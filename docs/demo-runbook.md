@@ -1,12 +1,24 @@
 # Demo runbook
 
-1. Start the installed Hermes gateway and the local connector.
-2. Open the bridge health endpoint and show the runtime as online.
-3. Invoke the `hermes` custom skill on the Echo and ask a representative personal question, then ask one follow-up in the same conversation.
-4. Ask Alexa to start a benign reversible Hermes task. Read the returned work reference and retrieve it with `get_work`.
-5. Steer the live work. If Hermes asks for approval, speak the exact action and use approve once or deny; show that the approval clears only after Hermes confirms it.
-6. Cancel a separate reversible task and show the confirmed or uncertain outcome.
-7. Disconnect the local host and ask Alexa for status. Show an honest offline response without cloud replay.
-8. If the cloud runtime is configured, explicitly select it and run a task that uses a cloud-only capability. Say which runtime owns the result.
+1. Start the installed Hermes gateway and the local connector; start Ambient
+   with the full `runtimes.json`.
+2. Open `/healthz` — show every configured runtime, its state, and its
+   capability set. Run `pnpm check:runtime <id>` live for at least one cloud
+   runtime.
+3. `list_assistants` in the MCP client (or "list my assistants" on Alexa), then
+   `select_assistant` — show the sticky default change.
+4. Ask Hermes a representative question, then a follow-up in the same
+   conversation. Then `ask` Grok Bot and Muse Spark in turn — same surface,
+   different assistants.
+5. Open the `dashboard` tool — switch assistants, watch the live work feed
+   update across runtimes.
+6. Run a benign reversible task that triggers an approval; answer it by voice
+   with the exact action (approve once / deny) or the dashboard buttons. Show it
+   clears only on assistant confirmation.
+7. Cancel a separate reversible task; show the confirmed or uncertain outcome.
+8. Ask Instinct something long-horizon; show the run stay `accepted`, then the
+   email reply land in the feed as `completed` minutes later.
+9. Disconnect the local host and ask for status — honest `offline`, no replay.
 
-Keep a terminal with `pnpm latency` available for transport measurements. Do not include private transcripts, gateway tokens, or unredacted account details in the recording.
+Keep `pnpm latency` handy for transport numbers. No private transcripts, tokens,
+or unredacted account details in the recording.

@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { DASHBOARD_HTML, dashboardSnapshot } from "./dashboard.js";
 import type { RuntimeRegistry } from "./runtimes/registry.js";
 import type { RunView, RuntimeState } from "./types.js";
 
@@ -180,6 +181,31 @@ export function createMcpServer({ registry }: McpDependencies): McpServer {
       return failure(error);
     }
   });
+
+  server.registerTool("dashboard", {
+    title: "Ambient dashboard",
+    description: "Open the live Ambient dashboard: assistant switcher, live work feed across every runtime, and pending approvals with one-tap answers. Also returns the full snapshot as structured content.",
+    inputSchema: {},
+    _meta: { "ui/resourceUri": "ui://ambient/dashboard" }
+  }, async () => {
+    try {
+      const snapshot = dashboardSnapshot(registry);
+      return {
+        content: [{ type: "text" as const, text: `${snapshot.assistants.length} assistants, ${snapshot.approvals.length} pending approvals, ${snapshot.work.length} recent work items.` }],
+        structuredContent: snapshot as unknown as Record<string, unknown>
+      };
+    } catch (error) {
+      return failure(error);
+    }
+  });
+
+  server.registerResource("ambient-dashboard", "ui://ambient/dashboard", {
+    title: "Ambient dashboard",
+    description: "Live multi-assistant dashboard: switcher, work feed, approvals.",
+    mimeType: "text/html;profile=mcp-app"
+  }, async () => ({
+    contents: [{ uri: "ui://ambient/dashboard", mimeType: "text/html;profile=mcp-app", text: DASHBOARD_HTML }]
+  }));
 
   server.registerTool("respond_to_approval", {
     title: "Respond to an approval",

@@ -19,6 +19,31 @@ This file records observed contracts for the Hermes revision and Alexa tooling u
 - Local bridge evidence: `pnpm check:hermes`, `pnpm check:hermes-contract`, and the connector smoke path completed against the running gateway on 2026-09-06.
 - No raw gateway frames or personal session data are committed; the sanitized live receipt is in `.audit/hermes-contract-2026-09-06.txt` and the probe is rerunnable with `pnpm check:hermes-contract`.
 
+## Other adapters (contract-tested, live-verified where noted)
+
+- **OpenClaw** — Gateway WS protocol v4. `connect.challenge` event → `connect` req
+  with role `operator` and scopes `operator.read operator.write operator.approvals`
+  → `hello-ok`. Verified against published TypeBox schemas: `sessions.create/send/
+  list/resolve/abort`, `chat.send queueMode:"steer"`, `agent` → `{runId}` +
+  `agent.wait`, `exec.approval.list`, `approval.resolve {id,kind,decision}`,
+  `exec.approval.requested`/`session.approval` events. Contract-tested with a fake
+  socket; live verification needs a self-hosted gateway + operator token.
+- **Grok Bot** — unofficial `sand` host gateway (`POST /api/<command>`, bearer,
+  default port 1340). Commands per the host's SAND_GATEWAY_COMMANDS surface:
+  `listAgents`, `createAgent`, `sendPrompt`, `interruptAgentRun`,
+  `getAgentTranscriptTail`, `getHostStatus`; `/health` and `/events` exist.
+  Completion is poll-based. Not an official API — keep the gateway on LAN/VPN.
+- **Muse** — `api.meta.ai/v1` OpenAI-compatible chat completions,
+  `options.model` default `muse-spark-1.1` (the model behind consumer Muse —
+  not the consumer product, which has no API). Threads are in-memory.
+- **Townie** — Val Town `POST /v1/run/{user}.{val}`; the val receives one arg
+  `{prompt}`. Live-verified against a mock endpoint via `pnpm check:runtime`.
+  First-party Townie chat has no public API — point the endpoint at a deployed
+  Townie-based val.
+- **Instinct** — documented email channel: Gmail `users.me.messages/send` +
+  `users.me/messages` poll for `[ambient:<sessionId>]` correlation. Async by
+  design (minutes); cancel unsupported (email can't be unsent).
+
 ## Alexa host options
 
 - Alexa+ MCP is the primary hackathon host. The self-hosted endpoint must negotiate MCP spec `2025-11-25` or newer; if preview access is unavailable, the rules permit a simulated Alexa+ experience in a web app.

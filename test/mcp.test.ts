@@ -33,6 +33,7 @@ describe("MCP surface", () => {
     expect(Object.keys(tools).sort()).toEqual([
       "ask",
       "cancel_work",
+      "dashboard",
       "get_work",
       "list_approvals",
       "list_assistants",
@@ -42,6 +43,7 @@ describe("MCP surface", () => {
       "select_conversation",
       "steer_work"
     ]);
+    expect((tools.dashboard as { _meta?: Record<string, unknown> })._meta).toMatchObject({ "ui/resourceUri": "ui://ambient/dashboard" });
     store.close();
   });
 });
