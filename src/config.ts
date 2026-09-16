@@ -10,6 +10,7 @@ const RuntimeEntrySchema = z.object({
   endpoint: z.string().min(1).optional(),
   tokenEnv: z.string().min(1).optional(),
   connectorTokenEnv: z.string().min(1).optional(),
+  options: z.record(z.string(), z.string()).optional(),
   default: z.boolean().optional()
 });
 

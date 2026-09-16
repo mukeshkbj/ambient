@@ -440,6 +440,8 @@ export class HermesConnection extends EventEmitter {
 }
 
 export class HermesClient implements AssistantClient {
+  readonly ephemeralSessions = true;
+
   readonly capabilities: RuntimeCapabilities = {
     sessions: true,
     steer: true,

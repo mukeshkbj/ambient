@@ -3,6 +3,11 @@ import type { AppConfig, RuntimeConfigEntry } from "../config.js";
 import { HermesClient, HermesConnection } from "../hermes.js";
 import type { AmbientStore } from "../store.js";
 import type { RunView, RuntimeState } from "../types.js";
+import { GrokBotClient } from "./grokbot.js";
+import { InstinctClient } from "./instinct.js";
+import { MuseClient } from "./muse.js";
+import { OpenClawClient, OpenClawConnection } from "./openclaw.js";
+import { TownieClient } from "./townie.js";
 import type { AssistantClient, ConnectorConnection, RuntimeDescriptor } from "./types.js";
 
 export type RuntimeEntry = {
@@ -188,16 +193,155 @@ function hermesRuntime(item: RuntimeConfigEntry, env: Record<string, string | un
   };
 }
 
+type ClosableClient = AssistantClient & { close?(): void | Promise<void> };
+
+function engineFor(item: RuntimeConfigEntry, store: AmbientStore, client: ClosableClient): ConversationEngine {
+  return new ConversationEngine(client, store, {
+    runtime: { id: item.id, label: item.label, kind: item.kind, state: "unknown", updatedAt: new Date().toISOString() }
+  });
+}
+
+function entryFor(
+  item: RuntimeConfigEntry,
+  client: ClosableClient,
+  engine: ConversationEngine,
+  start: () => void,
+  close: () => Promise<void>
+): RuntimeEntry {
+  return {
+    descriptor: { id: item.id, label: item.label, kind: item.kind, adapter: item.adapter, capabilities: client.capabilities },
+    client,
+    engine,
+    start,
+    close
+  };
+}
+
+function numberOption(item: RuntimeConfigEntry, name: string): number | undefined {
+  const raw = item.options?.[name];
+  if (raw === undefined) return undefined;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) throw new Error(`Runtime "${item.id}" option "${name}" must be a positive number`);
+  return value;
+}
+
+/** Poll-free adapters: a discovery pass on start plus a re-check every 30s keeps /healthz honest. */
+function polledRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore, client: ClosableClient): RuntimeEntry {
+  const engine = engineFor(item, store, client);
+  let timer: NodeJS.Timeout | undefined;
+  const discover = () => {
+    engine.discover().catch(() => undefined);
+  };
+  return entryFor(item, client, engine,
+    () => {
+      discover();
+      timer = setInterval(discover, 30_000);
+      timer.unref();
+    },
+    async () => {
+      if (timer) clearInterval(timer);
+      engine.close();
+      await client.close?.();
+    });
+}
+
+function openclawRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore): RuntimeEntry {
+  if (!item.endpoint) throw new Error(`Runtime "${item.id}" (openclaw) needs an endpoint, e.g. ws://127.0.0.1:18789`);
+  const token = item.tokenEnv ? env[item.tokenEnv] : undefined;
+  const connection = new OpenClawConnection({
+    url: item.endpoint,
+    ...(token ? { token } : {}),
+    ...(numberOption(item, "requestTimeoutMs") ? { requestTimeoutMs: numberOption(item, "requestTimeoutMs")! } : {})
+  });
+  const client = new OpenClawClient(connection);
+  const engine = engineFor(item, store, client);
+  let reconnect: NodeJS.Timeout | undefined;
+  const discover = () => {
+    engine.discover().catch(() => undefined);
+  };
+  return entryFor(item, client, engine,
+    () => {
+      const connect = () => {
+        connection.connect().then(discover).catch(() => engine.setRuntimeState("offline"));
+      };
+      connect();
+      connection.on("open", discover);
+      reconnect = setInterval(() => {
+        if (!connection.isConnected) connect();
+      }, 5_000);
+      reconnect.unref();
+    },
+    async () => {
+      if (reconnect) clearInterval(reconnect);
+      engine.close();
+      await connection.close();
+    });
+}
+
+function grokbotRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore): RuntimeEntry {
+  if (!item.endpoint) throw new Error(`Runtime "${item.id}" (grokbot) needs an endpoint, e.g. http://127.0.0.1:1340`);
+  const client = new GrokBotClient({
+    endpoint: item.endpoint,
+    ...(item.tokenEnv && env[item.tokenEnv] ? { token: env[item.tokenEnv]! } : {}),
+    ...(numberOption(item, "pollMs") ? { pollMs: numberOption(item, "pollMs")! } : {}),
+    ...(numberOption(item, "timeoutMs") ? { timeoutMs: numberOption(item, "timeoutMs")! } : {})
+  });
+  return polledRuntime(item, env, store, client);
+}
+
+function museRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore): RuntimeEntry {
+  const client = new MuseClient({
+    ...(item.endpoint ? { endpoint: item.endpoint } : {}),
+    ...(item.tokenEnv && env[item.tokenEnv] ? { token: env[item.tokenEnv]! } : {}),
+    ...(item.options?.model ? { model: item.options.model } : {}),
+    ...(numberOption(item, "timeoutMs") ? { timeoutMs: numberOption(item, "timeoutMs")! } : {})
+  });
+  return polledRuntime(item, env, store, client);
+}
+
+function townieRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore): RuntimeEntry {
+  if (!item.endpoint) throw new Error(`Runtime "${item.id}" (townie) needs an endpoint, e.g. https://api.val.town/v1/run/<user>.<val>`);
+  const client = new TownieClient({
+    endpoint: item.endpoint,
+    ...(item.tokenEnv && env[item.tokenEnv] ? { token: env[item.tokenEnv]! } : {}),
+    ...(numberOption(item, "timeoutMs") ? { timeoutMs: numberOption(item, "timeoutMs")! } : {})
+  });
+  return polledRuntime(item, env, store, client);
+}
+
+function instinctRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore): RuntimeEntry {
+  const to = item.options?.to;
+  if (!to) throw new Error(`Runtime "${item.id}" (instinct) needs options.to — the assistant's email address`);
+  const client = new InstinctClient({
+    to,
+    ...(item.tokenEnv && env[item.tokenEnv] ? { token: env[item.tokenEnv]! } : {}),
+    ...(item.options?.gmailEndpoint ? { gmailEndpoint: item.options.gmailEndpoint } : {}),
+    ...(numberOption(item, "pollMs") ? { pollMs: numberOption(item, "pollMs")! } : {}),
+    ...(numberOption(item, "timeoutMs") ? { timeoutMs: numberOption(item, "timeoutMs")! } : {})
+  });
+  return polledRuntime(item, env, store, client);
+}
+
+const ADAPTERS: Record<string, (item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore) => RuntimeEntry> = {
+  hermes: hermesRuntime,
+  openclaw: openclawRuntime,
+  grokbot: grokbotRuntime,
+  muse: museRuntime,
+  townie: townieRuntime,
+  instinct: instinctRuntime
+};
+
 export function buildRuntimeRegistry(
   config: Pick<AppConfig, "runtimes" | "defaultRuntimeId">,
   env: Record<string, string | undefined>,
   store: AmbientStore
 ): RuntimeRegistry {
   const entries = config.runtimes.map(item => {
-    if (item.adapter !== "hermes") {
-      throw new Error(`Assistant adapter "${item.adapter}" is not available in this build`);
+    const factory = ADAPTERS[item.adapter];
+    if (!factory) {
+      throw new Error(`Assistant adapter "${item.adapter}" is not available; supported: ${Object.keys(ADAPTERS).join(", ")}`);
     }
-    return hermesRuntime(item, env, store);
+    return factory(item, env, store);
   });
   return new RuntimeRegistry(store, entries, config.defaultRuntimeId);
 }

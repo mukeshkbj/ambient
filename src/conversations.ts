@@ -117,7 +117,7 @@ export class ConversationEngine {
 
   async discover(): Promise<Conversation[]> {
     try {
-      this.store.clearLiveSessionIds(this.options.runtime.id);
+      if (this.assistant.ephemeralSessions) this.store.clearLiveSessionIds(this.options.runtime.id);
       await this.assistant.ping?.();
       const saved = await this.assistant.listSavedSessions?.(100) ?? [];
       for (const session of saved) this.mergeSavedSession(session);

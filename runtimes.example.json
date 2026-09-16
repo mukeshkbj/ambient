@@ -14,5 +14,49 @@
     "kind": "cloud",
     "adapter": "hermes",
     "connectorTokenEnv": "CONNECTOR_TOKEN"
+  },
+  {
+    "id": "openclaw",
+    "label": "OpenClaw",
+    "kind": "local",
+    "adapter": "openclaw",
+    "endpoint": "ws://127.0.0.1:18789",
+    "tokenEnv": "OPENCLAW_TOKEN"
+  },
+  {
+    "id": "grokbot",
+    "label": "Grok Bot",
+    "kind": "local",
+    "adapter": "grokbot",
+    "endpoint": "http://127.0.0.1:1340",
+    "tokenEnv": "GROKBOT_TOKEN"
+  },
+  {
+    "id": "muse",
+    "label": "Muse",
+    "kind": "cloud",
+    "adapter": "muse",
+    "tokenEnv": "META_MODEL_API_KEY",
+    "options": { "model": "muse-spark-1.1" }
+  },
+  {
+    "id": "townie",
+    "label": "Townie",
+    "kind": "cloud",
+    "adapter": "townie",
+    "endpoint": "https://api.val.town/v1/run/<you>.<your-townie-val>",
+    "tokenEnv": "VAL_TOWN_TOKEN"
+  },
+  {
+    "id": "instinct",
+    "label": "Instinct",
+    "kind": "cloud",
+    "adapter": "instinct",
+    "tokenEnv": "GOOGLE_GMAIL_TOKEN",
+    "options": {
+      "to": "<you>@mail.instinct.com",
+      "pollMs": "15000",
+      "timeoutMs": "1800000"
+    }
   }
 ]

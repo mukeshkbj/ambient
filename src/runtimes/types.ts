@@ -57,6 +57,13 @@ export type RuntimeDescriptor = {
 
 export type AssistantClient = {
   readonly capabilities: RuntimeCapabilities;
+  /**
+   * True when runtimeSessionIds are bound to a live connection and die with it
+   * (Hermes). Discovery clears stored live ids so stale ones are re-bound.
+   * Adapters whose session ids are durable (HTTP APIs, session keys) leave this
+   * unset — clearing would force a resume that some cannot perform.
+   */
+  readonly ephemeralSessions?: boolean;
   ping?(): Promise<void>;
   createSession(): Promise<AssistantSession>;
   submitPrompt(runtimeSessionId: string, text: string): Promise<Record<string, unknown>>;

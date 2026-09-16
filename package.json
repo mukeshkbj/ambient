@@ -19,6 +19,7 @@
     "check:hermes": "tsx scripts/check-hermes.ts",
     "check:hermes-contract": "tsx scripts/check-hermes-contract.ts",
     "check:mcp-contract": "tsx scripts/check-mcp-contract.ts",
+    "check:runtime": "tsx scripts/check-runtime.ts",
     "connector": "tsx scripts/connect-local.ts",
     "smoke:mcp": "tsx scripts/smoke-mcp.ts",
     "latency": "tsx scripts/latency.ts",

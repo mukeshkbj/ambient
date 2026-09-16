@@ -28,6 +28,7 @@ export function fakeAssistant(overrides: Partial<AssistantClient> = {}): FakeAss
   let replayGapHandler: ((gap: ReplayGap) => void) | undefined;
   const client: AssistantClient = {
     capabilities: ALL_CAPABILITIES,
+    ephemeralSessions: true,
     createSession: vi.fn().mockResolvedValue({ runtimeSessionId: "runtime-1", durableSessionId: "stored-1" }),
     submitPrompt: vi.fn().mockResolvedValue({ status: "streaming" }),
     steer: vi.fn().mockResolvedValue({ status: "queued" }),
