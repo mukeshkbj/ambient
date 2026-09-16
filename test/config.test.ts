@@ -5,20 +5,24 @@ describe("readConfig", () => {
   it("allows a local Hermes URL without OAuth during development", () => {
     expect(readConfig({ HERMES_WS_URL: "ws://127.0.0.1:9119/api/ws" })).toMatchObject({
       port: 3000,
-      runtimeId: "local",
-      hermesWsUrl: "ws://127.0.0.1:9119/api/ws",
-      allowUnauthenticated: false
+      defaultRuntimeId: "local",
+      allowUnauthenticated: false,
+      runtimes: [{ id: "local", adapter: "hermes", endpoint: "ws://127.0.0.1:9119/api/ws", tokenEnv: "HERMES_WS_TOKEN" }]
     });
   });
 
+  it("requires at least one runtime", () => {
+    expect(() => readConfig({ AMBIENT_RUNTIMES_FILE: "/nonexistent/runtimes.json" })).toThrow("At least one runtime");
+  });
+
   it("requires all OAuth values together", () => {
-    expect(() => readConfig({ OAUTH_ISSUER: "https://ambient.example" })).toThrow("required together");
+    expect(() => readConfig({ HERMES_WS_URL: "ws://127.0.0.1:9119/api/ws", OAUTH_ISSUER: "https://ambient.example" })).toThrow("required together");
   });
 
   it("keeps cloud runtime selection explicit", () => {
-    expect(readConfig({ HERMES_RUNTIME_KIND: "cloud", HERMES_WS_URL: "wss://hermes.example/api/ws" })).toMatchObject({
-      runtimeKind: "cloud",
-      hermesWsUrl: "wss://hermes.example/api/ws"
+    expect(readConfig({ HERMES_RUNTIME_KIND: "cloud", HERMES_WS_URL: "wss://hermes.example/api/ws" }).runtimes[0]).toMatchObject({
+      kind: "cloud",
+      endpoint: "wss://hermes.example/api/ws"
     });
   });
 

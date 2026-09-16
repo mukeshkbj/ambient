@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { handleAlexaRequest, AlexaRequestError } from "../src/alexa.js";
+import { handleAlexaRequest, AlexaRequestError, type AlexaSkillDependencies } from "../src/alexa.js";
 import type { ConversationEngine } from "../src/conversations.js";
+import { RuntimeRegistry, type RuntimeEntry } from "../src/runtimes/registry.js";
+import { AmbientStore } from "../src/store.js";
+import { fakeAssistant } from "./fake.js";
 
 function engine() {
   return {
@@ -15,6 +18,19 @@ function engine() {
     respondToApproval: vi.fn(),
     runtime: vi.fn().mockReturnValue({ id: "local", label: "My Hermes", kind: "local", state: "online", updatedAt: "2026-09-06T00:00:00.000Z" })
   } as unknown as ConversationEngine;
+}
+
+function dependencies(fake: ConversationEngine): AlexaSkillDependencies & { store: AmbientStore } {
+  const store = new AmbientStore();
+  const entry: RuntimeEntry = {
+    descriptor: { id: "local", label: "My Hermes", kind: "local", adapter: "fake", capabilities: fakeAssistant().client.capabilities },
+    client: fakeAssistant().client,
+    engine: fake,
+    start: () => undefined,
+    close: async () => undefined
+  };
+  const registry = new RuntimeRegistry(store, [entry]);
+  return { registry, store, applicationId: "skill-id", allowUnauthenticated: true };
 }
 
 function request(name: string, slots: Record<string, string> = {}, attributes: Record<string, unknown> = {}) {
@@ -43,22 +59,23 @@ const run = (status: "accepted" | "running" | "completed" = "accepted") => ({
 });
 
 describe("Alexa custom skill", () => {
-  it("asks Hermes and keeps the work reference for a follow-up", async () => {
+  it("asks the selected assistant and keeps the work reference for a follow-up", async () => {
     const fake = engine();
     vi.mocked(fake.ask).mockResolvedValue(run());
     vi.mocked(fake.getWork).mockReturnValue(run("completed"));
-    const dependencies = { engine: fake, applicationId: "skill-id", allowUnauthenticated: true };
+    const deps = dependencies(fake);
 
-    const asked = await handleAlexaRequest(request("AskHermesIntent", { request: "check my day" }), dependencies);
+    const asked = await handleAlexaRequest(request("AskIntent", { request: "check my day" }), deps);
     expect(fake.ask).toHaveBeenCalledWith("check my day");
     expect(asked.response.outputSpeech.ssml).toContain("work-1");
 
-    const checked = await handleAlexaRequest(request("GetLastWorkIntent", {}, asked.sessionAttributes ?? {}), dependencies);
-    expect(fake.getWork).toHaveBeenCalledWith("work-1");
+    deps.store.createRun({ ...run("completed"), answer: "Your day is clear." });
+    const checked = await handleAlexaRequest(request("GetLastWorkIntent", {}, asked.sessionAttributes ?? {}), deps);
     expect(checked.response.outputSpeech.ssml).toContain("Your day is clear.");
+    deps.store.close();
   });
 
-  it("maps a listed approval to an exact Hermes approval id", async () => {
+  it("maps a listed approval to its exact namespaced approval id", async () => {
     const fake = engine();
     vi.mocked(fake.listApprovals).mockReturnValue([{
       id: "local:approval-1",
@@ -72,29 +89,46 @@ describe("Alexa custom skill", () => {
       createdAt: "2026-09-06T00:00:00.000Z"
     }]);
     vi.mocked(fake.respondToApproval).mockResolvedValue(run("running"));
-    const dependencies = { engine: fake, applicationId: "skill-id", allowUnauthenticated: true };
+    const deps = dependencies(fake);
 
-    const listed = await handleAlexaRequest(request("ListApprovalsIntent"), dependencies);
-    await handleAlexaRequest(request("AMAZON.YesIntent", {}, listed.sessionAttributes ?? {}), dependencies);
+    const listed = await handleAlexaRequest(request("ListApprovalsIntent"), deps);
+    expect(listed.response.outputSpeech.ssml).toContain("My Hermes");
+    await handleAlexaRequest(request("AMAZON.YesIntent", {}, listed.sessionAttributes ?? {}), deps);
     expect(fake.respondToApproval).toHaveBeenCalledWith("local:approval-1", "once");
+    deps.store.close();
   });
 
-  it("finds the latest work when a new Alexa session has no attributes", async () => {
+  it("routes an ask to the named assistant slot", async () => {
     const fake = engine();
-    vi.mocked(fake.listRuns).mockReturnValue([run("completed")]);
-    vi.mocked(fake.getWork).mockReturnValue(run("completed"));
-    const dependencies = { engine: fake, applicationId: "skill-id", allowUnauthenticated: true };
+    vi.mocked(fake.ask).mockResolvedValue(run());
+    const deps = dependencies(fake);
 
-    const checked = await handleAlexaRequest(request("GetLastWorkIntent"), dependencies);
-    expect(fake.getWork).toHaveBeenCalledWith("work-1");
-    expect(checked.response.outputSpeech.ssml).toContain("Your day is clear.");
+    const asked = await handleAlexaRequest(request("AskIntent", { request: "check my day", assistant: "hermes" }), deps);
+    expect(fake.ask).toHaveBeenCalledWith("check my day");
+    expect(asked.sessionAttributes?.assistant).toBe("local");
+    deps.store.close();
+  });
+
+  it("lists assistants and switches the selection", async () => {
+    const fake = engine();
+    const deps = dependencies(fake);
+
+    const listed = await handleAlexaRequest(request("ListAssistantsIntent"), deps);
+    expect(listed.response.outputSpeech.ssml).toContain("My Hermes");
+
+    const selected = await handleAlexaRequest(request("SelectAssistantIntent", { assistant: "hermes" }), deps);
+    expect(selected.response.outputSpeech.ssml).toContain("My Hermes");
+    expect(deps.registry.selectedId()).toBe("local");
+    deps.store.close();
   });
 
   it("rejects a request from another Alexa skill", async () => {
     const fake = engine();
-    const payload = request("RuntimeStatusIntent");
+    const payload = request("RuntimeStatusIntent", { assistant: "hermes" });
     payload.session.application.applicationId = "other-skill";
-    await expect(handleAlexaRequest(payload, { engine: fake, applicationId: "skill-id", allowUnauthenticated: true }))
+    const deps = dependencies(fake);
+    await expect(handleAlexaRequest(payload, deps))
       .rejects.toMatchObject({ status: 401 } satisfies Partial<AlexaRequestError>);
+    deps.store.close();
   });
 });

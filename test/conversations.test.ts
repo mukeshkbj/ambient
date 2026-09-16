@@ -1,42 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { ConversationEngine, type HermesConversationClient } from "../src/conversations.js";
-import type { HermesEvent } from "../src/hermes.js";
+import { ConversationEngine } from "../src/conversations.js";
+import { fakeAssistant } from "./fake.js";
 import { AmbientStore } from "../src/store.js";
 
-function fakeHermes() {
-  let eventHandler: ((event: HermesEvent) => void) | undefined;
-  let stateHandler: ((state: "online" | "offline" | "unknown") => void) | undefined;
-  let replayGapHandler: ((gap: { sessionId: string; lastSeen: number; latestSeq: number }) => void) | undefined;
-  const client: HermesConversationClient = {
-    createSession: vi.fn().mockResolvedValue({ runtimeSessionId: "runtime-1", durableSessionId: "stored-1" }),
-    submitPrompt: vi.fn().mockResolvedValue({ status: "streaming" }),
-    steer: vi.fn().mockResolvedValue({ status: "queued" }),
-    interrupt: vi.fn().mockResolvedValue({ status: "interrupted" }),
-    respondToApproval: vi.fn().mockResolvedValue({ resolved: 1 }),
-    resumeSession: vi.fn().mockResolvedValue({ runtimeSessionId: "runtime-1", durableSessionId: "stored-1" }),
-    listSavedSessions: vi.fn().mockResolvedValue([]),
-    listActiveSessions: vi.fn().mockResolvedValue([]),
-    listPendingApprovals: vi.fn().mockResolvedValue([]),
-    onEvent: vi.fn(handler => {
-      eventHandler = handler;
-      return () => undefined;
-    }),
-    onConnectionState: vi.fn(handler => {
-      stateHandler = handler;
-      return () => undefined;
-    }),
-    onReplayGap: vi.fn(handler => {
-      replayGapHandler = handler;
-      return () => undefined;
-    })
-  };
-  return {
-    client,
-    emit: (event: HermesEvent) => eventHandler?.(event),
-    state: (value: "online" | "offline" | "unknown") => stateHandler?.(value),
-    gap: (value: { sessionId: string; lastSeen: number; latestSeq: number }) => replayGapHandler?.(value)
-  };
-}
+const fakeHermes = fakeAssistant;
 
 describe("ConversationEngine", () => {
   it("creates one conversation and returns before completion", async () => {
@@ -52,7 +19,7 @@ describe("ConversationEngine", () => {
     expect(run).toMatchObject({ status: "running", instruction: "What is on my schedule?" });
     expect(hermes.client.createSession).toHaveBeenCalledTimes(1);
     expect(hermes.client.submitPrompt).toHaveBeenCalledWith("runtime-1", "What is on my schedule?");
-    await expect(engine.ask("Another question")).rejects.toThrow("already has active Hermes work");
+    await expect(engine.ask("Another question")).rejects.toThrow("already has active My Hermes work");
     store.close();
   });
 
@@ -122,7 +89,7 @@ describe("ConversationEngine", () => {
     });
     const run = await engine.ask("Long task", undefined, true);
     hermes.state("offline");
-    expect(engine.getWork(run.id)).toMatchObject({ status: "unknown", progress: "Hermes disconnected; the work outcome is unknown" });
+    expect(engine.getWork(run.id)).toMatchObject({ status: "unknown", progress: "My Hermes disconnected; the work outcome is unknown" });
     await expect(engine.steer(run.id, "continue")).rejects.toThrow("outcome is unknown");
     hermes.state("online");
     hermes.emit({ type: "message.complete", sessionId: "runtime-1", payload: { text: "Recovered", status: "complete" } });
@@ -192,7 +159,7 @@ describe("ConversationEngine", () => {
     expect(engine.listApprovals()).toEqual([]);
     expect(engine.getWork(run.id)).toMatchObject({
       status: "unknown",
-      progress: "Hermes resolved an approval outside Ambient; the work outcome is unknown"
+      progress: "My Hermes resolved an approval outside Ambient; the work outcome is unknown"
     });
     store.close();
   });

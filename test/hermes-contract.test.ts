@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { WebSocketServer } from "ws";
-import { HermesClient, HermesConnection, type HermesEvent } from "../src/hermes.js";
+import { HermesClient, HermesConnection } from "../src/hermes.js";
+import type { AssistantEvent } from "../src/runtimes/types.js";
 import { rawText } from "../src/raw.js";
 
 let server: WebSocketServer | undefined;
@@ -124,7 +125,7 @@ describe("Hermes gateway contract", () => {
     const address = server.address();
     if (!address || typeof address === "string") throw new Error("server did not bind");
     const connection = new HermesConnection({ url: `ws://127.0.0.1:${address.port}` });
-    const events: HermesEvent[] = [];
+    const events: AssistantEvent[] = [];
     const openEventCounts: number[] = [];
     const secondEvent = new Promise<void>(resolve => connection.onEvent(event => {
       if (!event.sessionId) return;
@@ -174,7 +175,7 @@ describe("Hermes gateway contract", () => {
     const address = server.address();
     if (!address || typeof address === "string") throw new Error("server did not bind");
     const connection = new HermesConnection({ url: `ws://127.0.0.1:${address.port}` });
-    const events: HermesEvent[] = [];
+    const events: AssistantEvent[] = [];
     connection.onEvent(event => {
       if (event.sessionId) events.push(event);
     });
@@ -252,7 +253,7 @@ describe("Hermes gateway contract", () => {
     const address = server.address();
     if (!address || typeof address === "string") throw new Error("server did not bind");
     const connection = new HermesConnection({ url: `ws://127.0.0.1:${address.port}` });
-    const events: HermesEvent[] = [];
+    const events: AssistantEvent[] = [];
     const gaps: Array<{ sessionId: string; lastSeen: number; latestSeq: number }> = [];
     connection.onEvent(event => { if (event.sessionId) events.push(event); });
     connection.onReplayGap(gap => gaps.push(gap));
@@ -294,7 +295,7 @@ describe("Hermes gateway contract", () => {
     const address = server.address();
     if (!address || typeof address === "string") throw new Error("server did not bind");
     const connection = new HermesConnection({ url: `ws://127.0.0.1:${address.port}` });
-    const events: HermesEvent[] = [];
+    const events: AssistantEvent[] = [];
     const gaps: Array<{ sessionId: string; lastSeen: number; latestSeq: number }> = [];
     connection.onEvent(event => { if (event.sessionId) events.push(event); });
     connection.onReplayGap(gap => gaps.push(gap));

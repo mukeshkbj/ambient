@@ -4,12 +4,12 @@ import { join } from "node:path";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import WebSocket, { WebSocketServer } from "ws";
-import { ConversationEngine } from "./conversations.js";
 import { readConfig, type AppConfig } from "./config.js";
 import { OAuthError, OAuthProvider, type Principal } from "./auth.js";
 import { AlexaRequestError, handleAlexaRequest } from "./alexa.js";
-import { HermesClient, HermesConnection } from "./hermes.js";
 import { createMcpServer } from "./mcp.js";
+import { buildRuntimeRegistry, type RuntimeRegistry } from "./runtimes/registry.js";
+import type { ConnectorConnection } from "./runtimes/types.js";
 import { AmbientStore } from "./store.js";
 
 type McpSession = {
@@ -18,7 +18,7 @@ type McpSession = {
 };
 
 export type AmbientHttpDependencies = {
-  engine: ConversationEngine;
+  registry: RuntimeRegistry;
   auth?: OAuthProvider;
   accessToken?: string;
   allowUnauthenticated?: boolean;
@@ -28,11 +28,7 @@ export type AmbientHttpDependencies = {
     accessToken?: string;
     allowUnauthenticated?: boolean;
   };
-  connector?: {
-    runtimeId: string;
-    token: string;
-    connection: HermesConnection;
-  };
+  connectors?: Map<string, { token: string; connection: ConnectorConnection }>;
 };
 
 export type AmbientHttp = {
@@ -156,7 +152,7 @@ function authorizationForm(params: Record<string, string | undefined>, requiresL
 
 export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): AmbientHttp {
   const sessions = new Map<string, McpSession>();
-  const connectorServer = dependencies.connector ? new WebSocketServer({ noServer: true }) : undefined;
+  const connectorServer = dependencies.connectors && dependencies.connectors.size > 0 ? new WebSocketServer({ noServer: true }) : undefined;
   const handle = async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
     response.setHeader("access-control-allow-origin", "*");
     response.setHeader("access-control-allow-headers", "authorization, content-type, mcp-session-id, last-event-id");
@@ -169,7 +165,7 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
     const url = new URL(request.url ?? "/", "http://ambient.invalid");
 
     if (url.pathname === "/healthz" && request.method === "GET") {
-      writeJson(response, 200, { ok: true, runtime: dependencies.engine.runtime() });
+      writeJson(response, 200, { ok: true, runtimes: dependencies.registry.list() });
       return;
     }
     if (dependencies.auth && request.method === "GET" && (url.pathname === "/.well-known/oauth-protected-resource" || url.pathname === "/.well-known/oauth-protected-resource/mcp")) {
@@ -240,7 +236,7 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
         return;
       }
       try {
-        const result = await handleAlexaRequest(parsed, { engine: dependencies.engine, ...dependencies.alexa });
+        const result = await handleAlexaRequest(parsed, { registry: dependencies.registry, ...dependencies.alexa });
         writeJson(response, 200, result);
       } catch (error) {
         if (error instanceof AlexaRequestError) {
@@ -275,7 +271,7 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
       return;
     }
     if (!entry) {
-      const mcp = createMcpServer({ engine: dependencies.engine });
+      const mcp = createMcpServer({ registry: dependencies.registry });
       const ref: { current?: McpSession } = {};
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
@@ -311,21 +307,21 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
     });
   });
 
-  if (connectorServer && dependencies.connector) {
-    const connector = dependencies.connector;
+  if (connectorServer && dependencies.connectors) {
+    const connectors = dependencies.connectors;
     server.on("upgrade", (request, socket, head) => {
       const url = new URL(request.url ?? "/", "http://ambient.invalid");
       const runtimeId = request.headers["x-ambient-runtime-id"];
-      const headerRuntime = typeof runtimeId === "string" ? runtimeId : undefined;
+      const entry = typeof runtimeId === "string" ? connectors.get(runtimeId) : undefined;
       const authorization = request.headers.authorization;
       const token = authorization?.startsWith("Bearer ") ? authorization.slice("Bearer ".length) : undefined;
-      if (url.pathname !== "/connector" || headerRuntime !== connector.runtimeId || !secretMatches(token, connector.token)) {
+      if (url.pathname !== "/connector" || !entry || !secretMatches(token, entry.token)) {
         socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
         socket.destroy();
         return;
       }
       connectorServer.handleUpgrade(request, socket, head, webSocket => {
-        void connector.connection.attach(webSocket).catch(() => {
+        void entry.connection.attach(webSocket).catch(() => {
           if (webSocket.readyState === WebSocket.OPEN) webSocket.close(1013, "connector unavailable");
         });
       });
@@ -338,7 +334,7 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
       for (const entry of sessions.values()) await entry.server.close();
       sessions.clear();
       if (connectorServer) {
-        await dependencies.connector?.connection.close();
+        for (const connector of dependencies.connectors?.values() ?? []) await connector.connection.close();
         await new Promise<void>(resolve => connectorServer.close(() => resolve()));
       }
       if (!server.listening) return;
@@ -349,16 +345,9 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
 
 export async function startFromEnvironment(env: Record<string, string | undefined> = process.env): Promise<() => Promise<void>> {
   const config: AppConfig = readConfig(env);
-  if (!config.hermesWsUrl && !config.connectorToken) throw new Error("HERMES_WS_URL or CONNECTOR_TOKEN is required");
-  const connection = new HermesConnection({
-    url: config.hermesWsUrl ?? "ws://ambient-connector.invalid",
-    ...(config.hermesWsToken ? { token: config.hermesWsToken } : {})
-  });
-  const hermes = new HermesClient(connection);
   const store = new AmbientStore(join(config.dataDir, "ambient.sqlite"), config.retentionDays);
-  const engine = new ConversationEngine(hermes, store, {
-    runtime: { id: config.runtimeId, label: config.runtimeLabel, kind: config.runtimeKind, state: "unknown", updatedAt: new Date().toISOString() }
-  });
+  const registry = buildRuntimeRegistry(config, env, store);
+  const connectors = registry.connectors();
   const auth = config.oauth ? new OAuthProvider(config.oauth) : undefined;
   const alexa = config.alexaSkillId ? {
     applicationId: config.alexaSkillId,
@@ -367,44 +356,17 @@ export async function startFromEnvironment(env: Record<string, string | undefine
     allowUnauthenticated: config.allowUnauthenticated
   } : undefined;
   const http = createAmbientHttpServer({
-    engine,
+    registry,
     ...(auth ? { auth } : {}),
     ...(config.accessToken ? { accessToken: config.accessToken } : {}),
-    ...(config.connectorToken ? { connector: { runtimeId: config.runtimeId, token: config.connectorToken, connection } } : {}),
+    ...(connectors.size > 0 ? { connectors } : {}),
     ...(alexa ? { alexa } : {}),
     allowUnauthenticated: !auth && !config.accessToken && config.allowUnauthenticated
   });
   await new Promise<void>(resolve => http.server.listen(config.port, "0.0.0.0", resolve));
-  const discover = async () => {
-    try {
-      await engine.discover();
-    } catch {
-      engine.setRuntimeState("offline");
-    }
-  };
-  const direct = Boolean(config.hermesWsUrl);
-  const connect = async () => {
-    try {
-      await connection.connect();
-      await discover();
-    } catch {
-      engine.setRuntimeState("offline");
-    }
-  };
-  let reconnect: NodeJS.Timeout | undefined;
-  if (direct) {
-    void connect();
-    reconnect = setInterval(() => {
-      if (!connection.isConnected) void connect();
-    }, 5_000);
-    reconnect.unref();
-  } else {
-    connection.on("open", () => void discover());
-  }
+  registry.startAll();
   return async () => {
-    if (reconnect) clearInterval(reconnect);
-    engine.close();
-    await connection.close();
+    await registry.close();
     await http.close();
     store.close();
   };

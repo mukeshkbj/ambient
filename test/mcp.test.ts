@@ -1,8 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { createMcpServer } from "../src/mcp.js";
+import { RuntimeRegistry, type RuntimeEntry } from "../src/runtimes/registry.js";
+import { AmbientStore } from "../src/store.js";
+import type { ConversationEngine } from "../src/conversations.js";
+import { fakeAssistant } from "./fake.js";
 
 describe("MCP surface", () => {
-  it("exposes semantic Hermes controls without exposing Hermes tools", () => {
+  it("exposes semantic assistant controls without exposing runtime tools", () => {
+    const store = new AmbientStore();
     const engine = {
       ask: vi.fn(),
       getWork: vi.fn(),
@@ -15,17 +20,28 @@ describe("MCP surface", () => {
       runtime: vi.fn(),
       listRuns: vi.fn()
     };
-    const server = createMcpServer({ engine: engine as never });
+    const entry: RuntimeEntry = {
+      descriptor: { id: "local", label: "My Hermes", kind: "local", adapter: "fake", capabilities: fakeAssistant().client.capabilities },
+      client: fakeAssistant().client,
+      engine: engine as unknown as ConversationEngine,
+      start: () => undefined,
+      close: async () => undefined
+    };
+    const registry = new RuntimeRegistry(store, [entry]);
+    const server = createMcpServer({ registry });
     const tools = (server as unknown as { _registeredTools: Record<string, unknown> })._registeredTools;
     expect(Object.keys(tools).sort()).toEqual([
-      "ask_hermes",
+      "ask",
       "cancel_work",
       "get_work",
       "list_approvals",
+      "list_assistants",
       "list_conversations",
       "respond_to_approval",
+      "select_assistant",
       "select_conversation",
       "steer_work"
     ]);
+    store.close();
   });
 });

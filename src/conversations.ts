@@ -1,22 +1,14 @@
 import { randomUUID } from "node:crypto";
-import type { HermesActiveSession, HermesEvent, HermesReplayGap, HermesSavedSession, HermesSession } from "./hermes.js";
+import type {
+  ActiveSession,
+  AssistantClient,
+  AssistantEvent,
+  AssistantSession,
+  RuntimeCapabilities,
+  SavedSession
+} from "./runtimes/types.js";
 import type { AmbientStore, NewConversation } from "./store.js";
 import type { Approval, Conversation, RunStatus, RunView, Runtime, RuntimeState } from "./types.js";
-
-export type HermesConversationClient = {
-  createSession(): Promise<HermesSession>;
-  submitPrompt(runtimeSessionId: string, text: string): Promise<Record<string, unknown>>;
-  steer(runtimeSessionId: string, text: string): Promise<Record<string, unknown>>;
-  interrupt(runtimeSessionId: string): Promise<Record<string, unknown>>;
-  respondToApproval(runtimeSessionId: string, requestId: string, choice: string): Promise<Record<string, unknown>>;
-  resumeSession(durableSessionId: string): Promise<HermesSession>;
-  listSavedSessions(limit?: number): Promise<HermesSavedSession[]>;
-  listActiveSessions(): Promise<HermesActiveSession[]>;
-  listPendingApprovals(runtimeSessionId: string): Promise<Record<string, unknown>[]>;
-  onEvent(listener: (event: HermesEvent) => void): () => void;
-  onConnectionState(listener: (state: RuntimeState) => void): () => void;
-  onReplayGap(listener: (gap: HermesReplayGap) => void): () => void;
-};
 
 export type ConversationEngineOptions = {
   runtime: Runtime;
@@ -32,7 +24,7 @@ function resultStatus(result: Record<string, unknown>): string | undefined {
   return value(result.status);
 }
 
-function eventText(event: HermesEvent): string | undefined {
+function eventText(event: AssistantEvent): string | undefined {
   return value(event.payload.text) ?? value(event.payload.summary) ?? value(event.payload.message);
 }
 
@@ -42,10 +34,10 @@ function terminal(status: RunStatus): boolean {
 
 function makeConversation(
   runtimeId: string,
-  session: HermesSession,
+  session: AssistantSession,
   now: string,
   id: string,
-  title = "New Hermes conversation"
+  title: string
 ): NewConversation {
   return {
     id,
@@ -69,27 +61,29 @@ export class ConversationEngine {
   private readonly replayGapSessions = new Set<string>();
 
   constructor(
-    private readonly hermes: HermesConversationClient,
+    private readonly assistant: AssistantClient,
     private readonly store: AmbientStore,
     private readonly options: ConversationEngineOptions
   ) {
     this.now = options.now ?? (() => new Date().toISOString());
     this.id = options.id ?? (() => randomUUID());
     this.store.upsertRuntime({ ...options.runtime, state: options.runtime.state ?? "unknown" });
-    this.unsubscribeEvent = hermes.onEvent(event => {
+    this.unsubscribeEvent = assistant.onEvent(event => {
       void this.applyEvent(event);
     });
-    this.unsubscribeState = hermes.onConnectionState(state => {
-      if (state === "offline") this.store.markActiveRunsUnknown(this.options.runtime.id, this.now());
+    this.unsubscribeState = assistant.onConnectionState(state => {
+      if (state === "offline") {
+        this.store.markActiveRunsUnknown(this.options.runtime.id, this.now(), `${this.label()} disconnected; the work outcome is unknown`);
+      }
       this.setRuntimeState(state === "online" ? "unknown" : state);
     });
-    this.unsubscribeReplayGap = hermes.onReplayGap(gap => {
+    this.unsubscribeReplayGap = assistant.onReplayGap?.(gap => {
       const run = this.store.activeRunByLiveSession(this.options.runtime.id, gap.sessionId);
       if (run && !terminal(run.status)) {
         this.replayGapSessions.add(gap.sessionId);
         this.store.updateRun(run.id, {
           status: "unknown",
-          progress: "Hermes replay history was truncated; the work outcome is unknown",
+          progress: `${this.label()} replay history was truncated; the work outcome is unknown`,
           updatedAt: this.now()
         });
       }
@@ -100,6 +94,14 @@ export class ConversationEngine {
     this.unsubscribeEvent();
     this.unsubscribeState();
     this.unsubscribeReplayGap();
+  }
+
+  get capabilities(): RuntimeCapabilities {
+    return this.assistant.capabilities;
+  }
+
+  label(): string {
+    return this.options.runtime.label;
   }
 
   runtime(): Runtime {
@@ -116,11 +118,14 @@ export class ConversationEngine {
   async discover(): Promise<Conversation[]> {
     try {
       this.store.clearLiveSessionIds(this.options.runtime.id);
-      const saved = await this.hermes.listSavedSessions(100);
+      await this.assistant.ping?.();
+      const saved = await this.assistant.listSavedSessions?.(100) ?? [];
       for (const session of saved) this.mergeSavedSession(session);
-      const active = await this.hermes.listActiveSessions();
+      const active = await this.assistant.listActiveSessions?.() ?? [];
       for (const session of active) this.mergeActiveSession(session);
-      const reconciliations = await Promise.allSettled(active.map(session => this.reconcilePendingApprovals(session.id)));
+      const reconciliations = this.assistant.listPendingApprovals
+        ? await Promise.allSettled(active.map(session => this.reconcilePendingApprovals(session.id)))
+        : [];
       this.setRuntimeState(reconciliations.some(result => result.status === "rejected") ? "unknown" : "online");
     } catch (error) {
       this.setRuntimeState("offline");
@@ -149,14 +154,14 @@ export class ConversationEngine {
 
   async ask(text: string, conversationId?: string, newConversation = false): Promise<RunView> {
     const instruction = text.trim();
-    if (!instruction) throw new Error("A Hermes instruction is required");
+    if (!instruction) throw new Error(`An instruction for ${this.label()} is required`);
     const conversation = await this.ensureConversation(conversationId, newConversation);
     if (this.store.activeRunForConversation(this.options.runtime.id, conversation.id)) {
-      throw new Error("This conversation already has active Hermes work");
+      throw new Error(`This conversation already has active ${this.label()} work`);
     }
     const liveSessionId = await this.ensureLive(conversation);
     if (this.store.activeRunForConversation(this.options.runtime.id, conversation.id)) {
-      throw new Error("This conversation already has active Hermes work");
+      throw new Error(`This conversation already has active ${this.label()} work`);
     }
     const timestamp = this.now();
     const run = this.store.createRun({
@@ -172,7 +177,7 @@ export class ConversationEngine {
     });
 
     try {
-      const response = await this.hermes.submitPrompt(liveSessionId, instruction);
+      const response = await this.assistant.submitPrompt(liveSessionId, instruction);
       const current = this.store.run(run.id)!;
       if (current.status === "queued") {
         this.store.updateRun(run.id, {
@@ -201,10 +206,11 @@ export class ConversationEngine {
   async steer(runId: string, instruction: string): Promise<RunView> {
     const run = this.getWork(runId);
     if (terminal(run.status)) throw new Error("Work is already finished");
-    if (run.status === "unknown") throw new Error("Work outcome is unknown; wait for Hermes to reconnect before steering it");
+    if (run.status === "unknown") throw new Error(`Work outcome is unknown; wait for ${this.label()} to reconnect before steering it`);
     const text = instruction.trim();
-    if (!text) throw new Error("A Hermes steering instruction is required");
-    await this.hermes.steer(run.liveSessionId, text);
+    if (!text) throw new Error(`A steering instruction for ${this.label()} is required`);
+    if (!this.assistant.steer) throw new Error(`${this.label()} does not support steering work`);
+    await this.assistant.steer(run.liveSessionId, text);
     if (run.status === "queued" || run.status === "accepted") {
       this.store.updateRun(run.id, { status: "running", updatedAt: this.now() });
     }
@@ -214,8 +220,9 @@ export class ConversationEngine {
   async cancel(runId: string): Promise<RunView> {
     const run = this.getWork(runId);
     if (terminal(run.status)) return run;
-    if (run.status === "unknown") throw new Error("Work outcome is unknown; wait for Hermes to reconnect before cancelling it");
-    const response = await this.hermes.interrupt(run.liveSessionId);
+    if (run.status === "unknown") throw new Error(`Work outcome is unknown; wait for ${this.label()} to reconnect before cancelling it`);
+    if (!this.assistant.interrupt) throw new Error(`${this.label()} does not support cancelling work`);
+    const response = await this.assistant.interrupt(run.liveSessionId);
     const status = resultStatus(response);
     this.store.updateRun(run.id, {
       status: status === "interrupted" ? "cancelled" : "cancel_requested",
@@ -226,19 +233,20 @@ export class ConversationEngine {
   }
 
   async respondToApproval(approvalId: string, decision: "once" | "deny"): Promise<RunView> {
+    if (!this.assistant.respondToApproval) throw new Error(`${this.label()} does not support approvals`);
     const approval = this.store.approvalById(approvalId) ?? this.store.approvalForRuntime(this.options.runtime.id, approvalId);
     if (!approval || approval.runtimeId !== this.options.runtime.id || approval.resolvedAt) {
       throw new Error("Approval is no longer pending");
     }
     if (this.approvalResponses.has(approval.requestId)) throw new Error("Approval response is already in progress");
     const run = this.getWork(approval.runId);
-    if (run.status === "unknown") throw new Error("Work outcome is unknown; wait for Hermes to reconnect before answering approval");
+    if (run.status === "unknown") throw new Error(`Work outcome is unknown; wait for ${this.label()} to reconnect before answering approval`);
     this.approvalResponses.add(approval.requestId);
     try {
-      const response = await this.hermes.respondToApproval(approval.liveSessionId, approval.requestId, decision);
+      const response = await this.assistant.respondToApproval(approval.liveSessionId, approval.requestId, decision);
       const resolved = response.resolved;
       if (typeof resolved !== "number" || resolved < 1) {
-        throw new Error("Hermes did not accept the approval response");
+        throw new Error(`${this.label()} did not accept the approval response`);
       }
       this.store.resolveApprovalForRuntime(this.options.runtime.id, approval.requestId, this.now());
       this.store.updateRun(run.id, { status: "running", updatedAt: this.now() });
@@ -248,7 +256,7 @@ export class ConversationEngine {
     }
   }
 
-  async applyEvent(event: HermesEvent): Promise<void> {
+  async applyEvent(event: AssistantEvent): Promise<void> {
     if (!event.sessionId) return;
     const run = this.store.activeRunByLiveSession(this.options.runtime.id, event.sessionId);
     if (!run || terminal(run.status)) return;
@@ -257,7 +265,7 @@ export class ConversationEngine {
     if (event.type === "approval.request") {
       const requestId = value(event.payload.request_id);
       if (!requestId) {
-        this.store.updateRun(run.id, { progress: "Hermes sent an approval without a request identity", updatedAt: timestamp });
+        this.store.updateRun(run.id, { progress: `${this.label()} sent an approval without a request identity`, updatedAt: timestamp });
         return;
       }
       const existing = this.store.approvalForRuntime(this.options.runtime.id, requestId);
@@ -269,7 +277,7 @@ export class ConversationEngine {
         durableSessionId: run.durableSessionId,
         liveSessionId: event.sessionId,
         requestId,
-        command: value(event.payload.command) ?? "Hermes requested approval",
+        command: value(event.payload.command) ?? `${this.label()} requested approval`,
         ...(value(event.payload.description) ? { description: value(event.payload.description)! } : {}),
         choices: Array.isArray(event.payload.choices)
           ? event.payload.choices.filter((choice): choice is string => typeof choice === "string")
@@ -282,7 +290,7 @@ export class ConversationEngine {
     }
     if (event.type === "message.complete") {
       const status = value(event.payload.status);
-      const answer = eventText(event) ?? "Hermes completed the request";
+      const answer = eventText(event) ?? `${this.label()} completed the request`;
       if (run.status === "cancel_requested") {
         this.store.updateRun(run.id, { status: "cancelled", answer, updatedAt: timestamp });
       } else if (status === "error" || value(event.payload.error)) {
@@ -309,9 +317,15 @@ export class ConversationEngine {
       const selected = this.store.selectedConversation(this.options.runtime.id);
       if (selected) return selected;
     }
-    const session = await this.hermes.createSession();
+    const session = await this.assistant.createSession();
     const timestamp = this.now();
-    return this.store.createConversation(makeConversation(this.options.runtime.id, session, timestamp, this.id()));
+    return this.store.createConversation(makeConversation(
+      this.options.runtime.id,
+      session,
+      timestamp,
+      this.id(),
+      `New ${this.label()} conversation`
+    ));
   }
 
   private requireConversation(id: string): Conversation {
@@ -322,7 +336,10 @@ export class ConversationEngine {
 
   private async ensureLive(conversation: Conversation): Promise<string> {
     if (conversation.liveSessionId) return conversation.liveSessionId;
-    const resumed = await this.hermes.resumeSession(conversation.durableSessionId);
+    if (!this.assistant.resumeSession) {
+      throw new Error(`${this.label()} cannot resume that conversation; start a new conversation`);
+    }
+    const resumed = await this.assistant.resumeSession(conversation.durableSessionId);
     this.store.updateConversation(conversation.id, {
       durableSessionId: resumed.durableSessionId,
       liveSessionId: resumed.runtimeSessionId,
@@ -333,11 +350,11 @@ export class ConversationEngine {
   }
 
   private async reconcilePendingApprovals(liveSessionId: string): Promise<void> {
-    const pending = await this.hermes.listPendingApprovals(liveSessionId);
+    const pending = await this.assistant.listPendingApprovals?.(liveSessionId) ?? [];
     const pendingIds = new Set<string>();
     for (const payload of pending) {
       const requestId = value(payload.request_id);
-      if (!requestId) throw new Error("Hermes approval snapshot contains an approval without a request identity");
+      if (!requestId) throw new Error(`${this.label()} approval snapshot contains an approval without a request identity`);
       pendingIds.add(requestId);
     }
     const timestamp = this.now();
@@ -348,7 +365,7 @@ export class ConversationEngine {
       if (run && !terminal(run.status)) {
         this.store.updateRun(run.id, {
           status: "unknown",
-          progress: "Hermes resolved an approval outside Ambient; the work outcome is unknown",
+          progress: `${this.label()} resolved an approval outside Ambient; the work outcome is unknown`,
           updatedAt: timestamp
         });
       }
@@ -359,9 +376,9 @@ export class ConversationEngine {
     }
   }
 
-  private mergeSavedSession(session: HermesSavedSession): void {
+  private mergeSavedSession(session: SavedSession): void {
     const existing = this.store.conversationByDurable(this.options.runtime.id, session.id);
-    const title = session.title ?? session.preview ?? "Hermes conversation";
+    const title = session.title ?? session.preview ?? `${this.label()} conversation`;
     if (existing) {
       this.store.updateConversation(existing.id, { ...(title ? { title } : {}), updatedAt: this.now() });
       return;
@@ -378,10 +395,10 @@ export class ConversationEngine {
     });
   }
 
-  private mergeActiveSession(session: HermesActiveSession): void {
+  private mergeActiveSession(session: ActiveSession): void {
     if (!session.session_key) return;
     const existing = this.store.conversationByDurable(this.options.runtime.id, session.session_key);
-    const title = session.title ?? session.preview ?? "Active Hermes conversation";
+    const title = session.title ?? session.preview ?? `Active ${this.label()} conversation`;
     if (existing) {
       const timestamp = this.now();
       if (existing.liveSessionId && this.replayGapSessions.has(existing.liveSessionId)) {

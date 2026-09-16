@@ -1,0 +1,18 @@
+[
+  {
+    "id": "hermes",
+    "label": "Hermes",
+    "kind": "local",
+    "adapter": "hermes",
+    "endpoint": "ws://127.0.0.1:9129/api/ws",
+    "tokenEnv": "HERMES_WS_TOKEN",
+    "default": true
+  },
+  {
+    "id": "hermes-cloud",
+    "label": "Hermes Cloud",
+    "kind": "cloud",
+    "adapter": "hermes",
+    "connectorTokenEnv": "CONNECTOR_TOKEN"
+  }
+]

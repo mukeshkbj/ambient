@@ -1,6 +1,15 @@
 import { EventEmitter } from "node:events";
 import WebSocket from "ws";
 import { rawText } from "./raw.js";
+import type {
+  ActiveSession,
+  AssistantClient,
+  AssistantEvent,
+  AssistantSession,
+  ReplayGap,
+  RuntimeCapabilities,
+  SavedSession
+} from "./runtimes/types.js";
 
 type HermesFrame = {
   jsonrpc?: string;
@@ -9,42 +18,6 @@ type HermesFrame = {
   params?: unknown;
   result?: unknown;
   error?: { code?: number; message?: string; data?: unknown };
-};
-
-export type HermesEvent = {
-  type: string;
-  sessionId?: string;
-  payload: Record<string, unknown>;
-  seq?: number;
-};
-
-export type HermesReplayGap = {
-  sessionId: string;
-  lastSeen: number;
-  latestSeq: number;
-};
-
-export type HermesSession = {
-  runtimeSessionId: string;
-  durableSessionId: string;
-};
-
-export type HermesSavedSession = {
-  id: string;
-  title?: string;
-  preview?: string;
-  started_at?: number;
-  message_count?: number;
-  source?: string;
-};
-
-export type HermesActiveSession = {
-  id: string;
-  session_key?: string;
-  title?: string;
-  status?: string;
-  message_count?: number;
-  preview?: string;
 };
 
 export type HermesConnectionOptions = {
@@ -107,7 +80,7 @@ export class HermesConnection extends EventEmitter {
   private replayEpoch: string | undefined;
   private pendingReplayEpoch: string | undefined;
   private replayInFlight = false;
-  private replayHold: Map<string, HermesEvent[]> | undefined;
+  private replayHold: Map<string, AssistantEvent[]> | undefined;
   private readonly lastSeenSeq = new Map<string, number>();
 
   constructor(private readonly options: HermesConnectionOptions) {
@@ -165,12 +138,12 @@ export class HermesConnection extends EventEmitter {
     });
   }
 
-  onEvent(listener: (event: HermesEvent) => void): () => void {
+  onEvent(listener: (event: AssistantEvent) => void): () => void {
     this.on("event", listener);
     return () => this.off("event", listener);
   }
 
-  onReplayGap(listener: (gap: HermesReplayGap) => void): () => void {
+  onReplayGap(listener: (gap: ReplayGap) => void): () => void {
     this.on("replayGap", listener);
     return () => this.off("replayGap", listener);
   }
@@ -224,7 +197,7 @@ export class HermesConnection extends EventEmitter {
           ...(sessionId ? { sessionId } : {}),
           payload,
           ...(seq !== undefined ? { seq } : {})
-        } satisfies HermesEvent;
+        } satisfies AssistantEvent;
         if (type === "gateway.ready") {
           const epoch = typeof payload.replay_epoch === "string" && payload.replay_epoch ? payload.replay_epoch : undefined;
           if (epoch && this.opened && this.lastSeenSeq.size > 0 && epoch !== this.replayEpoch) {
@@ -277,7 +250,7 @@ export class HermesConnection extends EventEmitter {
     await new Promise<void>((resolve, reject) => {
       let settled = false;
       let readyStarted = false;
-      const onReady = (event: HermesEvent) => {
+      const onReady = (event: AssistantEvent) => {
         if (event.type !== "gateway.ready" || settled || readyStarted) return;
         readyStarted = true;
         this.ready = true;
@@ -344,7 +317,7 @@ export class HermesConnection extends EventEmitter {
     this.heartbeatTimer = undefined;
   }
 
-  private dispatchIfNewer(event: HermesEvent): void {
+  private dispatchIfNewer(event: AssistantEvent): void {
     if (event.sessionId && event.seq !== undefined) {
       const previous = this.lastSeenSeq.get(event.sessionId) ?? -1;
       if (event.seq <= previous) return;
@@ -371,14 +344,14 @@ export class HermesConnection extends EventEmitter {
     }
     this.replayInFlight = true;
     const entries = [...this.lastSeenSeq.entries()];
-    const hold = new Map<string, HermesEvent[]>();
+    const hold = new Map<string, AssistantEvent[]>();
     for (const [sessionId] of entries) hold.set(sessionId, []);
     this.replayHold = hold;
     const gaps = new Set<string>();
     const emitGap = (sessionId: string, lastSeen: number, latestSeq: number): void => {
       if (gaps.has(sessionId)) return;
       gaps.add(sessionId);
-      this.emit("replayGap", { sessionId, lastSeen, latestSeq } satisfies HermesReplayGap);
+      this.emit("replayGap", { sessionId, lastSeen, latestSeq } satisfies ReplayGap);
     };
     try {
       const results = await Promise.allSettled(entries.map(([sessionId, lastSeen]) =>
@@ -412,7 +385,7 @@ export class HermesConnection extends EventEmitter {
           emitGap(requestedSessionId, lastSeen, latestSeq);
           continue;
         }
-        const replayed: HermesEvent[] = [];
+        const replayed: AssistantEvent[] = [];
         let malformed = false;
         for (const item of value.events) {
           if (!item || typeof item !== "object" || Array.isArray(item)) {
@@ -466,18 +439,32 @@ export class HermesConnection extends EventEmitter {
   }
 }
 
-export class HermesClient {
+export class HermesClient implements AssistantClient {
+  readonly capabilities: RuntimeCapabilities = {
+    sessions: true,
+    steer: true,
+    cancel: true,
+    approvals: true,
+    resume: true,
+    events: true,
+    asyncClass: "realtime"
+  };
+
   constructor(private readonly rpc: HermesConnection) {}
 
   get connection(): HermesConnection {
     return this.rpc;
   }
 
-  onEvent(listener: (event: HermesEvent) => void): () => void {
+  async close(): Promise<void> {
+    await this.rpc.close();
+  }
+
+  onEvent(listener: (event: AssistantEvent) => void): () => void {
     return this.rpc.onEvent(listener);
   }
 
-  onReplayGap(listener: (gap: HermesReplayGap) => void): () => void {
+  onReplayGap(listener: (gap: ReplayGap) => void): () => void {
     return this.rpc.onReplayGap(listener);
   }
 
@@ -485,7 +472,7 @@ export class HermesClient {
     return this.rpc.onConnectionState(listener);
   }
 
-  createSession(): Promise<HermesSession> {
+  createSession(): Promise<AssistantSession> {
     return this.rpc.request<Record<string, unknown>>("session.create", {
       source: "ambient",
       close_on_disconnect: false
@@ -511,7 +498,7 @@ export class HermesClient {
     return this.rpc.request("approval.respond", { session_id: runtimeSessionId, request_id: requestId, choice });
   }
 
-  listSavedSessions(limit = 50): Promise<HermesSavedSession[]> {
+  listSavedSessions(limit = 50): Promise<SavedSession[]> {
     return this.rpc.request("session.list", { limit }).then(value => sessionRows(value).map(row => ({
       id: stringField(row, "id"),
       ...(typeof row.title === "string" ? { title: row.title } : {}),
@@ -522,7 +509,7 @@ export class HermesClient {
     })));
   }
 
-  listActiveSessions(): Promise<HermesActiveSession[]> {
+  listActiveSessions(): Promise<ActiveSession[]> {
     return this.rpc.request("session.active_list").then(value => sessionRows(value).map(row => ({
       id: stringField(row, "id"),
       ...(typeof row.session_key === "string" ? { session_key: row.session_key } : {}),
@@ -533,7 +520,7 @@ export class HermesClient {
     })));
   }
 
-  resumeSession(durableSessionId: string): Promise<HermesSession> {
+  resumeSession(durableSessionId: string): Promise<AssistantSession> {
     return this.rpc.request<Record<string, unknown>>("session.resume", { session_id: durableSessionId }).then(result => ({
       runtimeSessionId: stringField(result, "session_id"),
       durableSessionId: typeof result.session_key === "string" && result.session_key

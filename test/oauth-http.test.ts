@@ -1,28 +1,12 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { createPkceChallenge, OAuthProvider } from "../src/auth.js";
-import { ConversationEngine, type HermesConversationClient } from "../src/conversations.js";
+import { RuntimeRegistry } from "../src/runtimes/registry.js";
 import { createAmbientHttpServer } from "../src/server.js";
 import { AmbientStore } from "../src/store.js";
+import { fakeAssistant, fakeRuntimeEntry } from "./fake.js";
 
-function fakeHermes(): HermesConversationClient {
-  return {
-    createSession: vi.fn(),
-    submitPrompt: vi.fn(),
-    steer: vi.fn(),
-    interrupt: vi.fn(),
-    respondToApproval: vi.fn(),
-    resumeSession: vi.fn(),
-    listSavedSessions: vi.fn().mockResolvedValue([]),
-    listActiveSessions: vi.fn().mockResolvedValue([]),
-    listPendingApprovals: vi.fn().mockResolvedValue([]),
-    onEvent: vi.fn(() => () => undefined),
-    onConnectionState: vi.fn(() => () => undefined),
-    onReplayGap: vi.fn(() => () => undefined)
-  };
-}
-
-async function start(engine: ConversationEngine, auth: OAuthProvider) {
-  const http = createAmbientHttpServer({ engine, auth });
+async function start(registry: RuntimeRegistry, auth: OAuthProvider) {
+  const http = createAmbientHttpServer({ registry, auth });
   await new Promise<void>(resolve => http.server.listen(0, "127.0.0.1", resolve));
   const address = http.server.address();
   if (!address || typeof address === "string") throw new Error("Server did not bind");
@@ -31,20 +15,25 @@ async function start(engine: ConversationEngine, auth: OAuthProvider) {
 
 describe("OAuth HTTP boundary", () => {
   let store: AmbientStore | undefined;
-  let engine: ConversationEngine | undefined;
+  let registry: RuntimeRegistry | undefined;
   let close: (() => Promise<void>) | undefined;
+
+  function buildRegistry() {
+    store = new AmbientStore();
+    registry = new RuntimeRegistry(store, [fakeRuntimeEntry("local", "My Hermes", fakeAssistant().client, store)]);
+    return registry;
+  }
 
   afterEach(async () => {
     await close?.();
-    engine?.close();
+    await registry?.close();
     store?.close();
+    registry = undefined;
+    store = undefined;
   });
 
   it("keeps service discovery separate from personal tool calls", async () => {
-    store = new AmbientStore();
-    engine = new ConversationEngine(fakeHermes(), store, {
-      runtime: { id: "local", label: "My Hermes", kind: "local", state: "online", updatedAt: new Date().toISOString() }
-    });
+    const registry = buildRegistry();
     const auth = new OAuthProvider({
       issuer: "https://ambient.example",
       resource: "http://127.0.0.1:3000/mcp",
@@ -53,7 +42,7 @@ describe("OAuth HTTP boundary", () => {
       clientSecret: "client-secret-long-enough",
       redirectUris: ["https://alexa.example/callback"]
     });
-    const server = await start(engine, auth);
+    const server = await start(registry, auth);
     close = server.http.close;
     const response = await fetch(`${server.base}/token`, {
       method: "POST",
@@ -74,10 +63,7 @@ describe("OAuth HTTP boundary", () => {
   });
 
   it("completes the owner PKCE flow and accepts the user token", async () => {
-    store = new AmbientStore();
-    engine = new ConversationEngine(fakeHermes(), store, {
-      runtime: { id: "local", label: "My Hermes", kind: "local", state: "online", updatedAt: new Date().toISOString() }
-    });
+    const registry = buildRegistry();
     const auth = new OAuthProvider({
       issuer: "https://ambient.example",
       resource: "http://127.0.0.1:3000/mcp",
@@ -87,7 +73,7 @@ describe("OAuth HTTP boundary", () => {
       redirectUris: ["https://alexa.example/callback"],
       demoLinkCode: "link-code-123456"
     });
-    const server = await start(engine, auth);
+    const server = await start(registry, auth);
     close = server.http.close;
     const verifier = "verifier-that-is-long-enough-123456789";
     const query = new URLSearchParams({

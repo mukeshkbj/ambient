@@ -124,16 +124,22 @@ export class AmbientStore {
         runtime_id TEXT NOT NULL,
         durable_session_id TEXT NOT NULL,
         live_session_id TEXT NOT NULL,
-        request_id TEXT NOT NULL UNIQUE,
+        request_id TEXT NOT NULL,
         command TEXT NOT NULL,
         description TEXT,
         choices_json TEXT NOT NULL,
         created_at TEXT NOT NULL,
-        resolved_at TEXT
+        resolved_at TEXT,
+        UNIQUE(runtime_id, request_id)
       );
       CREATE INDEX IF NOT EXISTS runs_live_session_idx ON runs(live_session_id, status);
       CREATE INDEX IF NOT EXISTS approvals_open_idx ON approvals(runtime_id, resolved_at);
+      CREATE TABLE IF NOT EXISTS meta (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
     `);
+    this.migrate();
     this.purge(retentionDays);
   }
 
@@ -143,6 +149,40 @@ export class AmbientStore {
 
   clearLiveSessionIds(runtimeId: RuntimeId): void {
     this.db.prepare("UPDATE conversations SET live_session_id = NULL WHERE runtime_id = ?").run(runtimeId);
+  }
+
+  // approvals.request_id used to carry a global UNIQUE constraint, which breaks
+  // once two runtimes can raise the same request id. Rebuild the table when a
+  // single-column index on request_id survives from an older schema.
+  private migrate(): void {
+    const indexes = this.db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'approvals'").all() as Row[];
+    const stale = indexes.some(index => {
+      const columns = this.db.prepare("SELECT name FROM pragma_index_info(?)").all(text(index.name)) as Row[];
+      return columns.length === 1 && text(columns[0]!.name) === "request_id";
+    });
+    if (!stale) return;
+    this.db.exec(`
+      BEGIN;
+      CREATE TABLE approvals_next (
+        id TEXT PRIMARY KEY,
+        run_id TEXT NOT NULL,
+        runtime_id TEXT NOT NULL,
+        durable_session_id TEXT NOT NULL,
+        live_session_id TEXT NOT NULL,
+        request_id TEXT NOT NULL,
+        command TEXT NOT NULL,
+        description TEXT,
+        choices_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        resolved_at TEXT,
+        UNIQUE(runtime_id, request_id)
+      );
+      INSERT INTO approvals_next SELECT * FROM approvals;
+      DROP TABLE approvals;
+      ALTER TABLE approvals_next RENAME TO approvals;
+      CREATE INDEX approvals_open_idx ON approvals(runtime_id, resolved_at);
+      COMMIT;
+    `);
   }
 
   private purge(retentionDays: number): void {
@@ -294,12 +334,22 @@ export class AmbientStore {
     return row ? run(row) : undefined;
   }
 
-  markActiveRunsUnknown(runtimeId: RuntimeId, updatedAt: string): void {
+  getMeta(key: string): string | undefined {
+    const row = this.db.prepare("SELECT value FROM meta WHERE key = ?").get(key) as Row | undefined;
+    return row ? text(row.value) : undefined;
+  }
+
+  setMeta(key: string, value: string): void {
+    this.db.prepare("INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
+      .run(key, value);
+  }
+
+  markActiveRunsUnknown(runtimeId: RuntimeId, updatedAt: string, message: string): void {
     this.db.prepare(`
       UPDATE runs SET status = 'unknown', progress = ?, updated_at = ?
       WHERE runtime_id = ?
         AND status IN ('queued', 'accepted', 'running', 'waiting_approval', 'cancel_requested')
-    `).run("Hermes disconnected; the work outcome is unknown", updatedAt, runtimeId);
+    `).run(message, updatedAt, runtimeId);
   }
 
   markUnknownRunsRunning(runtimeId: RuntimeId, conversationId: string, updatedAt: string): void {
@@ -359,7 +409,7 @@ export class AmbientStore {
         (id, run_id, runtime_id, durable_session_id, live_session_id, request_id, command,
          description, choices_json, created_at, resolved_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(request_id) DO UPDATE SET command = excluded.command,
+      ON CONFLICT(runtime_id, request_id) DO UPDATE SET command = excluded.command,
         description = excluded.description, choices_json = excluded.choices_json, resolved_at = NULL
     `).run(
       value.id,

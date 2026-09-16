@@ -1,4 +1,19 @@
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { z } from "zod";
+
+const RuntimeEntrySchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  kind: z.enum(["local", "cloud"]).default("local"),
+  adapter: z.string().min(1).default("hermes"),
+  endpoint: z.string().min(1).optional(),
+  tokenEnv: z.string().min(1).optional(),
+  connectorTokenEnv: z.string().min(1).optional(),
+  default: z.boolean().optional()
+});
+
+export type RuntimeConfigEntry = z.infer<typeof RuntimeEntrySchema>;
 
 const EnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
@@ -9,6 +24,7 @@ const EnvSchema = z.object({
   HERMES_RUNTIME_LABEL: z.string().min(1).default("My Hermes"),
   HERMES_RUNTIME_KIND: z.enum(["local", "cloud"]).default("local"),
   AMBIENT_DATA_DIR: z.string().min(1).default(".hermes-ambient"),
+  AMBIENT_RUNTIMES_FILE: z.string().min(1).optional(),
   AMBIENT_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
   AMBIENT_ACCESS_TOKEN: z.string().min(16).optional(),
   ALLOW_UNAUTHENTICATED: z.string().default("false").transform(value => value === "true"),
@@ -25,16 +41,13 @@ const EnvSchema = z.object({
 export type AppConfig = {
   port: number;
   publicBaseUrl: string;
-  hermesWsUrl?: string;
-  hermesWsToken?: string;
-  runtimeId: string;
-  runtimeLabel: string;
-  runtimeKind: "local" | "cloud";
+  runtimes: RuntimeConfigEntry[];
+  defaultRuntimeId: string;
+  runtimesFile: string;
   dataDir: string;
   retentionDays: number;
   accessToken?: string;
   allowUnauthenticated: boolean;
-  connectorToken?: string;
   alexaSkillId?: string;
   oauth?: {
     issuer: string;
@@ -46,6 +59,32 @@ export type AppConfig = {
     demoLinkCode?: string;
   };
 };
+
+function runtimeEntries(parsed: z.infer<typeof EnvSchema>, runtimesFile: string): RuntimeConfigEntry[] {
+  const entries: RuntimeConfigEntry[] = existsSync(runtimesFile)
+    ? z.array(RuntimeEntrySchema).parse(JSON.parse(readFileSync(runtimesFile, "utf8")) as unknown)
+    : [];
+  const seen = new Set<string>();
+  for (const entry of entries) {
+    if (seen.has(entry.id)) throw new Error(`Duplicate runtime id "${entry.id}" in ${runtimesFile}`);
+    seen.add(entry.id);
+  }
+  // Env shorthand defines the default Hermes runtime unless the file already declares that id.
+  if ((parsed.HERMES_WS_URL || parsed.CONNECTOR_TOKEN) && !seen.has(parsed.HERMES_RUNTIME_ID)) {
+    entries.unshift({
+      id: parsed.HERMES_RUNTIME_ID,
+      label: parsed.HERMES_RUNTIME_LABEL,
+      kind: parsed.HERMES_RUNTIME_KIND,
+      adapter: "hermes",
+      ...(parsed.HERMES_WS_URL ? { endpoint: parsed.HERMES_WS_URL, tokenEnv: "HERMES_WS_TOKEN" } : {}),
+      ...(parsed.CONNECTOR_TOKEN ? { connectorTokenEnv: "CONNECTOR_TOKEN" } : {})
+    });
+  }
+  if (entries.length === 0) {
+    throw new Error("At least one runtime is required: set HERMES_WS_URL/CONNECTOR_TOKEN or add entries to AMBIENT_RUNTIMES_FILE");
+  }
+  return entries;
+}
 
 export function readConfig(env: Record<string, string | undefined> = process.env): AppConfig {
   const parsed = EnvSchema.parse(env);
@@ -69,19 +108,18 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     redirectUris: parsed.ALEXA_REDIRECT_URIS!.split(",").map(value => value.trim()).filter(Boolean),
     ...(parsed.DEMO_LINK_CODE ? { demoLinkCode: parsed.DEMO_LINK_CODE } : {})
   } : undefined;
+  const runtimesFile = parsed.AMBIENT_RUNTIMES_FILE ?? join(parsed.AMBIENT_DATA_DIR, "runtimes.json");
+  const runtimes = runtimeEntries(parsed, runtimesFile);
   return {
     port: parsed.PORT,
     publicBaseUrl: parsed.PUBLIC_BASE_URL.replace(/\/$/, ""),
-    ...(parsed.HERMES_WS_URL ? { hermesWsUrl: parsed.HERMES_WS_URL } : {}),
-    ...(parsed.HERMES_WS_TOKEN ? { hermesWsToken: parsed.HERMES_WS_TOKEN } : {}),
-    runtimeId: parsed.HERMES_RUNTIME_ID,
-    runtimeLabel: parsed.HERMES_RUNTIME_LABEL,
-    runtimeKind: parsed.HERMES_RUNTIME_KIND,
+    runtimes,
+    defaultRuntimeId: runtimes.find(entry => entry.default)?.id ?? runtimes[0]!.id,
+    runtimesFile,
     dataDir: parsed.AMBIENT_DATA_DIR,
     retentionDays: parsed.AMBIENT_RETENTION_DAYS,
     ...(parsed.AMBIENT_ACCESS_TOKEN ? { accessToken: parsed.AMBIENT_ACCESS_TOKEN } : {}),
     allowUnauthenticated: parsed.ALLOW_UNAUTHENTICATED,
-    ...(parsed.CONNECTOR_TOKEN ? { connectorToken: parsed.CONNECTOR_TOKEN } : {}),
     ...(parsed.ALEXA_SKILL_ID ? { alexaSkillId: parsed.ALEXA_SKILL_ID } : {}),
     ...(oauth ? { oauth } : {})
   };

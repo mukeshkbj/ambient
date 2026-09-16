@@ -1,21 +1,23 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "hermes",
+      "invocationName": "ambient",
       "intents": [
         {
-          "name": "AskHermesIntent",
+          "name": "AskIntent",
           "slots": [
-            { "name": "request", "type": "AMAZON.SearchQuery" }
+            { "name": "request", "type": "AMAZON.SearchQuery" },
+            { "name": "assistant", "type": "AssistantName" }
           ],
           "samples": [
             "ask {request}",
+            "ask {assistant} {request}",
             "tell me {request}",
             "answer {request}"
           ]
         },
         {
-          "name": "ProvideHermesRequestIntent",
+          "name": "ProvideRequestIntent",
           "slots": [
             { "name": "request", "type": "AMAZON.SearchQuery" }
           ],
@@ -24,14 +26,38 @@
           ]
         },
         {
-          "name": "StartHermesWorkIntent",
+          "name": "StartWorkIntent",
           "slots": [
-            { "name": "request", "type": "AMAZON.SearchQuery" }
+            { "name": "request", "type": "AMAZON.SearchQuery" },
+            { "name": "assistant", "type": "AssistantName" }
           ],
           "samples": [
             "start work to {request}",
             "do {request}",
-            "work on {request}"
+            "work on {request}",
+            "get {assistant} to {request}",
+            "have {assistant} {request}"
+          ]
+        },
+        {
+          "name": "ListAssistantsIntent",
+          "samples": [
+            "which assistants are online",
+            "list assistants",
+            "who can I talk to",
+            "what assistants do I have"
+          ]
+        },
+        {
+          "name": "SelectAssistantIntent",
+          "slots": [
+            { "name": "assistant", "type": "AssistantName" }
+          ],
+          "samples": [
+            "use {assistant}",
+            "switch to {assistant}",
+            "talk to {assistant}",
+            "select {assistant}"
           ]
         },
         {
@@ -72,21 +98,27 @@
           ],
           "samples": [
             "cancel work {workId}",
-            "stop work {workId}"
+            "stop work {workId}",
+            "cancel that"
           ]
         },
         {
           "name": "ListConversationsIntent",
+          "slots": [
+            { "name": "assistant", "type": "AssistantName" }
+          ],
           "samples": [
             "list conversations",
             "show my conversations",
-            "what conversations do I have"
+            "what conversations do I have",
+            "list {assistant} conversations"
           ]
         },
         {
           "name": "SelectConversationIntent",
           "slots": [
-            { "name": "conversation", "type": "AMAZON.SearchQuery" }
+            { "name": "conversation", "type": "AMAZON.SearchQuery" },
+            { "name": "assistant", "type": "AssistantName" }
           ],
           "samples": [
             "select conversation {conversation}",
@@ -99,13 +131,14 @@
           "samples": [
             "list approvals",
             "what needs approval",
-            "show pending approvals"
+            "show pending approvals",
+            "does anything need approval"
           ]
         },
         {
           "name": "RespondApprovalIntent",
           "slots": [
-            { "name": "decision", "type": "HermesDecision" },
+            { "name": "decision", "type": "Decision" },
             { "name": "approvalNumber", "type": "AMAZON.Ordinal" },
             { "name": "approvalId", "type": "AMAZON.SearchQuery" }
           ],
@@ -117,10 +150,13 @@
         },
         {
           "name": "RuntimeStatusIntent",
+          "slots": [
+            { "name": "assistant", "type": "AssistantName" }
+          ],
           "samples": [
-            "what is the Hermes status",
-            "is Hermes online",
-            "check Hermes"
+            "what is the {assistant} status",
+            "is {assistant} online",
+            "check {assistant}"
           ]
         },
         { "name": "AMAZON.HelpIntent", "samples": [] },
@@ -132,10 +168,21 @@
       ],
       "types": [
         {
-          "name": "HermesDecision",
+          "name": "Decision",
           "values": [
             { "name": { "value": "approve", "synonyms": ["allow", "yes", "once"] } },
             { "name": { "value": "deny", "synonyms": ["decline", "reject", "no"] } }
+          ]
+        },
+        {
+          "name": "AssistantName",
+          "values": [
+            { "name": { "value": "hermes", "synonyms": ["my hermes", "the hermes"] } },
+            { "name": { "value": "grokbot", "synonyms": ["grok bot", "grok", "grok-bot"] } },
+            { "name": { "value": "muse", "synonyms": ["meta muse", "the muse"] } },
+            { "name": { "value": "openclaw", "synonyms": ["open claw", "claw"] } },
+            { "name": { "value": "townie", "synonyms": ["towny", "val town"] } },
+            { "name": { "value": "instinct", "synonyms": ["my instinct"] } }
           ]
         }
       ]

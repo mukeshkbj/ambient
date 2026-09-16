@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import type { OAuthProvider } from "./auth.js";
-import type { ConversationEngine } from "./conversations.js";
 import { viewText } from "./mcp.js";
+import type { RuntimeEntry, RuntimeRegistry } from "./runtimes/registry.js";
 import type { Conversation, RunView } from "./types.js";
 
 type AlexaEnvelope = Record<string, unknown>;
@@ -17,7 +17,7 @@ export type AlexaSkillResponse = {
 };
 
 export type AlexaSkillDependencies = {
-  engine: ConversationEngine;
+  registry: RuntimeRegistry;
   applicationId?: string;
   auth?: OAuthProvider;
   accessToken?: string;
@@ -61,7 +61,7 @@ function response(value: string, sessionAttributes: Record<string, unknown>, sho
     sessionAttributes,
     response: {
       outputSpeech,
-      ...(shouldEndSession ? {} : { reprompt: { outputSpeech: speech("What would you like Hermes to do?") } }),
+      ...(shouldEndSession ? {} : { reprompt: { outputSpeech: speech("What would you like your assistants to do?") } }),
       shouldEndSession
     }
   };
@@ -172,16 +172,18 @@ function decision(value: string | undefined): "once" | "deny" | undefined {
 
 function errorText(error: unknown): string {
   const message = error instanceof Error ? error.message.toLowerCase() : "";
-  if (message.includes("not found")) return "I could not find that Hermes item.";
-  if (message.includes("already has active")) return "That conversation already has active Hermes work.";
-  if (message.includes("already finished")) return "That Hermes work is already finished.";
-  if (message.includes("unknown")) return "Hermes needs to reconnect before I can do that.";
-  if (message.includes("approval")) return "Hermes could not confirm that approval response.";
-  return "Hermes could not complete that request.";
+  if (message.includes("unknown assistant")) return error instanceof Error ? error.message : "I do not know that assistant.";
+  if (message.includes("not found")) return "I could not find that item.";
+  if (message.includes("already has active")) return "That conversation already has active work.";
+  if (message.includes("already finished")) return "That work is already finished.";
+  if (message.includes("unknown")) return "The assistant needs to reconnect before I can do that.";
+  if (message.includes("approval")) return "The assistant could not confirm that approval response.";
+  if (message.includes("does not support")) return error instanceof Error ? error.message : "The assistant does not support that.";
+  return "The assistant could not complete that request.";
 }
 
 function runAttributes(attributes: Record<string, unknown>, run: RunView): Record<string, unknown> {
-  const next: Record<string, unknown> = { ...attributes, lastWorkId: run.id };
+  const next: Record<string, unknown> = { ...attributes, lastWorkId: run.id, assistant: run.runtimeId };
   if (run.approval) {
     next.lastApprovalId = run.approval.id;
   } else {
@@ -196,11 +198,25 @@ function conversationMatches(conversations: Conversation[], query: string): Conv
   return exact.length > 0 ? exact : conversations.filter(conversation => conversation.title.toLowerCase().includes(normalized));
 }
 
+function pickAssistant(
+  intent: AlexaEnvelope,
+  attributes: Record<string, unknown>,
+  dependencies: AlexaSkillDependencies
+): RuntimeEntry | string {
+  const name = slotValue(intent, "assistant", "assistantName") ?? text(attributes.assistant);
+  try {
+    return dependencies.registry.resolve(name);
+  } catch (error) {
+    return error instanceof Error ? error.message : "I do not know that assistant.";
+  }
+}
+
 async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, unknown>, dependencies: AlexaSkillDependencies): Promise<AlexaSkillResponse> {
   const name = text(intent.name);
   if (!name) throw new AlexaRequestError(400, "Alexa intent name is required");
+  const registry = dependencies.registry;
   if (name === "AMAZON.HelpIntent") {
-    return response("You can ask Hermes a question, ask for work status, list conversations, steer or cancel work, or list and answer approvals.", attributes);
+    return response("You can ask an assistant a question, name one directly, ask which assistants are online, check work status, list conversations, steer or cancel work, or list and answer approvals.", attributes);
   }
   if (name === "AMAZON.StopIntent" || name === "AMAZON.CancelIntent") {
     return response("Goodbye.", attributes, true);
@@ -209,39 +225,62 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     const approvalId = lastApprovalId(attributes, intent);
     if (!approvalId) return response("I do not have one pending approval selected. Say list approvals first.", attributes);
     try {
-      const run = await dependencies.engine.respondToApproval(approvalId, name === "AMAZON.YesIntent" ? "once" : "deny");
+      const engine = registry.engineForApproval(approvalId);
+      const run = await engine.respondToApproval(approvalId, name === "AMAZON.YesIntent" ? "once" : "deny");
       const next = { ...attributes };
       delete next.lastApprovalId;
       delete next.pendingApprovalIds;
-      return response(name === "AMAZON.YesIntent" ? `Approved once. ${viewText(run)}` : `Denied. ${viewText(run)}`, runAttributes(next, run));
+      const label = registry.label(run.runtimeId);
+      return response(name === "AMAZON.YesIntent" ? `Approved once. ${viewText(run, label)}` : `Denied. ${viewText(run, label)}`, runAttributes(next, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
   }
-  if (name === "AMAZON.FallbackIntent") return response("I did not understand that. Ask Hermes a question or say help.", attributes);
+  if (name === "AMAZON.FallbackIntent") return response("I did not understand that. Ask an assistant a question or say help.", attributes);
+  if (name === "ListAssistantsIntent") {
+    const assistants = registry.list();
+    if (assistants.length === 0) return response("No assistants are configured.", attributes);
+    const states = assistants.map(item => `${item.label} is ${item.state}`).join(". ");
+    const selected = assistants.find(item => item.selected);
+    return response(`${states}. ${selected ? `Currently using ${selected.label}.` : ""}`, attributes);
+  }
+  if (name === "SelectAssistantIntent") {
+    const wanted = slotValue(intent, "assistant", "assistantName", "name");
+    if (!wanted) return response("Which assistant should I use?", attributes);
+    try {
+      const entry = registry.select(wanted);
+      return response(`Using ${entry.descriptor.label} now.`, { ...attributes, assistant: entry.descriptor.id });
+    } catch (error) {
+      return response(errorText(error), attributes);
+    }
+  }
   if (name === "ListConversationsIntent") {
-    const conversations = dependencies.engine.listConversations();
-    if (conversations.length === 0) return response("There are no saved Hermes conversations yet.", attributes);
+    const picked = pickAssistant(intent, attributes, dependencies);
+    if (typeof picked === "string") return response(picked, attributes);
+    const conversations = picked.engine.listConversations();
+    if (conversations.length === 0) return response(`There are no saved ${picked.descriptor.label} conversations yet.`, attributes);
     const names = conversations.slice(0, 5).map(conversation => conversation.title);
-    return response(`I found ${conversations.length} conversation${conversations.length === 1 ? "" : "s"}: ${names.join(", ")}.`, attributes);
+    return response(`I found ${conversations.length} conversation${conversations.length === 1 ? "" : "s"} on ${picked.descriptor.label}: ${names.join(", ")}.`, attributes);
   }
   if (name === "SelectConversationIntent") {
+    const picked = pickAssistant(intent, attributes, dependencies);
+    if (typeof picked === "string") return response(picked, attributes);
     const query = slotValue(intent, "conversation", "conversationName", "name");
-    if (!query) return response("Which Hermes conversation should I select?", attributes);
-    const matches = conversationMatches(dependencies.engine.listConversations(), query);
-    if (matches.length === 0) return response("I could not find that Hermes conversation.", attributes);
+    if (!query) return response(`Which ${picked.descriptor.label} conversation should I select?`, attributes);
+    const matches = conversationMatches(picked.engine.listConversations(), query);
+    if (matches.length === 0) return response(`I could not find that ${picked.descriptor.label} conversation.`, attributes);
     if (matches.length > 1) return response(`I found more than one conversation matching ${query}. Say the full conversation name.`, attributes);
     const match = matches[0];
-    if (!match) return response("I could not find that Hermes conversation.", attributes);
-    const selected = await dependencies.engine.selectConversation(match.id);
-    return response(`Selected ${selected.title}.`, attributes);
+    if (!match) return response(`I could not find that ${picked.descriptor.label} conversation.`, attributes);
+    const selected = await picked.engine.selectConversation(match.id);
+    return response(`Selected ${selected.title} on ${picked.descriptor.label}.`, { ...attributes, assistant: picked.descriptor.id });
   }
   if (name === "ListApprovalsIntent") {
-    const approvals = dependencies.engine.listApprovals();
-    if (approvals.length === 0) return response("There are no pending Hermes approvals.", { ...attributes, pendingApprovalIds: [] });
+    const approvals = registry.list().flatMap(item => registry.entry(item.id)!.engine.listApprovals());
+    if (approvals.length === 0) return response("There are no pending approvals.", { ...attributes, pendingApprovalIds: [] });
     const firstApproval = approvals[0];
-    if (!firstApproval) return response("There are no pending Hermes approvals.", { ...attributes, pendingApprovalIds: [] });
-    const descriptions = approvals.slice(0, 3).map((approval, index) => `Approval ${index + 1}: ${approval.description ?? approval.command}`);
+    if (!firstApproval) return response("There are no pending approvals.", { ...attributes, pendingApprovalIds: [] });
+    const descriptions = approvals.slice(0, 3).map((approval, index) => `Approval ${index + 1} from ${registry.label(approval.runtimeId)}: ${approval.description ?? approval.command}`);
     return response(`I found ${approvals.length} pending approval${approvals.length === 1 ? "" : "s"}. ${descriptions.join(". ")}. Say approve once or deny followed by the approval number.`, {
       ...attributes,
       pendingApprovalIds: approvals.map(approval => approval.id),
@@ -254,31 +293,35 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     if (!approvalId) return response("Say list approvals first, then give the approval number.", attributes);
     if (!selectedDecision) return response("Say approve once or deny.", attributes);
     try {
-      const run = await dependencies.engine.respondToApproval(approvalId, selectedDecision);
+      const engine = registry.engineForApproval(approvalId);
+      const run = await engine.respondToApproval(approvalId, selectedDecision);
       const next = { ...attributes };
       delete next.lastApprovalId;
       delete next.pendingApprovalIds;
-      return response(`${selectedDecision === "once" ? "Approved once." : "Denied."} ${viewText(run)}`, runAttributes(next, run));
+      return response(`${selectedDecision === "once" ? "Approved once." : "Denied."} ${viewText(run, registry.label(run.runtimeId))}`, runAttributes(next, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
   }
-  if (name === "AskHermesIntent" || name === "ProvideHermesRequestIntent" || name === "StartHermesWorkIntent") {
+  if (name === "AskIntent" || name === "ProvideRequestIntent" || name === "StartWorkIntent" || name === "AskHermesIntent" || name === "ProvideHermesRequestIntent" || name === "StartHermesWorkIntent") {
     const instruction = slotValue(intent, "request", "instruction", "text");
-    if (!instruction) return response("What should I ask Hermes to do?", attributes);
+    if (!instruction) return response("What should I ask your assistant to do?", attributes);
+    const picked = pickAssistant(intent, attributes, dependencies);
+    if (typeof picked === "string") return response(picked, attributes);
     try {
-      const run = await dependencies.engine.ask(instruction);
-      return response(viewText(run), runAttributes(attributes, run));
+      const run = await picked.engine.ask(instruction);
+      return response(viewText(run, picked.descriptor.label), runAttributes({ ...attributes, assistant: picked.descriptor.id }, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
   }
   if (name === "GetWorkIntent" || name === "GetLastWorkIntent") {
-    const workId = lastWorkId(attributes, intent) ?? (name === "GetLastWorkIntent" ? dependencies.engine.listRuns(1)[0]?.id : undefined);
-    if (!workId) return response("Which Hermes work should I check?", attributes);
+    const workId = lastWorkId(attributes, intent) ?? (name === "GetLastWorkIntent" ? registry.latestRun()?.id : undefined);
+    if (!workId) return response("Which work should I check?", attributes);
     try {
-      const run = dependencies.engine.getWork(workId);
-      return response(viewText(run), runAttributes(attributes, run));
+      const engine = registry.engineForRun(workId);
+      const run = engine.getWork(workId);
+      return response(viewText(run, registry.label(run.runtimeId)), runAttributes(attributes, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
@@ -286,30 +329,34 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
   if (name === "SteerWorkIntent") {
     const workId = lastWorkId(attributes, intent);
     const instruction = slotValue(intent, "instruction", "text", "request");
-    if (!workId) return response("Which Hermes work should I steer?", attributes);
-    if (!instruction) return response("What should I tell the Hermes work to do next?", attributes);
+    if (!workId) return response("Which work should I steer?", attributes);
+    if (!instruction) return response("What should I tell the work to do next?", attributes);
     try {
-      const run = await dependencies.engine.steer(workId, instruction);
-      return response(viewText(run), runAttributes(attributes, run));
+      const engine = registry.engineForRun(workId);
+      const run = await engine.steer(workId, instruction);
+      return response(viewText(run, registry.label(run.runtimeId)), runAttributes(attributes, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
   }
   if (name === "CancelWorkIntent") {
     const workId = lastWorkId(attributes, intent);
-    if (!workId) return response("Which Hermes work should I cancel?", attributes);
+    if (!workId) return response("Which work should I cancel?", attributes);
     try {
-      const run = await dependencies.engine.cancel(workId);
-      return response(viewText(run), runAttributes(attributes, run));
+      const engine = registry.engineForRun(workId);
+      const run = await engine.cancel(workId);
+      return response(viewText(run, registry.label(run.runtimeId)), runAttributes(attributes, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
   }
   if (name === "RuntimeStatusIntent") {
-    const runtime = dependencies.engine.runtime();
-    return response(`The ${runtime.label} Hermes runtime is ${runtime.state}.`, attributes);
+    const picked = pickAssistant(intent, attributes, dependencies);
+    if (typeof picked === "string") return response(picked, attributes);
+    const runtime = picked.engine.runtime();
+    return response(`The ${runtime.label} assistant is ${runtime.state}.`, { ...attributes, assistant: picked.descriptor.id });
   }
-  return response("I do not know that Hermes command yet. Say help for the available commands.", attributes);
+  return response("I do not know that command yet. Say help for the available commands.", attributes);
 }
 
 export async function handleAlexaRequest(input: unknown, dependencies: AlexaSkillDependencies): Promise<AlexaSkillResponse> {
@@ -318,7 +365,7 @@ export async function handleAlexaRequest(input: unknown, dependencies: AlexaSkil
   await authorize(envelope, dependencies);
   const attributes = sessionAttributes(envelope);
   const type = requestType(envelope);
-  if (type === "LaunchRequest") return response("What would you like Hermes to do?", attributes);
+  if (type === "LaunchRequest") return response("What would you like your assistants to do?", attributes);
   if (type === "SessionEndedRequest") return response("Goodbye.", attributes, true);
   if (type !== "IntentRequest") throw new AlexaRequestError(400, "Unsupported Alexa request type");
   const intent = object(requestObject(envelope).intent);
