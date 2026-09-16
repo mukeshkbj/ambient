@@ -1,0 +1,7 @@
+{
+  "app": "pnpm exec tsx infra/app.ts",
+  "context": {
+    "instanceType": "t3.micro",
+    "dataVolumeGiB": 20
+  }
+}

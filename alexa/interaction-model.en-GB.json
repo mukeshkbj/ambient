@@ -1,0 +1,144 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "hermes",
+      "intents": [
+        {
+          "name": "AskHermesIntent",
+          "slots": [
+            { "name": "request", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "ask {request}",
+            "tell me {request}",
+            "answer {request}"
+          ]
+        },
+        {
+          "name": "ProvideHermesRequestIntent",
+          "slots": [
+            { "name": "request", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "{request}"
+          ]
+        },
+        {
+          "name": "StartHermesWorkIntent",
+          "slots": [
+            { "name": "request", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "start work to {request}",
+            "do {request}",
+            "work on {request}"
+          ]
+        },
+        {
+          "name": "GetLastWorkIntent",
+          "samples": [
+            "what happened",
+            "check the work",
+            "how is it going",
+            "what is the status"
+          ]
+        },
+        {
+          "name": "GetWorkIntent",
+          "slots": [
+            { "name": "workId", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "check work {workId}",
+            "get the result for {workId}",
+            "status of {workId}"
+          ]
+        },
+        {
+          "name": "SteerWorkIntent",
+          "slots": [
+            { "name": "instruction", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "tell it {instruction}",
+            "steer the work to {instruction}",
+            "change the work to {instruction}"
+          ]
+        },
+        {
+          "name": "CancelWorkIntent",
+          "slots": [
+            { "name": "workId", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "cancel work {workId}",
+            "stop work {workId}"
+          ]
+        },
+        {
+          "name": "ListConversationsIntent",
+          "samples": [
+            "list conversations",
+            "show my conversations",
+            "what conversations do I have"
+          ]
+        },
+        {
+          "name": "SelectConversationIntent",
+          "slots": [
+            { "name": "conversation", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "select conversation {conversation}",
+            "use conversation {conversation}",
+            "continue {conversation}"
+          ]
+        },
+        {
+          "name": "ListApprovalsIntent",
+          "samples": [
+            "list approvals",
+            "what needs approval",
+            "show pending approvals"
+          ]
+        },
+        {
+          "name": "RespondApprovalIntent",
+          "slots": [
+            { "name": "decision", "type": "HermesDecision" },
+            { "name": "approvalNumber", "type": "AMAZON.Ordinal" },
+            { "name": "approvalId", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "{decision}",
+            "{decision} approval {approvalNumber}",
+            "{decision} {approvalId}"
+          ]
+        },
+        {
+          "name": "RuntimeStatusIntent",
+          "samples": [
+            "what is the Hermes status",
+            "is Hermes online",
+            "check Hermes"
+          ]
+        },
+        { "name": "AMAZON.HelpIntent", "samples": [] },
+        { "name": "AMAZON.StopIntent", "samples": [] },
+        { "name": "AMAZON.CancelIntent", "samples": [] },
+        { "name": "AMAZON.YesIntent", "samples": [] },
+        { "name": "AMAZON.NoIntent", "samples": [] },
+        { "name": "AMAZON.FallbackIntent", "samples": [] }
+      ],
+      "types": [
+        {
+          "name": "HermesDecision",
+          "values": [
+            { "name": { "value": "approve", "synonyms": ["allow", "yes", "once"] } },
+            { "name": { "value": "deny", "synonyms": ["decline", "reject", "no"] } }
+          ]
+        }
+      ]
+    }
+  }
+}

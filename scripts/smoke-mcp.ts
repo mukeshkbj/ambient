@@ -1,0 +1,18 @@
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+
+const endpoint = process.env.MCP_URL ?? "http://127.0.0.1:3000/mcp";
+const token = process.env.MCP_ACCESS_TOKEN;
+const transport = new StreamableHTTPClientTransport(new URL(endpoint), token ? {
+  requestInit: { headers: { authorization: `Bearer ${token}` } }
+} : undefined);
+const client = new Client({ name: "hermes-ambient-smoke", version: "0.1.0" });
+
+try {
+  await client.connect(transport as Parameters<typeof client.connect>[0]);
+  const tools = await client.listTools();
+  const conversations = await client.callTool({ name: "list_conversations", arguments: {} });
+  console.log(JSON.stringify({ endpoint, tools: tools.tools.map(tool => tool.name), conversations }, null, 2));
+} finally {
+  await client.close();
+}

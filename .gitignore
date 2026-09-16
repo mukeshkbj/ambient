@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+.hermes-ambient/
+.hermes-ambient-*/
+.DS_Store
+cdk.out/
+decisions.tsv
+.audit/
