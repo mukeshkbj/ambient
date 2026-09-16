@@ -157,7 +157,7 @@ function authorizationForm(params: Record<string, string | undefined>, requiresL
 export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): AmbientHttp {
   const sessions = new Map<string, McpSession>();
   const connectorServer = dependencies.connector ? new WebSocketServer({ noServer: true }) : undefined;
-  const server = createHttpServer(async (request, response) => {
+  const handle = async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
     response.setHeader("access-control-allow-origin", "*");
     response.setHeader("access-control-allow-headers", "authorization, content-type, mcp-session-id, last-event-id");
     response.setHeader("access-control-allow-methods", "GET, POST, DELETE, OPTIONS");
@@ -276,12 +276,12 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
     }
     if (!entry) {
       const mcp = createMcpServer({ engine: dependencies.engine });
-      let created: McpSession | undefined;
+      const ref: { current?: McpSession } = {};
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
         enableJsonResponse: true,
         onsessioninitialized: id => {
-          if (created) sessions.set(id, created);
+          if (ref.current) sessions.set(id, ref.current);
         },
         onsessionclosed: async id => {
           const closed = sessions.get(id);
@@ -289,7 +289,8 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
           await closed?.server.close();
         }
       });
-      created = { server: mcp, transport };
+      const created: McpSession = { server: mcp, transport };
+      ref.current = created;
       entry = created;
       try {
         await mcp.connect(transport as Parameters<typeof mcp.connect>[0]);
@@ -303,6 +304,11 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
     } catch (error) {
       if (!response.headersSent) writeJson(response, 500, { error: error instanceof Error ? error.message : String(error) });
     }
+  };
+  const server = createHttpServer((request, response) => {
+    void handle(request, response).catch(error => {
+      if (!response.headersSent) writeJson(response, 500, { error: error instanceof Error ? error.message : String(error) });
+    });
   });
 
   if (connectorServer && dependencies.connector) {

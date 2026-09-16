@@ -1,4 +1,5 @@
 import WebSocket from "ws";
+import { rawText } from "./raw.js";
 
 export type LocalConnectorOptions = {
   bridgeUrl: string;
@@ -98,14 +99,14 @@ export class LocalHermesConnector {
           this.retryDelay = this.minDelay;
         });
         hermes.on("message", data => {
-          const text = data.toString();
+          const text = rawText(data);
           if (bridge.readyState === WebSocket.OPEN) bridge.send(text);
         });
         hermes.on("error", () => end());
         hermes.on("close", () => end());
       });
       bridge.on("message", data => {
-        const text = data.toString();
+        const text = rawText(data);
         if (this.hermes?.readyState === WebSocket.OPEN) this.hermes.send(text);
       });
       bridge.on("error", () => end());

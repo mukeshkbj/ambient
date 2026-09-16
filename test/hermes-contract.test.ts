@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { WebSocketServer } from "ws";
 import { HermesClient, HermesConnection, type HermesEvent } from "../src/hermes.js";
+import { rawText } from "../src/raw.js";
 
 let server: WebSocketServer | undefined;
 
@@ -17,7 +18,7 @@ describe("Hermes gateway contract", () => {
         type: "gateway.ready", payload: { change_events: true }
       }}));
       socket.on("message", raw => {
-        const request = JSON.parse(raw.toString()) as { id: string; method: string };
+        const request = JSON.parse(rawText(raw)) as { id: string; method: string };
         expect(request.method).toBe("session.list");
         socket.send(JSON.stringify({ jsonrpc: "2.0", id: request.id, result: {
           sessions: [{ id: "stored-1", title: "Personal schedule", preview: "What is on my schedule?" }]
@@ -79,7 +80,7 @@ describe("Hermes gateway contract", () => {
         type: "gateway.ready", payload: { heartbeat: true }
       }}));
       socket.on("message", raw => {
-        const request = JSON.parse(raw.toString()) as { id: string; method: string };
+        const request = JSON.parse(rawText(raw)) as { id: string; method: string };
         if (request.method === "gateway.ping") socket.send(JSON.stringify({ jsonrpc: "2.0", id: request.id, result: { ok: true } }));
       });
     });
@@ -110,7 +111,7 @@ describe("Hermes gateway contract", () => {
         return;
       }
       socket.on("message", raw => {
-        const request = JSON.parse(raw.toString()) as { id: string; method: string };
+        const request = JSON.parse(rawText(raw)) as { id: string; method: string };
         if (request.method === "session.events.since") {
           socket.send(JSON.stringify({ jsonrpc: "2.0", id: request.id, result: {
             events: [{ type: "message.complete", session_id: "runtime-1", seq: 2, payload: { text: "done" } }],
@@ -161,7 +162,7 @@ describe("Hermes gateway contract", () => {
         return;
       }
       socket.on("message", raw => {
-        const request = JSON.parse(raw.toString()) as { id: string; method: string };
+        const request = JSON.parse(rawText(raw)) as { id: string; method: string };
         if (request.method === "session.events.since") {
           socket.send(JSON.stringify({ jsonrpc: "2.0", id: request.id, result: {
             events: [{ type: "message.complete", session_id: "runtime-1", seq: 2, payload: { text: "partial" } }],
@@ -202,7 +203,7 @@ describe("Hermes gateway contract", () => {
         return;
       }
       socket.on("message", raw => {
-        const request = JSON.parse(raw.toString()) as { id: string; method: string };
+        const request = JSON.parse(rawText(raw)) as { id: string; method: string };
         if (request.method === "session.events.since") {
           socket.send(JSON.stringify({ jsonrpc: "2.0", id: request.id, error: { code: -32000, message: "replay unavailable" } }));
         }
@@ -239,7 +240,7 @@ describe("Hermes gateway contract", () => {
         return;
       }
       socket.on("message", raw => {
-        const request = JSON.parse(raw.toString()) as { id: string; method: string };
+        const request = JSON.parse(rawText(raw)) as { id: string; method: string };
         if (request.method === "session.events.since") {
           socket.send(JSON.stringify({ jsonrpc: "2.0", id: request.id, result: {
             events: [{ type: "message.complete", session_id: "runtime-1", seq: 2, payload: "malformed" }],
@@ -281,7 +282,7 @@ describe("Hermes gateway contract", () => {
         return;
       }
       socket.on("message", raw => {
-        const request = JSON.parse(raw.toString()) as { id: string; method: string };
+        const request = JSON.parse(rawText(raw)) as { id: string; method: string };
         if (request.method === "session.events.since") {
           socket.send(JSON.stringify({ jsonrpc: "2.0", id: request.id, result: {
             events: [{ type: "message.complete", session_id: "runtime-1", seq: 2, payload: { text: "stale" } }],

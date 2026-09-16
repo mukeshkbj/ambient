@@ -147,10 +147,11 @@ export class OAuthProvider {
       });
       const kind = verified.payload.kind;
       if (kind !== "service" && kind !== "user") throw new Error("invalid token kind");
+      const scopeClaim = verified.payload.scope;
       return {
         kind,
-        subject: String(verified.payload.sub ?? ""),
-        scopes: scopes(String(verified.payload.scope ?? ""))
+        subject: typeof verified.payload.sub === "string" ? verified.payload.sub : "",
+        scopes: scopes(typeof scopeClaim === "string" ? scopeClaim : "")
       };
     } catch {
       throw new OAuthError("invalid_token", "Invalid access token");

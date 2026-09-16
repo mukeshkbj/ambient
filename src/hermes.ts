@@ -1,7 +1,8 @@
 import { EventEmitter } from "node:events";
 import WebSocket from "ws";
+import { rawText } from "./raw.js";
 
-export type HermesFrame = {
+type HermesFrame = {
   jsonrpc?: string;
   id?: string | number;
   method?: string;
@@ -54,9 +55,9 @@ export type HermesConnectionOptions = {
   heartbeatDeadlineMs?: number;
 };
 
-export class HermesRpcError extends Error {
+class HermesRpcError extends Error {
   readonly code: number | undefined;
-  readonly data: unknown | undefined;
+  readonly data: unknown;
 
   constructor(message: string, code?: number, data?: unknown) {
     super(message);
@@ -258,7 +259,7 @@ export class HermesConnection extends EventEmitter {
   }
 
   private bindSocket(socket: WebSocket): void {
-    socket.on("message", data => this.handleMessage(data.toString(), socket));
+    socket.on("message", data => this.handleMessage(rawText(data), socket));
     socket.on("error", error => {
       if (this.socket === socket) this.emit("protocolError", new HermesRpcError(error instanceof Error ? error.message : String(error)));
     });
@@ -276,7 +277,6 @@ export class HermesConnection extends EventEmitter {
     await new Promise<void>((resolve, reject) => {
       let settled = false;
       let readyStarted = false;
-      let timer: NodeJS.Timeout;
       const onReady = (event: HermesEvent) => {
         if (event.type !== "gateway.ready" || settled || readyStarted) return;
         readyStarted = true;
@@ -299,10 +299,11 @@ export class HermesConnection extends EventEmitter {
         socket.off("error", onError);
         socket.off("close", onClose);
         if (error && this.socket === socket && socket.readyState === WebSocket.OPEN) socket.close();
-        error ? reject(error) : resolve();
+        if (error) reject(error);
+        else resolve();
         return true;
       };
-      timer = setTimeout(() => finish(new HermesRpcError("Hermes gateway.ready timed out")), this.requestTimeoutMs);
+      const timer = setTimeout(() => finish(new HermesRpcError("Hermes gateway.ready timed out")), this.requestTimeoutMs);
       this.on("event", onReady);
       socket.once("error", onError);
       socket.once("close", onClose);

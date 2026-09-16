@@ -6,7 +6,9 @@ import type { Approval, Conversation, Run, RunStatus, Runtime, RuntimeId, Runtim
 type Row = Record<string, unknown>;
 
 function text(value: unknown): string {
-  return typeof value === "string" ? value : String(value ?? "");
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") return String(value);
+  return "";
 }
 
 function optionalText(value: unknown): string | undefined {
