@@ -273,6 +273,128 @@ describe("OpenClawClient (gateway WS protocol v4)", () => {
   });
 });
 
+describe("honest-state regressions", () => {
+  it("keeps a cancelled Muse run cancelled instead of overwriting it with the abort error", async () => {
+    const fetchImpl = (async (_url: unknown, init: RequestInit = {}) => new Promise<Response>((_resolve, reject) => {
+      init.signal?.addEventListener("abort", () => reject(new DOMException("The operation was aborted", "AbortError")));
+    })) as typeof fetch;
+    const store = new AmbientStore();
+    const client = new MuseClient({ fetchImpl });
+    const engine = engineFor(client, store, "muse");
+
+    const askPromise = engine.ask("long task", undefined, true);
+    await new Promise(resolve => setTimeout(resolve, 10));
+    const run = store.listRuns("muse", 1)[0]!;
+    const view = await engine.cancel(run.id);
+    await askPromise;
+
+    expect(view.status).toBe("cancelled");
+    expect(engine.getWork(run.id)).toMatchObject({ status: "cancelled" });
+    expect(engine.runtime().state).not.toBe("offline");
+    await client.close();
+    engine.close();
+    store.close();
+  });
+
+  it("marks an OpenClaw run unknown, not failed, when the gateway drops mid-run", async () => {
+    const socket = new FakeSocket();
+    const connection = new OpenClawConnection({ url: "ws://127.0.0.1:18789", socketFactory: () => socket });
+    const client = new OpenClawClient(connection);
+    const store = new AmbientStore();
+    const engine = engineFor(client, store, "openclaw");
+    const tick = () => new Promise(resolve => setTimeout(resolve, 10));
+
+    const connectPromise = connection.connect();
+    socket.open();
+    await tick();
+    socket.deliver({ type: "res", id: socket.last("connect").id!, ok: true, payload: { type: "hello-ok" } });
+    await connectPromise;
+
+    const runPromise = engine.ask("work", undefined, true);
+    await tick();
+    socket.respond("sessions.create", { key: "s1" });
+    await tick();
+    const agent = socket.last("agent");
+    socket.deliver({ type: "res", id: agent.id!, ok: true, payload: { runId: "r1" } });
+    const run = await runPromise;
+
+    socket.close();
+    await tick();
+    expect(engine.getWork(run.id).status).toBe("unknown");
+
+    await connection.close();
+    engine.close();
+    store.close();
+  });
+
+  it("matches an Instinct reply by Gmail thread when the tag is not quoted", async () => {
+    const { fetchImpl } = fakeFetch(req => {
+      if (req.url.endsWith("/users/me/messages/send")) return { body: { id: "m-out", threadId: "t-1" } };
+      if (req.url.includes("/users/me/messages?")) return { body: { messages: [{ id: "m-in" }] } };
+      if (req.url.includes("/users/me/messages/m-in")) {
+        return {
+          body: {
+            id: "m-in",
+            threadId: "t-1",
+            internalDate: String(Date.now()),
+            payload: { mimeType: "text/plain", body: { data: Buffer.from("watered").toString("base64url") } }
+          }
+        };
+      }
+      return { body: {} };
+    });
+    const store = new AmbientStore();
+    const client = new InstinctClient({ to: "me@mail.instinct.com", pollMs: 5, fetchImpl });
+    const engine = engineFor(client, store, "instinct");
+
+    const run = await engine.ask("water the plants", undefined, true);
+    expect(await waitFor(engine, run.id)).toBe("completed");
+    expect(engine.getWork(run.id).answer).toContain("watered");
+
+    await client.close();
+    engine.close();
+    store.close();
+  });
+
+  it("marks a Grok Bot run cancelled after interrupt without a racy completion event", async () => {
+    const { fetchImpl } = fakeFetch(req => {
+      if (req.url.endsWith("/api/listAgents")) return { body: { agents: [{ id: "ag-1", status: "running" }] } };
+      if (req.url.endsWith("/api/getAgentTranscriptTail")) return { body: { entries: [] } };
+      if (req.url.endsWith("/api/createAgent")) return { body: { id: "ag-1" } };
+      return { body: { ok: true } };
+    });
+    const store = new AmbientStore();
+    const client = new GrokBotClient({ endpoint: "http://127.0.0.1:1340", pollMs: 5, fetchImpl });
+    const engine = engineFor(client, store, "grokbot");
+
+    const run = await engine.ask("hello", undefined, true);
+    const view = await engine.cancel(run.id);
+    expect(view.status).toBe("cancelled");
+    expect(engine.getWork(run.id).status).toBe("cancelled");
+
+    await client.close();
+    engine.close();
+    store.close();
+  });
+
+  it("marks leftover active runs unknown when a process-bound runtime starts", async () => {
+    const store = new AmbientStore();
+    const now = new Date().toISOString();
+    store.createConversation({ id: "c1", runtimeId: "grok", durableSessionId: "d1", title: "t", selected: true, createdAt: now, updatedAt: now });
+    store.createRun({ id: "r1", conversationId: "c1", runtimeId: "grok", durableSessionId: "d1", liveSessionId: "l1", instruction: "x", status: "running", createdAt: now, updatedAt: now });
+
+    const registry = buildRuntimeRegistry({
+      defaultRuntimeId: "grok",
+      runtimes: [{ id: "grok", label: "Grok", kind: "local", adapter: "grokbot", endpoint: "http://127.0.0.1:1" }]
+    }, {}, store);
+    registry.startAll();
+    expect(store.run("r1")!.status).toBe("unknown");
+
+    await registry.close();
+    store.close();
+  });
+});
+
 describe("buildRuntimeRegistry adapter dispatch", () => {
   it("builds every supported adapter and rejects unknown ones", async () => {
     const config = readConfig({

@@ -130,7 +130,13 @@ export class RuntimeRegistry {
   }
 
   startAll(): void {
-    for (const entry of this.entries.values()) entry.start();
+    for (const entry of this.entries.values()) {
+      // A restarted process can't have verified in-flight work: anything left
+      // active in the store is stale until discovery/replay re-establishes it.
+      this.store.markActiveRunsUnknown(entry.descriptor.id, new Date().toISOString(),
+        "Ambient restarted before this work finished; the outcome is unknown");
+      entry.start();
+    }
   }
 
   async close(): Promise<void> {
@@ -253,7 +259,9 @@ function openclawRuntime(item: RuntimeConfigEntry, env: Record<string, string | 
     ...(token ? { token } : {}),
     ...(numberOption(item, "requestTimeoutMs") ? { requestTimeoutMs: numberOption(item, "requestTimeoutMs")! } : {})
   });
-  const client = new OpenClawClient(connection);
+  const client = new OpenClawClient(connection, {
+    ...(numberOption(item, "runTimeoutMs") ? { runTimeoutMs: numberOption(item, "runTimeoutMs")! } : {})
+  });
   const engine = engineFor(item, store, client);
   let reconnect: NodeJS.Timeout | undefined;
   const discover = () => {
@@ -261,11 +269,11 @@ function openclawRuntime(item: RuntimeConfigEntry, env: Record<string, string | 
   };
   return entryFor(item, client, engine,
     () => {
+      connection.on("open", discover);
       const connect = () => {
-        connection.connect().then(discover).catch(() => engine.setRuntimeState("offline"));
+        connection.connect().catch(() => engine.setRuntimeState("offline"));
       };
       connect();
-      connection.on("open", discover);
       reconnect = setInterval(() => {
         if (!connection.isConnected) connect();
       }, 5_000);

@@ -51,30 +51,25 @@ function writeText(response: ServerResponse, status: number, body: string, type 
   response.end(body);
 }
 
-async function formBody(request: IncomingMessage): Promise<Record<string, string | undefined>> {
+async function body(request: IncomingMessage, limit: number): Promise<Buffer> {
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const chunk of request) {
     const value = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
     size += value.length;
-    if (size > 1_000_000) throw new Error("request body too large");
+    if (size > limit) throw new Error("request body too large");
     chunks.push(value);
   }
-  const raw = Buffer.concat(chunks).toString("utf8");
-  if (!raw) return {};
-  return Object.fromEntries(new URLSearchParams(raw).entries());
+  return Buffer.concat(chunks);
+}
+
+async function formBody(request: IncomingMessage): Promise<Record<string, string | undefined>> {
+  const raw = (await body(request, 1_000_000)).toString("utf8");
+  return raw ? Object.fromEntries(new URLSearchParams(raw).entries()) : {};
 }
 
 async function jsonBody(request: IncomingMessage): Promise<unknown> {
-  const chunks: Buffer[] = [];
-  let size = 0;
-  for await (const chunk of request) {
-    const value = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-    size += value.length;
-    if (size > 5_000_000) throw new Error("request body too large");
-    chunks.push(value);
-  }
-  const raw = Buffer.concat(chunks).toString("utf8");
+  const raw = (await body(request, 5_000_000)).toString("utf8");
   return raw ? JSON.parse(raw) : undefined;
 }
 
@@ -147,7 +142,7 @@ function authorizationForm(params: Record<string, string | undefined>, requiresL
     .map(([key, value]) => `<input type="hidden" name="${htmlEscape(key)}" value="${htmlEscape(value!)}">`)
     .join("");
   const linkCode = requiresLinkCode ? '<label>Link code <input name="link_code" type="password" autocomplete="one-time-code" required></label>' : "";
-  return `<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Link Hermes Ambient</title><body><main><h1>Link Hermes Ambient</h1><p>Confirm access for Alexa.</p><form method="post" action="/authorize/confirm">${hidden}${linkCode}<button type="submit">Link account</button></form></main></body></html>`;
+  return `<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Link Ambient</title><body><main><h1>Link Ambient</h1><p>Confirm access for Alexa.</p><form method="post" action="/authorize/confirm">${hidden}${linkCode}<button type="submit">Link account</button></form></main></body></html>`;
 }
 
 export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): AmbientHttp {

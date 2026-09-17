@@ -98,7 +98,21 @@ describe("ConversationEngine", () => {
     store.close();
   });
 
-  it("keeps the runtime unknown until discovery confirms the live sessions", async () => {
+  it("maps a cancelled message.complete to cancelled, not completed", async () => {
+    const hermes = fakeHermes();
+    const store = new AmbientStore();
+    const engine = new ConversationEngine(hermes.client, store, {
+      runtime: { id: "local", label: "My Hermes", kind: "local", state: "unknown", updatedAt: "2026-09-06T10:00:00.000Z" },
+      id: (() => { let n = 0; return () => `id-${++n}`; })()
+    });
+    const run = await engine.ask("Task", undefined, true);
+    hermes.emit({ type: "message.complete", sessionId: "runtime-1", payload: { status: "cancelled" } });
+    await new Promise(resolve => setImmediate(resolve));
+    expect(engine.getWork(run.id).status).toBe("cancelled");
+    store.close();
+  });
+
+  it("trusts the adapter's connection state and marks runs unknown on disconnect", async () => {
     const hermes = fakeHermes();
     const store = new AmbientStore();
     const engine = new ConversationEngine(hermes.client, store, {
@@ -106,9 +120,9 @@ describe("ConversationEngine", () => {
       id: (() => { let n = 0; return () => `id-${++n}`; })()
     });
     hermes.state("online");
-    expect(engine.runtime().state).toBe("unknown");
-    await engine.discover();
     expect(engine.runtime().state).toBe("online");
+    hermes.state("offline");
+    expect(engine.runtime().state).toBe("offline");
     store.close();
   });
 

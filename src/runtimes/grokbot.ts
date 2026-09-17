@@ -1,12 +1,11 @@
-import type { RuntimeState } from "../types.js";
 import { contentText, firstString, jsonRequest, record } from "./http.js";
-import type {
-  ActiveSession,
-  AssistantClient,
-  AssistantEvent,
-  AssistantSession,
-  RuntimeCapabilities,
-  SavedSession
+import {
+  AssistantEvented,
+  type ActiveSession,
+  type AssistantClient,
+  type AssistantSession,
+  type RuntimeCapabilities,
+  type SavedSession
 } from "./types.js";
 
 export type GrokBotClientOptions = {
@@ -38,6 +37,7 @@ function entryKey(entry: Record<string, unknown>): string | undefined {
 }
 
 function entriesOf(payload: unknown): Record<string, unknown>[] {
+  if (Array.isArray(payload)) return payload.map(record);
   const row = record(payload);
   const list = row.entries ?? row.items ?? row.messages ?? row.transcript;
   return Array.isArray(list) ? list.map(record) : [];
@@ -60,7 +60,7 @@ function entryText(entry: Record<string, unknown>): string | undefined {
  * stabilizes or the agent goes idle. This gateway is private to the host —
  * expose it only over LAN/VPN/tunnel, never publicly.
  */
-export class GrokBotClient implements AssistantClient {
+export class GrokBotClient extends AssistantEvented implements AssistantClient {
   readonly capabilities: RuntimeCapabilities = {
     sessions: true,
     steer: true,
@@ -76,32 +76,13 @@ export class GrokBotClient implements AssistantClient {
   private readonly timeoutMs: number;
   private readonly fetchImpl: typeof fetch;
   private readonly watchers = new Map<string, Watcher>();
-  private readonly eventListeners = new Set<(event: AssistantEvent) => void>();
-  private readonly stateListeners = new Set<(state: RuntimeState) => void>();
 
   constructor(private readonly options: GrokBotClientOptions) {
+    super();
     this.endpoint = options.endpoint.replace(/\/$/, "");
     this.pollMs = options.pollMs ?? 2_000;
     this.timeoutMs = options.timeoutMs ?? 600_000;
     this.fetchImpl = options.fetchImpl ?? fetch;
-  }
-
-  private emit(event: AssistantEvent): void {
-    for (const listener of this.eventListeners) listener(event);
-  }
-
-  private emitState(state: RuntimeState): void {
-    for (const listener of this.stateListeners) listener(state);
-  }
-
-  onEvent(listener: (event: AssistantEvent) => void): () => void {
-    this.eventListeners.add(listener);
-    return () => this.eventListeners.delete(listener);
-  }
-
-  onConnectionState(listener: (state: RuntimeState) => void): () => void {
-    this.stateListeners.add(listener);
-    return () => this.stateListeners.delete(listener);
   }
 
   private command<T>(name: string, body: Record<string, unknown> = {}): Promise<T> {
@@ -201,7 +182,8 @@ export class GrokBotClient implements AssistantClient {
   async interrupt(runtimeSessionId: string): Promise<Record<string, unknown>> {
     await this.command("interruptAgentRun", { id: runtimeSessionId });
     this.stopWatch(runtimeSessionId);
-    this.emit({ type: "message.complete", sessionId: runtimeSessionId, payload: { text: "Interrupted", status: "cancelled" } });
+    // No message.complete here: engine.cancel marks the run cancelled from the
+    // "interrupted" status, and emitting mid-call can overwrite a completed run.
     return { status: "interrupted" };
   }
 

@@ -4,13 +4,13 @@ import WebSocket from "ws";
 import { rawText } from "../raw.js";
 import type { RuntimeState } from "../types.js";
 import { firstString, record } from "./http.js";
-import type {
-  ActiveSession,
-  AssistantClient,
-  AssistantEvent,
-  AssistantSession,
-  RuntimeCapabilities,
-  SavedSession
+import {
+  AssistantEvented,
+  type ActiveSession,
+  type AssistantClient,
+  type AssistantSession,
+  type RuntimeCapabilities,
+  type SavedSession
 } from "./types.js";
 
 const PROTOCOL_VERSION = 4;
@@ -155,7 +155,7 @@ export class OpenClawConnection extends EventEmitter {
     });
   }
 
-  request<T>(method: string, params: Record<string, unknown> = {}): Promise<T> {
+  request<T>(method: string, params: Record<string, unknown> = {}, timeoutMs = this.requestTimeoutMs): Promise<T> {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
       return Promise.reject(new OpenClawError("OpenClaw gateway is unavailable"));
     }
@@ -164,7 +164,7 @@ export class OpenClawConnection extends EventEmitter {
       const timer = setTimeout(() => {
         this.pending.delete(id);
         reject(new OpenClawError(`OpenClaw request timed out: ${method}`));
-      }, this.requestTimeoutMs);
+      }, timeoutMs);
       this.pending.set(id, { resolve: resolve as (value: unknown) => void, reject, timer });
       try {
         this.socket!.send(JSON.stringify({ type: "req", id, method, params }));
@@ -203,7 +203,9 @@ export class OpenClawConnection extends EventEmitter {
 
   private bindSocket(socket: SocketLike): void {
     socket.on("message", (data: unknown) => this.handleMessage(rawText(data as Parameters<typeof rawText>[0]), socket));
-    socket.on("error", () => undefined);
+    socket.on("error", (error: unknown) => {
+      this.emit("protocolError", error instanceof Error ? error : new OpenClawError(String(error)));
+    });
     socket.on("close", () => {
       if (this.socket !== socket) return;
       this.socket = undefined;
@@ -233,7 +235,7 @@ function approvalPayload(payload: Record<string, unknown>): Record<string, unkno
   };
 }
 
-export class OpenClawClient implements AssistantClient {
+export class OpenClawClient extends AssistantEvented implements AssistantClient {
   readonly capabilities: RuntimeCapabilities = {
     sessions: true,
     steer: true,
@@ -244,26 +246,27 @@ export class OpenClawClient implements AssistantClient {
     asyncClass: "realtime"
   };
 
-  constructor(private readonly rpc: OpenClawConnection) {
+  private readonly runTimeoutMs: number;
+  private readonly subscribedSessions = new Set<string>();
+
+  constructor(private readonly rpc: OpenClawConnection, options: { runTimeoutMs?: number } = {}) {
+    super();
+    this.runTimeoutMs = options.runTimeoutMs ?? 15 * 60_000;
     rpc.on("gatewayEvent", (name: string, payload: Record<string, unknown>) => this.handleGatewayEvent(name, payload));
+    // Push delivery is opt-in: sessions.changed needs sessions.subscribe, and
+    // session.* streams need a per-session sessions.messages.subscribe. Both are
+    // best-effort — a gateway that rejects them still works via agent.wait.
+    rpc.on("open", () => {
+      void this.rpc.request("sessions.subscribe").catch(() => undefined);
+      for (const key of this.subscribedSessions) void this.subscribeSession(key);
+    });
   }
 
   get connection(): OpenClawConnection {
     return this.rpc;
   }
 
-  private readonly eventListeners = new Set<(event: AssistantEvent) => void>();
-
-  private emit(event: AssistantEvent): void {
-    for (const listener of this.eventListeners) listener(event);
-  }
-
-  onEvent(listener: (event: AssistantEvent) => void): () => void {
-    this.eventListeners.add(listener);
-    return () => this.eventListeners.delete(listener);
-  }
-
-  onConnectionState(listener: (state: RuntimeState) => void): () => void {
+  override onConnectionState(listener: (state: RuntimeState) => void): () => void {
     const open = () => listener("online");
     const close = () => listener("offline");
     this.rpc.on("open", open);
@@ -305,10 +308,16 @@ export class OpenClawClient implements AssistantClient {
     await this.rpc.request("sessions.list", { limit: 1 });
   }
 
+  private subscribeSession(key: string): Promise<unknown> {
+    this.subscribedSessions.add(key);
+    return this.rpc.request("sessions.messages.subscribe", { key, includeApprovals: true }).catch(() => undefined);
+  }
+
   async createSession(): Promise<AssistantSession> {
     const result = await this.rpc.request<unknown>("sessions.create", { label: "Ambient conversation" });
     const key = firstString(result, "key", "sessionKey", "session.key", "entry.key");
     if (!key) throw new OpenClawError("sessions.create returned no session key");
+    void this.subscribeSession(key);
     return { runtimeSessionId: key, durableSessionId: key };
   }
 
@@ -319,13 +328,14 @@ export class OpenClawClient implements AssistantClient {
     }));
     const runId = firstString(result, "runId", "run_id", "id");
     if (!runId) throw new OpenClawError("agent run was accepted without a run id");
+    void this.subscribeSession(runtimeSessionId);
     void this.waitForRun(runtimeSessionId, runId);
     return { status: "streaming" };
   }
 
   private async waitForRun(sessionId: string, runId: string): Promise<void> {
     try {
-      const result = record(await this.rpc.request<unknown>("agent.wait", { runId }));
+      const result = record(await this.rpc.request<unknown>("agent.wait", { runId }, this.runTimeoutMs));
       const status = firstString(result, "status") ?? "ok";
       if (status === "ok") {
         const text = firstString(result, "output", "text", "message", "result", "summary")
@@ -336,6 +346,9 @@ export class OpenClawClient implements AssistantClient {
         this.emit({ type: "message.complete", sessionId, payload: { status: "error", error, text: error } });
       }
     } catch (error) {
+      // A dropped socket means the run's outcome is unknown — the close event
+      // already marks the runtime offline and the engine marks runs unknown.
+      if (!this.rpc.isConnected) return;
       this.emit({
         type: "message.complete",
         sessionId,
@@ -368,6 +381,7 @@ export class OpenClawClient implements AssistantClient {
     }));
     if (result.ok === false) throw new OpenClawError(`OpenClaw session ${durableSessionId} no longer exists`);
     const key = firstString(result, "key", "sessionKey", "session.key") ?? durableSessionId;
+    void this.subscribeSession(key);
     return { runtimeSessionId: key, durableSessionId: key };
   }
 

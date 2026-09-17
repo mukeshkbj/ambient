@@ -41,10 +41,8 @@ const EnvSchema = z.object({
 
 export type AppConfig = {
   port: number;
-  publicBaseUrl: string;
   runtimes: RuntimeConfigEntry[];
   defaultRuntimeId: string;
-  runtimesFile: string;
   dataDir: string;
   retentionDays: number;
   accessToken?: string;
@@ -100,9 +98,10 @@ export function readConfig(env: Record<string, string | undefined> = process.env
   if (hasOAuth && oauthValues.some(value => !value)) {
     throw new Error("OAUTH_ISSUER, OAUTH_SIGNING_SECRET, ALEXA_CLIENT_ID, ALEXA_CLIENT_SECRET, and ALEXA_REDIRECT_URIS are required together");
   }
+  const baseUrl = parsed.PUBLIC_BASE_URL.replace(/\/$/, "");
   const oauth = hasOAuth ? {
     issuer: parsed.OAUTH_ISSUER!,
-    resource: `${parsed.PUBLIC_BASE_URL}/mcp`,
+    resource: `${baseUrl}/mcp`,
     signingSecret: parsed.OAUTH_SIGNING_SECRET!,
     clientId: parsed.ALEXA_CLIENT_ID!,
     clientSecret: parsed.ALEXA_CLIENT_SECRET!,
@@ -113,10 +112,8 @@ export function readConfig(env: Record<string, string | undefined> = process.env
   const runtimes = runtimeEntries(parsed, runtimesFile);
   return {
     port: parsed.PORT,
-    publicBaseUrl: parsed.PUBLIC_BASE_URL.replace(/\/$/, ""),
     runtimes,
     defaultRuntimeId: runtimes.find(entry => entry.default)?.id ?? runtimes[0]!.id,
-    runtimesFile,
     dataDir: parsed.AMBIENT_DATA_DIR,
     retentionDays: parsed.AMBIENT_RETENTION_DAYS,
     ...(parsed.AMBIENT_ACCESS_TOKEN ? { accessToken: parsed.AMBIENT_ACCESS_TOKEN } : {}),

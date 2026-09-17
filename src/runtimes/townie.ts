@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
-import type { RuntimeState } from "../types.js";
 import { contentText, jsonRequest } from "./http.js";
-import type { AssistantClient, AssistantEvent, AssistantSession, RuntimeCapabilities } from "./types.js";
+import { AssistantEvented, type AssistantClient, type AssistantSession, type RuntimeCapabilities } from "./types.js";
 
 export type TownieClientOptions = {
   /** Full val run URL, e.g. https://api.val.town/v1/run/<user>.<valname>. */
@@ -18,7 +17,7 @@ export type TownieClientOptions = {
  * (townie.val.run is open source) or any prompt-accepting val. Each call is
  * stateless — Ambient conversations here are grouping labels only.
  */
-export class TownieClient implements AssistantClient {
+export class TownieClient extends AssistantEvented implements AssistantClient {
   readonly capabilities: RuntimeCapabilities = {
     sessions: false,
     steer: false,
@@ -33,33 +32,14 @@ export class TownieClient implements AssistantClient {
   private readonly meUrl: string;
   private readonly timeoutMs: number;
   private readonly fetchImpl: typeof fetch;
-  private readonly eventListeners = new Set<(event: AssistantEvent) => void>();
-  private readonly stateListeners = new Set<(state: RuntimeState) => void>();
 
   constructor(private readonly options: TownieClientOptions) {
+    super();
     const url = new URL(options.endpoint);
     this.runUrl = url.toString();
     this.meUrl = `${url.origin}/v1/me`;
     this.timeoutMs = options.timeoutMs ?? 120_000;
     this.fetchImpl = options.fetchImpl ?? fetch;
-  }
-
-  private emit(event: AssistantEvent): void {
-    for (const listener of this.eventListeners) listener(event);
-  }
-
-  private emitState(state: RuntimeState): void {
-    for (const listener of this.stateListeners) listener(state);
-  }
-
-  onEvent(listener: (event: AssistantEvent) => void): () => void {
-    this.eventListeners.add(listener);
-    return () => this.eventListeners.delete(listener);
-  }
-
-  onConnectionState(listener: (state: RuntimeState) => void): () => void {
-    this.stateListeners.add(listener);
-    return () => this.stateListeners.delete(listener);
   }
 
   async ping(): Promise<void> {

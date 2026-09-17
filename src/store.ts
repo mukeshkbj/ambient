@@ -427,11 +427,6 @@ export class AmbientStore {
     return this.approvalForRuntime(value.runtimeId, value.requestId)!;
   }
 
-  approval(requestId: string): Approval | undefined {
-    const row = this.db.prepare("SELECT * FROM approvals WHERE request_id = ?").get(requestId) as Row | undefined;
-    return row ? approval(row) : undefined;
-  }
-
   approvalForRuntime(runtimeId: RuntimeId, requestId: string): Approval | undefined {
     const row = this.db.prepare("SELECT * FROM approvals WHERE runtime_id = ? AND request_id = ?").get(runtimeId, requestId) as Row | undefined;
     return row ? approval(row) : undefined;
@@ -447,12 +442,6 @@ export class AmbientStore {
       "SELECT * FROM approvals WHERE runtime_id = ? AND resolved_at IS NULL ORDER BY created_at"
     ).all(runtimeId) as Row[];
     return rows.map(approval);
-  }
-
-  resolveApproval(requestId: string, resolvedAt: string): Approval | undefined {
-    this.db.prepare("UPDATE approvals SET resolved_at = ? WHERE request_id = ? AND resolved_at IS NULL")
-      .run(resolvedAt, requestId);
-    return this.approval(requestId);
   }
 
   resolveApprovalForRuntime(runtimeId: RuntimeId, requestId: string, resolvedAt: string): Approval | undefined {

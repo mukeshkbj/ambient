@@ -47,9 +47,13 @@ with role `operator` and scopes `operator.read operator.write operator.approvals
 → `hello-ok`. Sessions via `sessions.create`/`sessions.list`/`sessions.resolve`,
 prompts via `agent` + `agent.wait`, steering via `chat.send queueMode:"steer"`,
 cancel via `sessions.abort`, exec approvals via `exec.approval.*` events and
-`approval.resolve`. Needs a reachable self-hosted gateway (default `:18789`) and
-an operator token. Pin the gateway version you validated; older gateways may
-reject protocol v4.
+`approval.resolve`. The adapter subscribes (`sessions.subscribe`,
+`sessions.messages.subscribe`) for push events — a gateway that rejects
+subscriptions still works through `agent.wait`. `options.requestTimeoutMs`
+governs ordinary calls (default 30 s); `options.runTimeoutMs` governs
+`agent.wait` (default 15 min). Needs a reachable self-hosted gateway (default
+`:18789`) and an operator token. Pin the gateway version you validated; older
+gateways may reject protocol v4.
 
 ## Grok Bot (`grokbot`)
 
@@ -88,8 +92,9 @@ and a run completes when the HTTP call returns.
 
 Instinct's documented async surface is its **email channel**: send it a task and
 it replies later. The adapter sends through the Gmail API
-(`users.me.messages/send`) and polls `users.me/messages` for a reply containing
-the `[ambient:<sessionId>]` subject tag (`options.pollMs` default 15 s).
+(`users.me.messages/send`) and polls `users.me/messages` for the reply —
+correlated by the sent message's `threadId`, with the `[ambient:<sessionId>]`
+subject tag as fallback (`options.pollMs` default 15 s).
 `options.to` is your Instinct address (`<you>@mail.instinct.com`); `tokenEnv` is
 a Google OAuth access token with `gmail.send` + `gmail.readonly`. Replies take
 minutes — `asyncClass: "async"`, default `timeoutMs` 30 min, after which the run

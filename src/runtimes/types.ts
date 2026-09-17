@@ -83,3 +83,27 @@ export type ConnectorConnection = {
   attach(socket: WebSocket): Promise<void>;
   close(): Promise<void>;
 };
+
+/** Shared listener plumbing for adapters that emit AssistantEvents and connection states. */
+export abstract class AssistantEvented {
+  private readonly eventListeners = new Set<(event: AssistantEvent) => void>();
+  private readonly stateListeners = new Set<(state: RuntimeState) => void>();
+
+  protected emit(event: AssistantEvent): void {
+    for (const listener of this.eventListeners) listener(event);
+  }
+
+  protected emitState(state: RuntimeState): void {
+    for (const listener of this.stateListeners) listener(state);
+  }
+
+  onEvent(listener: (event: AssistantEvent) => void): () => void {
+    this.eventListeners.add(listener);
+    return () => this.eventListeners.delete(listener);
+  }
+
+  onConnectionState(listener: (state: RuntimeState) => void): () => void {
+    this.stateListeners.add(listener);
+    return () => this.stateListeners.delete(listener);
+  }
+}

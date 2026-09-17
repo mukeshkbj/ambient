@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
-import type { RuntimeState } from "../types.js";
 import { contentText, jsonRequest, record } from "./http.js";
-import type { AssistantClient, AssistantEvent, AssistantSession, RuntimeCapabilities } from "./types.js";
+import { AssistantEvented, type AssistantClient, type AssistantSession, type RuntimeCapabilities } from "./types.js";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -19,7 +18,7 @@ export type MuseClientOptions = {
  * secure-VM product itself, which has no public API. Sessions are in-memory
  * conversation threads; they survive an Ambient restart as empty threads.
  */
-export class MuseClient implements AssistantClient {
+export class MuseClient extends AssistantEvented implements AssistantClient {
   /** Threads live in process memory; a restart must re-bind via resumeSession. */
   readonly ephemeralSessions = true;
 
@@ -39,32 +38,13 @@ export class MuseClient implements AssistantClient {
   private readonly fetchImpl: typeof fetch;
   private readonly sessions = new Map<string, ChatMessage[]>();
   private readonly inflight = new Map<string, AbortController>();
-  private readonly eventListeners = new Set<(event: AssistantEvent) => void>();
-  private readonly stateListeners = new Set<(state: RuntimeState) => void>();
 
   constructor(private readonly options: MuseClientOptions) {
+    super();
     this.endpoint = (options.endpoint ?? "https://api.meta.ai/v1").replace(/\/$/, "");
     this.model = options.model ?? "muse-spark-1.1";
     this.timeoutMs = options.timeoutMs ?? 120_000;
     this.fetchImpl = options.fetchImpl ?? fetch;
-  }
-
-  private emit(event: AssistantEvent): void {
-    for (const listener of this.eventListeners) listener(event);
-  }
-
-  private emitState(state: RuntimeState): void {
-    for (const listener of this.stateListeners) listener(state);
-  }
-
-  onEvent(listener: (event: AssistantEvent) => void): () => void {
-    this.eventListeners.add(listener);
-    return () => this.eventListeners.delete(listener);
-  }
-
-  onConnectionState(listener: (state: RuntimeState) => void): () => void {
-    this.stateListeners.add(listener);
-    return () => this.stateListeners.delete(listener);
   }
 
   async ping(): Promise<void> {
@@ -114,6 +94,9 @@ export class MuseClient implements AssistantClient {
       this.emitState("online");
       return { status: "streaming" };
     } catch (error) {
+      // An abort means engine.cancel already marked the run cancelled —
+      // don't overwrite it with a failure or flag the runtime offline.
+      if (controller.signal.aborted) return { status: "cancelled" };
       this.emitState("offline");
       throw error;
     } finally {

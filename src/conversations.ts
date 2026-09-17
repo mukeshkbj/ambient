@@ -75,7 +75,7 @@ export class ConversationEngine {
       if (state === "offline") {
         this.store.markActiveRunsUnknown(this.options.runtime.id, this.now(), `${this.label()} disconnected; the work outcome is unknown`);
       }
-      this.setRuntimeState(state === "online" ? "unknown" : state);
+      this.setRuntimeState(state);
     });
     this.unsubscribeReplayGap = assistant.onReplayGap?.(gap => {
       const run = this.store.activeRunByLiveSession(this.options.runtime.id, gap.sessionId);
@@ -295,6 +295,8 @@ export class ConversationEngine {
         this.store.updateRun(run.id, { status: "cancelled", answer, updatedAt: timestamp });
       } else if (status === "error" || value(event.payload.error)) {
         this.store.updateRun(run.id, { status: "failed", answer, failure: value(event.payload.error) ?? answer, updatedAt: timestamp });
+      } else if (status === "cancelled" || status === "canceled") {
+        this.store.updateRun(run.id, { status: "cancelled", answer, updatedAt: timestamp });
       } else {
         this.store.updateRun(run.id, { status: "completed", answer, updatedAt: timestamp });
       }
@@ -319,12 +321,14 @@ export class ConversationEngine {
     }
     const session = await this.assistant.createSession();
     const timestamp = this.now();
+    // Number titles so voice selection can disambiguate between conversations.
+    const count = this.store.listConversations(this.options.runtime.id).length;
     return this.store.createConversation(makeConversation(
       this.options.runtime.id,
       session,
       timestamp,
       this.id(),
-      `New ${this.label()} conversation`
+      `New ${this.label()} conversation ${count + 1}`
     ));
   }
 
