@@ -78,6 +78,12 @@ export type NewRun = Omit<Run, "status" | "createdAt" | "updatedAt"> & {
   updatedAt: string;
 };
 
+export type TranscriptEntry = {
+  seq: number;
+  role: string;
+  json: string;
+};
+
 export class AmbientStore {
   private readonly db: DatabaseSync;
 
@@ -134,6 +140,14 @@ export class AmbientStore {
       );
       CREATE INDEX IF NOT EXISTS runs_live_session_idx ON runs(live_session_id, status);
       CREATE INDEX IF NOT EXISTS approvals_open_idx ON approvals(runtime_id, resolved_at);
+      CREATE TABLE IF NOT EXISTS transcripts (
+        runtime_id TEXT NOT NULL,
+        durable_session_id TEXT NOT NULL,
+        seq INTEGER NOT NULL,
+        role TEXT NOT NULL,
+        json TEXT NOT NULL,
+        PRIMARY KEY (runtime_id, durable_session_id, seq)
+      );
       CREATE TABLE IF NOT EXISTS meta (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
@@ -460,5 +474,29 @@ export class AmbientStore {
     if (!value) return undefined;
     const pending = this.listApprovals(value.runtimeId).find(item => item.runId === runId);
     return pending ? { ...value, approval: pending } : value;
+  }
+
+  appendTranscript(runtimeId: RuntimeId, durableSessionId: string, role: string, json: string): void {
+    const row = this.db.prepare(
+      "SELECT COALESCE(MAX(seq), 0) + 1 AS next FROM transcripts WHERE runtime_id = ? AND durable_session_id = ?"
+    ).get(runtimeId, durableSessionId) as Row;
+    this.db.prepare(
+      "INSERT INTO transcripts (runtime_id, durable_session_id, seq, role, json) VALUES (?, ?, ?, ?, ?)"
+    ).run(runtimeId, durableSessionId, Number(row.next), role, json);
+  }
+
+  transcript(runtimeId: RuntimeId, durableSessionId: string): TranscriptEntry[] {
+    const rows = this.db.prepare(
+      "SELECT seq, role, json FROM transcripts WHERE runtime_id = ? AND durable_session_id = ? ORDER BY seq"
+    ).all(runtimeId, durableSessionId) as Row[];
+    return rows.map(row => ({ seq: Number(row.seq), role: text(row.role), json: text(row.json) }));
+  }
+
+  listTranscriptSessions(runtimeId: RuntimeId): string[] {
+    const rows = this.db.prepare(`
+      SELECT durable_session_id, MAX(seq) AS last FROM transcripts
+      WHERE runtime_id = ? GROUP BY durable_session_id ORDER BY last DESC
+    `).all(runtimeId) as Row[];
+    return rows.map(row => text(row.durable_session_id));
   }
 }

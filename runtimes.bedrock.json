@@ -1,0 +1,19 @@
+[
+  {
+    "id": "nova",
+    "label": "Nova",
+    "kind": "cloud",
+    "adapter": "bedrock",
+    "default": true,
+    "options": {
+      "model": "us.amazon.nova-lite-v1:0",
+      "region": "us-east-1"
+    }
+  },
+  {
+    "id": "planner",
+    "label": "Demo Agent",
+    "kind": "cloud",
+    "adapter": "demo"
+  }
+]

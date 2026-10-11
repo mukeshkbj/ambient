@@ -29,6 +29,8 @@ credentials and private transcripts out of the repository.
 
 | Adapter | Contract-tested | Live-verified | Gate |
 |---|---|---|---|
+| demo | yes (engine-driven) | n/a — deterministic, no service | — |
+| bedrock | yes (mocked Converse) | **blocked** — no AWS credentials on this machine (no `aws` CLI, no `~/.aws`, no `AWS_*` env; checked 2026-10-11) | AWS credentials + Bedrock model access |
 | hermes | yes | yes (2026-09-06) | — |
 | openclaw | yes (fake socket) | no | self-hosted gateway + operator token |
 | grokbot | yes (fake fetch) | no | host `sand` gateway reachable + token |

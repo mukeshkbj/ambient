@@ -92,6 +92,9 @@ export class DemoClient extends AssistantEvented implements AssistantClient {
     asyncClass: "realtime"
   };
 
+  /** Live session handles die with the process; discovery re-binds via durable ids. */
+  readonly ephemeralSessions = true;
+
   private readonly speedMs: number;
   private readonly sessions = new Map<string, DemoSession>();
 

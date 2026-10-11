@@ -3,6 +3,7 @@ import type { AppConfig, RuntimeConfigEntry } from "../config.js";
 import { HermesClient, HermesConnection } from "../hermes.js";
 import type { AmbientStore } from "../store.js";
 import type { RunView, RuntimeState } from "../types.js";
+import { BedrockClient } from "./bedrock.js";
 import { DemoClient } from "./demo.js";
 import { GrokBotClient } from "./grokbot.js";
 import { InstinctClient } from "./instinct.js";
@@ -339,9 +340,23 @@ function demoRuntime(item: RuntimeConfigEntry, env: Record<string, string | unde
   return polledRuntime(item, env, store, client);
 }
 
-const ADAPTERS: Record<string, (item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore) => RuntimeEntry> = {
+function bedrockRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore, dataDir?: string): RuntimeEntry {
+  const client = new BedrockClient({
+    runtimeId: item.id,
+    store,
+    env,
+    ...(item.options?.model ? { model: item.options.model } : {}),
+    ...(item.options?.region ? { region: item.options.region } : {}),
+    ...(dataDir ? { dataDir } : {}),
+    ...(numberOption(item, "maxTurns") ? { maxTurns: numberOption(item, "maxTurns")! } : {})
+  });
+  return polledRuntime(item, env, store, client);
+}
+
+const ADAPTERS: Record<string, (item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore, dataDir?: string) => RuntimeEntry> = {
   hermes: hermesRuntime,
   demo: demoRuntime,
+  bedrock: bedrockRuntime,
   openclaw: openclawRuntime,
   grokbot: grokbotRuntime,
   muse: museRuntime,
@@ -350,7 +365,7 @@ const ADAPTERS: Record<string, (item: RuntimeConfigEntry, env: Record<string, st
 };
 
 export function buildRuntimeRegistry(
-  config: Pick<AppConfig, "runtimes" | "defaultRuntimeId">,
+  config: Pick<AppConfig, "runtimes" | "defaultRuntimeId"> & { dataDir?: string },
   env: Record<string, string | undefined>,
   store: AmbientStore
 ): RuntimeRegistry {
@@ -359,7 +374,7 @@ export function buildRuntimeRegistry(
     if (!factory) {
       throw new Error(`Assistant adapter "${item.adapter}" is not available; supported: ${Object.keys(ADAPTERS).join(", ")}`);
     }
-    return factory(item, env, store);
+    return factory(item, env, store, config.dataDir);
   });
   return new RuntimeRegistry(store, entries, config.defaultRuntimeId);
 }
