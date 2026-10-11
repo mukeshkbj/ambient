@@ -4,9 +4,12 @@ coverage/
 .env
 .env.*
 !.env.example
+.ambient/
+.ambient-*/
 .hermes-ambient/
 .hermes-ambient-*/
 .DS_Store
 cdk.out/
 decisions.tsv
 .audit/
+.pytest_cache/

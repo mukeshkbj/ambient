@@ -11,12 +11,6 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.30.0
         version: 1.30.0(zod@4.5.4)
-      aws-cdk-lib:
-        specifier: ^2.114.0
-        version: 2.114.0(constructs@10.8.1)
-      constructs:
-        specifier: ^10.8.1
-        version: 10.8.1
       jose:
         specifier: ^6.1.0
         version: 6.2.12
@@ -39,6 +33,12 @@ importers:
       aws-cdk:
         specifier: ^2.1140.0
         version: 2.1140.0
+      aws-cdk-lib:
+        specifier: ^2.114.0
+        version: 2.114.0(constructs@10.8.1)
+      constructs:
+        specifier: ^10.8.1
+        version: 10.8.1
       eslint:
         specifier: ^10.10.0
         version: 10.10.0(jiti@2.7.0)

@@ -249,7 +249,11 @@ export class ConversationEngine {
         throw new Error(`${this.label()} did not accept the approval response`);
       }
       this.store.resolveApprovalForRuntime(this.options.runtime.id, approval.requestId, this.now());
-      this.store.updateRun(run.id, { status: "running", updatedAt: this.now() });
+      // The assistant may already have finished the run while we awaited its ack;
+      // only move a still-waiting run back to running.
+      if (this.store.run(run.id)?.status === "waiting_approval") {
+        this.store.updateRun(run.id, { status: "running", updatedAt: this.now() });
+      }
       return this.store.view(run.id)!;
     } finally {
       this.approvalResponses.delete(approval.requestId);

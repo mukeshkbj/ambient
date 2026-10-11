@@ -3,6 +3,7 @@ import type { AppConfig, RuntimeConfigEntry } from "../config.js";
 import { HermesClient, HermesConnection } from "../hermes.js";
 import type { AmbientStore } from "../store.js";
 import type { RunView, RuntimeState } from "../types.js";
+import { DemoClient } from "./demo.js";
 import { GrokBotClient } from "./grokbot.js";
 import { InstinctClient } from "./instinct.js";
 import { MuseClient } from "./muse.js";
@@ -330,8 +331,17 @@ function instinctRuntime(item: RuntimeConfigEntry, env: Record<string, string | 
   return polledRuntime(item, env, store, client);
 }
 
+function demoRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore): RuntimeEntry {
+  const client = new DemoClient({
+    ...(item.options?.script ? { script: item.options.script } : {}),
+    ...(numberOption(item, "speedMs") ? { speedMs: numberOption(item, "speedMs")! } : {})
+  });
+  return polledRuntime(item, env, store, client);
+}
+
 const ADAPTERS: Record<string, (item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore) => RuntimeEntry> = {
   hermes: hermesRuntime,
+  demo: demoRuntime,
   openclaw: openclawRuntime,
   grokbot: grokbotRuntime,
   muse: museRuntime,

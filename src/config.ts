@@ -24,7 +24,7 @@ const EnvSchema = z.object({
   HERMES_RUNTIME_ID: z.string().min(1).default("local"),
   HERMES_RUNTIME_LABEL: z.string().min(1).default("My Hermes"),
   HERMES_RUNTIME_KIND: z.enum(["local", "cloud"]).default("local"),
-  AMBIENT_DATA_DIR: z.string().min(1).default(".hermes-ambient"),
+  AMBIENT_DATA_DIR: z.string().min(1).default(".ambient"),
   AMBIENT_RUNTIMES_FILE: z.string().min(1).optional(),
   AMBIENT_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
   AMBIENT_ACCESS_TOKEN: z.string().min(16).optional(),
