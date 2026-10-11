@@ -8,10 +8,13 @@ credentials and private transcripts out of the repository.
 
 - Multi-runtime registry: four adapters (Bedrock, Hermes, OpenClaw, Demo) build
   from one `runtimes.json`; `/healthz` reports each runtime's state and
-  capabilities; selection is sticky via `select_assistant`.
-- Eleven neutral MCP tools over authenticated Streamable HTTP (`2025-11-25`),
-  including `dashboard`, which serves a `ui://ambient/dashboard` MCP App
-  (`text/html;profile=mcp-app`) plus a full structured snapshot.
+  capabilities; selection is sticky via `agents` (`use`).
+- Seven customer-intent MCP tools over authenticated Streamable HTTP
+  (`2025-11-25`, SSE responses so in-call elicitation has a channel):
+  `delegate`, `status`, `approve`, `stop`, `agents`, `briefing`, and
+  `dashboard`, which serves `ui://ambient/dashboard` (`text/html;profile=mcp-app`)
+  plus a full structured snapshot. Task results carry
+  `_meta.ui.resourceUri` = `ui://ambient/task`.
 - `pnpm check:runtime` ran live against local HTTP endpoints for `townie` and
   `muse` (adapters removed 2026-10-11; historical receipts are in git history).
 - Contract tests pin each adapter's wire shape: OpenClaw `connect`/`hello-ok`
@@ -21,6 +24,12 @@ credentials and private transcripts out of the repository.
 - Engine honesty: offline runtimes mark active work `unknown`; approval ids are
   runtime-namespaced; unsupported controls (steer/cancel/approvals on adapters
   without them) fail with explicit errors.
+- Voice contract (2026-10-11): `delegate` → bounded wait → `waiting_approval`
+  result speaks the ask and ends with "Say approve to allow it once, or deny";
+  `approve` resolved it and waited to the completed answer. `stop` reports
+  "Nothing is running" once a run is `unknown`. Verified live over
+  `pnpm demo` with a raw SDK client — no id strings appear in any `speech`
+  field (golden tests pin this).
 - `pnpm scan` green: typecheck, eslint, knip, 71 tests.
 - The installed Hermes gateway accepts the pinned WebSocket connection, replays
   observed events by sequence, and surfaces replay gaps as `unknown` work.

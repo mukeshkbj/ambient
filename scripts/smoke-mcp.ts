@@ -11,8 +11,9 @@ const client = new Client({ name: "hermes-ambient-smoke", version: "0.1.0" });
 try {
   await client.connect(transport as Parameters<typeof client.connect>[0]);
   const tools = await client.listTools();
-  const conversations = await client.callTool({ name: "list_conversations", arguments: {} });
-  console.log(JSON.stringify({ endpoint, tools: tools.tools.map(tool => tool.name), conversations }, null, 2));
+  const status = await client.callTool({ name: "status", arguments: {} });
+  const agents = await client.callTool({ name: "agents", arguments: {} });
+  console.log(JSON.stringify({ endpoint, tools: tools.tools.map(tool => tool.name), status, agents }, null, 2));
 } finally {
   await client.close();
 }

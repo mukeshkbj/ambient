@@ -10,6 +10,14 @@ function fakeRegistry(store: AmbientStore): RuntimeRegistry {
   return new RuntimeRegistry(store, [fakeRuntimeEntry("local", "My Hermes", fakeAssistant().client, store)]);
 }
 
+/** Read the last JSON-RPC message out of an SSE response body. */
+function parseSse(body: string): unknown {
+  const data = body.split("\n")
+    .filter(line => line.startsWith("data:"))
+    .map(line => JSON.parse(line.slice(5).trim()) as unknown);
+  return data[data.length - 1];
+}
+
 async function listen(server: ReturnType<typeof createAmbientHttpServer>): Promise<number> {
   await new Promise<void>(resolve => server.server.listen(0, "127.0.0.1", resolve));
   const address = server.server.address();
@@ -48,21 +56,17 @@ describe("Ambient HTTP bridge", () => {
     await client.connect(transport as Parameters<typeof client.connect>[0]);
     const tools = await client.listTools();
     expect(tools.tools.map(tool => tool.name)).toEqual([
-      "ask",
-      "get_work",
-      "list_assistants",
-      "select_assistant",
-      "list_conversations",
-      "select_conversation",
-      "steer_work",
-      "cancel_work",
-      "list_approvals",
-      "dashboard",
-      "respond_to_approval"
+      "delegate",
+      "status",
+      "approve",
+      "stop",
+      "agents",
+      "briefing",
+      "dashboard"
     ]);
-    const result = await client.callTool({ name: "list_conversations", arguments: {} });
+    const result = await client.callTool({ name: "status", arguments: {} });
     expect(result.isError).not.toBe(true);
-    expect(result.structuredContent).toMatchObject({ runtime: { id: "local" }, conversations: [], work: [] });
+    expect(result.structuredContent).toMatchObject({ status: "idle" });
     await client.close();
   });
 
@@ -80,7 +84,8 @@ describe("Ambient HTTP bridge", () => {
       })
     });
     expect(initialize.status).toBe(200);
-    const payload = await initialize.json() as { result?: { protocolVersion?: string } };
+    expect(initialize.headers.get("content-type")).toContain("text/event-stream");
+    const payload = parseSse(await initialize.text()) as { result?: { protocolVersion?: string } };
     expect(payload.result?.protocolVersion).toBe("2025-11-25");
     const sessionId = initialize.headers.get("mcp-session-id");
     expect(sessionId).toBeTruthy();
@@ -96,8 +101,8 @@ describe("Ambient HTTP bridge", () => {
       body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list", params: {} })
     });
     expect(tools.status).toBe(200);
-    const toolsPayload = await tools.json() as { result?: { tools?: unknown[] } };
-    expect(toolsPayload.result?.tools).toHaveLength(11);
+    const toolsPayload = parseSse(await tools.text()) as { result?: { tools?: unknown[] } };
+    expect(toolsPayload.result?.tools).toHaveLength(7);
     const deleted = await fetch(`http://127.0.0.1:${port}/mcp`, { method: "DELETE", headers: { "mcp-session-id": sessionId! } });
     expect([200, 204]).toContain(deleted.status);
   });

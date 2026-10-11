@@ -27,6 +27,7 @@ const EnvSchema = z.object({
   AMBIENT_DATA_DIR: z.string().min(1).default(".ambient"),
   AMBIENT_RUNTIMES_FILE: z.string().min(1).optional(),
   AMBIENT_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
+  AMBIENT_ASK_WAIT_MS: z.coerce.number().int().nonnegative().default(6000),
   AMBIENT_ACCESS_TOKEN: z.string().min(16).optional(),
   ALLOW_UNAUTHENTICATED: z.string().default("false").transform(value => value === "true"),
   CONNECTOR_TOKEN: z.string().min(16).optional(),
@@ -45,6 +46,7 @@ export type AppConfig = {
   defaultRuntimeId: string;
   dataDir: string;
   retentionDays: number;
+  askWaitMs: number;
   accessToken?: string;
   allowUnauthenticated: boolean;
   alexaSkillId?: string;
@@ -116,6 +118,7 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     defaultRuntimeId: runtimes.find(entry => entry.default)?.id ?? runtimes[0]!.id,
     dataDir: parsed.AMBIENT_DATA_DIR,
     retentionDays: parsed.AMBIENT_RETENTION_DAYS,
+    askWaitMs: parsed.AMBIENT_ASK_WAIT_MS,
     ...(parsed.AMBIENT_ACCESS_TOKEN ? { accessToken: parsed.AMBIENT_ACCESS_TOKEN } : {}),
     allowUnauthenticated: parsed.ALLOW_UNAUTHENTICATED,
     ...(parsed.ALEXA_SKILL_ID ? { alexaSkillId: parsed.ALEXA_SKILL_ID } : {}),

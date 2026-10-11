@@ -32,6 +32,16 @@ function conversation(row: Row): Conversation {
   };
 }
 
+function stepsList(value: unknown): string[] {
+  if (typeof value !== "string" || !value) return [];
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 function run(row: Row): Run {
   return {
     id: text(row.id),
@@ -40,6 +50,8 @@ function run(row: Row): Run {
     durableSessionId: text(row.durable_session_id),
     liveSessionId: text(row.live_session_id),
     instruction: text(row.instruction),
+    ...(optionalText(row.title) ? { title: text(row.title) } : {}),
+    steps: stepsList(row.steps_json),
     status: text(row.status) as RunStatus,
     ...(optionalText(row.answer) ? { answer: text(row.answer) } : {}),
     ...(optionalText(row.progress) ? { progress: text(row.progress) } : {}),
@@ -117,6 +129,8 @@ export class AmbientStore {
         durable_session_id TEXT NOT NULL,
         live_session_id TEXT NOT NULL,
         instruction TEXT NOT NULL,
+        title TEXT,
+        steps_json TEXT,
         status TEXT NOT NULL,
         answer TEXT,
         progress TEXT,
@@ -165,10 +179,23 @@ export class AmbientStore {
     this.db.prepare("UPDATE conversations SET live_session_id = NULL WHERE runtime_id = ?").run(runtimeId);
   }
 
+  private migrate(): void {
+    this.migrateRuns();
+    this.migrateApprovals();
+  }
+
+  private migrateRuns(): void {
+    const columns = new Set(
+      (this.db.prepare("SELECT name FROM pragma_table_info('runs')").all() as Row[]).map(column => text(column.name))
+    );
+    if (!columns.has("title")) this.db.exec("ALTER TABLE runs ADD COLUMN title TEXT");
+    if (!columns.has("steps_json")) this.db.exec("ALTER TABLE runs ADD COLUMN steps_json TEXT");
+  }
+
   // approvals.request_id used to carry a global UNIQUE constraint, which breaks
   // once two runtimes can raise the same request id. Rebuild the table when a
   // single-column index on request_id survives from an older schema.
-  private migrate(): void {
+  private migrateApprovals(): void {
     const indexes = this.db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'approvals'").all() as Row[];
     const stale = indexes.some(index => {
       const columns = this.db.prepare("SELECT name FROM pragma_index_info(?)").all(text(index.name)) as Row[];
@@ -298,9 +325,9 @@ export class AmbientStore {
   createRun(value: NewRun): Run {
     this.db.prepare(`
       INSERT INTO runs
-        (id, conversation_id, runtime_id, durable_session_id, live_session_id, instruction, status,
-         answer, progress, failure, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, conversation_id, runtime_id, durable_session_id, live_session_id, instruction, title, steps_json,
+         status, answer, progress, failure, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       value.id,
       value.conversationId,
@@ -308,6 +335,8 @@ export class AmbientStore {
       value.durableSessionId,
       value.liveSessionId,
       value.instruction,
+      value.title ?? null,
+      JSON.stringify(value.steps ?? []),
       value.status,
       value.answer ?? null,
       value.progress ?? null,
@@ -328,6 +357,50 @@ export class AmbientStore {
       "SELECT * FROM runs WHERE runtime_id = ? ORDER BY updated_at DESC LIMIT ?"
     ).all(runtimeId, limit) as Row[];
     return rows.map(run);
+  }
+
+  private placeholders(count: number): string {
+    return Array.from({ length: count }, () => "?").join(", ");
+  }
+
+  /** Latest runs across runtimes in one query — no per-runtime fan-out. */
+  recentRuns(runtimeIds: RuntimeId[], limit = 25, since?: string): Run[] {
+    if (runtimeIds.length === 0) return [];
+    const clause = `runtime_id IN (${this.placeholders(runtimeIds.length)})`;
+    const rows = since
+      ? this.db.prepare(`SELECT * FROM runs WHERE ${clause} AND updated_at >= ? ORDER BY updated_at DESC LIMIT ?`)
+        .all(...runtimeIds, since, limit) as Row[]
+      : this.db.prepare(`SELECT * FROM runs WHERE ${clause} ORDER BY updated_at DESC LIMIT ?`)
+        .all(...runtimeIds, limit) as Row[];
+    return rows.map(run);
+  }
+
+  /** Every open approval for a set of runtimes, in one query. */
+  openApprovals(runtimeIds: RuntimeId[]): Approval[] {
+    if (runtimeIds.length === 0) return [];
+    const rows = this.db.prepare(`
+      SELECT * FROM approvals WHERE resolved_at IS NULL
+        AND runtime_id IN (${this.placeholders(runtimeIds.length)}) ORDER BY created_at
+    `).all(...runtimeIds) as Row[];
+    return rows.map(approval);
+  }
+
+  /** Runs with their pending approvals attached, without a per-run lookup. */
+  recentRunViews(runtimeIds: RuntimeId[], limit = 25, since?: string): RunView[] {
+    const runs = this.recentRuns(runtimeIds, limit, since);
+    const pending = this.openApprovals(runtimeIds);
+    const byRun = new Map<string, Approval>();
+    for (const item of pending) if (!byRun.has(item.runId)) byRun.set(item.runId, item);
+    return runs.map(value => this.asView(value, byRun.get(value.id)));
+  }
+
+  private asView(value: Run, pending?: Approval): RunView {
+    return {
+      ...value,
+      title: value.title ?? value.instruction,
+      steps: value.steps ?? [],
+      ...(pending ? { approval: pending } : {})
+    };
   }
 
   activeRunByLiveSession(runtimeId: RuntimeId, liveSessionId: string): Run | undefined {
@@ -402,15 +475,21 @@ export class AmbientStore {
   }): Run {
     const current = this.run(id);
     if (!current) throw new Error(`Run ${id} not found`);
+    const progress = changes.progress === undefined ? current.progress : changes.progress ?? undefined;
+    // Keep a bounded step history so task views can show what the agent has done.
+    const steps = progress && progress !== current.progress
+      ? [...(current.steps ?? []), progress].slice(-30)
+      : current.steps ?? [];
     this.db.prepare(`
-      UPDATE runs SET status = ?, answer = ?, progress = ?, failure = ?, live_session_id = ?, updated_at = ?
+      UPDATE runs SET status = ?, answer = ?, progress = ?, failure = ?, live_session_id = ?, steps_json = ?, updated_at = ?
       WHERE id = ?
     `).run(
       changes.status ?? current.status,
       changes.answer === undefined ? current.answer ?? null : changes.answer,
-      changes.progress === undefined ? current.progress ?? null : changes.progress,
+      progress ?? null,
       changes.failure === undefined ? current.failure ?? null : changes.failure,
       changes.liveSessionId ?? current.liveSessionId,
+      JSON.stringify(steps),
       changes.updatedAt,
       id
     );
@@ -473,7 +552,7 @@ export class AmbientStore {
     const value = this.run(runId);
     if (!value) return undefined;
     const pending = this.listApprovals(value.runtimeId).find(item => item.runId === runId);
-    return pending ? { ...value, approval: pending } : value;
+    return this.asView(value, pending);
   }
 
   appendTranscript(runtimeId: RuntimeId, durableSessionId: string, role: string, json: string): void {

@@ -22,6 +22,7 @@ export type AmbientHttpDependencies = {
   auth?: OAuthProvider;
   accessToken?: string;
   allowUnauthenticated?: boolean;
+  askWaitMs?: number;
   alexa?: {
     applicationId?: string;
     auth?: OAuthProvider;
@@ -231,7 +232,11 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
         return;
       }
       try {
-        const result = await handleAlexaRequest(parsed, { registry: dependencies.registry, ...dependencies.alexa });
+        const result = await handleAlexaRequest(parsed, {
+          registry: dependencies.registry,
+          ...(dependencies.askWaitMs !== undefined ? { askWaitMs: dependencies.askWaitMs } : {}),
+          ...dependencies.alexa
+        });
         writeJson(response, 200, result);
       } catch (error) {
         if (error instanceof AlexaRequestError) {
@@ -266,11 +271,16 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
       return;
     }
     if (!entry) {
-      const mcp = createMcpServer({ registry: dependencies.registry });
+      const mcp = createMcpServer({
+        registry: dependencies.registry,
+        ...(dependencies.askWaitMs !== undefined ? { askWaitMs: dependencies.askWaitMs } : {})
+      });
       const ref: { current?: McpSession } = {};
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
-        enableJsonResponse: true,
+        // SSE responses on every POST so in-tool server→client requests
+        // (elicitation) have a channel to the caller.
+        enableJsonResponse: false,
         onsessioninitialized: id => {
           if (ref.current) sessions.set(id, ref.current);
         },
@@ -356,6 +366,7 @@ export async function startFromEnvironment(env: Record<string, string | undefine
     ...(config.accessToken ? { accessToken: config.accessToken } : {}),
     ...(connectors.size > 0 ? { connectors } : {}),
     ...(alexa ? { alexa } : {}),
+    askWaitMs: config.askWaitMs,
     allowUnauthenticated: !auth && !config.accessToken && config.allowUnauthenticated
   });
   await new Promise<void>(resolve => http.server.listen(config.port, "0.0.0.0", resolve));

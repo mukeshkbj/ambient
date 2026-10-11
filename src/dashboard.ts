@@ -8,16 +8,11 @@ export type DashboardSnapshot = {
   approvals: unknown[];
 };
 
-/** One call, whole view: everything the dashboard renders comes from the engines. */
+/** One call, whole view: batched store reads, no per-runtime fan-out. */
 export function dashboardSnapshot(registry: RuntimeRegistry): DashboardSnapshot {
   const assistants = registry.list();
-  const work = assistants
-    .flatMap(item => registry.entry(item.id)!.engine.listRuns(10).map(run => ({ ...run, assistant: item.label })))
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-    .slice(0, 25);
-  const approvals = assistants
-    .flatMap(item => registry.entry(item.id)!.engine.listApprovals().map(approval => ({ ...approval, assistant: item.label })))
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const work = registry.recentRuns(25).map(run => ({ ...run, assistant: registry.label(run.runtimeId) }));
+  const approvals = registry.pendingApprovals().map(item => ({ ...item.approval, assistant: item.entry.descriptor.label }));
   return { generatedAt: new Date().toISOString(), assistants, work, approvals };
 }
 
@@ -80,15 +75,46 @@ const ICONS=${JSON.stringify(STATUS_ICON)};
 function render(d){
  document.getElementById("assistants").innerHTML=d.assistants.map(a=>
   \`<button class="chip\${a.selected?" sel":""}" data-id="\${esc(a.id)}" title="\${esc(a.id)} · \${esc(a.adapter)}"><span class="dot \${esc(a.state)}"></span>\${esc(a.label)}</button>\`).join("");
- document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{call("select_assistant",{assistant:c.dataset.id}).then(refresh).catch(showErr);});
+ document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{call("agents",{use:c.dataset.id}).then(refresh).catch(showErr);});
  const ap=d.approvals||[];document.getElementById("approvalsSec").style.display=ap.length?"":"none";
  document.getElementById("approvals").innerHTML=ap.map(a=>\`<div class="ap"><span class="ic waiting_approval">!</span><span class="cmd" title="\${esc(a.description||a.command)}"><b>\${esc(a.assistant)}</b> wants to \${esc(a.command)}</span><button data-ap="\${esc(a.id)}" data-d="once">Approve once</button><button class="deny" data-ap="\${esc(a.id)}" data-d="deny">Deny</button></div>\`).join("");
- document.querySelectorAll("[data-ap]").forEach(b=>b.onclick=()=>{call("respond_to_approval",{approvalId:b.dataset.ap,decision:b.dataset.d}).then(refresh).catch(showErr);});
+ document.querySelectorAll("[data-ap]").forEach(b=>b.onclick=()=>{call("approve",{approvalId:b.dataset.ap,decision:b.dataset.d}).then(refresh).catch(showErr);});
  const w=d.work||[];document.getElementById("runs").innerHTML=w.length?w.map(r=>\`<div class="row"><span class="ic \${esc(r.status)}">\${ICONS[r.status]||"?"}</span><span class="ins"><b>\${esc(r.assistant)}</b> \${esc(r.instruction)}\${r.answer?'<span class="ans">'+esc(r.answer)+"</span>":""}\${r.failure?'<span class="ans" style="color:var(--bad)">'+esc(r.failure)+"</span>":""}</span><span class="meta">\${ago(r.updatedAt)}</span></div>\`).join(""):'<div class="empty">No work yet — ask something below.</div>';
 }
 function showErr(e){document.getElementById("err").textContent=e.message||String(e);setTimeout(()=>document.getElementById("err").textContent="",6e3);}
 function refresh(){call("dashboard").then(r=>{if(r&&r.structuredContent)render(r.structuredContent);}).catch(()=>{});}
 document.getElementById("ask").onsubmit=e=>{e.preventDefault();const q=document.getElementById("q");if(!q.value.trim())return;
- call("ask",{text:q.value.trim()}).then(()=>{q.value="";refresh();}).catch(showErr);};
+ call("delegate",{task:q.value.trim()}).then(()=>{q.value="";refresh();}).catch(showErr);};
 refresh();setInterval(refresh,2500);
+</script></body></html>`;
+
+export const TASK_HTML = `<!doctype html>
+<html><head><meta charset="utf-8"><style>
+:root{color-scheme:dark;--bg:#0c0d10;--panel:#14161a;--line:#23262c;--fg:#e6e8ec;--dim:#8a909c;--accent:#7cc7ff;--ok:#5ad48a;--bad:#ff7a7a;--warn:#ffc66e}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,system-ui,sans-serif;padding:14px;display:flex;flex-direction:column;gap:8px}
+h1{font-size:15px;font-weight:600}
+.status{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.status.waiting_approval{color:var(--warn)}.status.completed{color:var(--ok)}.status.failed{color:var(--bad)}.status.running,.status.accepted,.status.queued{color:var(--accent)}
+ol{margin:0;padding-left:18px;color:var(--dim);font-size:12px;display:flex;flex-direction:column;gap:2px}
+.answer{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
+.approval{border:1px solid var(--warn);border-radius:8px;padding:8px 10px;font-size:13px}
+</style></head><body>
+<h1 id="title">Task</h1><div class="status" id="status"></div><ol id="steps"></ol>
+<div class="approval" id="approval" style="display:none"></div>
+<div class="answer" id="answer" style="display:none"></div>
+<script>
+addEventListener("message",e=>{const m=e.data;if(!m||m.jsonrpc!=="2.0")return;
+ if(m.method==="ui/notifications/tool-result"&&m.params&&m.params.structuredContent)render(m.params.structuredContent);});
+parent.postMessage({jsonrpc:"2.0",method:"ui/notifications/initialized",params:{}},"*");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function render(d){const t=d.task||{};
+ document.getElementById("title").textContent=t.title||"Task";
+ const s=document.getElementById("status");s.textContent=(t.status||"").replace("_"," ");s.className="status "+(t.status||"");
+ document.getElementById("steps").innerHTML=(t.steps||[]).map(x=>"<li>"+esc(x)+"</li>").join("");
+ const ap=(d.approvals||[])[0];const apEl=document.getElementById("approval");
+ if(ap){apEl.style.display="";apEl.innerHTML="<b>"+esc(ap.agent)+"</b> is asking: "+esc(ap.description||ap.command);}
+ else apEl.style.display="none";
+ const a=document.getElementById("answer");
+ if(t.answer||t.failure){a.style.display="";a.textContent=t.answer||t.failure;}else a.style.display="none";}
 </script></body></html>`;

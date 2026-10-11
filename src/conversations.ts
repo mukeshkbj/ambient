@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { EventEmitter } from "node:events";
 import type {
   ActiveSession,
   AssistantClient,
@@ -8,13 +9,22 @@ import type {
   SavedSession
 } from "./runtimes/types.js";
 import type { AmbientStore, NewConversation } from "./store.js";
-import type { Approval, Conversation, RunStatus, RunView, Runtime, RuntimeState } from "./types.js";
+import type { Approval, Conversation, Run, RunStatus, RunView, Runtime, RuntimeState } from "./types.js";
+import { titleFor } from "./voice.js";
 
 export type ConversationEngineOptions = {
   runtime: Runtime;
   now?: () => string;
   id?: () => string;
 };
+
+export type AskOptions = {
+  /** Bounded wait after submitting: return early when the run settles. */
+  waitMs?: number;
+};
+
+// Statuses a voice client can speak immediately — everything else is "still working".
+const SPEAKABLE: ReadonlySet<RunStatus> = new Set(["completed", "failed", "cancelled", "waiting_approval", "unknown"]);
 
 function value(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
@@ -59,6 +69,7 @@ export class ConversationEngine {
   private readonly unsubscribeReplayGap: () => void;
   private readonly approvalResponses = new Set<string>();
   private readonly replayGapSessions = new Set<string>();
+  private readonly changes = new EventEmitter();
 
   constructor(
     private readonly assistant: AssistantClient,
@@ -74,6 +85,7 @@ export class ConversationEngine {
     this.unsubscribeState = assistant.onConnectionState(state => {
       if (state === "offline") {
         this.store.markActiveRunsUnknown(this.options.runtime.id, this.now(), `${this.label()} disconnected; the work outcome is unknown`);
+        this.emitChanged("*");
       }
       this.setRuntimeState(state);
     });
@@ -81,7 +93,7 @@ export class ConversationEngine {
       const run = this.store.activeRunByLiveSession(this.options.runtime.id, gap.sessionId);
       if (run && !terminal(run.status)) {
         this.replayGapSessions.add(gap.sessionId);
-        this.store.updateRun(run.id, {
+        this.updateRun(run.id, {
           status: "unknown",
           progress: `${this.label()} replay history was truncated; the work outcome is unknown`,
           updatedAt: this.now()
@@ -91,9 +103,29 @@ export class ConversationEngine {
   }
 
   close(): void {
+    this.changes.removeAllListeners();
     this.unsubscribeEvent();
     this.unsubscribeState();
     this.unsubscribeReplayGap();
+  }
+
+  private emitChanged(runId: string): void {
+    this.changes.emit("run", runId);
+  }
+
+  /** Store writes funnel through here so waiters and live views see every update. */
+  private updateRun(runId: string, changes: Parameters<AmbientStore["updateRun"]>[1]): Run {
+    const run = this.store.updateRun(runId, changes);
+    this.emitChanged(runId);
+    return run;
+  }
+
+  /** Fires with the run id on every run update, or "*" for bulk changes. */
+  onRunChanged(listener: (runId: string) => void): () => void {
+    this.changes.on("run", listener);
+    return () => {
+      this.changes.off("run", listener);
+    };
   }
 
   get capabilities(): RuntimeCapabilities {
@@ -152,7 +184,7 @@ export class ConversationEngine {
     return this.store.updateConversation(conversationId, { selected: true, updatedAt: this.now() });
   }
 
-  async ask(text: string, conversationId?: string, newConversation = false): Promise<RunView> {
+  async ask(text: string, conversationId?: string, newConversation = false, options: AskOptions = {}): Promise<RunView> {
     const instruction = text.trim();
     if (!instruction) throw new Error(`An instruction for ${this.label()} is required`);
     const conversation = await this.ensureConversation(conversationId, newConversation);
@@ -171,6 +203,7 @@ export class ConversationEngine {
       durableSessionId: conversation.durableSessionId,
       liveSessionId,
       instruction,
+      title: titleFor(instruction),
       status: "queued",
       createdAt: timestamp,
       updatedAt: timestamp
@@ -180,21 +213,60 @@ export class ConversationEngine {
       const response = await this.assistant.submitPrompt(liveSessionId, instruction);
       const current = this.store.run(run.id)!;
       if (current.status === "queued") {
-        this.store.updateRun(run.id, {
+        this.updateRun(run.id, {
           status: resultStatus(response) === "streaming" ? "running" : "accepted",
           updatedAt: this.now()
         });
       }
       this.setRuntimeState("online");
     } catch (error) {
-      this.store.updateRun(run.id, {
+      this.updateRun(run.id, {
         status: "failed",
         failure: error instanceof Error ? error.message : String(error),
         updatedAt: this.now()
       });
       throw error;
     }
-    return this.store.view(run.id)!;
+    return this.waitForRun(run.id, options.waitMs ?? 0);
+  }
+
+  /**
+   * Block until the run reaches a speakable state or the deadline passes —
+   * event-driven, not polled.
+   */
+  waitForRun(runId: string, waitMs: number): Promise<RunView> {
+    const view = this.store.view(runId);
+    if (!view) return Promise.reject(new Error("Work item not found"));
+    if (waitMs <= 0 || SPEAKABLE.has(view.status)) return Promise.resolve(view);
+    return new Promise((resolve, reject) => {
+      const finish = () => {
+        clearTimeout(timer);
+        this.changes.off("run", onChange);
+        const latest = this.store.view(runId);
+        if (latest) resolve(latest);
+        else reject(new Error("Work item not found"));
+      };
+      const onChange = (changedId: string) => {
+        if (changedId !== runId && changedId !== "*") return;
+        const latest = this.store.view(runId);
+        if (!latest || SPEAKABLE.has(latest.status)) finish();
+      };
+      const timer = setTimeout(finish, waitMs);
+      this.changes.on("run", onChange);
+    });
+  }
+
+  /**
+   * The run a bare `delegate` would have to join: the active run on the
+   * conversation the next ask() would pick, without creating anything.
+   */
+  activeRunForNextAsk(conversationId?: string): RunView | undefined {
+    const conversation = conversationId
+      ? this.requireConversation(conversationId)
+      : this.store.selectedConversation(this.options.runtime.id);
+    if (!conversation) return undefined;
+    const run = this.store.activeRunForConversation(this.options.runtime.id, conversation.id);
+    return run ? this.store.view(run.id) : undefined;
   }
 
   getWork(runId: string): RunView {
@@ -212,7 +284,7 @@ export class ConversationEngine {
     if (!this.assistant.steer) throw new Error(`${this.label()} does not support steering work`);
     await this.assistant.steer(run.liveSessionId, text);
     if (run.status === "queued" || run.status === "accepted") {
-      this.store.updateRun(run.id, { status: "running", updatedAt: this.now() });
+      this.updateRun(run.id, { status: "running", updatedAt: this.now() });
     }
     return this.store.view(run.id)!;
   }
@@ -224,7 +296,7 @@ export class ConversationEngine {
     if (!this.assistant.interrupt) throw new Error(`${this.label()} does not support cancelling work`);
     const response = await this.assistant.interrupt(run.liveSessionId);
     const status = resultStatus(response);
-    this.store.updateRun(run.id, {
+    this.updateRun(run.id, {
       status: status === "interrupted" ? "cancelled" : "cancel_requested",
       updatedAt: this.now()
     });
@@ -249,10 +321,11 @@ export class ConversationEngine {
         throw new Error(`${this.label()} did not accept the approval response`);
       }
       this.store.resolveApprovalForRuntime(this.options.runtime.id, approval.requestId, this.now());
+      this.emitChanged(run.id);
       // The assistant may already have finished the run while we awaited its ack;
       // only move a still-waiting run back to running.
       if (this.store.run(run.id)?.status === "waiting_approval") {
-        this.store.updateRun(run.id, { status: "running", updatedAt: this.now() });
+        this.updateRun(run.id, { status: "running", updatedAt: this.now() });
       }
       return this.store.view(run.id)!;
     } finally {
@@ -269,7 +342,7 @@ export class ConversationEngine {
     if (event.type === "approval.request") {
       const requestId = value(event.payload.request_id);
       if (!requestId) {
-        this.store.updateRun(run.id, { progress: `${this.label()} sent an approval without a request identity`, updatedAt: timestamp });
+        this.updateRun(run.id, { progress: `${this.label()} sent an approval without a request identity`, updatedAt: timestamp });
         return;
       }
       const existing = this.store.approvalForRuntime(this.options.runtime.id, requestId);
@@ -289,27 +362,27 @@ export class ConversationEngine {
         createdAt: timestamp
       };
       this.store.createOrUpdateApproval(approval);
-      this.store.updateRun(run.id, { status: "waiting_approval", progress: approval.description ?? approval.command, updatedAt: timestamp });
+      this.updateRun(run.id, { status: "waiting_approval", progress: approval.description ?? approval.command, updatedAt: timestamp });
       return;
     }
     if (event.type === "message.complete") {
       const status = value(event.payload.status);
       const answer = eventText(event) ?? `${this.label()} completed the request`;
       if (run.status === "cancel_requested") {
-        this.store.updateRun(run.id, { status: "cancelled", answer, updatedAt: timestamp });
+        this.updateRun(run.id, { status: "cancelled", answer, updatedAt: timestamp });
       } else if (status === "error" || value(event.payload.error)) {
-        this.store.updateRun(run.id, { status: "failed", answer, failure: value(event.payload.error) ?? answer, updatedAt: timestamp });
+        this.updateRun(run.id, { status: "failed", answer, failure: value(event.payload.error) ?? answer, updatedAt: timestamp });
       } else if (status === "cancelled" || status === "canceled") {
-        this.store.updateRun(run.id, { status: "cancelled", answer, updatedAt: timestamp });
+        this.updateRun(run.id, { status: "cancelled", answer, updatedAt: timestamp });
       } else {
-        this.store.updateRun(run.id, { status: "completed", answer, updatedAt: timestamp });
+        this.updateRun(run.id, { status: "completed", answer, updatedAt: timestamp });
       }
       this.store.resolveApprovalsForRun(run.id, timestamp);
       return;
     }
     if (["message.start", "message.delta", "message.interim", "tool.start", "tool.complete", "status.update"].includes(event.type)) {
       const progress = eventText(event) ?? value(event.payload.name) ?? value(event.payload.kind);
-      this.store.updateRun(run.id, {
+      this.updateRun(run.id, {
         ...(run.status === "queued" || run.status === "accepted" ? { status: "running" as const } : {}),
         ...(progress ? { progress } : {}),
         updatedAt: timestamp
@@ -371,11 +444,13 @@ export class ConversationEngine {
       this.store.resolveApprovalForRuntime(this.options.runtime.id, approval.requestId, timestamp);
       const run = this.store.run(approval.runId);
       if (run && !terminal(run.status)) {
-        this.store.updateRun(run.id, {
+        this.updateRun(run.id, {
           status: "unknown",
           progress: `${this.label()} resolved an approval outside Ambient; the work outcome is unknown`,
           updatedAt: timestamp
         });
+      } else if (run) {
+        this.emitChanged(run.id);
       }
     }
     if (pending.length > 0) this.replayGapSessions.delete(liveSessionId);
@@ -417,6 +492,7 @@ export class ConversationEngine {
       if ((session.status === "working" || session.status === "starting") && !this.replayGapSessions.has(session.id)) {
         this.store.markUnknownRunsRunning(this.options.runtime.id, existing.id, timestamp);
       }
+      this.emitChanged("*");
       return;
     }
     const timestamp = this.now();

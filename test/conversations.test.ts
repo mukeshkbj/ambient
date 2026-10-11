@@ -178,6 +178,58 @@ describe("ConversationEngine", () => {
     store.close();
   });
 
+  it("returns a fast answer inline when ask waits", async () => {
+    const hermes = fakeHermes();
+    const store = new AmbientStore();
+    const engine = new ConversationEngine(hermes.client, store, {
+      runtime: { id: "local", label: "My Hermes", kind: "local", state: "unknown", updatedAt: "2026-09-06T10:00:00.000Z" },
+      now: () => "2026-09-06T10:00:00.000Z",
+      id: (() => { let n = 0; return () => `id-${++n}`; })()
+    });
+    const pending = engine.ask("Quick question", undefined, true, { waitMs: 2_000 });
+    await new Promise(resolve => setTimeout(resolve, 10));
+    hermes.emit({ type: "message.complete", sessionId: "runtime-1", payload: { text: "Four lights.", status: "complete" } });
+    const run = await pending;
+    expect(run).toMatchObject({ status: "completed", answer: "Four lights." });
+    store.close();
+  });
+
+  it("returns a still-running view when the bounded wait expires", async () => {
+    const hermes = fakeHermes();
+    const store = new AmbientStore();
+    const engine = new ConversationEngine(hermes.client, store, {
+      runtime: { id: "local", label: "My Hermes", kind: "local", state: "unknown", updatedAt: "2026-09-06T10:00:00.000Z" },
+      now: () => "2026-09-06T10:00:00.000Z",
+      id: (() => { let n = 0; return () => `id-${++n}`; })()
+    });
+    const started = Date.now();
+    const run = await engine.ask("Slow task", undefined, true, { waitMs: 50 });
+    expect(Date.now() - started).toBeLessThan(2_000);
+    expect(run.status).toBe("running");
+    store.close();
+  });
+
+  it("surfaces waiting_approval inline inside the bounded wait", async () => {
+    const hermes = fakeHermes();
+    const store = new AmbientStore();
+    const engine = new ConversationEngine(hermes.client, store, {
+      runtime: { id: "local", label: "My Hermes", kind: "local", state: "unknown", updatedAt: "2026-09-06T10:00:00.000Z" },
+      now: () => "2026-09-06T10:00:00.000Z",
+      id: (() => { let n = 0; return () => `id-${++n}`; })()
+    });
+    const pending = engine.ask("Guarded task", undefined, true, { waitMs: 2_000 });
+    await new Promise(resolve => setTimeout(resolve, 10));
+    hermes.emit({
+      type: "approval.request",
+      sessionId: "runtime-1",
+      payload: { request_id: "ap-7", command: "restart demo", choices: ["once", "deny"] }
+    });
+    const run = await pending;
+    expect(run.status).toBe("waiting_approval");
+    expect(run.approval?.requestId).toBe("ap-7");
+    store.close();
+  });
+
   it("keeps work unknown after a replay gap until a completion arrives", async () => {
     const hermes = fakeHermes();
     const store = new AmbientStore();

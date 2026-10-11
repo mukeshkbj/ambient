@@ -4,7 +4,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 const endpoint = process.env.MCP_URL ?? "http://127.0.0.1:3000/mcp";
 const count = Math.max(1, Number(process.env.LATENCY_SAMPLES ?? 30));
 const token = process.env.MCP_ACCESS_TOKEN;
-const tools = (process.env.LATENCY_TOOLS ?? "list_conversations,get_work").split(",").map(name => name.trim()).filter(Boolean);
+const tools = (process.env.LATENCY_TOOLS ?? "status,agents").split(",").map(name => name.trim()).filter(Boolean);
 const transport = new StreamableHTTPClientTransport(new URL(endpoint), token ? {
   requestInit: { headers: { authorization: `Bearer ${token}` } }
 } : undefined);

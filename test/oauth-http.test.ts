@@ -57,7 +57,7 @@ describe("OAuth HTTP boundary", () => {
     const unauthorized = await fetch(`${server.base}/mcp`, {
       method: "POST",
       headers: { authorization: `Bearer ${service.access_token}`, "content-type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "list_conversations", arguments: {} } })
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "status", arguments: {} } })
     });
     expect(unauthorized.status).toBe(401);
   });

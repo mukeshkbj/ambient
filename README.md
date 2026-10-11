@@ -47,15 +47,16 @@ Hermes and OpenClaw need their gateways; the demo agent is fully offline).
 
 ## MCP surface
 
-Eleven neutral tools: `ask`, `get_work`, `list_assistants`, `select_assistant`,
-`list_conversations`, `select_conversation`, `steer_work`, `cancel_work`,
-`list_approvals`, `respond_to_approval`, and `dashboard` — a live MCP App
-(assistant switcher, work feed, one-tap approvals) in hosts that support
+Seven customer-intent tools: `delegate` (start or continue work), `status`
+(latest or named task — fuzzy-matched by title, never an id), `approve`
+(pending requests, answered in place through MCP elicitation when the client
+supports it), `stop`, `agents`, `briefing`, and `dashboard` — a live MCP App
+(agent switcher, work feed, one-tap approvals) in hosts that support
 `ui://` resources, and a full JSON snapshot everywhere else.
 
-`ask` routes to the selected assistant or one named per call; a sticky default
-is kept per server. Work and approval ids are exact and runtime-namespaced —
-never guessed.
+`delegate` routes to the selected agent or one named per call; a sticky default
+is kept per server. Every result is speakable: two sentences, outcome first,
+no ids — the same text an Alexa host can say verbatim.
 
 ## Alexa
 

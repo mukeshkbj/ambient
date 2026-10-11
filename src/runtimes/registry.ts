@@ -2,7 +2,7 @@ import { ConversationEngine } from "../conversations.js";
 import type { AppConfig, RuntimeConfigEntry } from "../config.js";
 import { HermesClient, HermesConnection } from "../hermes.js";
 import type { AmbientStore } from "../store.js";
-import type { RunView, RuntimeState } from "../types.js";
+import type { Approval, RunView, RuntimeState } from "../types.js";
 import { BedrockClient } from "./bedrock.js";
 import { DemoClient } from "./demo.js";
 import { OpenClawClient, OpenClawConnection } from "./openclaw.js";
@@ -27,6 +27,33 @@ const SELECTED_RUNTIME_KEY = "selected_runtime";
 function normalize(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
 }
+
+// Words people say around a task name that carry no matching signal.
+const STOPWORDS = new Set([
+  "the", "a", "an", "my", "to", "of", "for", "on", "in", "it", "its", "that", "this", "task", "work",
+  "job", "thing", "about", "agent", "agents", "assistant", "assistants", "please", "can", "could", "you",
+  "what", "whats", "what's", "is", "are", "any", "status", "did", "do", "does", "me", "with", "and", "or"
+]);
+
+function keywords(query: string): string[] {
+  return [...new Set(query.toLowerCase().split(/[^a-z0-9]+/).filter(token => token && !STOPWORDS.has(token)))];
+}
+
+/** Count of query tokens that match a token of the candidate text (prefix either way). */
+function score(text: string, tokens: string[]): number {
+  const words = text.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  return tokens.filter(token => words.some(word => word.startsWith(token) || token.startsWith(word))).length;
+}
+
+export type PendingApproval = {
+  approval: Approval;
+  entry: RuntimeEntry;
+};
+
+export type ApprovalMatch = {
+  match?: PendingApproval;
+  candidates: PendingApproval[];
+};
 
 export class RuntimeRegistry {
   private readonly entries = new Map<string, RuntimeEntry>();
@@ -113,10 +140,88 @@ export class RuntimeRegistry {
     return entry.engine;
   }
 
+  runtimeIds(): string[] {
+    return [...this.entries.keys()];
+  }
+
+  /** Recent runs across every runtime, newest first — one store query. */
+  recentRuns(limit = 25, since?: string): RunView[] {
+    return this.store.recentRunViews(this.runtimeIds(), limit, since);
+  }
+
   latestRun(): RunView | undefined {
-    const runs = [...this.entries.values()].flatMap(entry => entry.engine.listRuns(1));
-    runs.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
-    return runs[0];
+    return this.recentRuns(1)[0];
+  }
+
+  /** The run that most needs a human right now: something waiting on an approval. */
+  needsAttention(): RunView | undefined {
+    return this.recentRuns(50).find(run => run.status === "waiting_approval");
+  }
+
+  /**
+   * Fuzzy-find a run by words from its title or instruction — "the dinner
+   * booking" finds "Book Lupa for four…". Newest wins on a tie.
+   */
+  findRun(about: string): RunView | undefined {
+    const tokens = keywords(about);
+    if (tokens.length === 0) return undefined;
+    let best: RunView | undefined;
+    let bestScore = 0;
+    for (const run of this.recentRuns(50)) {
+      const matched = score(`${run.title} ${run.instruction}`, tokens);
+      if (matched > bestScore) {
+        best = run;
+        bestScore = matched;
+      }
+    }
+    return best;
+  }
+
+  /** Open approvals across every runtime, with the owning entry attached. */
+  pendingApprovals(): PendingApproval[] {
+    return this.store.openApprovals(this.runtimeIds()).flatMap(approval => {
+      const entry = this.entries.get(approval.runtimeId);
+      return entry ? [{ approval, entry }] : [];
+    });
+  }
+
+  /**
+   * Resolve which pending approval "about" refers to. No query matches only
+   * when exactly one is pending; several plausible matches stay ambiguous.
+   */
+  findApproval(about?: string): ApprovalMatch {
+    const candidates = this.pendingApprovals();
+    const tokens = about?.trim() ? keywords(about) : [];
+    if (tokens.length === 0) {
+      const only = candidates[0];
+      return candidates.length === 1 && only ? { match: only, candidates } : { candidates };
+    }
+    let best: PendingApproval | undefined;
+    let bestScore = 0;
+    let tied = false;
+    for (const candidate of candidates) {
+      const run = this.store.run(candidate.approval.runId);
+      const matched = score(
+        `${candidate.approval.command} ${candidate.approval.description ?? ""} ${run?.title ?? ""} ${run?.instruction ?? ""}`,
+        tokens
+      );
+      if (matched > bestScore) {
+        best = candidate;
+        bestScore = matched;
+        tied = false;
+      } else if (matched === bestScore && matched > 0) {
+        tied = true;
+      }
+    }
+    return best && !tied ? { match: best, candidates } : { candidates };
+  }
+
+  meta(key: string): string | undefined {
+    return this.store.getMeta(key);
+  }
+
+  setMeta(key: string, value: string): void {
+    this.store.setMeta(key, value);
   }
 
   connectors(): Map<string, { token: string; connection: ConnectorConnection }> {

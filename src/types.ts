@@ -39,6 +39,8 @@ export type Run = {
   durableSessionId: string;
   liveSessionId: string;
   instruction: string;
+  title?: string;
+  steps?: string[];
   status: RunStatus;
   answer?: string;
   progress?: string;
@@ -62,5 +64,7 @@ export type Approval = {
 };
 
 export type RunView = Run & {
+  title: string;
+  steps: string[];
   approval?: Approval;
 };

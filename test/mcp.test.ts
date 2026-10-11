@@ -6,7 +6,7 @@ import type { ConversationEngine } from "../src/conversations.js";
 import { fakeAssistant } from "./fake.js";
 
 describe("MCP surface", () => {
-  it("exposes semantic assistant controls without exposing runtime tools", () => {
+  it("exposes customer-intent tools without exposing internal plumbing", () => {
     const store = new AmbientStore();
     const engine = {
       ask: vi.fn(),
@@ -18,7 +18,9 @@ describe("MCP surface", () => {
       listApprovals: vi.fn(),
       respondToApproval: vi.fn(),
       runtime: vi.fn(),
-      listRuns: vi.fn()
+      listRuns: vi.fn(),
+      waitForRun: vi.fn(),
+      activeRunForNextAsk: vi.fn()
     };
     const entry: RuntimeEntry = {
       descriptor: { id: "local", label: "My Hermes", kind: "local", adapter: "fake", capabilities: fakeAssistant().client.capabilities },
@@ -31,19 +33,15 @@ describe("MCP surface", () => {
     const server = createMcpServer({ registry });
     const tools = (server as unknown as { _registeredTools: Record<string, unknown> })._registeredTools;
     expect(Object.keys(tools).sort()).toEqual([
-      "ask",
-      "cancel_work",
+      "agents",
+      "approve",
+      "briefing",
       "dashboard",
-      "get_work",
-      "list_approvals",
-      "list_assistants",
-      "list_conversations",
-      "respond_to_approval",
-      "select_assistant",
-      "select_conversation",
-      "steer_work"
+      "delegate",
+      "status",
+      "stop"
     ]);
-    expect((tools.dashboard as { _meta?: Record<string, unknown> })._meta).toMatchObject({ "ui/resourceUri": "ui://ambient/dashboard" });
+    expect((tools.dashboard as { _meta?: Record<string, unknown> })._meta).toMatchObject({ ui: { resourceUri: "ui://ambient/dashboard" } });
     store.close();
   });
 });

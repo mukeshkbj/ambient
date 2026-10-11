@@ -52,6 +52,8 @@ const run = (status: "accepted" | "running" | "completed" = "accepted") => ({
   durableSessionId: "durable-1",
   liveSessionId: "live-1",
   instruction: "check my day",
+  title: "check my day",
+  steps: [] as string[],
   status,
   ...(status === "completed" ? { answer: "Your day is clear." } : {}),
   createdAt: "2026-09-06T00:00:00.000Z",
@@ -66,8 +68,9 @@ describe("Alexa custom skill", () => {
     const deps = dependencies(fake);
 
     const asked = await handleAlexaRequest(request("AskIntent", { request: "check my day" }), deps);
-    expect(fake.ask).toHaveBeenCalledWith("check my day");
-    expect(asked.response.outputSpeech.ssml).toContain("work-1");
+    expect(fake.ask).toHaveBeenCalledWith("check my day", undefined, false, { waitMs: 0 });
+    expect(asked.response.outputSpeech.ssml).toContain("check my day");
+    expect(asked.response.outputSpeech.ssml).not.toContain("work-1");
 
     deps.store.createRun({ ...run("completed"), answer: "Your day is clear." });
     const checked = await handleAlexaRequest(request("GetLastWorkIntent", {}, asked.sessionAttributes ?? {}), deps);
@@ -104,7 +107,7 @@ describe("Alexa custom skill", () => {
     const deps = dependencies(fake);
 
     const asked = await handleAlexaRequest(request("AskIntent", { request: "check my day", assistant: "hermes" }), deps);
-    expect(fake.ask).toHaveBeenCalledWith("check my day");
+    expect(fake.ask).toHaveBeenCalledWith("check my day", undefined, false, { waitMs: 0 });
     expect(asked.sessionAttributes?.assistant).toBe("local");
     deps.store.close();
   });

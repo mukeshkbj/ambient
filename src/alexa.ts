@@ -1,8 +1,8 @@
 import { timingSafeEqual } from "node:crypto";
 import type { OAuthProvider } from "./auth.js";
-import { viewText } from "./mcp.js";
 import type { RuntimeEntry, RuntimeRegistry } from "./runtimes/registry.js";
 import type { Conversation, RunView } from "./types.js";
+import { speak } from "./voice.js";
 
 type AlexaEnvelope = Record<string, unknown>;
 
@@ -22,6 +22,7 @@ export type AlexaSkillDependencies = {
   auth?: OAuthProvider;
   accessToken?: string;
   allowUnauthenticated?: boolean;
+  askWaitMs?: number;
 };
 
 export class AlexaRequestError extends Error {
@@ -211,6 +212,14 @@ function pickAssistant(
   }
 }
 
+function findWork(registry: RuntimeRegistry, query: string): RunView | undefined {
+  try {
+    return registry.engineForRun(query).getWork(query);
+  } catch {
+    return registry.findRun(query);
+  }
+}
+
 async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, unknown>, dependencies: AlexaSkillDependencies): Promise<AlexaSkillResponse> {
   const name = text(intent.name);
   if (!name) throw new AlexaRequestError(400, "Alexa intent name is required");
@@ -226,12 +235,14 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     if (!approvalId) return response("I do not have one pending approval selected. Say list approvals first.", attributes);
     try {
       const engine = registry.engineForApproval(approvalId);
-      const run = await engine.respondToApproval(approvalId, name === "AMAZON.YesIntent" ? "once" : "deny");
+      let run = await engine.respondToApproval(approvalId, name === "AMAZON.YesIntent" ? "once" : "deny");
+      if (dependencies.askWaitMs) run = await engine.waitForRun(run.id, dependencies.askWaitMs);
       const next = { ...attributes };
       delete next.lastApprovalId;
       delete next.pendingApprovalIds;
       const label = registry.label(run.runtimeId);
-      return response(name === "AMAZON.YesIntent" ? `Approved once. ${viewText(run, label)}` : `Denied. ${viewText(run, label)}`, runAttributes(next, run));
+      const prefix = name === "AMAZON.YesIntent" ? "Approved once. " : "Denied. ";
+      return response(prefix + speak(run, { label, state: engine.runtime().state }), runAttributes(next, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
@@ -294,11 +305,13 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     if (!selectedDecision) return response("Say approve once or deny.", attributes);
     try {
       const engine = registry.engineForApproval(approvalId);
-      const run = await engine.respondToApproval(approvalId, selectedDecision);
+      let run = await engine.respondToApproval(approvalId, selectedDecision);
+      if (dependencies.askWaitMs) run = await engine.waitForRun(run.id, dependencies.askWaitMs);
       const next = { ...attributes };
       delete next.lastApprovalId;
       delete next.pendingApprovalIds;
-      return response(`${selectedDecision === "once" ? "Approved once." : "Denied."} ${viewText(run, registry.label(run.runtimeId))}`, runAttributes(next, run));
+      const prefix = selectedDecision === "once" ? "Approved once. " : "Denied. ";
+      return response(prefix + speak(run, { label: registry.label(run.runtimeId), state: engine.runtime().state }), runAttributes(next, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
@@ -309,43 +322,41 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     const picked = pickAssistant(intent, attributes, dependencies);
     if (typeof picked === "string") return response(picked, attributes);
     try {
-      const run = await picked.engine.ask(instruction);
-      return response(viewText(run, picked.descriptor.label), runAttributes({ ...attributes, assistant: picked.descriptor.id }, run));
+      const run = await picked.engine.ask(instruction, undefined, false, { waitMs: dependencies.askWaitMs ?? 0 });
+      return response(speak(run, { label: picked.descriptor.label, state: picked.engine.runtime().state }), runAttributes({ ...attributes, assistant: picked.descriptor.id }, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
   }
   if (name === "GetWorkIntent" || name === "GetLastWorkIntent") {
-    const workId = lastWorkId(attributes, intent) ?? (name === "GetLastWorkIntent" ? registry.latestRun()?.id : undefined);
-    if (!workId) return response("Which work should I check?", attributes);
-    try {
-      const engine = registry.engineForRun(workId);
-      const run = engine.getWork(workId);
-      return response(viewText(run, registry.label(run.runtimeId)), runAttributes(attributes, run));
-    } catch (error) {
-      return response(errorText(error), attributes);
-    }
+    const query = lastWorkId(attributes, intent);
+    const named = query ? findWork(registry, query) : undefined;
+    const run = named ?? (name === "GetLastWorkIntent" ? registry.latestRun() : undefined);
+    if (!run) return response(query ? `I could not find work about ${query}.` : "Which work should I check?", attributes);
+    return response(speak(run, { label: registry.label(run.runtimeId) }), runAttributes(attributes, run));
   }
   if (name === "SteerWorkIntent") {
-    const workId = lastWorkId(attributes, intent);
+    const query = lastWorkId(attributes, intent);
     const instruction = slotValue(intent, "instruction", "text", "request");
-    if (!workId) return response("Which work should I steer?", attributes);
+    const found = query ? findWork(registry, query) : undefined;
+    if (!found) return response("Which work should I steer?", attributes);
     if (!instruction) return response("What should I tell the work to do next?", attributes);
     try {
-      const engine = registry.engineForRun(workId);
-      const run = await engine.steer(workId, instruction);
-      return response(viewText(run, registry.label(run.runtimeId)), runAttributes(attributes, run));
+      const engine = registry.engineForRun(found.id);
+      const run = await engine.steer(found.id, instruction);
+      return response(speak(run, { label: registry.label(run.runtimeId) }), runAttributes(attributes, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
   }
   if (name === "CancelWorkIntent") {
-    const workId = lastWorkId(attributes, intent);
-    if (!workId) return response("Which work should I cancel?", attributes);
+    const query = lastWorkId(attributes, intent);
+    const found = query ? findWork(registry, query) : undefined;
+    if (!found) return response("Which work should I cancel?", attributes);
     try {
-      const engine = registry.engineForRun(workId);
-      const run = await engine.cancel(workId);
-      return response(viewText(run, registry.label(run.runtimeId)), runAttributes(attributes, run));
+      const engine = registry.engineForRun(found.id);
+      const run = await engine.cancel(found.id);
+      return response(speak(run, { label: registry.label(run.runtimeId) }), runAttributes(attributes, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
