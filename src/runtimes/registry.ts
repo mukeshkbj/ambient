@@ -5,11 +5,7 @@ import type { AmbientStore } from "../store.js";
 import type { RunView, RuntimeState } from "../types.js";
 import { BedrockClient } from "./bedrock.js";
 import { DemoClient } from "./demo.js";
-import { GrokBotClient } from "./grokbot.js";
-import { InstinctClient } from "./instinct.js";
-import { MuseClient } from "./muse.js";
 import { OpenClawClient, OpenClawConnection } from "./openclaw.js";
-import { TownieClient } from "./townie.js";
 import type { AssistantClient, ConnectorConnection, RuntimeDescriptor } from "./types.js";
 
 export type RuntimeEntry = {
@@ -288,50 +284,6 @@ function openclawRuntime(item: RuntimeConfigEntry, env: Record<string, string | 
     });
 }
 
-function grokbotRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore): RuntimeEntry {
-  if (!item.endpoint) throw new Error(`Runtime "${item.id}" (grokbot) needs an endpoint, e.g. http://127.0.0.1:1340`);
-  const client = new GrokBotClient({
-    endpoint: item.endpoint,
-    ...(item.tokenEnv && env[item.tokenEnv] ? { token: env[item.tokenEnv]! } : {}),
-    ...(numberOption(item, "pollMs") ? { pollMs: numberOption(item, "pollMs")! } : {}),
-    ...(numberOption(item, "timeoutMs") ? { timeoutMs: numberOption(item, "timeoutMs")! } : {})
-  });
-  return polledRuntime(item, env, store, client);
-}
-
-function museRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore): RuntimeEntry {
-  const client = new MuseClient({
-    ...(item.endpoint ? { endpoint: item.endpoint } : {}),
-    ...(item.tokenEnv && env[item.tokenEnv] ? { token: env[item.tokenEnv]! } : {}),
-    ...(item.options?.model ? { model: item.options.model } : {}),
-    ...(numberOption(item, "timeoutMs") ? { timeoutMs: numberOption(item, "timeoutMs")! } : {})
-  });
-  return polledRuntime(item, env, store, client);
-}
-
-function townieRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore): RuntimeEntry {
-  if (!item.endpoint) throw new Error(`Runtime "${item.id}" (townie) needs an endpoint, e.g. https://api.val.town/v1/run/<user>.<val>`);
-  const client = new TownieClient({
-    endpoint: item.endpoint,
-    ...(item.tokenEnv && env[item.tokenEnv] ? { token: env[item.tokenEnv]! } : {}),
-    ...(numberOption(item, "timeoutMs") ? { timeoutMs: numberOption(item, "timeoutMs")! } : {})
-  });
-  return polledRuntime(item, env, store, client);
-}
-
-function instinctRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore): RuntimeEntry {
-  const to = item.options?.to;
-  if (!to) throw new Error(`Runtime "${item.id}" (instinct) needs options.to — the assistant's email address`);
-  const client = new InstinctClient({
-    to,
-    ...(item.tokenEnv && env[item.tokenEnv] ? { token: env[item.tokenEnv]! } : {}),
-    ...(item.options?.gmailEndpoint ? { gmailEndpoint: item.options.gmailEndpoint } : {}),
-    ...(numberOption(item, "pollMs") ? { pollMs: numberOption(item, "pollMs")! } : {}),
-    ...(numberOption(item, "timeoutMs") ? { timeoutMs: numberOption(item, "timeoutMs")! } : {})
-  });
-  return polledRuntime(item, env, store, client);
-}
-
 function demoRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore): RuntimeEntry {
   const client = new DemoClient({
     ...(item.options?.script ? { script: item.options.script } : {}),
@@ -357,11 +309,7 @@ const ADAPTERS: Record<string, (item: RuntimeConfigEntry, env: Record<string, st
   hermes: hermesRuntime,
   demo: demoRuntime,
   bedrock: bedrockRuntime,
-  openclaw: openclawRuntime,
-  grokbot: grokbotRuntime,
-  muse: museRuntime,
-  townie: townieRuntime,
-  instinct: instinctRuntime
+  openclaw: openclawRuntime
 };
 
 export function buildRuntimeRegistry(

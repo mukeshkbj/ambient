@@ -1,7 +1,31 @@
 # Goal report
 
 ## Objective
-You are continuing a hackathon build in ~/honey/hermesambient on this MacBook. The deadline is Fri 2026-10-23 12:00 PT. Aim to submit on Oct 22. READ FIRST - docs/plans/2026-10-11-hackathon-contender.md has the full critique, the phased plan (Phases 0–9), the schedule, the cut order, and a Definition of Done checklist. That file is the spec. Follow it phase by phase. - Hackathon: Amazon "Build, Ship, Shape", Alexa+ track. It needs a self-hosted MCP server (spec 2025-11-25, Streamable HTTP) and/or a simulated Alexa+ experience. Four criteria, each scored 1–5: Technical Implementation, Design, Potential Impact, Quality of the Idea. A friction log adds up to a 10% bonus. CURRENT STATE (uncommitted, verified on this machine: 64 tests pass, typecheck/eslint/knip clean) - Phase 0 is done: package renamed to "ambient", engines >=22.13, aws-cdk-lib/constructs moved to devDependencies (lockfile refreshed), default data dir .ambient, .github/workflows/ci.yml added, decisions.tsv and the scan reports moved to docs/engineering/. - Phase 1.1 is done: src/runtimes/demo.ts (a scripted agent that needs no credentials: planner→approval, research, deploy→disconnect, fail), runtimes.demo.json, test/demo.test.ts, and `pnpm demo`. - Engine fix: respondToApproval no longer overwrites a run that finished while waiting for the ack (src/conversations.ts). - A live check showed spoken text still includes ids ("Approval request: planner:ap-…"). Phase 2.2 fixes that. FIRST STEPS 1. Fix tooling. `pnpm` is broken here because Node 26 doesn't ship corepack. Run `npm i -g corepack && corepack enable` (or `npm i -g pnpm@10.33.0`), then make sure `pnpm scan` passes. 2. Commit the current state as a checkpoint ("Prepare repo for submission; add zero-credential demo agent"). Use the commit format from your system instructions. 3. Continue at Phase 1.2 and work through Phase 9 in order. Commit after each phase, and only when `pnpm scan && pnpm build` is green. DECISIONS ALREADY MADE - Pitch: "Your AI agents work in the background. Alexa tells you when they need you." The focus is approvals, async work, and honest state. It is not about switching between assistants. - Adapters: keep hermes and openclaw; add bedrock and demo. This machine has no credentials for grokbot, muse, townie, or instinct, so move them now to src/runtimes/contrib/ (or delete them). Remove them from the README, runtimes.example.json, docs, and the Alexa AssistantName slot. No third-party trademarks (Grok, Meta, Muse) in user-facing material. - Never put ids in spoken text, and enforce it with a test. Tools map to things people say: delegate, status, approve, stop, agents, briefing. Approvals go through MCP elicitation (`server.server.elicitInput`), with a fallback to the approve tool. - MCP Apps: use `_meta.ui.resourceUri` (the flat "ui/resourceUri" key is deprecated). Views must do the `ui/initialize` handshake, read hostContext.deviceClass, and stop the 2.5 s polling. - The /sim Alexa+ simulator is a real MCP client calling /mcp. It uses Web Speech for voice, has a device switcher (Echo Show 8/15, Fire TV, Mobile, Voice-only), and acts as an MCP Apps host. Without AWS credentials it uses a keyword router, so `pnpm demo` still works offline. - SDK facts (@modelcontextprotocol/sdk 1.30): it has elicitInput, experimental tasks, and allowedOrigins/allowedHosts/enableDnsRebindingProtection. Elicitation needs SSE responses, so enableJsonResponse must be false for those calls. HONESTY RULES (non-negotiable) - docs/acceptance.md records only receipts you actually produced. docs/friction-log.md lists only friction you actually reproduced. No invented results. - Before Phase 1.2, run `aws sts get-caller-identity` to check for AWS credentials. If there are none, build the Bedrock adapter with mocked tests, mark its live receipt as blocked, and keep going. - For any new dependency, pick a version published at least 7 days ago. ASK ME BEFORE (prepare everything up to that point, then ask) - Creating the public GitHub repo or pushing. - Deploying to AWS (`cdk deploy`) or anything else that costs money. - Anything that needs my accounts: the ASK console model build, the Devpost submission, recording the video. VERIFICATION - `pnpm scan && pnpm build` after every phase. - `pnpm demo`, then exercise the flows through the MCP client and /sim. - Check /sim in the T3 preview browser across every device class and save screenshots to docs/media/. - Phase 9: do a clean clone into a temp dir, run `pnpm i && pnpm demo`, and time how long it takes to get the first spoken answer. STOP CONDITION Stop only when every Definition of Done item in the plan is checked off or is explicitly blocked on me. Then give me a final report covering: what shipped (with file references), test count, receipts, every blocked item with the exact action I need to take, and the remaining submission steps (video, Devpost text in docs/submission.md, product feedback, friction log).
+Hackathon build in ~/honey/hermesambient — Amazon "Build, Ship, Shape", Alexa+ track.
+Deadline Fri 2026-10-23 12:00 PT; aim to submit Oct 22.
+Spec: docs/plans/2026-10-11-hackathon-contender.md (Phases 0–9 + Definition of Done).
 
 ## Progress
-(started)
+- **Phase 0** done + committed (20044dd): rename→ambient, engines>=22.13, cdk deps→dev,
+  .ambient data dir, CI workflow, docs declutter, .pytest_cache gitignored.
+- **Phase 1.1** done + committed (20044dd): demo adapter + runtimes.demo.json + `pnpm demo`.
+- **Phase 1.2** done + committed (2ca5142): Bedrock adapter (Converse tool loop,
+  approval-gated tools, transcript persistence in SQLite, honest credential ping),
+  runtimes.bedrock.json, `pnpm dev:bedrock`, 7 mocked tests.
+  - **BLOCKED RECEIPT**: no AWS credentials on this MacBook (no aws CLI, no ~/.aws,
+    no AWS_* env — checked 2026-10-11). `pnpm check:runtime nova` live receipt
+    needs user to provide credentials or run elsewhere.
+- Engine fix committed: respondToApproval no longer overwrites finished runs.
+- Verified: `pnpm scan` green (typecheck+eslint+knip+71 tests), `pnpm build` green.
+- Tooling note: pnpm 10.33.0 already installed at ~/.local/bin/pnpm; the "pnpm
+  broken" note in the objective was stale — no fix needed.
+
+## In progress / next
+- Phase 1.3: quarantine grokbot/muse/townie/instinct to src/runtimes/contrib/,
+  scrub README/docs/runtimes.example.json/Alexa AssistantName slot.
+- Then Phase 2 (voice-first contract) → Phase 3 (sim) → … → Phase 9 (QA).
+
+## Blocked on user (do not poll)
+- AWS credentials for live Bedrock receipt (`aws configure` / AWS_PROFILE), and
+  approval before `cdk deploy` (Phase 6), public repo creation, ASK console model
+  build, Devpost submission, video recording.

@@ -1,12 +1,22 @@
 [
   {
+    "id": "nova",
+    "label": "Nova",
+    "kind": "cloud",
+    "adapter": "bedrock",
+    "default": true,
+    "options": {
+      "model": "us.amazon.nova-lite-v1:0",
+      "region": "us-east-1"
+    }
+  },
+  {
     "id": "hermes",
     "label": "Hermes",
     "kind": "local",
     "adapter": "hermes",
     "endpoint": "ws://127.0.0.1:9129/api/ws",
-    "tokenEnv": "HERMES_WS_TOKEN",
-    "default": true
+    "tokenEnv": "HERMES_WS_TOKEN"
   },
   {
     "id": "hermes-cloud",
@@ -24,39 +34,10 @@
     "tokenEnv": "OPENCLAW_TOKEN"
   },
   {
-    "id": "grokbot",
-    "label": "Grok Bot",
-    "kind": "local",
-    "adapter": "grokbot",
-    "endpoint": "http://127.0.0.1:1340",
-    "tokenEnv": "GROKBOT_TOKEN"
-  },
-  {
-    "id": "muse",
-    "label": "Muse",
+    "id": "planner",
+    "label": "Demo Agent",
     "kind": "cloud",
-    "adapter": "muse",
-    "tokenEnv": "META_MODEL_API_KEY",
-    "options": { "model": "muse-spark-1.1" }
-  },
-  {
-    "id": "townie",
-    "label": "Townie",
-    "kind": "cloud",
-    "adapter": "townie",
-    "endpoint": "https://api.val.town/v1/run/<you>.<your-townie-val>",
-    "tokenEnv": "VAL_TOWN_TOKEN"
-  },
-  {
-    "id": "instinct",
-    "label": "Instinct",
-    "kind": "cloud",
-    "adapter": "instinct",
-    "tokenEnv": "GOOGLE_GMAIL_TOKEN",
-    "options": {
-      "to": "<you>@mail.instinct.com",
-      "pollMs": "15000",
-      "timeoutMs": "1800000"
-    }
+    "adapter": "demo",
+    "options": { "speedMs": "1200" }
   }
 ]

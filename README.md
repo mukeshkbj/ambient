@@ -2,8 +2,8 @@
 
 Ambient is a personal-assistant gateway: one authenticated MCP endpoint — plus an
 Alexa skill and an optional dashboard — in front of every assistant you can
-actually reach. Ask Hermes for your mail, steer a Grok Bot agent, get a Muse
-Spark answer, or email Instinct a task — through one voice or chat surface.
+actually reach. Delegate work to a Bedrock agent, steer Hermes, or watch a task
+through — through one voice or chat surface.
 
 ```text
 Alexa+ / any MCP client ─┐
@@ -12,10 +12,10 @@ Ambient dashboard ───────┴──▶ Ambient
                                  │  RuntimeRegistry — one ConversationEngine per
                                  │  runtime over a shared SQLite store
                 ┌────────────────┼─────────────────┬───────────────┐
-           Hermes (WS)      OpenClaw (WS v4)   Grok Bot (HTTP)   Muse Spark (HTTPS)
-                │                │
-           outbound         Townie/Val Town (HTTPS)
-           connector        Instinct (email via Gmail)
+          Bedrock agent    Hermes (WS)      OpenClaw (WS v4)   Demo agent
+          (Converse API)        │
+                          outbound
+                          connector
 ```
 
 Assistants keep their own tools, memory, sessions, and approval policy. Ambient
@@ -25,7 +25,13 @@ controls an assistant does not have.
 
 ## Quick start
 
-Node 24+, pnpm. Copy `runtimes.example.json` to `runtimes.json`, fill in
+Node 22.13+, pnpm. Zero credentials needed for the demo:
+
+```sh
+pnpm demo                    # scripted agent — no keys, no network
+```
+
+For a real agent, copy `runtimes.example.json` to `runtimes.json`, fill in
 endpoints, and point each `tokenEnv` at a credential env var — secrets never go
 in the file. Then:
 
@@ -36,9 +42,8 @@ MCP_URL=http://127.0.0.1:3000/mcp pnpm smoke:mcp
 ```
 
 `docs/runtimes.md` documents each adapter's exact surface, required credentials,
-and honest limits (Grok Bot's gateway is unofficial; "Muse" is Muse Spark, the
-model behind consumer Muse; Instinct is email-async; Townie drives your deployed
-val).
+and honest limits (Bedrock needs AWS credentials and a Nova-capable region;
+Hermes and OpenClaw need their gateways; the demo agent is fully offline).
 
 ## MCP surface
 
@@ -55,7 +60,7 @@ never guessed.
 ## Alexa
 
 `POST /alexa` serves a custom skill with assistant-selection intents ("ask
-Grok Bot", "use Muse") and a sticky per-session default. Import
+my coding agent", "use Nova") and a sticky per-session default. Import
 `alexa/interaction-model.en-GB.json`; see `docs/deployment.md`. OAuth account
 linking is bundled for the single-owner case.
 

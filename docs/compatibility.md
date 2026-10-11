@@ -28,21 +28,12 @@ This file records observed contracts for the Hermes revision and Alexa tooling u
   `agent.wait`, `exec.approval.list`, `approval.resolve {id,kind,decision}`,
   `exec.approval.requested`/`session.approval` events. Contract-tested with a fake
   socket; live verification needs a self-hosted gateway + operator token.
-- **Grok Bot** — unofficial `sand` host gateway (`POST /api/<command>`, bearer,
-  default port 1340). Commands per the host's SAND_GATEWAY_COMMANDS surface:
-  `listAgents`, `createAgent`, `sendPrompt`, `interruptAgentRun`,
-  `getAgentTranscriptTail`, `getHostStatus`; `/health` and `/events` exist.
-  Completion is poll-based. Not an official API — keep the gateway on LAN/VPN.
-- **Muse** — `api.meta.ai/v1` OpenAI-compatible chat completions,
-  `options.model` default `muse-spark-1.1` (the model behind consumer Muse —
-  not the consumer product, which has no API). Threads are in-memory.
-- **Townie** — Val Town `POST /v1/run/{user}.{val}`; the val receives one arg
-  `{prompt}`. Live-verified against a mock endpoint via `pnpm check:runtime`.
-  First-party Townie chat has no public API — point the endpoint at a deployed
-  Townie-based val.
-- **Instinct** — documented email channel: Gmail `users.me.messages/send` +
-  `users.me/messages` poll for `[ambient:<sessionId>]` correlation. Async by
-  design (minutes); cancel unsupported (email can't be unsent).
+- **Bedrock** — Amazon Bedrock Converse API with tool use
+  (`tools`/`toolUse`/`toolResult`, `stopReason: tool_use`). The agent loop,
+  approval gate, cancel-via-abort, and transcript persistence are tested with a
+  mocked `ConverseCommand`; live verification needs AWS credentials and a
+  Nova-capable region.
+- **Demo** — scripted in-process agent, no network. Used by `pnpm demo`.
 
 ## Alexa host options
 

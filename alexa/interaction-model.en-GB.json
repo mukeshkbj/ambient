@@ -177,12 +177,11 @@
         {
           "name": "AssistantName",
           "values": [
+            { "name": { "value": "my agent", "synonyms": ["the agent", "default agent"] } },
+            { "name": { "value": "my coding agent", "synonyms": ["the coder", "coding agent"] } },
             { "name": { "value": "hermes", "synonyms": ["my hermes", "the hermes"] } },
-            { "name": { "value": "grokbot", "synonyms": ["grok bot", "grok", "grok-bot"] } },
-            { "name": { "value": "muse", "synonyms": ["meta muse", "the muse"] } },
             { "name": { "value": "openclaw", "synonyms": ["open claw", "claw"] } },
-            { "name": { "value": "townie", "synonyms": ["towny", "val town"] } },
-            { "name": { "value": "instinct", "synonyms": ["my instinct"] } }
+            { "name": { "value": "nova", "synonyms": ["my nova", "bedrock"] } }
           ]
         }
       ]

@@ -1,194 +1,18 @@
 import { EventEmitter } from "node:events";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ConversationEngine } from "../src/conversations.js";
 import { readConfig } from "../src/config.js";
-import { GrokBotClient } from "../src/runtimes/grokbot.js";
-import { InstinctClient } from "../src/runtimes/instinct.js";
-import { MuseClient } from "../src/runtimes/muse.js";
 import { OpenClawClient, OpenClawConnection, type SocketLike } from "../src/runtimes/openclaw.js";
 import { buildRuntimeRegistry } from "../src/runtimes/registry.js";
-import { TownieClient } from "../src/runtimes/townie.js";
 import type { AssistantClient } from "../src/runtimes/types.js";
 import { AmbientStore } from "../src/store.js";
-
-type RequestLog = { url: string; method: string; auth?: string; body: unknown };
-
-function fakeFetch(handler: (req: RequestLog) => { status?: number; body?: unknown }) {
-  const requests: RequestLog[] = [];
-  const fetchImpl = (async (url: unknown, init: { method?: string; headers?: Record<string, string>; body?: string } = {}) => {
-    const request: RequestLog = {
-      url: String(url),
-      method: init.method ?? "GET",
-      ...(init.headers?.authorization ? { auth: init.headers.authorization } : {}),
-      body: init.body ? JSON.parse(init.body) : undefined
-    };
-    requests.push(request);
-    const result = handler(request);
-    return new Response(result.body === undefined ? "" : JSON.stringify(result.body), {
-      status: result.status ?? 200,
-      headers: { "content-type": "application/json" }
-    });
-  }) as unknown as typeof fetch;
-  return { fetchImpl, requests };
-}
+import { fakeAssistant } from "./fake.js";
 
 function engineFor(client: AssistantClient, store: AmbientStore, id = "rt"): ConversationEngine {
   return new ConversationEngine(client, store, {
     runtime: { id, label: id, kind: "cloud", state: "unknown", updatedAt: "2026-09-06T10:00:00.000Z" }
   });
 }
-
-async function waitFor(engine: ConversationEngine, runId: string, ms = 5_000): Promise<string> {
-  const deadline = Date.now() + ms;
-  while (Date.now() < deadline) {
-    const status = engine.getWork(runId).status;
-    if (["completed", "failed", "cancelled", "unknown"].includes(status)) return status;
-    await new Promise(resolve => setTimeout(resolve, 10));
-  }
-  return "timeout";
-}
-
-describe("MuseClient (Muse Spark / Meta Model API)", () => {
-  it("completes a run from a chat completion and reports honest capabilities", async () => {
-    const { fetchImpl, requests } = fakeFetch(req => {
-      if (req.url.endsWith("/chat/completions")) {
-        return { body: { choices: [{ message: { role: "assistant", content: "hello from muse" } }] } };
-      }
-      return { body: { data: [] } };
-    });
-    const store = new AmbientStore();
-    const client = new MuseClient({ token: "m-key", model: "muse-spark-1.3", fetchImpl });
-    const engine = engineFor(client, store, "muse");
-
-    const run = await engine.ask("say hi", undefined, true);
-    expect(await waitFor(engine, run.id)).toBe("completed");
-    expect(engine.getWork(run.id).answer).toBe("hello from muse");
-
-    const call = requests.find(req => req.url.includes("chat/completions"))!;
-    expect(call.auth).toBe("Bearer m-key");
-    expect((call.body as { model: string }).model).toBe("muse-spark-1.3");
-
-    expect(client.capabilities).toMatchObject({ approvals: false, steer: false, sessions: true });
-    await client.close();
-    engine.close();
-    store.close();
-  });
-});
-
-describe("TownieClient (Val Town run API)", () => {
-  it("posts the prompt to the configured val run URL and pings /v1/me", async () => {
-    const { fetchImpl, requests } = fakeFetch(req =>
-      req.url.endsWith("/v1/me") ? { body: { id: "u1" } } : { body: "val says done" });
-    const store = new AmbientStore();
-    const client = new TownieClient({ endpoint: "https://api.val.town/v1/run/me.myval", token: "vt", fetchImpl });
-    const engine = engineFor(client, store, "townie");
-
-    await client.ping();
-    const run = await engine.ask("ship it", undefined, true);
-    expect(await waitFor(engine, run.id)).toBe("completed");
-    expect(engine.getWork(run.id).answer).toBe("val says done");
-
-    expect(requests[0]!.url).toBe("https://api.val.town/v1/me");
-    const runCall = requests[1]!;
-    expect(runCall.url).toBe("https://api.val.town/v1/run/me.myval");
-    expect(runCall.body).toEqual([{ prompt: "ship it" }]);
-
-    expect(client.capabilities).toMatchObject({ approvals: false, resume: false, sessions: false });
-    engine.close();
-    store.close();
-  });
-});
-
-describe("GrokBotClient (sand host gateway)", () => {
-  it("sends prompts via /api/sendPrompt and completes on a transcript reply", async () => {
-    const { fetchImpl, requests } = fakeFetch(req => {
-      if (req.url.endsWith("/api/listAgents")) {
-        return { body: { agents: [{ id: "ag-1", name: "Ambient session", status: "idle" }] } };
-      }
-      if (req.url.endsWith("/api/getAgentTranscriptTail")) {
-        const sent = requests.some(r => r.url.endsWith("/api/sendPrompt"));
-        return { body: { entries: sent ? [{ seq: 7, role: "assistant", text: "grok says hi" }] : [] } };
-      }
-      if (req.url.endsWith("/api/createAgent")) {
-        return { body: { id: "ag-1" } };
-      }
-      return { body: { ok: true } };
-    });
-    const store = new AmbientStore();
-    const client = new GrokBotClient({ endpoint: "http://127.0.0.1:1340", token: "sand", pollMs: 5, fetchImpl });
-    const engine = engineFor(client, store, "grokbot");
-
-    const run = await engine.ask("hello", undefined, true);
-    expect(await waitFor(engine, run.id)).toBe("completed");
-    expect(engine.getWork(run.id).answer).toBe("grok says hi");
-
-    const send = requests.find(req => req.url.endsWith("/api/sendPrompt"))!;
-    expect(send.body).toEqual({ id: "ag-1", prompt: "hello" });
-    expect(send.auth).toBe("Bearer sand");
-
-    await client.interrupt("ag-1");
-    expect(requests.some(req => req.url.endsWith("/api/interruptAgentRun"))).toBe(true);
-
-    expect(client.capabilities).toMatchObject({ approvals: false, cancel: true, asyncClass: "async" });
-    await client.close();
-    engine.close();
-    store.close();
-  });
-
-  it("uses createAgent for new sessions and resumeSession validates the roster", async () => {
-    const { fetchImpl } = fakeFetch(req => {
-      if (req.url.endsWith("/api/createAgent")) return { body: { id: "ag-new" } };
-      if (req.url.endsWith("/api/listAgents")) return { body: { agents: [{ id: "ag-1", name: "x" }] } };
-      return { body: {} };
-    });
-    const client = new GrokBotClient({ endpoint: "http://127.0.0.1:1340", fetchImpl });
-    expect(await client.createSession()).toEqual({ runtimeSessionId: "ag-new", durableSessionId: "ag-new" });
-    expect(await client.resumeSession("ag-1")).toEqual({ runtimeSessionId: "ag-1", durableSessionId: "ag-1" });
-    await expect(client.resumeSession("gone")).rejects.toThrow("no longer exists");
-    await client.close();
-  });
-});
-
-describe("InstinctClient (email channel)", () => {
-  it("emails the task and completes when the reply lands", async () => {
-    let sentTag = "";
-    const { fetchImpl, requests } = fakeFetch(req => {
-      if (req.url.endsWith("/users/me/messages/send")) {
-        const raw = Buffer.from((req.body as { raw: string }).raw, "base64url").toString("utf8");
-        sentTag = raw.match(/ambient:inst-[a-z0-9-]+/)?.[0] ?? "";
-        return { body: { id: "m-out" } };
-      }
-      if (req.url.includes("/users/me/messages?")) {
-        return { body: { messages: [{ id: "m-in" }] } };
-      }
-      if (req.url.includes("/users/me/messages/m-in")) {
-        return {
-          body: {
-            id: "m-in",
-            internalDate: String(Date.now()),
-            snippet: sentTag,
-            payload: { mimeType: "text/plain", body: { data: Buffer.from(`done [${sentTag}]`).toString("base64url") } }
-          }
-        };
-      }
-      return { body: {} };
-    });
-    const store = new AmbientStore();
-    const client = new InstinctClient({ to: "me@mail.instinct.com", token: "g", pollMs: 5, fetchImpl });
-    const engine = engineFor(client, store, "instinct");
-
-    const run = await engine.ask("water the plants", undefined, true);
-    expect(await waitFor(engine, run.id)).toBe("completed");
-    expect(engine.getWork(run.id).answer).toContain("done");
-    expect(sentTag).toMatch(/^ambient:inst-/);
-    expect(requests[0]!.auth).toBe("Bearer g");
-
-    expect(client.capabilities).toMatchObject({ asyncClass: "async", cancel: false, approvals: false });
-    await client.close();
-    engine.close();
-    store.close();
-  });
-});
 
 class FakeSocket extends EventEmitter implements SocketLike {
   readyState = 0;
@@ -274,24 +98,25 @@ describe("OpenClawClient (gateway WS protocol v4)", () => {
 });
 
 describe("honest-state regressions", () => {
-  it("keeps a cancelled Muse run cancelled instead of overwriting it with the abort error", async () => {
-    const fetchImpl = (async (_url: unknown, init: RequestInit = {}) => new Promise<Response>((_resolve, reject) => {
-      init.signal?.addEventListener("abort", () => reject(new DOMException("The operation was aborted", "AbortError")));
-    })) as typeof fetch;
+  it("keeps a cancelled run cancelled when the in-flight submit resolves after interrupt", async () => {
+    const fake = fakeAssistant({
+      // submitPrompt resolves only once interrupt acknowledges — the path that
+      // used to let a late submit overwrite `cancelled` with a stale status.
+      submitPrompt: vi.fn().mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ status: "streaming" }), 30))),
+      interrupt: vi.fn().mockResolvedValue({ status: "interrupted" })
+    });
     const store = new AmbientStore();
-    const client = new MuseClient({ fetchImpl });
-    const engine = engineFor(client, store, "muse");
+    const engine = engineFor(fake.client, store, "agent");
 
     const askPromise = engine.ask("long task", undefined, true);
     await new Promise(resolve => setTimeout(resolve, 10));
-    const run = store.listRuns("muse", 1)[0]!;
+    const run = store.listRuns("agent", 1)[0]!;
     const view = await engine.cancel(run.id);
     await askPromise;
 
     expect(view.status).toBe("cancelled");
     expect(engine.getWork(run.id)).toMatchObject({ status: "cancelled" });
     expect(engine.runtime().state).not.toBe("offline");
-    await client.close();
     engine.close();
     store.close();
   });
@@ -327,65 +152,15 @@ describe("honest-state regressions", () => {
     store.close();
   });
 
-  it("matches an Instinct reply by Gmail thread when the tag is not quoted", async () => {
-    const { fetchImpl } = fakeFetch(req => {
-      if (req.url.endsWith("/users/me/messages/send")) return { body: { id: "m-out", threadId: "t-1" } };
-      if (req.url.includes("/users/me/messages?")) return { body: { messages: [{ id: "m-in" }] } };
-      if (req.url.includes("/users/me/messages/m-in")) {
-        return {
-          body: {
-            id: "m-in",
-            threadId: "t-1",
-            internalDate: String(Date.now()),
-            payload: { mimeType: "text/plain", body: { data: Buffer.from("watered").toString("base64url") } }
-          }
-        };
-      }
-      return { body: {} };
-    });
-    const store = new AmbientStore();
-    const client = new InstinctClient({ to: "me@mail.instinct.com", pollMs: 5, fetchImpl });
-    const engine = engineFor(client, store, "instinct");
-
-    const run = await engine.ask("water the plants", undefined, true);
-    expect(await waitFor(engine, run.id)).toBe("completed");
-    expect(engine.getWork(run.id).answer).toContain("watered");
-
-    await client.close();
-    engine.close();
-    store.close();
-  });
-
-  it("marks a Grok Bot run cancelled after interrupt without a racy completion event", async () => {
-    const { fetchImpl } = fakeFetch(req => {
-      if (req.url.endsWith("/api/listAgents")) return { body: { agents: [{ id: "ag-1", status: "running" }] } };
-      if (req.url.endsWith("/api/getAgentTranscriptTail")) return { body: { entries: [] } };
-      if (req.url.endsWith("/api/createAgent")) return { body: { id: "ag-1" } };
-      return { body: { ok: true } };
-    });
-    const store = new AmbientStore();
-    const client = new GrokBotClient({ endpoint: "http://127.0.0.1:1340", pollMs: 5, fetchImpl });
-    const engine = engineFor(client, store, "grokbot");
-
-    const run = await engine.ask("hello", undefined, true);
-    const view = await engine.cancel(run.id);
-    expect(view.status).toBe("cancelled");
-    expect(engine.getWork(run.id).status).toBe("cancelled");
-
-    await client.close();
-    engine.close();
-    store.close();
-  });
-
   it("marks leftover active runs unknown when a process-bound runtime starts", async () => {
     const store = new AmbientStore();
     const now = new Date().toISOString();
-    store.createConversation({ id: "c1", runtimeId: "grok", durableSessionId: "d1", title: "t", selected: true, createdAt: now, updatedAt: now });
-    store.createRun({ id: "r1", conversationId: "c1", runtimeId: "grok", durableSessionId: "d1", liveSessionId: "l1", instruction: "x", status: "running", createdAt: now, updatedAt: now });
+    store.createConversation({ id: "c1", runtimeId: "agent", durableSessionId: "d1", title: "t", selected: true, createdAt: now, updatedAt: now });
+    store.createRun({ id: "r1", conversationId: "c1", runtimeId: "agent", durableSessionId: "d1", liveSessionId: "l1", instruction: "x", status: "running", createdAt: now, updatedAt: now });
 
     const registry = buildRuntimeRegistry({
-      defaultRuntimeId: "grok",
-      runtimes: [{ id: "grok", label: "Grok", kind: "local", adapter: "grokbot", endpoint: "http://127.0.0.1:1" }]
+      defaultRuntimeId: "agent",
+      runtimes: [{ id: "agent", label: "Agent", kind: "local", adapter: "demo" }]
     }, {}, store);
     registry.startAll();
     expect(store.run("r1")!.status).toBe("unknown");
@@ -411,14 +186,12 @@ describe("buildRuntimeRegistry adapter dispatch", () => {
       runtimes: [
         { id: "hermes", label: "Hermes", kind: "local", adapter: "hermes", connectorTokenEnv: "CONNECTOR_TOKEN" },
         { id: "oc", label: "OpenClaw", kind: "local", adapter: "openclaw", endpoint: "ws://127.0.0.1:18789", tokenEnv: "OC_TOKEN" },
-        { id: "grok", label: "Grok Bot", kind: "local", adapter: "grokbot", endpoint: "http://127.0.0.1:1340", tokenEnv: "GROK_TOKEN" },
-        { id: "muse", label: "Muse", kind: "cloud", adapter: "muse", tokenEnv: "META_KEY", options: { model: "muse-spark-1.3" } },
-        { id: "townie", label: "Townie", kind: "cloud", adapter: "townie", endpoint: "https://api.val.town/v1/run/me.v", tokenEnv: "VT" },
-        { id: "instinct", label: "Instinct", kind: "cloud", adapter: "instinct", tokenEnv: "GOOGLE_TOKEN", options: { to: "me@mail.instinct.com" } }
+        { id: "nova", label: "Nova", kind: "cloud", adapter: "bedrock", options: { model: "us.amazon.nova-lite-v1:0" } },
+        { id: "planner", label: "Demo Agent", kind: "cloud", adapter: "demo" }
       ]
     }, env, store);
-    expect(registry.list().map(item => item.id).sort()).toEqual(["grok", "hermes", "instinct", "muse", "oc", "townie"]);
-    expect(registry.entry("muse")!.client.capabilities.approvals).toBe(false);
+    expect(registry.list().map(item => item.id).sort()).toEqual(["hermes", "nova", "oc", "planner"]);
+    expect(registry.entry("nova")!.client.capabilities.approvals).toBe(true);
     await registry.close();
 
     expect(() => buildRuntimeRegistry({

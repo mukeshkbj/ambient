@@ -6,22 +6,22 @@ credentials and private transcripts out of the repository.
 
 ## Observed locally
 
-- Multi-runtime registry: six adapters (Hermes, OpenClaw, Grok Bot, Muse, Townie,
-  Instinct) build from one `runtimes.json`; `/healthz` reports each runtime's
-  state and capabilities; selection is sticky via `select_assistant`.
+- Multi-runtime registry: four adapters (Bedrock, Hermes, OpenClaw, Demo) build
+  from one `runtimes.json`; `/healthz` reports each runtime's state and
+  capabilities; selection is sticky via `select_assistant`.
 - Eleven neutral MCP tools over authenticated Streamable HTTP (`2025-11-25`),
   including `dashboard`, which serves a `ui://ambient/dashboard` MCP App
   (`text/html;profile=mcp-app`) plus a full structured snapshot.
 - `pnpm check:runtime` ran live against local HTTP endpoints for `townie` and
-  `muse`: handshake → trivial prompt → `completed` verdict JSON with real answers.
+  `muse` (adapters removed 2026-10-11; historical receipts are in git history).
 - Contract tests pin each adapter's wire shape: OpenClaw `connect`/`hello-ok`
   handshake + `agent`/`agent.wait` + `exec.approval.requested` → approval event;
-  Grok Bot `sendPrompt`/`getAgentTranscriptTail` polling; Instinct Gmail
-  send/poll correlation; Muse chat-completions; Townie `POST /v1/run`.
+  Bedrock Converse tool loop with approval-gated tools, abort-cancel, and
+  transcript resume; Demo scripts through the engine.
 - Engine honesty: offline runtimes mark active work `unknown`; approval ids are
   runtime-namespaced; unsupported controls (steer/cancel/approvals on adapters
   without them) fail with explicit errors.
-- `pnpm scan` green: typecheck, eslint, knip, 54 tests.
+- `pnpm scan` green: typecheck, eslint, knip, 71 tests.
 - The installed Hermes gateway accepts the pinned WebSocket connection, replays
   observed events by sequence, and surfaces replay gaps as `unknown` work.
 
@@ -33,10 +33,10 @@ credentials and private transcripts out of the repository.
 | bedrock | yes (mocked Converse) | **blocked** — no AWS credentials on this machine (no `aws` CLI, no `~/.aws`, no `AWS_*` env; checked 2026-10-11) | AWS credentials + Bedrock model access |
 | hermes | yes | yes (2026-09-06) | — |
 | openclaw | yes (fake socket) | no | self-hosted gateway + operator token |
-| grokbot | yes (fake fetch) | no | host `sand` gateway reachable + token |
-| muse | yes (fake fetch) | no | Meta Model API key |
-| townie | yes (fake fetch) | yes (mock endpoint, `check:runtime`) | Val Town token + deployed val |
-| instinct | yes (fake fetch) | no | Gmail OAuth token + Instinct address |
+
+Removed 2026-10-11 (unverified, trademark risk): `grokbot`, `muse`, `townie`,
+`instinct`. Their code and historical receipts remain in git history
+(last present in 51775a0).
 
 ## Still required for the hackathon submission
 
