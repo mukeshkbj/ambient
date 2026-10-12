@@ -381,7 +381,7 @@ export class ConversationEngine {
       return;
     }
     if (["message.start", "message.delta", "message.interim", "tool.start", "tool.complete", "status.update"].includes(event.type)) {
-      const progress = eventText(event) ?? value(event.payload.name) ?? value(event.payload.kind);
+      const progress = eventText(event) ?? value(event.payload.name);
       this.updateRun(run.id, {
         ...(run.status === "queued" || run.status === "accepted" ? { status: "running" as const } : {}),
         ...(progress ? { progress } : {}),

@@ -26,6 +26,8 @@ export const DASHBOARD_HTML = `<!doctype html>
 :root{color-scheme:dark;--bg:#0c0d10;--panel:#14161a;--line:#23262c;--fg:#e6e8ec;--dim:#8a909c;--accent:#7cc7ff;--ok:#5ad48a;--bad:#ff7a7a;--warn:#ffc66e}
 *{box-sizing:border-box;margin:0}
 body{background:var(--bg);color:var(--fg);font:13px/1.45 -apple-system,"SF Mono",ui-monospace,system-ui,sans-serif;padding:12px;display:flex;flex-direction:column;gap:10px;height:100vh}
+body.big{font-size:22px;padding:48px;gap:20px}body.big h1{font-size:22px}body.big .row{padding:10px 2px}body.big button{padding:10px 18px;font-size:.9em}body.big input{font-size:.9em}
+body.compact{font-size:12px;padding:8px}body.voice #work,body.voice form,body.voice .assistants{display:none}
 h1{font-size:13px;font-weight:600;letter-spacing:.14em;color:var(--dim)}
 h1 b{color:var(--fg)}
 .assistants{display:flex;flex-wrap:wrap;gap:6px}
@@ -64,11 +66,21 @@ input:focus{border-color:var(--accent)}
 let seq=0;const pending=new Map();
 addEventListener("message",e=>{const m=e.data;if(!m||m.jsonrpc!=="2.0")return;
  if(m.id!==undefined&&pending.has(m.id)){const p=pending.get(m.id);pending.delete(m.id);m.error?p[1](new Error(m.error.message||"tool error")):p[0](m.result);}
- if(m.method==="ui/notifications/tool-result"&&m.params&&m.params.structuredContent)render(m.params.structuredContent);});
+ if(m.method==="ui/notifications/tool-result"&&m.params&&m.params.structuredContent)render(m.params.structuredContent);
+ if(m.method==="ui/notifications/host-context-changed"&&m.params)applyDevice(m.params.hostContext||m.params);});
 function call(name,args){return new Promise((res,rej)=>{const id=++seq;pending.set(id,[res,rej]);
  parent.postMessage({jsonrpc:"2.0",id,method:"tools/call",params:{name,arguments:args||{}}},"*");
  setTimeout(()=>{if(pending.has(id)){pending.delete(id);rej(new Error("timeout"));}},15000);});}
-parent.postMessage({jsonrpc:"2.0",method:"ui/notifications/initialized",params:{}},"*");
+function applyDevice(ctx){const dc=((ctx||{}).deviceClass||"display");
+ document.body.dataset.device=dc;
+ if(dc==="tv")document.body.classList.add("big");
+ if(dc==="mobile")document.body.classList.add("compact");
+ if(dc==="voice")document.body.classList.add("voice");}
+async function boot(){
+ try{const init=await call("ui/initialize",{protocolVersion:"2025-11-25",clientInfo:{name:"ambient-dashboard",version:"1.0"}});
+  applyDevice(init&&init.hostContext);}catch{}
+ parent.postMessage({jsonrpc:"2.0",method:"ui/notifications/initialized",params:{}},"*");}
+boot();
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const ago=t=>{const s=(Date.now()-new Date(t).getTime())/1e3;return s<60?Math.round(s)+"s":s<3600?Math.round(s/60)+"m":Math.round(s/3600)+"h"};
 const ICONS=${JSON.stringify(STATUS_ICON)};
@@ -85,28 +97,54 @@ function showErr(e){document.getElementById("err").textContent=e.message||String
 function refresh(){call("dashboard").then(r=>{if(r&&r.structuredContent)render(r.structuredContent);}).catch(()=>{});}
 document.getElementById("ask").onsubmit=e=>{e.preventDefault();const q=document.getElementById("q");if(!q.value.trim())return;
  call("delegate",{task:q.value.trim()}).then(()=>{q.value="";refresh();}).catch(showErr);};
-refresh();setInterval(refresh,2500);
+refresh();
 </script></body></html>`;
+
+const HOST_BOOT = `
+let hostCtx={};
+function rpc(method,params){return new Promise((res,rej)=>{const id=++seq;pending.set(id,[res,rej]);
+ parent.postMessage({jsonrpc:"2.0",id,method,params:params||{}},"*");
+ setTimeout(()=>{if(pending.has(id)){pending.delete(id);rej(new Error("timeout"));}},15000);});}
+function applyDevice(ctx){
+ hostCtx=ctx||{};const dc=(ctx.deviceClass||"display");
+ document.body.dataset.device=dc;
+ if(dc==="tv")document.body.classList.add("big");
+ if(dc==="mobile")document.body.classList.add("compact");
+ if(dc==="voice")document.body.classList.add("voice");
+}
+async function boot(){
+ try{const init=await rpc("ui/initialize",{protocolVersion:"2025-11-25",clientInfo:{name:"ambient-view",version:"1.0"}});
+  applyDevice(init&&init.hostContext);}catch{}
+ parent.postMessage({jsonrpc:"2.0",method:"ui/notifications/initialized",params:{}},"*");
+}
+`;
 
 export const TASK_HTML = `<!doctype html>
 <html><head><meta charset="utf-8"><style>
 :root{color-scheme:dark;--bg:#0c0d10;--panel:#14161a;--line:#23262c;--fg:#e6e8ec;--dim:#8a909c;--accent:#7cc7ff;--ok:#5ad48a;--bad:#ff7a7a;--warn:#ffc66e}
 *{box-sizing:border-box;margin:0}
 body{background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,system-ui,sans-serif;padding:14px;display:flex;flex-direction:column;gap:8px}
-h1{font-size:15px;font-weight:600}
-.status{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+body.big{font-size:24px;padding:48px;gap:16px}
+body.big h1{font-size:30px}body.big .status{font-size:18px}body.big ol{font-size:20px}body.big .answer,body.big .approval{font-size:22px;padding:16px 20px}
+body.compact{font-size:13px;padding:10px}
+body.voice{background:transparent;padding:10px}
+h1{font-size:1.1em;font-weight:600}
+.status{font-size:.78em;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
 .status.waiting_approval{color:var(--warn)}.status.completed{color:var(--ok)}.status.failed{color:var(--bad)}.status.running,.status.accepted,.status.queued{color:var(--accent)}
-ol{margin:0;padding-left:18px;color:var(--dim);font-size:12px;display:flex;flex-direction:column;gap:2px}
-.answer{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
-.approval{border:1px solid var(--warn);border-radius:8px;padding:8px 10px;font-size:13px}
+ol{margin:0;padding-left:1.3em;color:var(--dim);font-size:.85em;display:flex;flex-direction:column;gap:2px}
+.answer{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:.93em}
+.approval{border:1px solid var(--warn);border-radius:8px;padding:8px 10px;font-size:.93em}
 </style></head><body>
 <h1 id="title">Task</h1><div class="status" id="status"></div><ol id="steps"></ol>
 <div class="approval" id="approval" style="display:none"></div>
 <div class="answer" id="answer" style="display:none"></div>
 <script>
+let seq=0;const pending=new Map();
 addEventListener("message",e=>{const m=e.data;if(!m||m.jsonrpc!=="2.0")return;
- if(m.method==="ui/notifications/tool-result"&&m.params&&m.params.structuredContent)render(m.params.structuredContent);});
-parent.postMessage({jsonrpc:"2.0",method:"ui/notifications/initialized",params:{}},"*");
+ if(m.id!==undefined&&pending.has(m.id)){const p=pending.get(m.id);pending.delete(m.id);m.error?p[1](new Error(m.error.message||"tool error")):p[0](m.result);}
+ if(m.method==="ui/notifications/tool-result"&&m.params&&m.params.structuredContent)render(m.params.structuredContent);
+ if(m.method==="ui/notifications/host-context-changed"&&m.params)applyDevice(m.params.hostContext||m.params);});
+${HOST_BOOT}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function render(d){const t=d.task||{};
  document.getElementById("title").textContent=t.title||"Task";
@@ -117,4 +155,5 @@ function render(d){const t=d.task||{};
  else apEl.style.display="none";
  const a=document.getElementById("answer");
  if(t.answer||t.failure){a.style.display="";a.textContent=t.answer||t.failure;}else a.style.display="none";}
+boot();
 </script></body></html>`;

@@ -1,6 +1,8 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
+import { existsSync } from "node:fs";
 import { createServer as createHttpServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import WebSocket, { WebSocketServer } from "ws";
@@ -10,6 +12,7 @@ import { AlexaRequestError, handleAlexaRequest } from "./alexa.js";
 import { createMcpServer } from "./mcp.js";
 import { buildRuntimeRegistry, type RuntimeRegistry } from "./runtimes/registry.js";
 import type { ConnectorConnection } from "./runtimes/types.js";
+import { SimHost } from "./sim.js";
 import { AmbientStore } from "./store.js";
 
 type McpSession = {
@@ -23,6 +26,7 @@ export type AmbientHttpDependencies = {
   accessToken?: string;
   allowUnauthenticated?: boolean;
   askWaitMs?: number;
+  sim?: SimHost;
   alexa?: {
     applicationId?: string;
     auth?: OAuthProvider;
@@ -219,6 +223,76 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
       }
       return;
     }
+    if (dependencies.sim && (url.pathname === "/sim" || url.pathname.startsWith("/sim/"))) {
+      const sim = dependencies.sim;
+      if (url.pathname === "/sim/api/events" && request.method === "GET") {
+        response.writeHead(200, {
+          "content-type": "text/event-stream",
+          "cache-control": "no-cache, no-transform",
+          connection: "keep-alive"
+        });
+        const send = (event: unknown) => response.write(`data: ${JSON.stringify(event)}\n\n`);
+        const unlisten = sim.onEvent(send);
+        const heartbeat = setInterval(() => response.write(": ping\n\n"), 15_000);
+        request.on("close", () => {
+          clearInterval(heartbeat);
+          unlisten();
+        });
+        return;
+      }
+      if (url.pathname === "/sim/api/turn" && request.method === "POST") {
+        try {
+          const input = await jsonBody(request) as { utterance?: unknown } | undefined;
+          const utterance = typeof input?.utterance === "string" ? input.utterance.trim() : "";
+          if (!utterance) {
+            writeJson(response, 400, { error: "utterance is required" });
+            return;
+          }
+          writeJson(response, 200, await sim.turn(utterance));
+        } catch (error) {
+          writeJson(response, 500, { error: error instanceof Error ? error.message : String(error) });
+        }
+        return;
+      }
+      if (url.pathname === "/sim/api/tool" && request.method === "POST") {
+        try {
+          const input = await jsonBody(request) as { name?: unknown; arguments?: unknown } | undefined;
+          if (typeof input?.name !== "string" || !input.name) {
+            writeJson(response, 400, { error: "tool name is required" });
+            return;
+          }
+          const args = input.arguments && typeof input.arguments === "object" ? input.arguments as Record<string, unknown> : {};
+          writeJson(response, 200, await sim.callTool(input.name, args));
+        } catch (error) {
+          writeJson(response, 500, { error: error instanceof Error ? error.message : String(error) });
+        }
+        return;
+      }
+      if (url.pathname === "/sim/api/resource" && request.method === "GET") {
+        const uri = url.searchParams.get("uri") ?? "";
+        try {
+          const resource = await sim.readResource(uri);
+          if (resource) writeJson(response, 200, resource);
+          else writeJson(response, 404, { error: "not_found" });
+        } catch {
+          writeJson(response, 404, { error: "not_found" });
+        }
+        return;
+      }
+      if (url.pathname === "/sim/api/elicit" && request.method === "POST") {
+        const input = await jsonBody(request) as { id?: unknown; decision?: unknown } | undefined;
+        const decision = input?.decision === "deny" ? "deny" : input?.decision === "decline" ? "decline" : "approve_once";
+        const answered = typeof input?.id === "string" && sim.answerElicit(input.id, decision);
+        writeJson(response, answered ? 200 : 404, { answered });
+        return;
+      }
+      if (request.method === "GET") {
+        const asset = sim.asset(url.pathname);
+        if (asset) writeText(response, 200, asset.body, asset.type);
+        else writeJson(response, 404, { error: "not_found" });
+        return;
+      }
+    }
     if (request.method === "POST" && url.pathname === "/alexa") {
       let parsed: unknown;
       try {
@@ -360,6 +434,19 @@ export async function startFromEnvironment(env: Record<string, string | undefine
     ...(config.accessToken ? { accessToken: config.accessToken } : {}),
     allowUnauthenticated: config.allowUnauthenticated
   } : undefined;
+  // The simulator is a real MCP client on the loopback /mcp endpoint — it goes
+  // through the same auth surface, so hand it the local token when one is set.
+  const simAssets = [new URL("../web/sim/", import.meta.url), new URL("../../web/sim/", import.meta.url)]
+    .map(candidate => fileURLToPath(candidate))
+    .find(dir => existsSync(dir)) ?? join(process.cwd(), "web/sim");
+  const sim = new SimHost({
+    registry,
+    mcpUrl: `http://127.0.0.1:${config.port}/mcp`,
+    ...(config.accessToken ? { token: config.accessToken } : {}),
+    assetsDir: simAssets,
+    env
+  });
+  sim.watch();
   const http = createAmbientHttpServer({
     registry,
     ...(auth ? { auth } : {}),
@@ -367,11 +454,13 @@ export async function startFromEnvironment(env: Record<string, string | undefine
     ...(connectors.size > 0 ? { connectors } : {}),
     ...(alexa ? { alexa } : {}),
     askWaitMs: config.askWaitMs,
+    sim,
     allowUnauthenticated: !auth && !config.accessToken && config.allowUnauthenticated
   });
   await new Promise<void>(resolve => http.server.listen(config.port, "0.0.0.0", resolve));
   registry.startAll();
   return async () => {
+    sim.close();
     await registry.close();
     await http.close();
     store.close();

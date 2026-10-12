@@ -30,9 +30,34 @@ credentials and private transcripts out of the repository.
   "Nothing is running" once a run is `unknown`. Verified live over
   `pnpm demo` with a raw SDK client — no id strings appear in any `speech`
   field (golden tests pin this).
-- `pnpm scan` green: typecheck, eslint, knip, 71 tests.
+- `pnpm scan` green: typecheck, eslint, knip, 80 tests.
 - The installed Hermes gateway accepts the pinned WebSocket connection, replays
   observed events by sequence, and surfaces replay gaps as `unknown` work.
+- Alexa+ simulator (2026-10-12): `/sim` serves a voice panel + device frame; it
+  is a real MCP client on the loopback `/mcp` (Streamable HTTP, declares the
+  `elicitation` capability). Natural-language turns route through a keyword
+  router (Bedrock `toolConfig` when `BEDROCK_ROUTER_*` is configured) onto the
+  semantic tools — never by id.
+- Simulated approval, observed live: `delegate` ran "Book a table at Lupa",
+  the run went `waiting_approval`, `server.server.elicitInput` held an in-call
+  elicitation open on the tool call's SSE stream, the browser card resolved it
+  (`POST /sim/api/elicit`), `respondToApproval` resumed the run, and the turn
+  POST answered "Done — Lupa is booked…". The 60s timeout auto-declines stale
+  elicitations; a page (re)load replays still-pending cards.
+- Sim live feed: `GET /sim/api/events` streams `run` events (title/status/
+  assistant plus the task-view payload — the UI updates without a tool call),
+  `attention` counts, and `elicit` cards; the orb rings amber while anything
+  needs you. Screenshots in `docs/media/sim-*.png` (Echo Show 8/15, Mobile,
+  Fire TV, Voice only) were captured by scripted Playwright driving the real
+  page, including the mid-run `waiting_approval` state.
+- MCP App views do the `ui/initialize` handshake and read
+  `hostContext.deviceClass` (`ui/notifications/host-context-changed` re-fits
+  them when the sim device switches — verified: Fire TV renders the large
+  variant). The old 2.5 s dashboard polling is gone; refreshes are pushed.
+- Known edge: a `status` call on a `waiting_approval` run also elicits (by
+  design — voice clients get asked in-band); two in-flight calls can hold one
+  elicitation each for the same approval. The first browser answer wins the
+  real approval; the other call just reports current state.
 
 ## Per-adapter live status
 
@@ -49,8 +74,9 @@ Removed 2026-10-11 (unverified, trademark risk): `grokbot`, `muse`, `townie`,
 
 ## Still required for the hackathon submission
 
-- Connect the real Alexa+ MCP client (or the rules-permitted simulated Alexa+)
-  and record the negotiated protocol and account stage.
+- Connect the real Alexa+ MCP client (the rules-permitted simulated experience
+  at `/sim` is built and recorded above) and record the negotiated protocol
+  and account stage.
 - Link the Echo custom skill; verify Amazon request signature before public use.
 - Speak a question + follow-up through Alexa; record spoken-result latency.
 - Run a real end-to-end task with steer, approval, and cancellation on a live
