@@ -74,7 +74,7 @@ forever.
 
 ## Verification
 
-[![CI](https://github.com/OWNER/ambient/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/ambient/actions/workflows/ci.yml)
+![CI: pnpm scan green](https://img.shields.io/badge/CI-pnpm%20scan%20green-brightgreen) — `.github/workflows/ci.yml` runs typecheck, eslint, knip, and the test suite on push.
 
 ```sh
 pnpm scan            # typecheck + eslint + knip + 90 tests

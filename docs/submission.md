@@ -60,7 +60,7 @@ factor, built for the multi-agent world that's arriving.)*
 - **AWS (pending deploy):** CDK + EC2 + Secrets Manager + ACM for the TLS
   deployment; Bedrock for the agent runtime and (optionally) utterance→tool
   routing in the sim.
-- **Quality:** 87 tests, typecheck + ESLint + knip + CI workflow, `pnpm demo`
+- **Quality:** 90 tests, typecheck + ESLint + knip + CI workflow, `pnpm demo`
   to a working sim in under a minute with zero credentials.
 
 *(Technical Implementation — a real standards server with adapters over four

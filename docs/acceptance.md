@@ -90,7 +90,7 @@ credentials and private transcripts out of the repository.
   `{state:"accepted"|"streaming"}`; `steer`/`interrupt`/`respondToApproval`/
   `listPendingApprovals` return typed results. `ActiveSession.session_key` →
   `durableId`; session rows are camelCase at the adapter boundary.
-  `pnpm scan && pnpm build` green — 87 tests / 18 files.
+  `pnpm scan && pnpm build` green — 90 tests / 19 files..
 - Submission assets (2026-10-12): architecture diagram authored from repo
   structure (`docs/media/ambient-architecture.json` → validated 9/9 showcase
   checks → `ambient-architecture.html` + `architecture.png`); approval-moment

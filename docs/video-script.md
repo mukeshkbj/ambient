@@ -21,7 +21,7 @@ agent" — same supervisor, different worker. Say which is which either way.
 | 1:25–1:45 | Trigger the deploy disconnect (demo agent's deploy script drops mid-run). "Is the deploy done?" → "It disconnected before confirming. I won't retry it." | "Here's the part most demos fake. The agent's host died mid-run — Ambient says *unknown*, not 'failed', not a guess. An honest 'I don't know' is the feature." |
 | 1:45–2:05 | "What did my agents get done today?" Briefing speaks the digest across agents. | "One briefing across every agent I supervise — what finished, what needs me, what's still running." |
 | 2:05–2:25 | Terminal: MCP Inspector (or the curl transcript) against `/mcp` — initialize `2025-11-25`, tool list, the `ui://ambient/task` resource. | "Underneath it's a real MCP server — spec 2025-11-25 over Streamable HTTP. Any MCP client can supervise; the sim you just saw is one." |
-| 2:25–2:40 | README on screen: architecture SVG, CI badge, 87 tests. | "Eighty-seven tests, typed end to end, runs with zero credentials. The Bedrock path lights up the moment AWS keys exist." |
+| 2:25–2:40 | README on screen: architecture, CI badge, 90 tests. | "Ninety tests, typed end to end, runs with zero credentials. The Bedrock path lights up the moment AWS keys exist." |
 | 2:40–2:50 | Title card again. | "Ambient. Your agents work in the background — Alexa tells you when they need you." |
 
 **Post checklist**
