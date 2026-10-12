@@ -71,6 +71,23 @@ credentials and private transcripts out of the repository.
   stale timestamp, and foreign cert URL all 400. Interaction model now has
   carrier phrases on every SearchQuery sample, `about` slots instead of id
   slots, and a matching `en-US` locale alongside `en-GB`.
+- AssistantClient type tightening (2026-10-12): `AssistantEvent` is a
+  discriminated union (7 typed variants); `AssistantWireEvent` is the loose
+  transport shape canonicalized inside `src/hermes.ts` — the only file that
+  still names `session_key`/`request_id`/`started_at`. `submitPrompt` returns
+  `{state:"accepted"|"streaming"}`; `steer`/`interrupt`/`respondToApproval`/
+  `listPendingApprovals` return typed results. `ActiveSession.session_key` →
+  `durableId`; session rows are camelCase at the adapter boundary.
+  `pnpm scan && pnpm build` green — 87 tests / 18 files.
+- Submission assets (2026-10-12): architecture diagram authored from repo
+  structure (`docs/media/ambient-architecture.json` → validated 9/9 showcase
+  checks → `ambient-architecture.html` + `architecture.png`); approval-moment
+  GIF captured live by Playwright video + ffmpeg
+  (`docs/media/sim-approval.gif`, delegate → elicit card → approve → "Done"
+  at 9 fps / 920 px); `docs/friction-log.md` holds 8 reproduced entries;
+  `docs/product-feedback.md`, `docs/video-script.md`, `docs/submission.md`,
+  `CONTRIBUTING.md`, `docs/adapters.md`, and the rewritten README are in
+  place.
 
 ## Per-adapter live status
 

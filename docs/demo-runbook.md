@@ -5,7 +5,7 @@
    use `pnpm dev` / `pnpm dev:bedrock` with `runtimes.json`.)
 2. Open `/healthz` — show every configured runtime, its state, and its
    capability set. Run `pnpm check:runtime <id>` live for at least one runtime.
-3. `agents` in the MCP client (or "list my assistants" on Alexa), then
+3. `agents` in the MCP client (or "what agents do I have" on Alexa), then
    `agents` with `use` — show the sticky default change.
 4. `delegate` a Saturday dinner booking to the planner agent — watch progress
    steps, then the approval request for the deposit. Answer through the MCP

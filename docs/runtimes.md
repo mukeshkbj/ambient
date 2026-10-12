@@ -27,7 +27,7 @@ pnpm check:runtime <id-or-name>     # handshake → trivial prompt → verdict J
 | `openclaw` | OpenClaw gateway | WS protocol v4 | yes | yes | yes | yes (exec) | yes | realtime |
 | `demo` | Scripted agent | none | yes | yes | yes | yes | yes | realtime |
 
-Capabilities are reported per runtime in `list_assistants` and `/healthz`;
+Capabilities are reported per runtime in `agents` and `/healthz`;
 unsupported controls fail with a clear error instead of pretending.
 
 ## Bedrock (`bedrock`)

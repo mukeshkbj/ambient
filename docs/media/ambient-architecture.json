@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Ambient — Alexa supervises your background agents",
+    "output": "ambient-architecture.html",
+    "quality_profile": "showcase"
+  },
+  "layout": { "mode": "grid", "cols": 4, "gapX": 90, "gapY": 80, "cellW": 150, "cellH": 64 },
+  "components": [
+    { "id": "alexa", "type": "external", "label": "Alexa+ / Echo devices", "sublabel": "voice + task cards", "pos": [60, 90], "size": [150, 62], "tag": "MCP client" },
+    { "id": "sim", "type": "frontend", "label": "Alexa+ simulator  /sim", "sublabel": "real MCP client · MCP Apps host", "pos": [60, 300], "size": [160, 64], "tag": "loopback" },
+    { "id": "alexa-ep", "type": "backend", "label": "POST /alexa", "sublabel": "skill endpoint", "pos": [330, 90], "size": [150, 62], "tag": "signature-verified" },
+    { "id": "mcp", "type": "backend", "label": "Streamable HTTP /mcp", "sublabel": "MCP 2025-11-25", "pos": [330, 300], "size": [170, 64], "tag": "sessions · elicitation" },
+    { "id": "engine", "type": "backend", "label": "ConversationEngine", "sublabel": "runs · approvals · honest unknown", "pos": [590, 270], "size": [180, 72] },
+    { "id": "store", "type": "database", "label": "node:sqlite", "sublabel": "conversations · runs · approvals", "pos": [600, 420], "size": [160, 56] },
+    { "id": "bedrock", "type": "cloud", "label": "Amazon Bedrock", "sublabel": "Converse tool loop · Nova", "pos": [860, 60], "size": [160, 56], "tag": "needs AWS creds" },
+    { "id": "hermes", "type": "external", "label": "Hermes", "sublabel": "WS JSON-RPC gateway", "pos": [860, 180], "size": [160, 56] },
+    { "id": "openclaw", "type": "external", "label": "OpenClaw", "sublabel": "protocol v4", "pos": [860, 300], "size": [160, 56] },
+    { "id": "demo", "type": "backend", "label": "Demo agent", "sublabel": "scripted · zero credentials", "pos": [860, 420], "size": [160, 56], "tag": "default" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Ambient server — origin/host allowlists · session eviction", "wraps": ["alexa-ep", "mcp", "engine", "store"] },
+    { "kind": "security-group", "label": "Agent runtimes — AssistantClient adapters", "wraps": ["bedrock", "hermes", "openclaw", "demo"] }
+  ],
+  "connections": [
+    { "id": "alexa-skill", "from": "alexa", "to": "alexa-ep", "label": "skill intents" },
+    { "id": "alexa-mcp", "from": "alexa", "to": "mcp", "label": "MCP client · 2025-11-25", "variant": "emphasis", "labelAt": [205, 215] },
+    { "id": "sim-mcp", "from": "sim", "to": "mcp", "label": "tools/call · elicitInput · ui://", "variant": "emphasis", "labelAt": [290, 395] },
+    { "id": "ep-engine", "from": "alexa-ep", "to": "engine", "label": "intents → speak()", "labelAt": [538, 205] },
+    { "id": "mcp-engine", "from": "mcp", "to": "engine", "label": "voice-first tools", "variant": "emphasis", "labelAt": [575, 382] },
+    { "id": "engine-store", "from": "engine", "to": "store", "label": "SQLite", "labelAt": [690, 385] },
+    { "id": "engine-bedrock", "from": "engine", "to": "bedrock" },
+    { "id": "engine-hermes", "from": "engine", "to": "hermes" },
+    { "id": "engine-openclaw", "from": "engine", "to": "openclaw" },
+    { "id": "engine-demo", "from": "engine", "to": "demo" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Voice-first surface", "items": ["Six tools map to what people say: delegate, status, approve, stop, agents, briefing", "Approvals ride MCP elicitInput — speech never carries internal ids"] },
+    { "dot": "emerald", "title": "Honest state", "items": ["Disconnects mark runs unknown — never a guessed failure", "Approval snapshots reconcile after reconnect; nothing waits forever"] },
+    { "dot": "rose", "title": "Zero-credential demo", "items": ["pnpm demo serves /sim and /mcp with the scripted agent", "Bedrock, Hermes, and OpenClaw activate only when credentials exist"] }
+  ]
+}

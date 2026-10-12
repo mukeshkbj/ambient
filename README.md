@@ -1,85 +1,106 @@
 # Ambient
 
-Ambient is a personal-assistant gateway: one authenticated MCP endpoint — plus an
-Alexa skill and an optional dashboard — in front of every assistant you can
-actually reach. Delegate work to a Bedrock agent, steer Hermes, or watch a task
-through — through one voice or chat surface.
+**Your AI agents work in the background. Alexa tells you when they need you.**
 
-```text
-Alexa+ / any MCP client ─┐
-Alexa custom skill ──────┤   authenticated Streamable HTTP
-Ambient dashboard ───────┴──▶ Ambient
-                                 │  RuntimeRegistry — one ConversationEngine per
-                                 │  runtime over a shared SQLite store
-                ┌────────────────┼─────────────────┬───────────────┐
-          Bedrock agent    Hermes (WS)      OpenClaw (WS v4)   Demo agent
-          (Converse API)        │
-                          outbound
-                          connector
-```
+Ambient is an ambient supervisor for a fleet of personal agents: they run for
+minutes or hours — coding, booking, deploying — and when they hit a decision
+only you can make, Alexa (or the bundled simulator) speaks up. Approvals are
+elicited, disconnects are reported honestly as *unknown*, and no spoken reply
+ever contains an internal id.
 
-Assistants keep their own tools, memory, sessions, and approval policy. Ambient
-routes, tracks work honestly (`queued → accepted → running → completed/failed/
-cancelled/unknown`), and reports per-runtime capabilities instead of faking
-controls an assistant does not have.
+![Delegate a task, get asked to approve, approve by voice](docs/media/sim-approval.gif)
 
-## Quick start
+| | |
+|---|---|
+| **Track** | Alexa+ — primary track |
+| **Compliance** | Self-hosted MCP server · MCP spec **2025-11-25** · Streamable HTTP |
+| **Entry point** | `src/server.ts` → `createMcpServer` in `src/mcp.ts` |
+| **Simulated Alexa+ host** | `/sim` — a real MCP client, not a mock |
+| **Also** | `/alexa` signature-verified skill endpoint · `ui://ambient/task` MCP App views |
 
-Node 22.13+, pnpm. Zero credentials needed for the demo:
+## Run it in 60 seconds
+
+Zero credentials, fully deterministic:
 
 ```sh
-pnpm demo                    # scripted agent — no keys, no network
+pnpm install
+pnpm demo
+# → open http://localhost:3000/sim
 ```
 
-For a real agent, copy `runtimes.example.json` to `runtimes.json`, fill in
-endpoints, and point each `tokenEnv` at a credential env var — secrets never go
-in the file. Then:
+Try: *"Book Lupa for Saturday at 7"* — the task card fills with live steps,
+the approval card asks *"Approve once or deny?"*, and the agent finishes only
+after you answer. Then ask *"What did my agents get done today?"*
+
+## With AWS
 
 ```sh
-AMBIENT_RUNTIMES_FILE=runtimes.json ALLOW_UNAUTHENTICATED=true pnpm dev
-pnpm check:runtime hermes        # handshake → prompt → verdict, per runtime
-MCP_URL=http://127.0.0.1:3000/mcp pnpm smoke:mcp
+AWS_PROFILE=your-profile pnpm dev:bedrock
+# or copy runtimes.example.json → runtimes.json and wire your own endpoints
 ```
 
-`docs/runtimes.md` documents each adapter's exact surface, required credentials,
-and honest limits (Bedrock needs AWS credentials and a Nova-capable region;
-Hermes and OpenClaw need their gateways; the demo agent is fully offline).
+The Bedrock adapter runs a real Converse tool loop with approval-gated tools
+and transcript persistence. Hermes (WS JSON-RPC) and OpenClaw (protocol v4)
+plug in through the same `AssistantClient` interface — see
+[`docs/adapters.md`](docs/adapters.md) and [`docs/runtimes.md`](docs/runtimes.md).
 
-## MCP surface
+## Architecture
 
-Seven customer-intent tools: `delegate` (start or continue work), `status`
-(latest or named task — fuzzy-matched by title, never an id), `approve`
-(pending requests, answered in place through MCP elicitation when the client
-supports it), `stop`, `agents`, `briefing`, and `dashboard` — a live MCP App
-(agent switcher, work feed, one-tap approvals) in hosts that support
-`ui://` resources, and a full JSON snapshot everywhere else.
+[![Ambient architecture](docs/media/architecture.png)](docs/media/ambient-architecture.html)
 
-`delegate` routes to the selected agent or one named per call; a sticky default
-is kept per server. Every result is speakable: two sentences, outcome first,
-no ids — the same text an Alexa host can say verbatim.
+*[Interactive version](docs/media/ambient-architecture.html) — every box is a
+real module in this repo.*
 
-## Alexa
+## Honesty guarantees
 
-`POST /alexa` serves a custom skill with assistant-selection intents ("ask
-my coding agent", "use Nova") and a sticky per-session default. Import
-`alexa/interaction-model.en-GB.json`; see `docs/deployment.md`. OAuth account
-linking is bundled for the single-owner case.
+| Run state | What Alexa says (`speak()` in `src/voice.ts`) |
+|---|---|
+| `queued` / `accepted` / `running` | "*Agent* is working on *task* — *latest step*. Say 'what's the status' any time." |
+| `waiting_approval` | "*Agent* is asking: *request*. Say approve to allow it once, or deny." |
+| `completed` | The agent's own answer, clamped to two sentences — never an id. |
+| `failed` | "*Agent* couldn't finish *task*: *reason*." |
+| `cancelled` | "*Agent* stopped *task*." |
+| `cancel_requested` | "Asking *agent* to stop *task*." |
+| `unknown` | "*Agent* lost the connection during *task*, so the outcome is unknown. It won't retry by itself — ask again when it's back." |
+| Runtime `offline` | "*Agent* is offline; *task* is marked *status* until it reconnects." |
 
-## Topology
-
-The default deployment keeps assistants private: the bridge accepts an outbound
-connector (per-runtime bearer + `x-ambient-runtime-id`) so a Hermes host never
-needs a public listener. Cloud assistants use their own HTTPS endpoints. The CDK
-stack provisions one EC2 bridge host (`pnpm infra:synth`, `docs/deployment.md`).
+`unknown` is a first-class status: when a runtime drops mid-run Ambient says
+so instead of guessing, and `stop` refuses to touch work whose fate it can't
+see. Approval snapshots reconcile after every reconnect so nothing waits
+forever.
 
 ## Verification
 
+[![CI](https://github.com/OWNER/ambient/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/ambient/actions/workflows/ci.yml)
+
 ```sh
-pnpm scan            # typecheck + eslint + knip + tests
+pnpm scan            # typecheck + eslint + knip + 87 tests
 pnpm build
 pnpm check:runtime <id>   # live reachability verdict per runtime
-pnpm latency              # authenticated MCP latency, per tool
 ```
 
-Evidence and open gates: `docs/acceptance.md`, `docs/compatibility.md`,
-`docs/demo-runbook.md`, `docs/submission.md`.
+A golden speech corpus (`test/voice.test.ts`) regex-rejects ids in every
+spoken string; security middleware (origin/host allowlists, DNS-rebinding,
+session eviction, Alexa signature verification) is covered by
+`test/security.test.ts`. Honest receipts live in
+[`docs/acceptance.md`](docs/acceptance.md).
+
+## Limits, stated plainly
+
+- **Bedrock needs AWS credentials** and a Nova-capable region — its live
+  receipt is marked *blocked* in `acceptance.md` because this build machine
+  has none; the adapter is unit-tested against a mocked Converse loop.
+- **Hermes / OpenClaw** need their gateways reachable; a sleeping laptop means
+  an offline runtime — and Ambient will say *offline*, not pretend.
+- **AWS deployment** is prepared (`pnpm infra:synth`, `docs/deployment.md`)
+  but the TLS deploy itself is pending account-owner approval.
+- **The `/sim` host** stands in for the gated Alexa+ toolkit — it is a real
+  MCP client over loopback, so everything it does is standards-verifiable.
+
+## Docs
+
+[CONTRIBUTING](CONTRIBUTING.md) · [adapters](docs/adapters.md) ·
+[acceptance](docs/acceptance.md) · [friction log](docs/friction-log.md) ·
+[product feedback](docs/product-feedback.md) ·
+[video script](docs/video-script.md) · [submission](docs/submission.md) ·
+[demo runbook](docs/demo-runbook.md)
