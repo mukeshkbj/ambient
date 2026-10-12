@@ -76,24 +76,49 @@ Objective: ship the Alexa+ hackathon submission per
   adapter" guide on the demo template; `CONTRIBUTING.md` covers setup,
   `pnpm scan`, adapter + voice/honesty rules. `pnpm scan && pnpm build`
   green — 87 tests.
+- **Phase 8 (submission assets)** — commit `9fc671a`: README rewrite (pitch,
+  compliance box, GIF, architecture, honesty table), archify-generated
+  interactive diagram + PNG (showcase-validated 9/9), approval-moment GIF
+  (Playwright video → ffmpeg, 3.8 MB), `docs/friction-log.md` (8 real
+  entries), `docs/product-feedback.md` (per-tool sections), `docs/submission.md`
+  (Devpost prose), `docs/video-script.md` (2:45 timed script).
+- **Phase 9 (clean-clone QA)** — `/private/tmp/ambient-clean`: `pnpm i &&
+  pnpm demo` ran from README alone; first spoken answer ~11 s (elicitation
+  card at 4.9 s, completion at 6.1 s — far under the 2 min target);
+  `pnpm scan && pnpm build` green in the clone.
+- **Phase 2.5 (MCP Tasks)** — commit `9ced97a`: `delegate_task` registered
+  via `server.experimental.tasks.registerToolTask` (`taskSupport:
+  "optional"`, `InMemoryTaskStore`, 1 h ttl, 250 ms poll). `waiting_approval`
+  maps to `input_required` with a voice-safe `statusMessage`; `unknown` maps
+  to `failed` with an honest message. `delegate` deliberately stays a normal
+  tool — the SDK's auto-poll on plain `optional` calls is unbounded and
+  would break Alexa's bounded ask. Round-trip proven: `test/tasks.test.ts`
+  (real SDK client, `taskCreated` → `working` → `input_required` → approve →
+  `completed` → `getTaskResult`, plus failed + cancelled) and
+  `scripts/smoke-tasks.ts` over real Streamable HTTP. 90 tests.
+- **CDK synth receipt** — `pnpm infra:synth` emits a 25-resource template
+  (EC2 + EIP, dedicated VPC, IAM, 2 Secrets Manager secrets). Synth only;
+  deploy awaits user approval.
 
 ## Remaining
 
-- Phase 2.5 (cuttable): MCP Tasks augmentation.
 - Phase 6: AWS TLS deploy — **ASK USER before cdk deploy / anything paid**.
-- Phase 8: README rewrite, compliance box, architecture SVG, GIF, friction log
-  (5+ real entries), product feedback per tool, video, Devpost text.
-- Phase 9: clean-clone QA + time-to-first-spoken-answer <2min.
+- Definition-of-done items needing the user (below).
 
 ## Blockers
 
-- **AWS credentials**: none on this machine → Bedrock live receipt blocked;
+- **AWS credentials**: none on this machine → Bedrock live receipt blocked
+  (DoD line "Bedrock agent completes a real multi-tool task" unverifiable);
   sim's Bedrock tool-choice will run keyword router unless creds appear.
-- **User actions**: public repo/push, `cdk deploy`, ASK console model build,
-  Devpost submission, video recording — all need explicit user approval.
+- **User actions**: public repo/push, `cdk deploy`, ASK console model build
+  (en-US + en-GB model files ready in `alexa/`), Devpost submission, video
+  recording (`docs/video-script.md` ready) — all need explicit user approval.
+- DoD status: 8/10 lines fully verifiable on this machine; the exceptions are
+  Bedrock-live (blocked: credentials) and video+Devpost (user actions).
 
 ## Evidence
 
-- `pnpm scan` = typecheck + eslint + knip + vitest → green (80 tests).
-- `pnpm build` green. `pnpm demo` + raw SDK client transcript in
-  `docs/acceptance.md`.
+- `pnpm scan` = typecheck + eslint + knip + vitest → green (90 tests,
+  19 files).
+- `pnpm build` green. `pnpm demo` + raw SDK client transcript +
+  `scripts/smoke-tasks.ts` HTTP round-trip in `docs/acceptance.md`.

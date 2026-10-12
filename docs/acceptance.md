@@ -100,6 +100,15 @@ credentials and private transcripts out of the repository.
   `docs/product-feedback.md`, `docs/video-script.md`, `docs/submission.md`,
   `CONTRIBUTING.md`, `docs/adapters.md`, and the rewritten README are in
   place.
+- MCP Tasks (2026-10-12): `delegate_task` registered `taskSupport: "optional"`
+  with `InMemoryTaskStore` (1 h ttl, 250 ms poll); `test/tasks.test.ts` proves
+  the SDK-client round-trip (`taskCreated` → `working` → `input_required` →
+  approve → `completed` → `getTaskResult`) plus failed/cancelled mappings,
+  and `scripts/smoke-tasks.ts` verified it live over Streamable HTTP.
+- CDK synth (2026-10-12): `pnpm infra:synth` emits a complete template —
+  EC2 + Elastic IP, dedicated VPC/subnets/routes/security group, IAM role,
+  and two Secrets Manager secrets (connector + OAuth). Synth only; `cdk
+  deploy` awaits account-owner approval (paid resources).
 
 ## Per-adapter live status
 
