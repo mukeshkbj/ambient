@@ -1,8 +1,8 @@
 status=active
-iterations=0
+iterations=1
 blocked_count=0
-judge_errors=0
-claimed=none
+judge_errors=1
+claimed=waiting
 started_at=1791755768
-updated_at=1791755768
+updated_at=1791787402
 owner_session=heather-nerine

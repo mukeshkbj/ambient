@@ -99,6 +99,14 @@ Objective: ship the Alexa+ hackathon submission per
 - **CDK synth receipt** — `pnpm infra:synth` emits a 25-resource template
   (EC2 + EIP, dedicated VPC, IAM, 2 Secrets Manager secrets). Synth only;
   deploy awaits user approval.
+- **Demo video built** — `docs/media/ambient-demo.mp4` (1:50, h264+aac,
+  2.4 MB): `scripts/video/build.py` captures real Playwright runs of `/sim`
+  (cold-open status, Lupa approval click-through, device switching, deploy→
+  `unknown`, briefing) + `say` narration per beat + real /mcp transcript
+  card (protocolVersion, tool list, ui:// URIs — captured live). Frame-
+  checked all beats. Upload remains a user action. Friction log gained a
+  9th entry (PORT without PUBLIC_BASE_URL → forbidden_origin — hit it while
+  recording).
 
 ## Remaining
 
@@ -122,3 +130,6 @@ Objective: ship the Alexa+ hackathon submission per
   19 files).
 - `pnpm build` green. `pnpm demo` + raw SDK client transcript +
   `scripts/smoke-tasks.ts` HTTP round-trip in `docs/acceptance.md`.
+
+## waiting claim (2026-10-12 07:38)
+All agent-doable work complete and committed (20044dd…96ca4d7, 90 tests green). Awaiting user actions: (1) approve AWS/cdk deploy for Phase 6 TLS receipt, (2) provide AWS credentials or approve skipping the Bedrock live receipt, (3) approve public repo creation/push, (4) import + build the interaction model in the ASK console (alexa/interaction-model.*.json ready), (5) record the video (docs/video-script.md ready) and upload publicly, (6) submit Devpost text (docs/submission.md ready) by Oct 22.

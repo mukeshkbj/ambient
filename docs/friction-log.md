@@ -95,3 +95,13 @@ Record an entry while a failure is reproducible. Do not invent entries for failu
 - **Severity:** Nice-to-have (cost ~1 minute, but blocks a cold start)
 - **Workaround:** `npm i -g pnpm@10.33.0`. (Non-Amazon tool.)
 - **Suggestion:** Re-ship corepack, or have Node honor `packageManager` natively so one `package.json` field is the whole bootstrap story.
+
+### 2026-10-12 — This project: `PORT` override without `PUBLIC_BASE_URL` 403s the browser
+
+- **Task:** Record the demo video against `pnpm demo` on a non-default port (3102) because the default was already in use.
+- **Steps:** `PORT=3102 pnpm demo`, then drive `/sim` from a headless browser.
+- **Expected:** The page works; same-origin fetches to `/sim/api/*` succeed.
+- **Actual:** Every browser request carried `Origin: http://127.0.0.1:3102`, which was not in the origin allowlist (seeded only from `PUBLIC_BASE_URL`, still `…:3000`) — `/sim` returned `forbidden_origin` and the elicitation card silently never appeared. Correct behavior from the middleware (DNS-rebinding protection is the point), but the failure mode was opaque: turns "worked" while follow-up calls were rejected.
+- **Severity:** Important
+- **Workaround:** Run with `PUBLIC_BASE_URL=http://127.0.0.1:<port>` (or add the origin via `AMBIENT_ALLOWED_ORIGINS`) whenever `PORT` differs.
+- **Suggestion:** For loopback dev, derive the origin allowlist from the bound port automatically — `PUBLIC_BASE_URL` and `PORT` disagreeing is an easy trap. (Self-friction, not an Amazon tool.)

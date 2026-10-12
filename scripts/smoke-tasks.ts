@@ -7,7 +7,7 @@ const port = Number(process.env.PORT ?? 3101);
 const client = new Client({ name: "tasks-smoke", version: "0.1.0" }, {
   capabilities: { tasks: { list: {}, cancel: {}, requests: { tools: { call: {} } } } }
 });
-await client.connect(new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${port}/mcp`)));
+await client.connect(new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${port}/mcp`)) as Parameters<typeof client.connect>[0]);
 await client.listTools();
 const messages: string[] = [];
 let taskId = "";

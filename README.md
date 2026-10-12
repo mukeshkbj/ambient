@@ -10,6 +10,8 @@ ever contains an internal id.
 
 ![Delegate a task, get asked to approve, approve by voice](docs/media/sim-approval.gif)
 
+**Demo video:** [`docs/media/ambient-demo.mp4`](docs/media/ambient-demo.mp4) — 1:50, narrated, every beat captured live from the sim.
+
 | | |
 |---|---|
 | **Track** | Alexa+ — primary track |

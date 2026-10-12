@@ -25,6 +25,9 @@ agent" — same supervisor, different worker. Say which is which either way.
 | 2:40–2:50 | Title card again. | "Ambient. Your agents work in the background — Alexa tells you when they need you." |
 
 **Post checklist**
-- [ ] Trim to ≤3:00; captions or clean audio.
+- [x] Trim to ≤3:00 — `docs/media/ambient-demo.mp4` built by
+  `scripts/video/build.py` is 1:50 (Playwright captures of the real sim +
+  `say` narration + real /mcp transcript). Re-record with a human voice if
+  preferred; the beat timings above are what it plays.
 - [ ] Upload public YouTube; verify the link unauthenticated in a private window.
 - [ ] Paste the link into Devpost and README.

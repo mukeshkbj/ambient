@@ -109,6 +109,12 @@ credentials and private transcripts out of the repository.
   EC2 + Elastic IP, dedicated VPC/subnets/routes/security group, IAM role,
   and two Secrets Manager secrets (connector + OAuth). Synth only; `cdk
   deploy` awaits account-owner approval (paid resources).
+- Demo video (2026-10-12): `docs/media/ambient-demo.mp4` — 109.7 s, built by
+  `scripts/video/build.py`: Playwright recordings of the real `/sim` (status,
+  approval click-through, device switching, deploy→`unknown`, briefing),
+  `say` narration per beat, HTML cards (title, live MCP transcript captured
+  from the running server, verified stats). Reviewed frame-by-frame. Public
+  upload remains a user action.
 
 ## Per-adapter live status
 
