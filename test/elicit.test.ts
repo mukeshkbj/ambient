@@ -62,7 +62,7 @@ describe("approval via MCP elicitation", () => {
       assistant.emit({
         type: "approval.request",
         sessionId: "runtime-1",
-        payload: { request_id: "ap-1", command: "Book Lupa for 4 — $40 deposit", choices: ["once", "deny"] }
+        payload: { requestId: "ap-1", command: "Book Lupa for 4 — $40 deposit", choices: ["once", "deny"] }
       });
       await waitFor(() => messages.length === 1);
       expect(messages[0]).toContain("Book Lupa");
@@ -88,7 +88,7 @@ describe("approval via MCP elicitation", () => {
       assistant.emit({
         type: "approval.request",
         sessionId: "runtime-1",
-        payload: { request_id: "ap-2", command: "Book Lupa", choices: ["once", "deny"] }
+        payload: { requestId: "ap-2", command: "Book Lupa", choices: ["once", "deny"] }
       });
       const result = await call;
       const structured = result.structuredContent as { status: string; speech: string };
@@ -108,7 +108,7 @@ describe("approval via MCP elicitation", () => {
       assistant.emit({
         type: "approval.request",
         sessionId: "runtime-1",
-        payload: { request_id: "ap-3", command: "Book Lupa — $40 deposit", choices: ["once", "deny"] }
+        payload: { requestId: "ap-3", command: "Book Lupa — $40 deposit", choices: ["once", "deny"] }
       });
       const result = await call;
       const structured = result.structuredContent as { status: string; speech: string; approvals: { command: string }[] };

@@ -30,12 +30,9 @@ function value(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
-function resultStatus(result: Record<string, unknown>): string | undefined {
-  return value(result.status);
-}
-
 function eventText(event: AssistantEvent): string | undefined {
-  return value(event.payload.text) ?? value(event.payload.summary) ?? value(event.payload.message);
+  const payload = event.payload as { text?: unknown; summary?: unknown; message?: unknown };
+  return value(payload.text) ?? value(payload.summary) ?? value(payload.message);
 }
 
 function terminal(status: RunStatus): boolean {
@@ -214,7 +211,7 @@ export class ConversationEngine {
       const current = this.store.run(run.id)!;
       if (current.status === "queued") {
         this.updateRun(run.id, {
-          status: resultStatus(response) === "streaming" ? "running" : "accepted",
+          status: response.state === "streaming" ? "running" : "accepted",
           updatedAt: this.now()
         });
       }
@@ -295,7 +292,7 @@ export class ConversationEngine {
     if (run.status === "unknown") throw new Error(`Work outcome is unknown; wait for ${this.label()} to reconnect before cancelling it`);
     if (!this.assistant.interrupt) throw new Error(`${this.label()} does not support cancelling work`);
     const response = await this.assistant.interrupt(run.liveSessionId);
-    const status = resultStatus(response);
+    const status = response.state;
     this.updateRun(run.id, {
       status: status === "interrupted" ? "cancelled" : "cancel_requested",
       updatedAt: this.now()
@@ -316,8 +313,7 @@ export class ConversationEngine {
     this.approvalResponses.add(approval.requestId);
     try {
       const response = await this.assistant.respondToApproval(approval.liveSessionId, approval.requestId, decision);
-      const resolved = response.resolved;
-      if (typeof resolved !== "number" || resolved < 1) {
+      if (response.resolved < 1) {
         throw new Error(`${this.label()} did not accept the approval response`);
       }
       this.store.resolveApprovalForRuntime(this.options.runtime.id, approval.requestId, this.now());
@@ -340,7 +336,7 @@ export class ConversationEngine {
     if (event.type === "message.complete") this.replayGapSessions.delete(event.sessionId);
     const timestamp = this.now();
     if (event.type === "approval.request") {
-      const requestId = value(event.payload.request_id);
+      const requestId = value(event.payload.requestId);
       if (!requestId) {
         this.updateRun(run.id, { progress: `${this.label()} sent an approval without a request identity`, updatedAt: timestamp });
         return;
@@ -381,7 +377,7 @@ export class ConversationEngine {
       return;
     }
     if (["message.start", "message.delta", "message.interim", "tool.start", "tool.complete", "status.update"].includes(event.type)) {
-      const progress = eventText(event) ?? value(event.payload.name);
+      const progress = eventText(event) ?? ("name" in event.payload ? value(event.payload.name) : undefined);
       this.updateRun(run.id, {
         ...(run.status === "queued" || run.status === "accepted" ? { status: "running" as const } : {}),
         ...(progress ? { progress } : {}),
@@ -434,7 +430,7 @@ export class ConversationEngine {
     const pending = await this.assistant.listPendingApprovals?.(liveSessionId) ?? [];
     const pendingIds = new Set<string>();
     for (const payload of pending) {
-      const requestId = value(payload.request_id);
+      const requestId = value(payload.requestId);
       if (!requestId) throw new Error(`${this.label()} approval snapshot contains an approval without a request identity`);
       pendingIds.add(requestId);
     }
@@ -479,8 +475,8 @@ export class ConversationEngine {
   }
 
   private mergeActiveSession(session: ActiveSession): void {
-    if (!session.session_key) return;
-    const existing = this.store.conversationByDurable(this.options.runtime.id, session.session_key);
+    if (!session.durableId) return;
+    const existing = this.store.conversationByDurable(this.options.runtime.id, session.durableId);
     const title = session.title ?? session.preview ?? `Active ${this.label()} conversation`;
     if (existing) {
       const timestamp = this.now();
@@ -499,7 +495,7 @@ export class ConversationEngine {
     this.store.createConversation({
       id: this.id(),
       runtimeId: this.options.runtime.id,
-      durableSessionId: session.session_key,
+      durableSessionId: session.durableId,
       title,
       liveSessionId: session.id,
       selected: false,

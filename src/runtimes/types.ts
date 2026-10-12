@@ -1,12 +1,41 @@
 import type WebSocket from "ws";
 import type { RuntimeState } from "../types.js";
 
-export type AssistantEvent = {
+/** Canonical approval payload — adapters map their wire fields into this. */
+export type ApprovalPayload = {
+  requestId: string;
+  command: string;
+  description?: string;
+  choices?: string[];
+};
+
+type Event<T extends string, P> = { type: T; sessionId?: string; payload: P; seq?: number };
+
+/** Canonical engine-facing event stream — a discriminated union, not a string. */
+export type AssistantEvent =
+  | Event<"message.start", { kind?: string }>
+  | Event<"message.delta" | "message.interim", { text?: string }>
+  | Event<"message.complete", { text?: string; status?: string; error?: string }>
+  | Event<"tool.start" | "tool.complete", { name?: string }>
+  | Event<"status.update", { text?: string; name?: string; summary?: string; message?: string }>
+  | Event<"approval.request", ApprovalPayload>;
+
+/**
+ * Raw shape a transport emits before an adapter canonicalizes it — wire
+ * protocols use snake_case and their own event names; the AssistantEvent
+ * union only exists after the adapter's mapping layer.
+ */
+export type AssistantWireEvent = {
   type: string;
   sessionId?: string;
   payload: Record<string, unknown>;
   seq?: number;
 };
+
+export type SubmitResult = { state: "accepted" | "streaming" };
+export type SteerResult = { state: string };
+export type InterruptResult = { state: "interrupted" | "acknowledged" };
+export type ApprovalResponse = { resolved: number };
 
 export type ReplayGap = {
   sessionId: string;
@@ -23,17 +52,18 @@ export type SavedSession = {
   id: string;
   title?: string;
   preview?: string;
-  started_at?: number;
-  message_count?: number;
+  startedAt?: number;
+  messageCount?: number;
   source?: string;
 };
 
 export type ActiveSession = {
   id: string;
-  session_key?: string;
+  /** Durable id the live session can resume into (Hermes session_key, OpenClaw key). */
+  durableId?: string;
   title?: string;
   status?: string;
-  message_count?: number;
+  messageCount?: number;
   preview?: string;
 };
 
@@ -66,14 +96,14 @@ export type AssistantClient = {
   readonly ephemeralSessions?: boolean;
   ping?(): Promise<void>;
   createSession(): Promise<AssistantSession>;
-  submitPrompt(runtimeSessionId: string, text: string): Promise<Record<string, unknown>>;
+  submitPrompt(runtimeSessionId: string, text: string): Promise<SubmitResult>;
   resumeSession?(durableSessionId: string): Promise<AssistantSession>;
   listSavedSessions?(limit?: number): Promise<SavedSession[]>;
   listActiveSessions?(): Promise<ActiveSession[]>;
-  listPendingApprovals?(runtimeSessionId: string): Promise<Record<string, unknown>[]>;
-  steer?(runtimeSessionId: string, text: string): Promise<Record<string, unknown>>;
-  interrupt?(runtimeSessionId: string): Promise<Record<string, unknown>>;
-  respondToApproval?(runtimeSessionId: string, requestId: string, choice: string): Promise<Record<string, unknown>>;
+  listPendingApprovals?(runtimeSessionId: string): Promise<ApprovalPayload[]>;
+  steer?(runtimeSessionId: string, text: string): Promise<SteerResult>;
+  interrupt?(runtimeSessionId: string): Promise<InterruptResult>;
+  respondToApproval?(runtimeSessionId: string, requestId: string, choice: string): Promise<ApprovalResponse>;
   onEvent(listener: (event: AssistantEvent) => void): () => void;
   onConnectionState(listener: (state: RuntimeState) => void): () => void;
   onReplayGap?(listener: (gap: ReplayGap) => void): () => void;

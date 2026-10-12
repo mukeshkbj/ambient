@@ -35,7 +35,7 @@ describe("ConversationEngine", () => {
     hermes.emit({
       type: "approval.request",
       sessionId: "runtime-1",
-      payload: { request_id: "approval-7", command: "restart demo", description: "Restart it", choices: ["once", "deny"] }
+      payload: { requestId: "approval-7", command: "restart demo", description: "Restart it", choices: ["once", "deny"] }
     });
     await new Promise(resolve => setImmediate(resolve));
     expect(engine.getWork(run.id)).toMatchObject({ status: "waiting_approval", approval: { requestId: "approval-7" } });
@@ -140,7 +140,7 @@ describe("ConversationEngine", () => {
       id: "runtime-1", session_key: "stored-1", status: "working"
     }]);
     hermes.client.listPendingApprovals = vi.fn().mockResolvedValue([{
-      request_id: "approval-recovered", command: "run guarded task", description: "Confirm the guarded task", choices: ["once", "deny"]
+      requestId: "approval-recovered", command: "run guarded task", description: "Confirm the guarded task", choices: ["once", "deny"]
     }]);
     await engine.discover();
     expect(engine.getWork(run.id)).toMatchObject({
@@ -162,7 +162,7 @@ describe("ConversationEngine", () => {
     hermes.emit({
       type: "approval.request",
       sessionId: "runtime-1",
-      payload: { request_id: "approval-stale", command: "run guarded task", choices: ["once", "deny"] }
+      payload: { requestId: "approval-stale", command: "run guarded task", choices: ["once", "deny"] }
     });
     await new Promise(resolve => setImmediate(resolve));
     hermes.state("offline");
@@ -222,7 +222,7 @@ describe("ConversationEngine", () => {
     hermes.emit({
       type: "approval.request",
       sessionId: "runtime-1",
-      payload: { request_id: "ap-7", command: "restart demo", choices: ["once", "deny"] }
+      payload: { requestId: "ap-7", command: "restart demo", choices: ["once", "deny"] }
     });
     const run = await pending;
     expect(run.status).toBe("waiting_approval");

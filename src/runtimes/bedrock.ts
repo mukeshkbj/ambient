@@ -4,10 +4,15 @@ import { defaultTools, type AgentTool, type ToolInput } from "./bedrock-tools.js
 import {
   AssistantEvented,
   type ActiveSession,
+  type ApprovalPayload,
+  type ApprovalResponse,
   type AssistantClient,
   type AssistantSession,
+  type InterruptResult,
   type RuntimeCapabilities,
-  type SavedSession
+  type SavedSession,
+  type SteerResult,
+  type SubmitResult
 } from "./types.js";
 
 const DEFAULT_MODEL = "us.amazon.nova-lite-v1:0";
@@ -189,17 +194,17 @@ export class BedrockClient extends AssistantEvented implements AssistantClient {
   listActiveSessions(): Promise<ActiveSession[]> {
     return Promise.resolve([...this.sessions.values()]
       .filter(session => session.working)
-      .map(session => ({ id: session.liveId, session_key: session.durableId, status: "working", title: session.title })));
+      .map(session => ({ id: session.liveId, durableId: session.durableId, status: "working", title: session.title })));
   }
 
-  listPendingApprovals(runtimeSessionId: string): Promise<Record<string, unknown>[]> {
+  listPendingApprovals(runtimeSessionId: string): Promise<ApprovalPayload[]> {
     const pending = this.sessions.get(runtimeSessionId)?.pending;
     return Promise.resolve(pending
-      ? [{ request_id: pending.requestId, command: pending.command, description: pending.description, choices: ["once", "deny"] }]
+      ? [{ requestId: pending.requestId, command: pending.command, description: pending.description, choices: ["once", "deny"] }]
       : []);
   }
 
-  submitPrompt(runtimeSessionId: string, text: string): Promise<Record<string, unknown>> {
+  submitPrompt(runtimeSessionId: string, text: string): Promise<SubmitResult> {
     const session = this.require(runtimeSessionId);
     if (session.working) throw new Error("This Bedrock session already has active work");
     session.working = true;
@@ -210,17 +215,17 @@ export class BedrockClient extends AssistantEvented implements AssistantClient {
     this.pushMessage(session, { role: "user", content: [...steered, { text }] });
     this.emit({ type: "message.start", sessionId: session.liveId, payload: { kind: "assistant" } });
     void this.runLoop(session);
-    return Promise.resolve({ status: "streaming" });
+    return Promise.resolve({ state: "streaming" });
   }
 
-  steer(runtimeSessionId: string, text: string): Promise<Record<string, unknown>> {
+  steer(runtimeSessionId: string, text: string): Promise<SteerResult> {
     const session = this.require(runtimeSessionId);
     session.steerQueue.push(text);
     this.emit({ type: "status.update", sessionId: session.liveId, payload: { text: `Noted — adjusting for: ${text}` } });
-    return Promise.resolve({ status: "queued" });
+    return Promise.resolve({ state: "queued" });
   }
 
-  interrupt(runtimeSessionId: string): Promise<Record<string, unknown>> {
+  interrupt(runtimeSessionId: string): Promise<InterruptResult> {
     const session = this.sessions.get(runtimeSessionId);
     if (session) {
       session.aborted = true;
@@ -228,10 +233,10 @@ export class BedrockClient extends AssistantEvented implements AssistantClient {
       session.pending = undefined;
       session.abort.abort();
     }
-    return Promise.resolve({ status: "interrupted" });
+    return Promise.resolve({ state: "interrupted" });
   }
 
-  respondToApproval(runtimeSessionId: string, requestId: string, choice: string): Promise<Record<string, unknown>> {
+  respondToApproval(runtimeSessionId: string, requestId: string, choice: string): Promise<ApprovalResponse> {
     const pending = this.sessions.get(runtimeSessionId)?.pending;
     if (!pending || pending.requestId !== requestId) return Promise.resolve({ resolved: 0 });
     pending.resolve(choice === "deny" ? "deny" : "once");
@@ -341,7 +346,7 @@ export class BedrockClient extends AssistantEvented implements AssistantClient {
     };
   }
 
-  private finish(session: BedrockSession, payload: Record<string, unknown>): void {
+  private finish(session: BedrockSession, payload: { text?: string; status?: string; error?: string }): void {
     session.working = false;
     session.pending = undefined;
     this.emit({ type: "message.complete", sessionId: session.liveId, payload });
@@ -355,7 +360,7 @@ export class BedrockClient extends AssistantEvented implements AssistantClient {
         type: "approval.request",
         sessionId: session.liveId,
         payload: {
-          request_id: call.toolUseId,
+          requestId: call.toolUseId,
           command: described.command,
           description: described.description,
           choices: ["once", "deny"]

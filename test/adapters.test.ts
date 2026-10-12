@@ -102,8 +102,8 @@ describe("honest-state regressions", () => {
     const fake = fakeAssistant({
       // submitPrompt resolves only once interrupt acknowledges — the path that
       // used to let a late submit overwrite `cancelled` with a stale status.
-      submitPrompt: vi.fn().mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ status: "streaming" }), 30))),
-      interrupt: vi.fn().mockResolvedValue({ status: "interrupted" })
+      submitPrompt: vi.fn().mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ state: "streaming" }), 30))),
+      interrupt: vi.fn().mockResolvedValue({ state: "interrupted" })
     });
     const store = new AmbientStore();
     const engine = engineFor(fake.client, store, "agent");

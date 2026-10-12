@@ -7,10 +7,15 @@ import { firstString, record } from "./http.js";
 import {
   AssistantEvented,
   type ActiveSession,
+  type ApprovalPayload,
+  type ApprovalResponse,
   type AssistantClient,
   type AssistantSession,
+  type InterruptResult,
   type RuntimeCapabilities,
-  type SavedSession
+  type SavedSession,
+  type SteerResult,
+  type SubmitResult
 } from "./types.js";
 
 const PROTOCOL_VERSION = 4;
@@ -224,11 +229,11 @@ export class OpenClawConnection extends EventEmitter {
   }
 }
 
-function approvalPayload(payload: Record<string, unknown>): Record<string, unknown> | undefined {
+function approvalPayload(payload: Record<string, unknown>): ApprovalPayload | undefined {
   const requestId = firstString(payload, "id", "approvalId", "requestId", "request_id");
   if (!requestId) return undefined;
   return {
-    request_id: requestId,
+    requestId,
     command: firstString(payload, "command", "title", "summary") ?? "OpenClaw requested approval",
     ...(firstString(payload, "description", "detail", "reason") ? { description: firstString(payload, "description", "detail", "reason")! } : {}),
     choices: ["once", "deny"]
@@ -321,7 +326,7 @@ export class OpenClawClient extends AssistantEvented implements AssistantClient 
     return { runtimeSessionId: key, durableSessionId: key };
   }
 
-  async submitPrompt(runtimeSessionId: string, text: string): Promise<Record<string, unknown>> {
+  async submitPrompt(runtimeSessionId: string, text: string): Promise<SubmitResult> {
     const result = record(await this.rpc.request<unknown>("agent", {
       sessionKey: runtimeSessionId,
       message: text
@@ -330,7 +335,7 @@ export class OpenClawClient extends AssistantEvented implements AssistantClient 
     if (!runId) throw new OpenClawError("agent run was accepted without a run id");
     void this.subscribeSession(runtimeSessionId);
     void this.waitForRun(runtimeSessionId, runId);
-    return { status: "streaming" };
+    return { state: "streaming" };
   }
 
   private async waitForRun(sessionId: string, runId: string): Promise<void> {
@@ -360,18 +365,19 @@ export class OpenClawClient extends AssistantEvented implements AssistantClient 
     }
   }
 
-  steer(runtimeSessionId: string, text: string): Promise<Record<string, unknown>> {
-    return this.rpc.request("chat.send", {
+  async steer(runtimeSessionId: string, text: string): Promise<SteerResult> {
+    await this.rpc.request("chat.send", {
       sessionKey: runtimeSessionId,
       message: text,
       queueMode: "steer",
       idempotencyKey: randomUUID()
     });
+    return { state: "accepted" };
   }
 
-  async interrupt(runtimeSessionId: string): Promise<Record<string, unknown>> {
+  async interrupt(runtimeSessionId: string): Promise<InterruptResult> {
     await this.rpc.request("sessions.abort", { key: runtimeSessionId });
-    return { status: "interrupted" };
+    return { state: "interrupted" };
   }
 
   async resumeSession(durableSessionId: string): Promise<AssistantSession> {
@@ -395,7 +401,7 @@ export class OpenClawClient extends AssistantEvented implements AssistantClient 
       return [{
         id,
         ...(firstString(row, "label", "displayName", "title") ? { title: firstString(row, "label", "displayName", "title")! } : {}),
-        ...(typeof updated === "number" ? { started_at: updated } : {}),
+        ...(typeof updated === "number" ? { startedAt: updated } : {}),
         source: "openclaw"
       }];
     });
@@ -409,14 +415,14 @@ export class OpenClawClient extends AssistantEvented implements AssistantClient 
       if (!id || row.hasActiveRun !== true) return [];
       return [{
         id,
-        session_key: id,
+        durableId: id,
         status: "working",
         ...(firstString(row, "label", "displayName", "title") ? { title: firstString(row, "label", "displayName", "title")! } : {})
       }];
     });
   }
 
-  async listPendingApprovals(): Promise<Record<string, unknown>[]> {
+  async listPendingApprovals(): Promise<ApprovalPayload[]> {
     const result = record(await this.rpc.request<unknown>("exec.approval.list"));
     const rows = result.pending ?? result.approvals ?? result.items;
     if (!Array.isArray(rows)) return [];
@@ -426,7 +432,7 @@ export class OpenClawClient extends AssistantEvented implements AssistantClient 
     });
   }
 
-  async respondToApproval(_runtimeSessionId: string, requestId: string, choice: string): Promise<Record<string, unknown>> {
+  async respondToApproval(_runtimeSessionId: string, requestId: string, choice: string): Promise<ApprovalResponse> {
     await this.rpc.request("approval.resolve", {
       id: requestId,
       kind: "exec",

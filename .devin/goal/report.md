@@ -63,16 +63,24 @@ Objective: ship the Alexa+ hackathon submission per
   (7 new tests incl. a generated throwaway chain; valid/tampered/stale/
   bad-URL/route all covered). Interaction model: carrier phrases on every
   SearchQuery sample, `about` slots replace id slots, en-US added.
-- **Verification**: `pnpm scan && pnpm build` green — 87 tests / 18 files.
-  Live over `pnpm demo`: delegate→waiting_approval speech, approve→completed,
-  status/briefing/agents/stop all speak cleanly; unknown deploy says "won't
-  retry". Recorded in `docs/acceptance.md`.
+- **Phase 7 (type tightening + docs)** — `AssistantEvent` is now a
+  discriminated union (7 variants with typed payloads) in
+  `src/runtimes/types.ts`; `AssistantWireEvent` is the loose transport shape
+  hermes canonicalizes inside `src/hermes.ts` — the only file that still knows
+  `session_key`/`request_id`/`started_at`. `submitPrompt` returns
+  `{ state: "accepted" | "streaming" }`; `steer`/`interrupt`/`respondToApproval`/
+  `listPendingApprovals` all return typed results (`SteerResult`,
+  `InterruptResult`, `ApprovalResponse`, `ApprovalPayload[]`).
+  `ActiveSession.session_key` → `durableId`; `SavedSession`/`ActiveSession`
+  went camelCase (`startedAt`, `messageCount`). `docs/adapters.md` = "write an
+  adapter" guide on the demo template; `CONTRIBUTING.md` covers setup,
+  `pnpm scan`, adapter + voice/honesty rules. `pnpm scan && pnpm build`
+  green — 87 tests.
 
 ## Remaining
 
 - Phase 2.5 (cuttable): MCP Tasks augmentation.
 - Phase 6: AWS TLS deploy — **ASK USER before cdk deploy / anything paid**.
-- Phase 7: adapters.md, CONTRIBUTING, AssistantClient type tightening.
 - Phase 8: README rewrite, compliance box, architecture SVG, GIF, friction log
   (5+ real entries), product feedback per tool, video, Devpost text.
 - Phase 9: clean-clone QA + time-to-first-spoken-answer <2min.

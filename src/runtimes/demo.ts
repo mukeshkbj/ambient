@@ -2,10 +2,15 @@ import { randomUUID } from "node:crypto";
 import {
   AssistantEvented,
   type ActiveSession,
+  type ApprovalPayload,
+  type ApprovalResponse,
   type AssistantClient,
   type AssistantSession,
+  type InterruptResult,
   type RuntimeCapabilities,
-  type SavedSession
+  type SavedSession,
+  type SteerResult,
+  type SubmitResult
 } from "./types.js";
 
 export type DemoClientOptions = {
@@ -125,31 +130,31 @@ export class DemoClient extends AssistantEvented implements AssistantClient {
   listActiveSessions(): Promise<ActiveSession[]> {
     return Promise.resolve([...this.sessions.values()]
       .filter(session => session.working)
-      .map(session => ({ id: session.id, session_key: session.durableId, status: "working", title: session.title })));
+      .map(session => ({ id: session.id, durableId: session.durableId, status: "working", title: session.title })));
   }
 
-  listPendingApprovals(runtimeSessionId: string): Promise<Record<string, unknown>[]> {
+  listPendingApprovals(runtimeSessionId: string): Promise<ApprovalPayload[]> {
     const pending = this.sessions.get(runtimeSessionId)?.pending;
-    return Promise.resolve(pending ? [{ request_id: pending.requestId, command: pending.command, description: pending.description, choices: ["once", "deny"] }] : []);
+    return Promise.resolve(pending ? [{ requestId: pending.requestId, command: pending.command, description: pending.description, choices: ["once", "deny"] }] : []);
   }
 
-  submitPrompt(runtimeSessionId: string, text: string): Promise<Record<string, unknown>> {
+  submitPrompt(runtimeSessionId: string, text: string): Promise<SubmitResult> {
     const session = this.require(runtimeSessionId);
     session.working = true;
     session.aborted = false;
     session.title = text.split(/\s+/).slice(0, 8).join(" ");
     this.emit({ type: "message.start", sessionId: runtimeSessionId, payload: { kind: "assistant" } });
     void this.runScript(session, scriptFor(text, this.options.script));
-    return Promise.resolve({ status: "streaming" });
+    return Promise.resolve({ state: "streaming" });
   }
 
-  steer(runtimeSessionId: string, text: string): Promise<Record<string, unknown>> {
+  steer(runtimeSessionId: string, text: string): Promise<SteerResult> {
     const session = this.require(runtimeSessionId);
     this.after(session, () => this.emit({ type: "status.update", sessionId: runtimeSessionId, payload: { text: `Noted — adjusting for: ${text}` } }));
-    return Promise.resolve({ status: "queued" });
+    return Promise.resolve({ state: "queued" });
   }
 
-  interrupt(runtimeSessionId: string): Promise<Record<string, unknown>> {
+  interrupt(runtimeSessionId: string): Promise<InterruptResult> {
     const session = this.sessions.get(runtimeSessionId);
     if (session) {
       session.aborted = true;
@@ -159,10 +164,10 @@ export class DemoClient extends AssistantEvented implements AssistantClient {
       session.pending?.resolve("deny");
       session.pending = undefined;
     }
-    return Promise.resolve({ status: "interrupted" });
+    return Promise.resolve({ state: "interrupted" });
   }
 
-  respondToApproval(runtimeSessionId: string, requestId: string, choice: string): Promise<Record<string, unknown>> {
+  respondToApproval(runtimeSessionId: string, requestId: string, choice: string): Promise<ApprovalResponse> {
     const pending = this.sessions.get(runtimeSessionId)?.pending;
     if (!pending || pending.requestId !== requestId) return Promise.resolve({ resolved: 0 });
     pending.resolve(choice);
@@ -215,7 +220,7 @@ export class DemoClient extends AssistantEvented implements AssistantClient {
             type: "approval.request",
             sessionId: session.id,
             payload: {
-              request_id: requestId,
+              requestId,
               command: step.waitApproval!.command,
               description: step.waitApproval!.description,
               choices: ["once", "deny"]

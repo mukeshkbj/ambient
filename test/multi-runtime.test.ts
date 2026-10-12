@@ -17,8 +17,8 @@ describe("multi-runtime isolation", () => {
     const betaRun = await registry.resolve("beta agent").engine.ask("summarize the news");
 
     // Approval ids are namespaced per runtime even when request ids collide.
-    hermes.emit({ type: "approval.request", sessionId: "runtime-1", payload: { request_id: "a-1", command: "send it", choices: ["once", "deny"] } });
-    beta.emit({ type: "approval.request", sessionId: "runtime-1", payload: { request_id: "a-1", command: "post it", choices: ["once", "deny"] } });
+    hermes.emit({ type: "approval.request", sessionId: "runtime-1", payload: { requestId: "a-1", command: "send it", choices: ["once", "deny"] } });
+    beta.emit({ type: "approval.request", sessionId: "runtime-1", payload: { requestId: "a-1", command: "post it", choices: ["once", "deny"] } });
     await new Promise(resolve => setImmediate(resolve));
     const approvals = registry.list().flatMap(item => registry.entry(item.id)!.engine.listApprovals());
     expect(approvals.map(approval => approval.id).sort()).toEqual(["beta:a-1", "hermes:a-1"]);

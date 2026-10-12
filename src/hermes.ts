@@ -3,13 +3,76 @@ import WebSocket from "ws";
 import { rawText } from "./raw.js";
 import type {
   ActiveSession,
+  ApprovalPayload,
+  ApprovalResponse,
   AssistantClient,
   AssistantEvent,
   AssistantSession,
+  AssistantWireEvent,
+  InterruptResult,
   ReplayGap,
   RuntimeCapabilities,
-  SavedSession
+  SavedSession,
+  SteerResult,
+  SubmitResult
 } from "./runtimes/types.js";
+
+/** Wire (snake_case) → canonical (camelCase) mapping, all in one place. */
+function canonicalize(event: AssistantWireEvent): AssistantEvent | undefined {
+  const base = {
+    ...(event.sessionId ? { sessionId: event.sessionId } : {}),
+    ...(event.seq !== undefined ? { seq: event.seq } : {})
+  };
+  const p = event.payload;
+  switch (event.type) {
+    case "message.start":
+      return { ...base, type: "message.start", payload: { ...(typeof p.kind === "string" ? { kind: p.kind } : {}) } };
+    case "message.delta":
+    case "message.interim":
+      return { ...base, type: event.type, payload: { ...(typeof p.text === "string" ? { text: p.text } : {}) } };
+    case "message.complete":
+      return {
+        ...base,
+        type: "message.complete",
+        payload: {
+          ...(typeof p.text === "string" ? { text: p.text } : {}),
+          ...(typeof p.status === "string" ? { status: p.status } : {}),
+          ...(typeof p.error === "string" ? { error: p.error } : {})
+        }
+      };
+    case "tool.start":
+    case "tool.complete":
+      return { ...base, type: event.type, payload: { ...(typeof p.name === "string" ? { name: p.name } : {}) } };
+    case "status.update":
+      return {
+        ...base,
+        type: "status.update",
+        payload: {
+          ...(typeof p.text === "string" ? { text: p.text } : {}),
+          ...(typeof p.name === "string" ? { name: p.name } : {}),
+          ...(typeof p.summary === "string" ? { summary: p.summary } : {}),
+          ...(typeof p.message === "string" ? { message: p.message } : {})
+        }
+      };
+    case "approval.request": {
+      const requestId = typeof p.request_id === "string" ? p.request_id
+        : typeof p.requestId === "string" ? p.requestId : undefined;
+      if (!requestId) return undefined;
+      return {
+        ...base,
+        type: "approval.request",
+        payload: {
+          requestId,
+          command: typeof p.command === "string" ? p.command : "Approval requested",
+          ...(typeof p.description === "string" ? { description: p.description } : {}),
+          ...(Array.isArray(p.choices) ? { choices: p.choices.filter((c): c is string => typeof c === "string") } : {})
+        }
+      };
+    }
+    default:
+      return undefined;
+  }
+}
 
 type HermesFrame = {
   jsonrpc?: string;
@@ -80,7 +143,7 @@ export class HermesConnection extends EventEmitter {
   private replayEpoch: string | undefined;
   private pendingReplayEpoch: string | undefined;
   private replayInFlight = false;
-  private replayHold: Map<string, AssistantEvent[]> | undefined;
+  private replayHold: Map<string, AssistantWireEvent[]> | undefined;
   private readonly lastSeenSeq = new Map<string, number>();
 
   constructor(private readonly options: HermesConnectionOptions) {
@@ -138,7 +201,7 @@ export class HermesConnection extends EventEmitter {
     });
   }
 
-  onEvent(listener: (event: AssistantEvent) => void): () => void {
+  onEvent(listener: (event: AssistantWireEvent) => void): () => void {
     this.on("event", listener);
     return () => this.off("event", listener);
   }
@@ -197,7 +260,7 @@ export class HermesConnection extends EventEmitter {
           ...(sessionId ? { sessionId } : {}),
           payload,
           ...(seq !== undefined ? { seq } : {})
-        } satisfies AssistantEvent;
+        } satisfies AssistantWireEvent;
         if (type === "gateway.ready") {
           const epoch = typeof payload.replay_epoch === "string" && payload.replay_epoch ? payload.replay_epoch : undefined;
           if (epoch && this.opened && this.lastSeenSeq.size > 0 && epoch !== this.replayEpoch) {
@@ -250,7 +313,7 @@ export class HermesConnection extends EventEmitter {
     await new Promise<void>((resolve, reject) => {
       let settled = false;
       let readyStarted = false;
-      const onReady = (event: AssistantEvent) => {
+      const onReady = (event: AssistantWireEvent) => {
         if (event.type !== "gateway.ready" || settled || readyStarted) return;
         readyStarted = true;
         this.ready = true;
@@ -317,7 +380,7 @@ export class HermesConnection extends EventEmitter {
     this.heartbeatTimer = undefined;
   }
 
-  private dispatchIfNewer(event: AssistantEvent): void {
+  private dispatchIfNewer(event: AssistantWireEvent): void {
     if (event.sessionId && event.seq !== undefined) {
       const previous = this.lastSeenSeq.get(event.sessionId) ?? -1;
       if (event.seq <= previous) return;
@@ -344,7 +407,7 @@ export class HermesConnection extends EventEmitter {
     }
     this.replayInFlight = true;
     const entries = [...this.lastSeenSeq.entries()];
-    const hold = new Map<string, AssistantEvent[]>();
+    const hold = new Map<string, AssistantWireEvent[]>();
     for (const [sessionId] of entries) hold.set(sessionId, []);
     this.replayHold = hold;
     const gaps = new Set<string>();
@@ -385,7 +448,7 @@ export class HermesConnection extends EventEmitter {
           emitGap(requestedSessionId, lastSeen, latestSeq);
           continue;
         }
-        const replayed: AssistantEvent[] = [];
+        const replayed: AssistantWireEvent[] = [];
         let malformed = false;
         for (const item of value.events) {
           if (!item || typeof item !== "object" || Array.isArray(item)) {
@@ -463,7 +526,10 @@ export class HermesClient implements AssistantClient {
   }
 
   onEvent(listener: (event: AssistantEvent) => void): () => void {
-    return this.rpc.onEvent(listener);
+    return this.rpc.onEvent(event => {
+      const canonical = canonicalize(event);
+      if (canonical) listener(canonical);
+    });
   }
 
   onReplayGap(listener: (gap: ReplayGap) => void): () => void {
@@ -484,20 +550,32 @@ export class HermesClient implements AssistantClient {
     }));
   }
 
-  submitPrompt(runtimeSessionId: string, text: string): Promise<Record<string, unknown>> {
-    return this.rpc.request("prompt.submit", { session_id: runtimeSessionId, text });
+  submitPrompt(runtimeSessionId: string, text: string): Promise<SubmitResult> {
+    return this.rpc.request<Record<string, unknown>>("prompt.submit", { session_id: runtimeSessionId, text }).then(result => ({
+      state: record(result).status === "streaming" ? "streaming" : "accepted"
+    }));
   }
 
-  steer(runtimeSessionId: string, text: string): Promise<Record<string, unknown>> {
-    return this.rpc.request("session.steer", { session_id: runtimeSessionId, text });
+  steer(runtimeSessionId: string, text: string): Promise<SteerResult> {
+    return this.rpc.request<Record<string, unknown>>("session.steer", { session_id: runtimeSessionId, text }).then(result => {
+      const status = record(result).status;
+      return { state: typeof status === "string" ? status : "accepted" };
+    });
   }
 
-  interrupt(runtimeSessionId: string): Promise<Record<string, unknown>> {
-    return this.rpc.request("session.interrupt", { session_id: runtimeSessionId });
+  interrupt(runtimeSessionId: string): Promise<InterruptResult> {
+    return this.rpc.request<Record<string, unknown>>("session.interrupt", { session_id: runtimeSessionId }).then(result => ({
+      state: record(result).status === "interrupted" ? "interrupted" : "acknowledged"
+    }));
   }
 
-  respondToApproval(runtimeSessionId: string, requestId: string, choice: string): Promise<Record<string, unknown>> {
-    return this.rpc.request("approval.respond", { session_id: runtimeSessionId, request_id: requestId, choice });
+  respondToApproval(runtimeSessionId: string, requestId: string, choice: string): Promise<ApprovalResponse> {
+    return this.rpc.request<Record<string, unknown>>("approval.respond", {
+      session_id: runtimeSessionId, request_id: requestId, choice
+    }).then(result => {
+      const resolved = record(result).resolved;
+      return { resolved: typeof resolved === "number" ? resolved : 0 };
+    });
   }
 
   listSavedSessions(limit = 50): Promise<SavedSession[]> {
@@ -505,8 +583,8 @@ export class HermesClient implements AssistantClient {
       id: stringField(row, "id"),
       ...(typeof row.title === "string" ? { title: row.title } : {}),
       ...(typeof row.preview === "string" ? { preview: row.preview } : {}),
-      ...(typeof row.started_at === "number" ? { started_at: row.started_at } : {}),
-      ...(typeof row.message_count === "number" ? { message_count: row.message_count } : {}),
+      ...(typeof row.started_at === "number" ? { startedAt: row.started_at } : {}),
+      ...(typeof row.message_count === "number" ? { messageCount: row.message_count } : {}),
       ...(typeof row.source === "string" ? { source: row.source } : {})
     })));
   }
@@ -514,10 +592,10 @@ export class HermesClient implements AssistantClient {
   listActiveSessions(): Promise<ActiveSession[]> {
     return this.rpc.request("session.active_list").then(value => sessionRows(value).map(row => ({
       id: stringField(row, "id"),
-      ...(typeof row.session_key === "string" ? { session_key: row.session_key } : {}),
+      ...(typeof row.session_key === "string" ? { durableId: row.session_key } : {}),
       ...(typeof row.title === "string" ? { title: row.title } : {}),
       ...(typeof row.status === "string" ? { status: row.status } : {}),
-      ...(typeof row.message_count === "number" ? { message_count: row.message_count } : {}),
+      ...(typeof row.message_count === "number" ? { messageCount: row.message_count } : {}),
       ...(typeof row.preview === "string" ? { preview: row.preview } : {})
     })));
   }
@@ -537,11 +615,21 @@ export class HermesClient implements AssistantClient {
     return this.rpc.request("session.history", { session_id: runtimeSessionId });
   }
 
-  listPendingApprovals(runtimeSessionId: string): Promise<Record<string, unknown>[]> {
+  listPendingApprovals(runtimeSessionId: string): Promise<ApprovalPayload[]> {
     return this.rpc.request("approval.pending", { session_id: runtimeSessionId }).then(result => {
       const approvals = record(result).approvals;
       if (!Array.isArray(approvals)) throw new HermesRpcError("Hermes approval response is missing approvals");
-      return approvals.map(record);
+      return approvals.map(record).flatMap(row => {
+        const requestId = typeof row.request_id === "string" ? row.request_id
+          : typeof row.requestId === "string" ? row.requestId : undefined;
+        if (!requestId) return [];
+        return [{
+          requestId,
+          command: typeof row.command === "string" ? row.command : "Approval requested",
+          ...(typeof row.description === "string" ? { description: row.description } : {}),
+          ...(Array.isArray(row.choices) ? { choices: row.choices.filter((c): c is string => typeof c === "string") } : {})
+        }];
+      });
     });
   }
 }
