@@ -400,12 +400,18 @@ Priorities: **P0** is required to be a contender. **P1** is what separates
 - Tests: an in-memory client that declares elicitation and auto-accepts, and
   one without the capability.
 
-**Task 2.5 (P1) — MCP Tasks for long work**
+**Task 2.5 (P1) — MCP Tasks for long work** — **DONE (2026-10-12, deviated)**
 - Use SDK 1.30 `experimental/tasks`: let `delegate` accept task augmentation
   so clients that support it get a task handle and `tasks/get`/`tasks/result`
   map onto engine runs. Keep `status` as the universal fallback.
 - Only claim this in the README if a test proves round-trip with the SDK
   client.
+- Deviation: shipped as `delegate_task`, not an augmented `delegate` — the
+  SDK auto-polls plain calls on `optional` tools with no bound, which would
+  break Alexa's bounded ask on approvals. `delegate_task` gives task-capable
+  clients the handle (`working`/`input_required`/`completed`/`failed`/
+  `cancelled`); round-trip proven in `test/tasks.test.ts` and over HTTP in
+  `scripts/smoke-tasks.ts`.
 
 ### Phase 3 — Alexa+ simulated experience and UI (Days 5–8) — P0
 

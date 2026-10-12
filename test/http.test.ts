@@ -57,6 +57,7 @@ describe("Ambient HTTP bridge", () => {
     const tools = await client.listTools();
     expect(tools.tools.map(tool => tool.name)).toEqual([
       "delegate",
+      "delegate_task",
       "status",
       "approve",
       "stop",
@@ -102,7 +103,7 @@ describe("Ambient HTTP bridge", () => {
     });
     expect(tools.status).toBe(200);
     const toolsPayload = parseSse(await tools.text()) as { result?: { tools?: unknown[] } };
-    expect(toolsPayload.result?.tools).toHaveLength(7);
+    expect(toolsPayload.result?.tools).toHaveLength(8);
     const deleted = await fetch(`http://127.0.0.1:${port}/mcp`, { method: "DELETE", headers: { "mcp-session-id": sessionId! } });
     expect([200, 204]).toContain(deleted.status);
   });

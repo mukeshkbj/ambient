@@ -38,6 +38,7 @@ describe("MCP surface", () => {
       "briefing",
       "dashboard",
       "delegate",
+      "delegate_task",
       "status",
       "stop"
     ]);

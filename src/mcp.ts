@@ -1,4 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { InMemoryTaskMessageQueue, InMemoryTaskStore } from "@modelcontextprotocol/sdk/experimental/tasks/stores/in-memory.js";
+import type { RequestTaskStore } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import type { Task } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { DASHBOARD_HTML, dashboardSnapshot, TASK_HTML } from "./dashboard.js";
 import type { PendingApproval, RuntimeEntry, RuntimeRegistry } from "./runtimes/registry.js";
@@ -45,10 +48,20 @@ function pendingSpeech(candidates: PendingApproval[]): string {
 }
 
 export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): McpServer {
+  const taskStore = new InMemoryTaskStore();
   const server = new McpServer(
     { name: "Ambient", version: "0.1.0" },
     {
-      instructions: "Ambient fronts the user's personal AI agents. Talk in terms of tasks, not ids: delegate starts or continues work, status reports the latest or a named task, approve and stop act on work, agents lists who's available, briefing summarizes recent activity. Approvals are answered through elicitation when the client supports it, otherwise tell the user to say approve or deny."
+      instructions: "Ambient fronts the user's personal AI agents. Talk in terms of tasks, not ids: delegate starts or continues work, status reports the latest or a named task, approve and stop act on work, agents lists who's available, briefing summarizes recent activity. Approvals are answered through elicitation when the client supports it, otherwise tell the user to say approve or deny.",
+      capabilities: {
+        tasks: {
+          list: {},
+          cancel: {},
+          requests: { tools: { call: {} } }
+        }
+      },
+      taskStore,
+      taskMessageQueue: new InMemoryTaskMessageQueue()
     }
   );
 
@@ -115,6 +128,85 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
       return await settleApproval(entry, view);
     } catch (error) {
       return failure(error);
+    }
+  });
+
+  // --- MCP Tasks (experimental): delegate_task exposes the same run through
+  // a task handle. Clients that augment the call get tasks/get + tasks/result;
+  // the SDK polls plain calls to terminal. `approve`/`status` stay the
+  // universal path — waiting_approval surfaces as input_required.
+  const taskStatus = (status: RunStatus): Task["status"] => {
+    switch (status) {
+      case "waiting_approval": return "input_required";
+      case "completed": return "completed";
+      case "cancelled": return "cancelled";
+      // MCP Task has no `unknown`; the statusMessage carries the honesty —
+      // the run itself stays `unknown` in the engine.
+      case "failed":
+      case "unknown": return "failed";
+      default: return "working";
+    }
+  };
+  const taskStatusMessage = (view: RunView, label: string): string | undefined => {
+    if (view.status === "waiting_approval") return approvalAsk(view, { label });
+    if (view.status === "unknown") return "The runtime disconnected mid-run — the outcome is unknown, not confirmed failed.";
+    return view.progress;
+  };
+  const driveEngineTask = async (entry: RuntimeEntry, store: RequestTaskStore, taskId: string, instruction: string, conversationId: string | undefined, newConversation: boolean | undefined): Promise<void> => {
+    const label = entry.descriptor.label;
+    let unwatch: (() => void) | undefined;
+    let runId = "";
+    const finish = async (): Promise<void> => {
+      unwatch?.();
+      const view = entry.engine.getWork(runId);
+      const failed = view.status === "failed" || view.status === "unknown" || view.status === "cancelled";
+      await store.storeTaskResult(taskId, failed ? "failed" : "completed",
+        runResult(view, { label, state: entry.engine.runtime().state })).catch(() => undefined);
+    };
+    try {
+      const view = await entry.engine.ask(instruction, conversationId, newConversation ?? false, { waitMs: 0 });
+      runId = view.id;
+      const push = async (current: RunView): Promise<void> => {
+        const mapped = taskStatus(current.status);
+        await store.updateTaskStatus(taskId, mapped, taskStatusMessage(current, label)).catch(() => undefined);
+      };
+      unwatch = entry.engine.onRunChanged(changed => {
+        if (changed !== runId && changed !== "*") return;
+        const current = entry.engine.getWork(runId);
+        void push(current);
+        if (["completed", "failed", "cancelled", "unknown"].includes(current.status)) void finish();
+      });
+      // Re-read after subscribing — a change can land between ask resolving and
+      // onRunChanged registering, and the `view` snapshot would miss it.
+      const current = entry.engine.getWork(runId);
+      await push(current);
+      if (["completed", "failed", "cancelled", "unknown"].includes(current.status)) await finish();
+    } catch (error) {
+      unwatch?.();
+      await store.storeTaskResult(taskId, "failed", failure(error)).catch(() => undefined);
+    }
+  };
+  server.experimental.tasks.registerToolTask("delegate_task", {
+    title: "Delegate a task (task-augmented)",
+    description: "Give an agent a new instruction — same work as delegate, but for clients that support MCP Tasks: the call returns a task handle and tasks/get + tasks/result track the run. Approvals surface as input_required — answer them with the approve tool.",
+    inputSchema: {
+      task: z.string().min(1).describe("The instruction for the agent, in the user's words"),
+      agent: z.string().min(1).optional().describe("Agent name; defaults to the selected agent"),
+      conversationId: z.string().min(1).optional().describe("Exact conversation id for programmatic clients; voice never needs it"),
+      newConversation: z.boolean().optional().describe("Start a fresh conversation instead of continuing the selected one")
+    },
+    execution: { taskSupport: "optional" }
+  }, {
+    createTask: async ({ task, agent, conversationId, newConversation }, extra) => {
+      const entry = registry.resolve(agent);
+      const mcpTask = await extra.taskStore.createTask({ ttl: 3_600_000, pollInterval: 250 });
+      void driveEngineTask(entry, extra.taskStore, mcpTask.taskId, task, conversationId, newConversation);
+      return { task: mcpTask };
+    },
+    getTask: async (_args, extra) => extra.taskStore.getTask(extra.taskId),
+    getTaskResult: async (_args, extra) => {
+      const result = await extra.taskStore.getTaskResult(extra.taskId);
+      return result as Awaited<ReturnType<typeof runResult>>;
     }
   });
 

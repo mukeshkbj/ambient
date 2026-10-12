@@ -17,6 +17,7 @@ ever contains an internal id.
 | **Entry point** | `src/server.ts` → `createMcpServer` in `src/mcp.ts` |
 | **Simulated Alexa+ host** | `/sim` — a real MCP client, not a mock |
 | **Also** | `/alexa` signature-verified skill endpoint · `ui://ambient/task` MCP App views |
+| **MCP Tasks** | `delegate_task` (experimental `taskSupport: "optional"`) — task-capable clients get a handle; `tasks/get` polls the run, `waiting_approval` maps to `input_required` |
 
 ## Run it in 60 seconds
 
@@ -74,7 +75,7 @@ forever.
 [![CI](https://github.com/OWNER/ambient/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/ambient/actions/workflows/ci.yml)
 
 ```sh
-pnpm scan            # typecheck + eslint + knip + 87 tests
+pnpm scan            # typecheck + eslint + knip + 90 tests
 pnpm build
 pnpm check:runtime <id>   # live reachability verdict per runtime
 ```

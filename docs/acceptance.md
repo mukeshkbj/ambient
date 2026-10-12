@@ -9,9 +9,10 @@ credentials and private transcripts out of the repository.
 - Multi-runtime registry: four adapters (Bedrock, Hermes, OpenClaw, Demo) build
   from one `runtimes.json`; `/healthz` reports each runtime's state and
   capabilities; selection is sticky via `agents` (`use`).
-- Seven customer-intent MCP tools over authenticated Streamable HTTP
+- Eight customer-intent MCP tools over authenticated Streamable HTTP
   (`2025-11-25`, SSE responses so in-call elicitation has a channel):
-  `delegate`, `status`, `approve`, `stop`, `agents`, `briefing`, and
+  `delegate`, `status`, `approve`, `stop`, `agents`, `briefing`,
+  `delegate_task` (task-augmented), and
   `dashboard`, which serves `ui://ambient/dashboard` (`text/html;profile=mcp-app`)
   plus a full structured snapshot. Task results carry
   `_meta.ui.resourceUri` = `ui://ambient/task`.
@@ -30,7 +31,7 @@ credentials and private transcripts out of the repository.
   "Nothing is running" once a run is `unknown`. Verified live over
   `pnpm demo` with a raw SDK client — no id strings appear in any `speech`
   field (golden tests pin this).
-- `pnpm scan` green: typecheck, eslint, knip, 80 tests.
+- `pnpm scan` green: typecheck, eslint, knip, 90 tests.
 - The installed Hermes gateway accepts the pinned WebSocket connection, replays
   observed events by sequence, and surfaces replay gaps as `unknown` work.
 - Alexa+ simulator (2026-10-12): `/sim` serves a voice panel + device frame; it
@@ -58,6 +59,17 @@ credentials and private transcripts out of the repository.
   design — voice clients get asked in-band); two in-flight calls can hold one
   elicitation each for the same approval. The first browser answer wins the
   real approval; the other call just reports current state.
+- MCP Tasks (2026-10-12, SDK `experimental.tasks`): `delegate_task` is
+  registered `taskSupport: "optional"` against an `InMemoryTaskStore` (1 h ttl,
+  250 ms poll hint) and drives the same engine run. Round-trip proven by
+  `test/tasks.test.ts` over a real SDK client (`InMemoryTransport`):
+  `callToolStream` yielded `taskCreated` → `working` → `input_required`
+  (voice-safe `statusMessage`, no ids) → the `approve` tool resolved it →
+  `completed` → `getTaskResult` returned the run's `CallToolResult`. Failed
+  runs map to `failed`; `tasks/cancel` marks the handle `cancelled`.
+  `delegate` stays a normal tool: the SDK's auto-poll for plain `optional`
+  calls is unbounded, so a blocking `delegate` would break Alexa's bounded
+  ask — task-capable clients opt in via `delegate_task` instead.
 - Security hardening (2026-10-12): Host and Origin allowlists enforced on
   every route (default: `PUBLIC_BASE_URL` + loopback, extend via
   `AMBIENT_ALLOWED_*`; live check: `Origin: https://evil.example` on `/mcp`
