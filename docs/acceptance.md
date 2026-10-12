@@ -58,6 +58,19 @@ credentials and private transcripts out of the repository.
   design — voice clients get asked in-band); two in-flight calls can hold one
   elicitation each for the same approval. The first browser answer wins the
   real approval; the other call just reports current state.
+- Security hardening (2026-10-12): Host and Origin allowlists enforced on
+  every route (default: `PUBLIC_BASE_URL` + loopback, extend via
+  `AMBIENT_ALLOWED_*`; live check: `Origin: https://evil.example` on `/mcp`
+  → 403 `forbidden_origin`, CORS `*` removed). Idle MCP sessions evict after
+  30 min on a 60 s sweep (`evictIdleSessions`). `/healthz` is `{ok:true}`
+  publicly; runtime detail needs the bearer token when one is configured.
+  `/alexa` verifies `SignatureCertChainUrl` (URL-pinned to Amazon's echo.api
+  bucket, SAN `echo-api.amazon.com`, in-date, chained), RSA-SHA256 over the
+  raw body, and a ±150 s timestamp when `ALEXA_VERIFY_SIGNATURE=true` —
+  tested with a generated throwaway chain: valid accepts, tampered body,
+  stale timestamp, and foreign cert URL all 400. Interaction model now has
+  carrier phrases on every SearchQuery sample, `about` slots instead of id
+  slots, and a matching `en-US` locale alongside `en-GB`.
 
 ## Per-adapter live status
 
@@ -77,7 +90,11 @@ Removed 2026-10-11 (unverified, trademark risk): `grokbot`, `muse`, `townie`,
 - Connect the real Alexa+ MCP client (the rules-permitted simulated experience
   at `/sim` is built and recorded above) and record the negotiated protocol
   and account stage.
-- Link the Echo custom skill; verify Amazon request signature before public use.
+- Link the Echo custom skill (request signature verification is implemented
+  behind `ALEXA_VERIFY_SIGNATURE`; validate it against real Amazon traffic on
+  the deployed path before public use). The updated interaction model
+  (en-GB + en-US, carrier phrases, no id slots) still needs importing and
+  building in the ASK console.
 - Speak a question + follow-up through Alexa; record spoken-result latency.
 - Run a real end-to-end task with steer, approval, and cancellation on a live
   assistant; record `check:runtime` receipts for each configured runtime.

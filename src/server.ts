@@ -9,6 +9,7 @@ import WebSocket, { WebSocketServer } from "ws";
 import { readConfig, type AppConfig } from "./config.js";
 import { OAuthError, OAuthProvider, type Principal } from "./auth.js";
 import { AlexaRequestError, handleAlexaRequest } from "./alexa.js";
+import { verifyAlexaRequest, type AlexaVerifyOptions } from "./alexa-verify.js";
 import { createMcpServer } from "./mcp.js";
 import { buildRuntimeRegistry, type RuntimeRegistry } from "./runtimes/registry.js";
 import type { ConnectorConnection } from "./runtimes/types.js";
@@ -18,7 +19,33 @@ import { AmbientStore } from "./store.js";
 type McpSession = {
   server: McpServer;
   transport: StreamableHTTPServerTransport;
+  lastSeenAt: number;
 };
+
+/** Alexa+ is conversation-based, not session-based — idle MCP sessions leak. */
+export const MCP_SESSION_TTL_MS = 30 * 60 * 1000;
+const MCP_SWEEP_INTERVAL_MS = 60_000;
+
+/** Close sessions idle longer than ttlMs. Exported for tests. */
+export async function evictIdleSessions<S extends { transport: { close(): Promise<void> }; server: { close(): Promise<void> }; lastSeenAt: number }>(
+  sessions: Map<string, S>,
+  ttlMs: number,
+  now = Date.now()
+): Promise<string[]> {
+  const evicted: string[] = [];
+  for (const [id, entry] of sessions) {
+    if (now - entry.lastSeenAt <= ttlMs) continue;
+    sessions.delete(id);
+    evicted.push(id);
+    try {
+      await entry.transport.close();
+    } catch { /* closing is best-effort */ }
+    try {
+      await entry.server.close();
+    } catch { /* closing is best-effort */ }
+  }
+  return evicted;
+}
 
 export type AmbientHttpDependencies = {
   registry: RuntimeRegistry;
@@ -26,12 +53,20 @@ export type AmbientHttpDependencies = {
   accessToken?: string;
   allowUnauthenticated?: boolean;
   askWaitMs?: number;
+  /** DNS-rebinding allowlists (hostname compared for Host, full origin for Origin). */
+  allowedHosts?: string[];
+  allowedOrigins?: string[];
+  sessionTtlMs?: number;
+  sweepIntervalMs?: number;
   sim?: SimHost;
   alexa?: {
     applicationId?: string;
     auth?: OAuthProvider;
     accessToken?: string;
     allowUnauthenticated?: boolean;
+    /** Verify SignatureCertChainUrl + Signature + timestamp (certification requirement). */
+    verifySignature?: boolean;
+    verifyOptions?: AlexaVerifyOptions;
   };
   connectors?: Map<string, { token: string; connection: ConnectorConnection }>;
 };
@@ -152,11 +187,32 @@ function authorizationForm(params: Record<string, string | undefined>, requiresL
 
 export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): AmbientHttp {
   const sessions = new Map<string, McpSession>();
+  const allowedHosts = new Set((dependencies.allowedHosts ?? []).map(host => host.toLowerCase()));
+  const allowedOrigins = new Set(dependencies.allowedOrigins ?? []);
   const connectorServer = dependencies.connectors && dependencies.connectors.size > 0 ? new WebSocketServer({ noServer: true }) : undefined;
+  const sweeper = setInterval(() => {
+    void evictIdleSessions(sessions, dependencies.sessionTtlMs ?? MCP_SESSION_TTL_MS);
+  }, dependencies.sweepIntervalMs ?? MCP_SWEEP_INTERVAL_MS);
+  sweeper.unref();
   const handle = async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
-    response.setHeader("access-control-allow-origin", "*");
+    // DNS-rebinding protection: Host must be an allowed hostname and a
+    // browser Origin, when present, must be an allowed origin. Non-browser
+    // clients (MCP, Alexa, curl) send no Origin and pass.
+    const hostHeader = typeof request.headers.host === "string" ? request.headers.host : "";
+    const hostname = hostHeader.split(":")[0]?.toLowerCase() ?? "";
+    if (allowedHosts.size > 0 && !allowedHosts.has(hostname)) {
+      writeJson(response, 403, { error: "forbidden_host" });
+      return;
+    }
+    const origin = typeof request.headers.origin === "string" ? request.headers.origin : undefined;
+    if (origin && allowedOrigins.size > 0 && !allowedOrigins.has(origin)) {
+      writeJson(response, 403, { error: "forbidden_origin" });
+      return;
+    }
+    if (origin) response.setHeader("access-control-allow-origin", origin);
     response.setHeader("access-control-allow-headers", "authorization, content-type, mcp-session-id, last-event-id");
     response.setHeader("access-control-allow-methods", "GET, POST, DELETE, OPTIONS");
+    response.setHeader("vary", "origin");
     if (request.method === "OPTIONS") {
       response.statusCode = 204;
       response.end();
@@ -165,7 +221,14 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
     const url = new URL(request.url ?? "/", "http://ambient.invalid");
 
     if (url.pathname === "/healthz" && request.method === "GET") {
-      writeJson(response, 200, { ok: true, runtimes: dependencies.registry.list() });
+      // {ok:true} is public; runtime detail (ids, adapters, capabilities)
+      // requires the same credentials as /mcp.
+      const detailed = dependencies.accessToken
+        ? tokenMatches(request.headers.authorization, dependencies.accessToken)
+        : dependencies.auth
+          ? await dependencies.auth.authenticate(request.headers.authorization).then(() => true, () => false)
+          : true;
+      writeJson(response, 200, detailed ? { ok: true, runtimes: dependencies.registry.list() } : { ok: true });
       return;
     }
     if (dependencies.auth && request.method === "GET" && (url.pathname === "/.well-known/oauth-protected-resource" || url.pathname === "/.well-known/oauth-protected-resource/mcp")) {
@@ -294,9 +357,11 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
       }
     }
     if (request.method === "POST" && url.pathname === "/alexa") {
+      let raw: Buffer;
       let parsed: unknown;
       try {
-        parsed = await jsonBody(request);
+        raw = await body(request, 1_000_000);
+        parsed = raw.length ? JSON.parse(raw.toString("utf8")) : undefined;
       } catch {
         writeJson(response, 400, { error: "invalid_request" });
         return;
@@ -304,6 +369,14 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
       if (!dependencies.alexa) {
         writeJson(response, 404, { error: "not_found" });
         return;
+      }
+      if (dependencies.alexa.verifySignature) {
+        try {
+          await verifyAlexaRequest(request.headers, raw, parsed, dependencies.alexa.verifyOptions ?? {});
+        } catch (error) {
+          writeJson(response, error instanceof AlexaRequestError ? error.status : 400, { error: "invalid_request" });
+          return;
+        }
       }
       try {
         const result = await handleAlexaRequest(parsed, {
@@ -340,6 +413,7 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
 
     const sessionId = typeof request.headers["mcp-session-id"] === "string" ? request.headers["mcp-session-id"] : undefined;
     let entry = sessionId ? sessions.get(sessionId) : undefined;
+    if (entry) entry.lastSeenAt = Date.now();
     if (!entry && sessionId) {
       writeJson(response, 404, { error: "unknown_mcp_session" });
       return;
@@ -364,7 +438,7 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
           await closed?.server.close();
         }
       });
-      const created: McpSession = { server: mcp, transport };
+      const created: McpSession = { server: mcp, transport, lastSeenAt: Date.now() };
       ref.current = created;
       entry = created;
       try {
@@ -410,6 +484,7 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
   return {
     server,
     close: async () => {
+      clearInterval(sweeper);
       for (const entry of sessions.values()) await entry.server.close();
       sessions.clear();
       if (connectorServer) {
@@ -432,7 +507,8 @@ export async function startFromEnvironment(env: Record<string, string | undefine
     applicationId: config.alexaSkillId,
     ...(auth ? { auth } : {}),
     ...(config.accessToken ? { accessToken: config.accessToken } : {}),
-    allowUnauthenticated: config.allowUnauthenticated
+    allowUnauthenticated: config.allowUnauthenticated,
+    verifySignature: config.alexaVerifySignature
   } : undefined;
   // The simulator is a real MCP client on the loopback /mcp endpoint — it goes
   // through the same auth surface, so hand it the local token when one is set.
@@ -455,6 +531,8 @@ export async function startFromEnvironment(env: Record<string, string | undefine
     ...(alexa ? { alexa } : {}),
     askWaitMs: config.askWaitMs,
     sim,
+    allowedOrigins: config.allowedOrigins,
+    allowedHosts: config.allowedHosts,
     allowUnauthenticated: !auth && !config.accessToken && config.allowUnauthenticated
   });
   await new Promise<void>(resolve => http.server.listen(config.port, "0.0.0.0", resolve));

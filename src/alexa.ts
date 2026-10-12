@@ -139,11 +139,11 @@ async function authorize(envelope: AlexaEnvelope, dependencies: AlexaSkillDepend
 }
 
 function lastWorkId(attributes: Record<string, unknown>, intent: AlexaEnvelope): string | undefined {
-  return slotValue(intent, "workId", "work", "id") ?? text(attributes.lastWorkId);
+  return slotValue(intent, "workId", "work", "id", "about") ?? text(attributes.lastWorkId);
 }
 
 function lastApprovalId(attributes: Record<string, unknown>, intent: AlexaEnvelope): string | undefined {
-  const explicit = slotValue(intent, "approvalId", "approval");
+  const explicit = slotValue(intent, "approvalId", "approval", "about");
   if (explicit) return explicit;
   const ordinal = slotValue(intent, "approvalNumber", "number");
   const ids = Array.isArray(attributes.pendingApprovalIds)

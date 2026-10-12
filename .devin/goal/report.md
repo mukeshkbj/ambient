@@ -52,7 +52,18 @@ Objective: ship the Alexa+ hackathon submission per
   scripted Playwright (`scripts/shots-sim.py`). Fixed: `status` no longer used
   for view refresh (it elicits by design — refresh now rides run events);
   `payload.kind` no longer lands as a run step.
-- **Verification**: `pnpm scan && pnpm build` green — 80 tests / 17 files.
+- **Phase 5 (security hardening)** — Host/Origin allowlists on every route
+  (SDK deprecated its transport options → enforced as middleware; live
+  `Origin: evil.example` → 403, `*` CORS gone). `evictIdleSessions` closes
+  sessions idle >30 min on a 60 s unref sweep; `lastSeenAt` touched per
+  request. `/healthz` = `{ok:true}` public, detail behind bearer.
+  `src/alexa-verify.ts`: cert URL pinned to s3.amazonaws.com/echo.api, SAN
+  echo-api.amazon.com, validity + chain verify, RSA-SHA256 over raw body,
+  ±150 s timestamp — `ALEXA_VERIFY_SIGNATURE=true` gates it on `/alexa`
+  (7 new tests incl. a generated throwaway chain; valid/tampered/stale/
+  bad-URL/route all covered). Interaction model: carrier phrases on every
+  SearchQuery sample, `about` slots replace id slots, en-US added.
+- **Verification**: `pnpm scan && pnpm build` green — 87 tests / 18 files.
   Live over `pnpm demo`: delegate→waiting_approval speech, approve→completed,
   status/briefing/agents/stop all speak cleanly; unknown deploy says "won't
   retry". Recorded in `docs/acceptance.md`.
@@ -60,8 +71,6 @@ Objective: ship the Alexa+ hackathon submission per
 ## Remaining
 
 - Phase 2.5 (cuttable): MCP Tasks augmentation.
-- Phase 5: origin/DNS protection, session eviction, minimal /healthz, Alexa
-  signature verification, interaction model en-US + en-GB.
 - Phase 6: AWS TLS deploy — **ASK USER before cdk deploy / anything paid**.
 - Phase 7: adapters.md, CONTRIBUTING, AssistantClient type tightening.
 - Phase 8: README rewrite, compliance box, architecture SVG, GIF, friction log

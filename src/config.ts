@@ -19,6 +19,8 @@ export type RuntimeConfigEntry = z.infer<typeof RuntimeEntrySchema>;
 const EnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   PUBLIC_BASE_URL: z.string().url().default("http://127.0.0.1:3000"),
+  AMBIENT_ALLOWED_ORIGINS: z.string().optional(),
+  AMBIENT_ALLOWED_HOSTS: z.string().optional(),
   HERMES_WS_URL: z.string().url().optional(),
   HERMES_WS_TOKEN: z.string().optional(),
   HERMES_RUNTIME_ID: z.string().min(1).default("local"),
@@ -32,6 +34,7 @@ const EnvSchema = z.object({
   ALLOW_UNAUTHENTICATED: z.string().default("false").transform(value => value === "true"),
   CONNECTOR_TOKEN: z.string().min(16).optional(),
   ALEXA_SKILL_ID: z.string().min(1).optional(),
+  ALEXA_VERIFY_SIGNATURE: z.string().default("false").transform(value => value === "true"),
   OAUTH_ISSUER: z.string().url().optional(),
   OAUTH_SIGNING_SECRET: z.string().min(32).optional(),
   ALEXA_CLIENT_ID: z.string().min(1).optional(),
@@ -42,6 +45,9 @@ const EnvSchema = z.object({
 
 export type AppConfig = {
   port: number;
+  publicBaseUrl: string;
+  allowedOrigins: string[];
+  allowedHosts: string[];
   runtimes: RuntimeConfigEntry[];
   defaultRuntimeId: string;
   dataDir: string;
@@ -50,6 +56,7 @@ export type AppConfig = {
   accessToken?: string;
   allowUnauthenticated: boolean;
   alexaSkillId?: string;
+  alexaVerifySignature: boolean;
   oauth?: {
     issuer: string;
     resource: string;
@@ -112,8 +119,23 @@ export function readConfig(env: Record<string, string | undefined> = process.env
   } : undefined;
   const runtimesFile = parsed.AMBIENT_RUNTIMES_FILE ?? join(parsed.AMBIENT_DATA_DIR, "runtimes.json");
   const runtimes = runtimeEntries(parsed, runtimesFile);
+  const publicOrigin = new URL(baseUrl).origin;
+  const list = (value: string | undefined): string[] =>
+    (value ?? "").split(",").map(item => item.trim()).filter(Boolean);
   return {
     port: parsed.PORT,
+    publicBaseUrl: baseUrl,
+    // DNS-rebinding allowlists: the public origin/host plus loopback for local
+    // clients; extend with AMBIENT_ALLOWED_ORIGINS / AMBIENT_ALLOWED_HOSTS.
+    allowedOrigins: [...new Set([publicOrigin, ...list(parsed.AMBIENT_ALLOWED_ORIGINS)])],
+    allowedHosts: [...new Set([
+      new URL(baseUrl).hostname,
+      "127.0.0.1",
+      "localhost",
+      "::1",
+      "[::1]",
+      ...list(parsed.AMBIENT_ALLOWED_HOSTS)
+    ])],
     runtimes,
     defaultRuntimeId: runtimes.find(entry => entry.default)?.id ?? runtimes[0]!.id,
     dataDir: parsed.AMBIENT_DATA_DIR,
@@ -122,6 +144,7 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     ...(parsed.AMBIENT_ACCESS_TOKEN ? { accessToken: parsed.AMBIENT_ACCESS_TOKEN } : {}),
     allowUnauthenticated: parsed.ALLOW_UNAUTHENTICATED,
     ...(parsed.ALEXA_SKILL_ID ? { alexaSkillId: parsed.ALEXA_SKILL_ID } : {}),
+    alexaVerifySignature: parsed.ALEXA_VERIFY_SIGNATURE,
     ...(oauth ? { oauth } : {})
   };
 }

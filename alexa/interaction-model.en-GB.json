@@ -22,7 +22,11 @@
             { "name": "request", "type": "AMAZON.SearchQuery" }
           ],
           "samples": [
-            "{request}"
+            "tell my agent {request}",
+            "ask it to {request}",
+            "i need {request}",
+            "can you {request}",
+            "please {request}"
           ]
         },
         {
@@ -66,18 +70,21 @@
             "what happened",
             "check the work",
             "how is it going",
-            "what is the status"
+            "what is the status",
+            "what needs me",
+            "does anything need me"
           ]
         },
         {
           "name": "GetWorkIntent",
           "slots": [
-            { "name": "workId", "type": "AMAZON.SearchQuery" }
+            { "name": "about", "type": "AMAZON.SearchQuery" }
           ],
           "samples": [
-            "check work {workId}",
-            "get the result for {workId}",
-            "status of {workId}"
+            "check the {about} work",
+            "status of the {about} task",
+            "how is the {about} going",
+            "what happened with {about}"
           ]
         },
         {
@@ -88,18 +95,20 @@
           "samples": [
             "tell it {instruction}",
             "steer the work to {instruction}",
-            "change the work to {instruction}"
+            "change the work to {instruction}",
+            "actually {instruction}"
           ]
         },
         {
           "name": "CancelWorkIntent",
           "slots": [
-            { "name": "workId", "type": "AMAZON.SearchQuery" }
+            { "name": "about", "type": "AMAZON.SearchQuery" }
           ],
           "samples": [
-            "cancel work {workId}",
-            "stop work {workId}",
-            "cancel that"
+            "cancel the {about} work",
+            "stop the {about} task",
+            "cancel that",
+            "stop that"
           ]
         },
         {
@@ -139,13 +148,13 @@
           "name": "RespondApprovalIntent",
           "slots": [
             { "name": "decision", "type": "Decision" },
-            { "name": "approvalNumber", "type": "AMAZON.Ordinal" },
-            { "name": "approvalId", "type": "AMAZON.SearchQuery" }
+            { "name": "about", "type": "AMAZON.SearchQuery" }
           ],
           "samples": [
             "{decision}",
-            "{decision} approval {approvalNumber}",
-            "{decision} {approvalId}"
+            "{decision} it",
+            "{decision} that one",
+            "{decision} the {about} request"
           ]
         },
         {
@@ -170,8 +179,8 @@
         {
           "name": "Decision",
           "values": [
-            { "name": { "value": "approve", "synonyms": ["allow", "yes", "once"] } },
-            { "name": { "value": "deny", "synonyms": ["decline", "reject", "no"] } }
+            { "name": { "value": "approve", "synonyms": ["allow", "yes", "once", "approve once"] } },
+            { "name": { "value": "deny", "synonyms": ["decline", "reject", "no", "refuse"] } }
           ]
         },
         {
@@ -181,7 +190,7 @@
             { "name": { "value": "my coding agent", "synonyms": ["the coder", "coding agent"] } },
             { "name": { "value": "hermes", "synonyms": ["my hermes", "the hermes"] } },
             { "name": { "value": "openclaw", "synonyms": ["open claw", "claw"] } },
-            { "name": { "value": "nova", "synonyms": ["my nova", "bedrock"] } }
+            { "name": { "value": "nova", "synonyms": ["my nova", "bedrock", "bedrock agent"] } }
           ]
         }
       ]

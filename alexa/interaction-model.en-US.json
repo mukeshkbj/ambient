@@ -1,0 +1,199 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "ambient",
+      "intents": [
+        {
+          "name": "AskIntent",
+          "slots": [
+            { "name": "request", "type": "AMAZON.SearchQuery" },
+            { "name": "assistant", "type": "AssistantName" }
+          ],
+          "samples": [
+            "ask {request}",
+            "ask {assistant} {request}",
+            "tell me {request}",
+            "answer {request}"
+          ]
+        },
+        {
+          "name": "ProvideRequestIntent",
+          "slots": [
+            { "name": "request", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "tell my agent {request}",
+            "ask it to {request}",
+            "i need {request}",
+            "can you {request}",
+            "please {request}"
+          ]
+        },
+        {
+          "name": "StartWorkIntent",
+          "slots": [
+            { "name": "request", "type": "AMAZON.SearchQuery" },
+            { "name": "assistant", "type": "AssistantName" }
+          ],
+          "samples": [
+            "start work to {request}",
+            "do {request}",
+            "work on {request}",
+            "get {assistant} to {request}",
+            "have {assistant} {request}"
+          ]
+        },
+        {
+          "name": "ListAssistantsIntent",
+          "samples": [
+            "which assistants are online",
+            "list assistants",
+            "who can I talk to",
+            "what assistants do I have"
+          ]
+        },
+        {
+          "name": "SelectAssistantIntent",
+          "slots": [
+            { "name": "assistant", "type": "AssistantName" }
+          ],
+          "samples": [
+            "use {assistant}",
+            "switch to {assistant}",
+            "talk to {assistant}",
+            "select {assistant}"
+          ]
+        },
+        {
+          "name": "GetLastWorkIntent",
+          "samples": [
+            "what happened",
+            "check the work",
+            "how is it going",
+            "what is the status",
+            "what needs me",
+            "does anything need me"
+          ]
+        },
+        {
+          "name": "GetWorkIntent",
+          "slots": [
+            { "name": "about", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "check the {about} work",
+            "status of the {about} task",
+            "how is the {about} going",
+            "what happened with {about}"
+          ]
+        },
+        {
+          "name": "SteerWorkIntent",
+          "slots": [
+            { "name": "instruction", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "tell it {instruction}",
+            "steer the work to {instruction}",
+            "change the work to {instruction}",
+            "actually {instruction}"
+          ]
+        },
+        {
+          "name": "CancelWorkIntent",
+          "slots": [
+            { "name": "about", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "cancel the {about} work",
+            "stop the {about} task",
+            "cancel that",
+            "stop that"
+          ]
+        },
+        {
+          "name": "ListConversationsIntent",
+          "slots": [
+            { "name": "assistant", "type": "AssistantName" }
+          ],
+          "samples": [
+            "list conversations",
+            "show my conversations",
+            "what conversations do I have",
+            "list {assistant} conversations"
+          ]
+        },
+        {
+          "name": "SelectConversationIntent",
+          "slots": [
+            { "name": "conversation", "type": "AMAZON.SearchQuery" },
+            { "name": "assistant", "type": "AssistantName" }
+          ],
+          "samples": [
+            "select conversation {conversation}",
+            "use conversation {conversation}",
+            "continue {conversation}"
+          ]
+        },
+        {
+          "name": "ListApprovalsIntent",
+          "samples": [
+            "list approvals",
+            "what needs approval",
+            "show pending approvals",
+            "does anything need approval"
+          ]
+        },
+        {
+          "name": "RespondApprovalIntent",
+          "slots": [
+            { "name": "decision", "type": "Decision" },
+            { "name": "about", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "{decision}",
+            "{decision} it",
+            "{decision} that one",
+            "{decision} the {about} request"
+          ]
+        },
+        {
+          "name": "RuntimeStatusIntent",
+          "slots": [
+            { "name": "assistant", "type": "AssistantName" }
+          ],
+          "samples": [
+            "what is the {assistant} status",
+            "is {assistant} online",
+            "check {assistant}"
+          ]
+        },
+        { "name": "AMAZON.HelpIntent", "samples": [] },
+        { "name": "AMAZON.StopIntent", "samples": [] },
+        { "name": "AMAZON.CancelIntent", "samples": [] },
+        { "name": "AMAZON.YesIntent", "samples": [] },
+        { "name": "AMAZON.NoIntent", "samples": [] },
+        { "name": "AMAZON.FallbackIntent", "samples": [] }
+      ],
+      "types": [
+        {
+          "name": "Decision",
+          "values": [
+            { "name": { "value": "approve", "synonyms": ["allow", "yes", "once", "approve once"] } },
+            { "name": { "value": "deny", "synonyms": ["decline", "reject", "no", "refuse"] } }
+          ]
+        },
+        {
+          "name": "AssistantName",
+          "values": [
+            { "name": { "value": "my agent", "synonyms": ["the agent", "default agent"] } },
+            { "name": { "value": "my coding agent", "synonyms": ["the coder", "coding agent"] } },
+            { "name": { "value": "hermes", "synonyms": ["my hermes", "the hermes"] } },
+            { "name": { "value": "openclaw", "synonyms": ["open claw", "claw"] } },
+            { "name": { "value": "nova", "synonyms": ["my nova", "bedrock", "bedrock agent"] } }
+          ]
+        }
+      ]
+    }
+  }
+}
