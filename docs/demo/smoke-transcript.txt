@@ -1,0 +1,10 @@
+tools: delegate, delegate_task, status, approve, stop, agents, briefing
+> delegate {"task":"Call Joe's Plumbing and book a visit to fix the kitchen sink, keep it under 150","newConversation":true}
+  Alexa: Joe's Plumbing can come Tuesday at ten for one hundred eighty dollars, over your limit of one hundred fifty dollars. Should I book it? Say approve, deny, or offer a different amount.
+> status
+  Alexa: Joe's Plumbing can come Tuesday at ten for one hundred eighty dollars, over your limit of one hundred fifty dollars. Should I book it? Say approve, deny, or offer a different amount.
+> delegate {"task":"offer 160"}
+  Alexa: Okay, I'll tell Joe's Plumbing.
+> status
+  Alexa: Joe's Plumbing confirmed Tuesday at ten for one hundred sixty dollars.
+smoke: ok, the simulated call ended confirmed at the steered price
