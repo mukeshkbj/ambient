@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { approvalAsk, runResult, speak, titleFor } from "../src/voice.js";
+import { approvalAsk, runResult, speak, steerReply, titleFor } from "../src/voice.js";
 import type { RunView } from "../src/types.js";
 
 // UUIDs, runtime-namespaced ids ("planner:ap-91f2"), and opaque request ids.
@@ -101,6 +101,39 @@ describe("speak", () => {
     expect(text).toBe("The call ended before they confirmed, so I won't assume it's booked.");
     expect(text).not.toMatch(ID_LIKE);
     expect(text).not.toMatch(/\b\d+\b/);
+  });
+
+  describe("during a phone call", () => {
+    const call = (overrides: Partial<RunView>) => view({ title: "Call Joe's Plumbing and book", steps: ["Calling Joe's Plumbing"], ...overrides });
+    const question = "Joe's Plumbing can come Tuesday at ten for one hundred eighty dollars, over your limit of one hundred fifty dollars. Should I book it?";
+    const approval = {
+      id: "caller:call-1:ask-1", runId: "61d7aa1b-3a8a-4f9e-9a5d-2f0d8a3cc04f", runtimeId: "caller", durableSessionId: "s", liveSessionId: "l",
+      requestId: "call-1:ask-1", command: question, description: question, choices: ["once", "deny"], amountUsd: 180, kind: "spend" as const,
+      createdAt: "2026-10-11T10:00:00.000Z"
+    };
+
+    it("asks the call's question as written, without repeating the amount", () => {
+      expect(approvalAsk(call({ status: "waiting_approval", approval }), { label: "Ambient" })).toBe(question);
+      expect(speak(call({ status: "waiting_approval", approval }), { label: "Ambient" })).toBe(`${question} Say approve, deny, or offer a different amount.`);
+    });
+
+    it("says who it is calling before they answer", () => {
+      expect(speak(call({ status: "running" }), { label: "Ambient" })).toBe("Ambient is calling Joe's Plumbing now.");
+    });
+
+    it("says what the business last said once connected", () => {
+      const steps = ["Calling Joe's Plumbing", "Connected to Joe's Plumbing", "Ambient: Hi, this is an AI assistant calling for Maya.", "Joe's Plumbing: We can come Tuesday at ten."];
+      expect(speak(call({ status: "running", steps }), { label: "Ambient" })).toBe("Ambient is on the phone with Joe's Plumbing. They just said: We can come Tuesday at ten.");
+    });
+
+    it("says nothing was booked when you hang up", () => {
+      expect(speak(call({ status: "cancelled" }), { label: "Ambient" })).toBe("I hung up on Joe's Plumbing. Nothing was booked.");
+    });
+
+    it("confirms a steer by naming who will hear it", () => {
+      expect(steerReply(call({ status: "running" }), { label: "Ambient" })).toBe("Okay, I'll tell Joe's Plumbing.");
+      expect(steerReply(view({ status: "running" }), { label: "My Agent" })).toBe('Noted — passed that to My Agent while it works on "Book a table for four".');
+    });
   });
 
   it("leads the approval ask with the stake in words", () => {

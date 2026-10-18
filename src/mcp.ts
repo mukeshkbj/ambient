@@ -6,7 +6,7 @@ import { z } from "zod";
 import { TASK_HTML } from "./task-view.js";
 import type { PendingApproval, RuntimeEntry, RuntimeRegistry } from "./runtimes/registry.js";
 import type { RunStatus, RunView } from "./types.js";
-import { approvalAsk, runResult, say, TASK_RESOURCE_URI } from "./voice.js";
+import { approvalAsk, runResult, say, steerReply, TASK_RESOURCE_URI } from "./voice.js";
 
 export type McpDependencies = {
   registry: RuntimeRegistry;
@@ -133,7 +133,7 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
           throw new Error(`${entry.descriptor.label} is still working on "${active.title}" and can't be steered. Wait for it to finish, or say stop first.`);
         }
         const view = await entry.engine.steer(active.id, task);
-        return runResult(view, { label: entry.descriptor.label }, `Noted — passed that to ${entry.descriptor.label} while it works on "${view.title}".`);
+        return runResult(view, { label: entry.descriptor.label }, steerReply(view, { label: entry.descriptor.label }));
       }
       const view = await entry.engine.ask(task, conversationId, newConversation ?? false, { waitMs: askWaitMs });
       return await settleApproval(entry, view, extra.requestId);

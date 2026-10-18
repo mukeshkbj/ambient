@@ -116,6 +116,16 @@ describe("CallerClient discovery and memory", () => {
     close();
   });
 
+  it("shows what it remembers from the last call to the same business", async () => {
+    const { engine, close } = setup(JOES_PLUMBING, { memory: true });
+    const first = await engine.ask("Call Joe's Plumbing and book a visit", undefined, true);
+    await until(engine, first.id, item => item.status === "completed");
+    const second = await engine.ask("Call Joe's Plumbing again", undefined, true);
+    const view = await until(engine, second.id, item => item.steps.some(step => step.startsWith("Remembered from")));
+    expect(view.steps.find(step => step.startsWith("Remembered from"))).toMatch(/— confirmed, quoted one hundred eighty dollars/);
+    close();
+  });
+
   it("dials a number given in the instruction with no dial approval", async () => {
     const { client, engine, close } = setup(JOES_PLUMBING, { discover: async () => [] });
     const dialRequests: string[] = [];

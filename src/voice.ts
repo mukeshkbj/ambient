@@ -38,11 +38,26 @@ export type SpeakContext = {
   state?: RuntimeState;
 };
 
+function callee(view: RunView): string | undefined {
+  for (const step of view.steps) {
+    const match = /^(?:Calling|Connected to) (.+)$/.exec(step);
+    if (match) return match[1];
+  }
+  return undefined;
+}
+
+function lastLineFrom(view: RunView, speaker: string): string | undefined {
+  const prefix = `${speaker}: `;
+  return view.steps.findLast(step => step.startsWith(prefix))?.slice(prefix.length);
+}
+
 /** The approval ask on its own — used as the elicitation message. */
 export function approvalAsk(view: RunView, ctx: SpeakContext): string {
   const request = view.approval?.description ?? view.approval?.command;
   if (request && view.approval?.amountUsd !== undefined) {
-    return `${ctx.label} needs your OK: ${stripEnd(request)}. That's ${dollarsInWords(view.approval.amountUsd)}.`;
+    const amount = dollarsInWords(view.approval.amountUsd);
+    const asked = /[?]$/.test(request.trim()) ? request.trim() : `${stripEnd(request)}.`;
+    return asked.includes(amount) ? asked : `${asked} That's ${amount}.`;
   }
   return request
     ? `${ctx.label} is asking: ${stripEnd(request)}.`
@@ -56,6 +71,19 @@ export function approvalAsk(view: RunView, ctx: SpeakContext): string {
 export function speak(view: RunView, ctx: SpeakContext): string {
   const label = ctx.label;
   const title = `"${view.title}"`;
+  const business = callee(view);
+  if (business) {
+    if (view.status === "waiting_approval") {
+      const choices = view.approval?.kind === "dial" ? "Say yes to place the call, or no." : "Say approve, deny, or offer a different amount.";
+      return `${approvalAsk(view, ctx)} ${choices}`;
+    }
+    if (view.status === "cancelled") return `I hung up on ${business}. Nothing was booked.`;
+    if (view.status === "running" || view.status === "accepted" || view.status === "queued") {
+      const heard = lastLineFrom(view, business);
+      if (heard) return `${label} is on the phone with ${business}. They just said: ${clampSentences(heard)}`;
+      return view.steps.some(step => step.startsWith("Connected to")) ? `${label} is on the phone with ${business}.` : `${label} is calling ${business} now.`;
+    }
+  }
   switch (view.status) {
     case "completed": {
       const outcome = view.outcome;
@@ -87,6 +115,11 @@ export function speak(view: RunView, ctx: SpeakContext): string {
       return `${working} Say "what's the status" any time.`;
     }
   }
+}
+
+export function steerReply(view: RunView, ctx: SpeakContext): string {
+  const business = callee(view);
+  return business ? `Okay, I'll tell ${business}.` : `Noted — passed that to ${ctx.label} while it works on "${view.title}".`;
 }
 
 export type VoiceResult = {

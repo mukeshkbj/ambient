@@ -97,6 +97,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
 
   private readonly calls = new Map<string, CallHandle>();
   private readonly pendingDials = new Map<string, PendingDial>();
+  private closed = false;
 
   constructor(private readonly options: CallerOptions) {
     super();
@@ -176,6 +177,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
   }
 
   close(): void {
+    this.closed = true;
     for (const pending of this.pendingDials.values()) pending.decide("cancel");
     this.pendingDials.clear();
     for (const call of this.calls.values()) call.hangUp();
@@ -263,6 +265,8 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
       facts: [...householdFacts(household), ...(memory?.facts(business.phone) ?? []), ...this.pastCalls(business.phone)]
     };
     this.emit({ type: "status.update", sessionId, payload: { text: `Calling ${business.name}` } });
+    const last = memory?.history(business.phone)[0];
+    if (last) this.emit({ type: "status.update", sessionId, payload: { text: `Remembered from ${dayLabel(last.at)} — ${describeOutcome(last.outcome)}` } });
     const call = runCall({
       brief,
       callId: sessionId,
@@ -275,7 +279,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
     this.calls.set(sessionId, call);
     void call.done.then(state => {
       this.calls.delete(sessionId);
-      if (memory && state.phase.kind === "ended") {
+      if (memory && !this.closed && state.phase.kind === "ended") {
         memory.recordCall({
           runId: sessionId,
           businessName: business.name,
