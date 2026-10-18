@@ -15,7 +15,7 @@ OUT = Path(__file__).resolve().parent.parent / "docs" / "media"
 
 
 async def phase(page, value, timeout=30000):
-    await page.wait_for_selector(f'#call[data-phase="{value}"]', timeout=timeout)
+    await page.wait_for_selector(f'body[data-phase="{value}"]', timeout=timeout)
 
 
 async def shot(page, name):

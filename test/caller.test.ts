@@ -10,7 +10,7 @@ import { AmbientStore } from "../src/store.js";
 import type { RunView } from "../src/types.js";
 import { speak } from "../src/voice.js";
 
-function setup(persona: BusinessPersona = JOES_PLUMBING, options: { discover?: () => Promise<Candidate[]>; memory?: boolean; brain?: Brain } = {}) {
+function setup(persona: BusinessPersona = JOES_PLUMBING, options: { discover?: () => Promise<Candidate[]>; memory?: boolean; brain?: Brain; limitDials?: boolean } = {}) {
   const store = new AmbientStore();
   const client = new CallerClient({
     household: { ownerName: "Maya", address: "12 Elm Street", maxUsdDefault: 200, facts: [] },
@@ -19,7 +19,8 @@ function setup(persona: BusinessPersona = JOES_PLUMBING, options: { discover?: (
     brain: options.brain ?? scriptedBrain(DEMO_SCRIPT),
     tickMs: 5,
     ...(options.discover ? { discover: options.discover } : {}),
-    ...(options.memory ? { memory: store } : {})
+    ...(options.memory ? { memory: store } : {}),
+    ...(options.limitDials !== undefined ? { limitDials: options.limitDials } : {})
   });
   const engine = new ConversationEngine(client, store, {
     runtime: { id: "caller", label: "Ambient", kind: "cloud", state: "unknown", updatedAt: new Date().toISOString() }
@@ -166,6 +167,16 @@ describe("CallerClient discovery and memory", () => {
     client.close();
     engine.close();
     memory.close();
+  });
+
+  it("does not limit calls to the simulated business", async () => {
+    const { engine, close } = setup(JOES_PLUMBING, { memory: true, limitDials: false });
+    for (let index = 0; index < 4; index++) {
+      const run = await engine.ask("Call Joe's Plumbing and book a visit", undefined, true);
+      const view = await until(engine, run.id, item => item.status === "completed");
+      expect(view.outcome).toMatchObject({ kind: "confirmed" });
+    }
+    close();
   });
 
   it("ends no_deal at the per-number daily limit without dialing", async () => {

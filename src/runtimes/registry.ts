@@ -316,6 +316,7 @@ function callerRuntime(item: RuntimeConfigEntry, env: Record<string, string | un
     line: () => simulatedLine(persona, speedMs !== undefined ? { speedMs } : {}),
     brain,
     memory: store,
+    limitDials: lineKind !== "simulated",
     ...(anthropic ? { discover: (goal: string, household: Household) => discoverBusiness(params => anthropic.messages.create(params), goal, household) } : {})
   });
   return polledRuntime(item, env, store, client);

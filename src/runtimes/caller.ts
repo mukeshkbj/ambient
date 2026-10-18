@@ -34,6 +34,7 @@ export type CallerOptions = {
   brain: Brain;
   discover?: (goal: string, household: Household) => Promise<Candidate[]>;
   memory?: CallerMemory;
+  limitDials?: boolean;
   tickMs?: number;
 };
 
@@ -248,7 +249,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
 
   private dial(sessionId: string, business: { name: string; phone: PhoneNumber }, instruction: string, maxUsd: number | undefined): void {
     const { household, memory } = this.options;
-    const limit = checkDialLimits(memory?.placedCalls() ?? [], business.phone, new Date().toISOString());
+    const limit = this.options.limitDials === false ? { ok: true as const } : checkDialLimits(memory?.placedCalls() ?? [], business.phone, new Date().toISOString());
     if (!limit.ok) {
       this.emit({
         type: "message.complete",
