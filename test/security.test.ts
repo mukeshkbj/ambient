@@ -80,7 +80,7 @@ const NOW = Date.parse("2027-06-01T12:00:00Z");
 const CERT_URL = "https://s3.amazonaws.com/echo.api/echo-api-cert.pem";
 
 function fakeRegistry(store: AmbientStore): RuntimeRegistry {
-  return new RuntimeRegistry(store, [fakeRuntimeEntry("local", "My Hermes", fakeAssistant().client, store)]);
+  return new RuntimeRegistry(store, [fakeRuntimeEntry("local", "My Agent", fakeAssistant().client, store)]);
 }
 
 async function listen(server: ReturnType<typeof createAmbientHttpServer>): Promise<number> {

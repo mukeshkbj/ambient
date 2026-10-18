@@ -5,14 +5,12 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import WebSocket, { WebSocketServer } from "ws";
 import { readConfig, type AppConfig } from "./config.js";
 import { OAuthError, OAuthProvider, type Principal } from "./auth.js";
 import { AlexaRequestError, handleAlexaRequest } from "./alexa.js";
 import { verifyAlexaRequest, type AlexaVerifyOptions } from "./alexa-verify.js";
 import { createMcpServer } from "./mcp.js";
 import { buildRuntimeRegistry, type RuntimeRegistry } from "./runtimes/registry.js";
-import type { ConnectorConnection } from "./runtimes/types.js";
 import { SimHost } from "./sim.js";
 import { AmbientStore } from "./store.js";
 
@@ -68,7 +66,6 @@ export type AmbientHttpDependencies = {
     verifySignature?: boolean;
     verifyOptions?: AlexaVerifyOptions;
   };
-  connectors?: Map<string, { token: string; connection: ConnectorConnection }>;
 };
 
 export type AmbientHttp = {
@@ -122,12 +119,6 @@ function methodOf(parsed: unknown): string {
 function tokenMatches(value: string | undefined, expected: string): boolean {
   if (!value?.startsWith("Bearer ")) return false;
   const actual = Buffer.from(value.slice("Bearer ".length));
-  const target = Buffer.from(expected);
-  return actual.length === target.length && timingSafeEqual(actual, target);
-}
-
-function secretMatches(value: string | undefined, expected: string): boolean {
-  const actual = Buffer.from(value ?? "");
   const target = Buffer.from(expected);
   return actual.length === target.length && timingSafeEqual(actual, target);
 }
@@ -189,7 +180,6 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
   const sessions = new Map<string, McpSession>();
   const allowedHosts = new Set((dependencies.allowedHosts ?? []).map(host => host.toLowerCase()));
   const allowedOrigins = new Set(dependencies.allowedOrigins ?? []);
-  const connectorServer = dependencies.connectors && dependencies.connectors.size > 0 ? new WebSocketServer({ noServer: true }) : undefined;
   const sweeper = setInterval(() => {
     void evictIdleSessions(sessions, dependencies.sessionTtlMs ?? MCP_SESSION_TTL_MS);
   }, dependencies.sweepIntervalMs ?? MCP_SWEEP_INTERVAL_MS);
@@ -305,20 +295,6 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
           clearInterval(heartbeat);
           unlisten();
         });
-        return;
-      }
-      if (url.pathname === "/sim/api/turn" && request.method === "POST") {
-        try {
-          const input = await jsonBody(request) as { utterance?: unknown } | undefined;
-          const utterance = typeof input?.utterance === "string" ? input.utterance.trim() : "";
-          if (!utterance) {
-            writeJson(response, 400, { error: "utterance is required" });
-            return;
-          }
-          writeJson(response, 200, await sim.turn(utterance));
-        } catch (error) {
-          writeJson(response, 500, { error: error instanceof Error ? error.message : String(error) });
-        }
         return;
       }
       if (url.pathname === "/sim/api/tool" && request.method === "POST") {
@@ -464,37 +440,12 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
     });
   });
 
-  if (connectorServer && dependencies.connectors) {
-    const connectors = dependencies.connectors;
-    server.on("upgrade", (request, socket, head) => {
-      const url = new URL(request.url ?? "/", "http://ambient.invalid");
-      const runtimeId = request.headers["x-ambient-runtime-id"];
-      const entry = typeof runtimeId === "string" ? connectors.get(runtimeId) : undefined;
-      const authorization = request.headers.authorization;
-      const token = authorization?.startsWith("Bearer ") ? authorization.slice("Bearer ".length) : undefined;
-      if (url.pathname !== "/connector" || !entry || !secretMatches(token, entry.token)) {
-        socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
-        socket.destroy();
-        return;
-      }
-      connectorServer.handleUpgrade(request, socket, head, webSocket => {
-        void entry.connection.attach(webSocket).catch(() => {
-          if (webSocket.readyState === WebSocket.OPEN) webSocket.close(1013, "connector unavailable");
-        });
-      });
-    });
-  }
-
   return {
     server,
     close: async () => {
       clearInterval(sweeper);
       for (const entry of sessions.values()) await entry.server.close();
       sessions.clear();
-      if (connectorServer) {
-        for (const connector of dependencies.connectors?.values() ?? []) await connector.connection.close();
-        await new Promise<void>(resolve => connectorServer.close(() => resolve()));
-      }
       if (!server.listening) return;
       await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
     }
@@ -505,7 +456,6 @@ export async function startFromEnvironment(env: Record<string, string | undefine
   const config: AppConfig = readConfig(env);
   const store = new AmbientStore(join(config.dataDir, "ambient.sqlite"), config.retentionDays);
   const registry = buildRuntimeRegistry(config, env, store);
-  const connectors = registry.connectors();
   const auth = config.oauth ? new OAuthProvider(config.oauth) : undefined;
   const alexa = config.alexaSkillId ? {
     applicationId: config.alexaSkillId,
@@ -523,15 +473,13 @@ export async function startFromEnvironment(env: Record<string, string | undefine
     registry,
     mcpUrl: `http://127.0.0.1:${config.port}/mcp`,
     ...(config.accessToken ? { token: config.accessToken } : {}),
-    assetsDir: simAssets,
-    env
+    assetsDir: simAssets
   });
   sim.watch();
   const http = createAmbientHttpServer({
     registry,
     ...(auth ? { auth } : {}),
     ...(config.accessToken ? { accessToken: config.accessToken } : {}),
-    ...(connectors.size > 0 ? { connectors } : {}),
     ...(alexa ? { alexa } : {}),
     askWaitMs: config.askWaitMs,
     sim,

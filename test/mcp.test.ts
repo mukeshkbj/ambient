@@ -23,7 +23,7 @@ describe("MCP surface", () => {
       activeRunForNextAsk: vi.fn()
     };
     const entry: RuntimeEntry = {
-      descriptor: { id: "local", label: "My Hermes", kind: "local", adapter: "fake", capabilities: fakeAssistant().client.capabilities },
+      descriptor: { id: "local", label: "My Agent", kind: "local", adapter: "fake", capabilities: fakeAssistant().client.capabilities },
       client: fakeAssistant().client,
       engine: engine as unknown as ConversationEngine,
       start: () => undefined,
@@ -36,13 +36,11 @@ describe("MCP surface", () => {
       "agents",
       "approve",
       "briefing",
-      "dashboard",
       "delegate",
       "delegate_task",
       "status",
       "stop"
     ]);
-    expect((tools.dashboard as { _meta?: Record<string, unknown> })._meta).toMatchObject({ ui: { resourceUri: "ui://ambient/dashboard" } });
     store.close();
   });
 });

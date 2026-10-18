@@ -20,7 +20,7 @@ describe("OAuth HTTP boundary", () => {
 
   function buildRegistry() {
     store = new AmbientStore();
-    registry = new RuntimeRegistry(store, [fakeRuntimeEntry("local", "My Hermes", fakeAssistant().client, store)]);
+    registry = new RuntimeRegistry(store, [fakeRuntimeEntry("local", "My Agent", fakeAssistant().client, store)]);
     return registry;
   }
 

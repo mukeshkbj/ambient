@@ -14,8 +14,8 @@ function registry(entries: Array<[string, string]>) {
 
 describe("RuntimeRegistry", () => {
   it("resolves the default and the sticky selection", () => {
-    const { store, registry: reg } = registry([["hermes", "Hermes"], ["beta", "Beta Agent"]]);
-    expect(reg.resolve().descriptor.id).toBe("hermes");
+    const { store, registry: reg } = registry([["alpha", "Alpha"], ["beta", "Beta Agent"]]);
+    expect(reg.resolve().descriptor.id).toBe("alpha");
     reg.select("beta agent");
     expect(reg.resolve().descriptor.id).toBe("beta");
     expect(reg.selectedId()).toBe("beta");
@@ -24,29 +24,29 @@ describe("RuntimeRegistry", () => {
   });
 
   it("resolves fuzzy names across id, label, and prefixes", () => {
-    const { store, registry: reg } = registry([["beta", "Beta Agent"], ["openclaw", "OpenClaw"]]);
+    const { store, registry: reg } = registry([["beta", "Beta Agent"], ["gamma", "Gamma Agent"]]);
     expect(reg.resolve("beta").descriptor.id).toBe("beta");
     expect(reg.resolve("Beta Agent").descriptor.id).toBe("beta");
     expect(reg.resolve("bet").descriptor.id).toBe("beta");
-    expect(reg.resolve("openclaw").descriptor.id).toBe("openclaw");
+    expect(reg.resolve("gamma").descriptor.id).toBe("gamma");
     store.close();
   });
 
   it("names the available assistants when the name is unknown", () => {
-    const { store, registry: reg } = registry([["hermes", "Hermes"], ["gamma", "Gamma Agent"]]);
-    expect(() => reg.resolve("nova")).toThrow('Unknown assistant "nova". Available: Hermes, Gamma Agent.');
+    const { store, registry: reg } = registry([["alpha", "Alpha"], ["gamma", "Gamma Agent"]]);
+    expect(() => reg.resolve("delta")).toThrow('Unknown assistant "delta". Available: Alpha, Gamma Agent.');
     store.close();
   });
 
   it("persists selection across registry instances", () => {
     const store = new AmbientStore();
     const first = new RuntimeRegistry(store, [
-      fakeRuntimeEntry("hermes", "Hermes", fakeAssistant().client, store),
+      fakeRuntimeEntry("alpha", "Alpha", fakeAssistant().client, store),
       fakeRuntimeEntry("gamma", "Gamma Agent", fakeAssistant().client, store)
     ]);
     first.select("gamma");
     const second = new RuntimeRegistry(store, [
-      fakeRuntimeEntry("hermes", "Hermes", fakeAssistant().client, store),
+      fakeRuntimeEntry("alpha", "Alpha", fakeAssistant().client, store),
       fakeRuntimeEntry("gamma", "Gamma Agent", fakeAssistant().client, store)
     ]);
     expect(second.selectedId()).toBe("gamma");

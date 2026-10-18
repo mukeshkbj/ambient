@@ -3,8 +3,7 @@
 An adapter teaches Ambient to talk to one agent runtime. It implements
 `AssistantClient` (`src/runtimes/types.ts`) and maps that runtime's protocol —
 events, sessions, approvals — onto the canonical shapes the engine consumes.
-Everything wire-specific stays inside the adapter; nothing else in the repo
-knows what a Hermes `session_key` is.
+Everything wire-specific stays inside the adapter.
 
 The [`demo` adapter](../src/runtimes/demo.ts) is the template. It needs no
 credentials and no network — the whole lifecycle is scripted on a timer — so
@@ -65,8 +64,8 @@ Two ids, deliberately:
   into a live handle.
 
 If live ids die with your connection, set `ephemeralSessions = true` so
-discovery re-binds them after reconnect (Hermes does this). If your ids are
-already durable keys (OpenClaw, Bedrock, demo), leave it unset.
+discovery re-binds them after reconnect. If your ids are already durable
+keys, leave it unset.
 
 ## Approvals: honest or absent
 
@@ -91,9 +90,8 @@ don't know; an honest unknown is a feature, not a failure.
 1. Write the client (`src/runtimes/<name>.ts`), extending `AssistantEvented`.
 2. Register it in `src/runtimes/registry.ts`'s adapter table with a config
    schema.
-3. Add a fixture to `runtimes.example.json` and tests in `test/` — the
-   `FakeSocket`-driven contract tests in `test/adapters.test.ts` and
-   `test/hermes-contract.test.ts` show how to exercise the client without a
+3. Add a fixture to `runtimes.example.json` and tests in `test/` —
+   `test/adapters.test.ts` shows how to exercise the client without a
    live backend.
 4. `pnpm scan` must stay green.
 

@@ -6,10 +6,9 @@ const RuntimeEntrySchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
   kind: z.enum(["local", "cloud"]).default("local"),
-  adapter: z.string().min(1).default("hermes"),
+  adapter: z.string().min(1).default("demo"),
   endpoint: z.string().min(1).optional(),
   tokenEnv: z.string().min(1).optional(),
-  connectorTokenEnv: z.string().min(1).optional(),
   options: z.record(z.string(), z.string()).optional(),
   default: z.boolean().optional()
 });
@@ -22,18 +21,12 @@ const EnvSchema = z.object({
   PUBLIC_BASE_URL: z.string().url().default("http://127.0.0.1:3000"),
   AMBIENT_ALLOWED_ORIGINS: z.string().optional(),
   AMBIENT_ALLOWED_HOSTS: z.string().optional(),
-  HERMES_WS_URL: z.string().url().optional(),
-  HERMES_WS_TOKEN: z.string().optional(),
-  HERMES_RUNTIME_ID: z.string().min(1).default("local"),
-  HERMES_RUNTIME_LABEL: z.string().min(1).default("My Hermes"),
-  HERMES_RUNTIME_KIND: z.enum(["local", "cloud"]).default("local"),
   AMBIENT_DATA_DIR: z.string().min(1).default(".ambient"),
   AMBIENT_RUNTIMES_FILE: z.string().min(1).optional(),
   AMBIENT_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
   AMBIENT_ASK_WAIT_MS: z.coerce.number().int().nonnegative().default(6000),
   AMBIENT_ACCESS_TOKEN: z.string().min(16).optional(),
   ALLOW_UNAUTHENTICATED: z.string().default("false").transform(value => value === "true"),
-  CONNECTOR_TOKEN: z.string().min(16).optional(),
   ALEXA_SKILL_ID: z.string().min(1).optional(),
   ALEXA_VERIFY_SIGNATURE: z.string().default("false").transform(value => value === "true"),
   OAUTH_ISSUER: z.string().url().optional(),
@@ -70,7 +63,7 @@ export type AppConfig = {
   };
 };
 
-function runtimeEntries(parsed: z.infer<typeof EnvSchema>, runtimesFile: string): RuntimeConfigEntry[] {
+function runtimeEntries(runtimesFile: string): RuntimeConfigEntry[] {
   const entries: RuntimeConfigEntry[] = existsSync(runtimesFile)
     ? z.array(RuntimeEntrySchema).parse(JSON.parse(readFileSync(runtimesFile, "utf8")) as unknown)
     : [];
@@ -79,19 +72,8 @@ function runtimeEntries(parsed: z.infer<typeof EnvSchema>, runtimesFile: string)
     if (seen.has(entry.id)) throw new Error(`Duplicate runtime id "${entry.id}" in ${runtimesFile}`);
     seen.add(entry.id);
   }
-  // Env shorthand defines the default Hermes runtime unless the file already declares that id.
-  if ((parsed.HERMES_WS_URL || parsed.CONNECTOR_TOKEN) && !seen.has(parsed.HERMES_RUNTIME_ID)) {
-    entries.unshift({
-      id: parsed.HERMES_RUNTIME_ID,
-      label: parsed.HERMES_RUNTIME_LABEL,
-      kind: parsed.HERMES_RUNTIME_KIND,
-      adapter: "hermes",
-      ...(parsed.HERMES_WS_URL ? { endpoint: parsed.HERMES_WS_URL, tokenEnv: "HERMES_WS_TOKEN" } : {}),
-      ...(parsed.CONNECTOR_TOKEN ? { connectorTokenEnv: "CONNECTOR_TOKEN" } : {})
-    });
-  }
   if (entries.length === 0) {
-    throw new Error("At least one runtime is required: set HERMES_WS_URL/CONNECTOR_TOKEN or add entries to AMBIENT_RUNTIMES_FILE");
+    throw new Error(`At least one runtime is required: add entries to ${runtimesFile} (AMBIENT_RUNTIMES_FILE)`);
   }
   return entries;
 }
@@ -120,7 +102,7 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     ...(parsed.DEMO_LINK_CODE ? { demoLinkCode: parsed.DEMO_LINK_CODE } : {})
   } : undefined;
   const runtimesFile = parsed.AMBIENT_RUNTIMES_FILE ?? join(parsed.AMBIENT_DATA_DIR, "runtimes.json");
-  const runtimes = runtimeEntries(parsed, runtimesFile);
+  const runtimes = runtimeEntries(runtimesFile);
   const publicOrigin = new URL(baseUrl).origin;
   const list = (value: string | undefined): string[] =>
     (value ?? "").split(",").map(item => item.trim()).filter(Boolean);

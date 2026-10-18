@@ -10,7 +10,6 @@
     "id": "coder",
     "label": "Coding Agent",
     "kind": "local",
-    "adapter": "demo",
-    "options": { "script": "deploy" }
+    "adapter": "demo"
   }
 ]

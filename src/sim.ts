@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { bedrockRoute, keywordRoute, type RoutedCall } from "./sim-router.js";
 import type { RuntimeRegistry } from "./runtimes/registry.js";
 
 export type SimDependencies = {
@@ -12,17 +11,6 @@ export type SimDependencies = {
   token?: string;
   /** Directory holding the sim front end (index.html). */
   assetsDir: string;
-  env?: Record<string, string | undefined>;
-};
-
-export type SimTurn = {
-  utterance: string;
-  routed: RoutedCall;
-  speech: string;
-  structuredContent: Record<string, unknown> | undefined;
-  /** MCP App resource (ui://…) declared by the tool result, with its HTML. */
-  ui: { resourceUri: string; html: string } | undefined;
-  isError: boolean;
 };
 
 export type SimEvent =
@@ -170,24 +158,12 @@ export class SimHost {
     for (const listener of this.listeners) listener(event);
   }
 
-  private async route(utterance: string): Promise<RoutedCall> {
-    const agents = this.options.registry.list().map(item => ({ id: item.id, label: item.label }));
-    const client = await this.client();
-    const listed = await client.listTools();
-    const viaModel = await bedrockRoute(utterance, listed.tools.map(tool => ({
-      name: tool.name,
-      ...(tool.description ? { description: tool.description } : {}),
-      inputSchema: tool.inputSchema
-    })), agents, this.options.env ?? process.env);
-    return viaModel ?? keywordRoute(utterance, agents);
-  }
-
   async callTool(name: string, args: Record<string, unknown>): Promise<Record<string, unknown>> {
     const client = await this.client();
     const result = await client.callTool({ name, arguments: args });
     const structured = structuredOf(result);
     const resourceUri = ((result as { _meta?: { ui?: { resourceUri?: unknown } } })._meta?.ui?.resourceUri);
-    let ui: SimTurn["ui"];
+    let ui: { resourceUri: string; html: string } | undefined;
     if (typeof resourceUri === "string" && resourceUri.startsWith("ui://")) {
       try {
         const resource = await client.readResource({ uri: resourceUri });
@@ -202,19 +178,6 @@ export class SimHost {
       structuredContent: structured,
       ui,
       isError: (result as { isError?: boolean }).isError === true
-    };
-  }
-
-  async turn(utterance: string): Promise<SimTurn> {
-    const routed = await this.route(utterance);
-    const result = await this.callTool(routed.name, routed.args);
-    return {
-      utterance,
-      routed,
-      speech: typeof result.speech === "string" ? result.speech : "",
-      structuredContent: result.structuredContent as Record<string, unknown> | undefined,
-      ui: result.ui as SimTurn["ui"],
-      isError: result.isError === true
     };
   }
 

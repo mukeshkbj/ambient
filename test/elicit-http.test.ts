@@ -36,7 +36,7 @@ describe("elicitation over Streamable HTTP", () => {
   it("reaches a client that opened no standalone GET stream", async () => {
     const store = new AmbientStore();
     const assistant = fakeAssistant();
-    const registry = new RuntimeRegistry(store, [fakeRuntimeEntry("local", "My Hermes", assistant.client, store)]);
+    const registry = new RuntimeRegistry(store, [fakeRuntimeEntry("local", "My Agent", assistant.client, store)]);
     const http = createAmbientHttpServer({ registry, allowUnauthenticated: true, askWaitMs: 400 });
     cleanup = async () => {
       await http.close();

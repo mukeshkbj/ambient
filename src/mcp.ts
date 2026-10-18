@@ -3,10 +3,10 @@ import { InMemoryTaskMessageQueue, InMemoryTaskStore } from "@modelcontextprotoc
 import type { RequestTaskStore } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import type { RequestId, Task } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { DASHBOARD_HTML, dashboardSnapshot, TASK_HTML } from "./dashboard.js";
+import { TASK_HTML } from "./task-view.js";
 import type { PendingApproval, RuntimeEntry, RuntimeRegistry } from "./runtimes/registry.js";
 import type { RunStatus, RunView } from "./types.js";
-import { approvalAsk, DASHBOARD_RESOURCE_URI, runResult, say, TASK_RESOURCE_URI } from "./voice.js";
+import { approvalAsk, runResult, say, TASK_RESOURCE_URI } from "./voice.js";
 
 export type McpDependencies = {
   registry: RuntimeRegistry;
@@ -383,31 +383,6 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
       return failure(error);
     }
   });
-
-  server.registerTool("dashboard", {
-    title: "Ambient dashboard",
-    description: "Open the live Ambient dashboard: agent switcher, live work feed across every runtime, and pending approvals with one-tap answers. Also returns the full snapshot as structured content.",
-    inputSchema: {},
-    _meta: { ui: { resourceUri: DASHBOARD_RESOURCE_URI } }
-  }, async () => {
-    try {
-      const snapshot = dashboardSnapshot(registry);
-      return {
-        content: [{ type: "text" as const, text: `${snapshot.assistants.length} agents, ${snapshot.approvals.length} pending approvals, ${snapshot.work.length} recent work items.` }],
-        structuredContent: snapshot as unknown as Record<string, unknown>
-      };
-    } catch (error) {
-      return failure(error);
-    }
-  });
-
-  server.registerResource("ambient-dashboard", DASHBOARD_RESOURCE_URI, {
-    title: "Ambient dashboard",
-    description: "Live multi-agent dashboard: switcher, work feed, approvals.",
-    mimeType: "text/html;profile=mcp-app"
-  }, async () => ({
-    contents: [{ uri: DASHBOARD_RESOURCE_URI, mimeType: "text/html;profile=mcp-app", text: DASHBOARD_HTML }]
-  }));
 
   server.registerResource("ambient-task", TASK_RESOURCE_URI, {
     title: "Ambient task card",

@@ -87,7 +87,6 @@ export type VoiceResult = {
 };
 
 export const TASK_RESOURCE_URI = "ui://ambient/task";
-export const DASHBOARD_RESOURCE_URI = "ui://ambient/dashboard";
 
 function approvalSummary(approval: Approval, label: string): Record<string, unknown> {
   return {

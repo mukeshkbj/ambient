@@ -14,8 +14,6 @@ import {
 } from "./types.js";
 
 export type DemoClientOptions = {
-  /** Force one script for every prompt: planner | research | deploy | fail | echo. */
-  script?: string;
   /** Milliseconds between scripted steps. Keep small in tests. */
   speedMs?: number;
 };
@@ -37,48 +35,21 @@ type DemoSession = {
   pending?: PendingApproval | undefined;
 };
 
-type Step = { text?: string; waitApproval?: PendingApprovalSeed; goOffline?: boolean; done?: { text: string; status?: "ok" | "error" } };
+type Step = { text?: string; waitApproval?: PendingApprovalSeed; done?: { text: string; status?: "ok" | "error" } };
 type PendingApprovalSeed = { command: string; description: string };
 
-function scriptFor(instruction: string, forced?: string): Step[] {
-  const text = instruction.toLowerCase();
-  const kind = forced === "planner" || forced === "research"
-    ? forced
-    : /deploy|ship|release/.test(text) ? "deploy"
-      : /book|table|restaurant|dinner|plan|reserve/.test(text) ? "planner"
-        : /fail|error|crash/.test(text) ? "fail"
-          : /research|compare|find|look/.test(text) ? "research" : "echo";
-  if (kind === "planner") return [
-    { text: "Searching restaurants near you with a table for four" },
-    { text: "Lupa has a 7pm opening on Saturday — checking the booking terms" },
-    { text: "Ready to book. The reservation needs a deposit, so I'm checking with you first." },
-    {
-      waitApproval: {
-        command: "Book Lupa, Saturday 7pm, table for 4",
-        description: "Book Lupa for 4 people on Saturday at 7pm. The restaurant charges a $40 deposit to your card on file."
-      }
-    },
-    { done: { text: "Done — Lupa is booked for 4 people on Saturday at 7pm, and I added it to your calendar." } }
-  ];
-  if (kind === "research") return [
-    { text: "Gathering options from your saved sources" },
-    { text: "Comparing the top three results" },
-    { done: { text: "Top pick: the 14-inch Airframe — lightest under $1,200 with all-day battery. Runner-up: the Camber 13, $220 cheaper but 40 minutes less battery." } }
-  ];
-  if (kind === "deploy") return [
-    { text: "Deploying the change to staging" },
-    { text: "Running the staging smoke checks" },
-    { goOffline: true }
-  ];
-  if (kind === "fail") return [
-    { text: "Starting the task" },
-    { done: { text: "The agent hit an error: the deployment target refused the connection.", status: "error" } }
-  ];
-  return [
-    { text: "Working on it" },
-    { done: { text: `Done. ${instruction}` } }
-  ];
-}
+const PLANNER_SCRIPT: Step[] = [
+  { text: "Searching restaurants near you with a table for four" },
+  { text: "Lupa has a 7pm opening on Saturday — checking the booking terms" },
+  { text: "Ready to book. The reservation needs a deposit, so I'm checking with you first." },
+  {
+    waitApproval: {
+      command: "Book Lupa, Saturday 7pm, table for 4",
+      description: "Book Lupa for 4 people on Saturday at 7pm. The restaurant charges a $40 deposit to your card on file."
+    }
+  },
+  { done: { text: "Done — Lupa is booked for 4 people on Saturday at 7pm, and I added it to your calendar." } }
+];
 
 /**
  * Deterministic zero-credential agent for demos, judge evaluation, and tests.
@@ -144,7 +115,7 @@ export class DemoClient extends AssistantEvented implements AssistantClient {
     session.aborted = false;
     session.title = text.split(/\s+/).slice(0, 8).join(" ");
     this.emit({ type: "message.start", sessionId: runtimeSessionId, payload: { kind: "assistant" } });
-    void this.runScript(session, scriptFor(text, this.options.script));
+    void this.runScript(session, PLANNER_SCRIPT);
     return Promise.resolve({ state: "streaming" });
   }
 
@@ -205,13 +176,6 @@ export class DemoClient extends AssistantEvented implements AssistantClient {
       await new Promise<void>(resolve => this.after(session, resolve));
       if (session.aborted) return;
       if (step.text) this.emit({ type: "status.update", sessionId: session.id, payload: { text: step.text } });
-      if (step.goOffline) {
-        session.working = false;
-        session.timers = [];
-        this.emitState("offline");
-        this.after(session, () => this.emitState("online"), this.speedMs * 4);
-        return;
-      }
       if (step.waitApproval) {
         const requestId = `ap-${randomUUID().slice(0, 8)}`;
         const choice = await new Promise<string>(resolve => {

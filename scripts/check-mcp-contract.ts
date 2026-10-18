@@ -35,7 +35,7 @@ const initialize = await requireOk(await post({
   params: {
     protocolVersion: "2025-11-25",
     capabilities: {},
-    clientInfo: { name: "hermes-ambient-contract", version: "0.1.0" }
+    clientInfo: { name: "ambient-contract", version: "0.1.0" }
   }
 }), "MCP initialize");
 const initializeResult = record(initialize.payload.result);

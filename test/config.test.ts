@@ -1,13 +1,32 @@
-import { describe, expect, it } from "vitest";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
 import { readConfig } from "../src/config.js";
 
+const planner = { id: "planner", label: "My Agent", kind: "cloud", adapter: "demo", default: true };
+
+let dir: string | undefined;
+
+afterEach(() => {
+  if (dir) rmSync(dir, { recursive: true, force: true });
+  dir = undefined;
+});
+
+function runtimesFile(entries: unknown[]): string {
+  dir = mkdtempSync(join(tmpdir(), "ambient-config-"));
+  const file = join(dir, "runtimes.json");
+  writeFileSync(file, JSON.stringify(entries));
+  return file;
+}
+
 describe("readConfig", () => {
-  it("allows a local Hermes URL without OAuth during development", () => {
-    expect(readConfig({ HERMES_WS_URL: "ws://127.0.0.1:9119/api/ws" })).toMatchObject({
+  it("reads runtimes from AMBIENT_RUNTIMES_FILE", () => {
+    expect(readConfig({ AMBIENT_RUNTIMES_FILE: runtimesFile([planner, { id: "coder", label: "Coding Agent", adapter: "demo" }]) })).toMatchObject({
       port: 3000,
-      defaultRuntimeId: "local",
+      defaultRuntimeId: "planner",
       allowUnauthenticated: false,
-      runtimes: [{ id: "local", adapter: "hermes", endpoint: "ws://127.0.0.1:9119/api/ws", tokenEnv: "HERMES_WS_TOKEN" }]
+      runtimes: [planner, { id: "coder", label: "Coding Agent", kind: "local", adapter: "demo" }]
     });
   });
 
@@ -16,18 +35,15 @@ describe("readConfig", () => {
   });
 
   it("requires all OAuth values together", () => {
-    expect(() => readConfig({ HERMES_WS_URL: "ws://127.0.0.1:9119/api/ws", OAUTH_ISSUER: "https://ambient.example" })).toThrow("required together");
+    expect(() => readConfig({ AMBIENT_RUNTIMES_FILE: runtimesFile([planner]), OAUTH_ISSUER: "https://ambient.example" })).toThrow("required together");
   });
 
   it("keeps cloud runtime selection explicit", () => {
-    expect(readConfig({ HERMES_RUNTIME_KIND: "cloud", HERMES_WS_URL: "wss://hermes.example/api/ws" }).runtimes[0]).toMatchObject({
-      kind: "cloud",
-      endpoint: "wss://hermes.example/api/ws"
-    });
+    expect(readConfig({ AMBIENT_RUNTIMES_FILE: runtimesFile([planner]) }).runtimes[0]).toMatchObject({ kind: "cloud" });
   });
 
   it("keeps the Alexa skill application id separate from runtime credentials", () => {
-    expect(readConfig({ HERMES_WS_URL: "ws://127.0.0.1:9119/api/ws", ALEXA_SKILL_ID: "amzn1.ask.skill.example" })).toMatchObject({
+    expect(readConfig({ AMBIENT_RUNTIMES_FILE: runtimesFile([planner]), ALEXA_SKILL_ID: "amzn1.ask.skill.example" })).toMatchObject({
       alexaSkillId: "amzn1.ask.skill.example"
     });
   });

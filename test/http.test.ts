@@ -8,7 +8,7 @@ import { AmbientStore } from "../src/store.js";
 import { fakeAssistant, fakeRuntimeEntry } from "./fake.js";
 
 function fakeRegistry(store: AmbientStore): RuntimeRegistry {
-  return new RuntimeRegistry(store, [fakeRuntimeEntry("local", "My Hermes", fakeAssistant().client, store)]);
+  return new RuntimeRegistry(store, [fakeRuntimeEntry("local", "My Agent", fakeAssistant().client, store)]);
 }
 
 /** Read the last JSON-RPC message out of an SSE response body. */
@@ -63,8 +63,7 @@ describe("Ambient HTTP bridge", () => {
       "approve",
       "stop",
       "agents",
-      "briefing",
-      "dashboard"
+      "briefing"
     ]);
     const result = await client.callTool({ name: "status", arguments: {} });
     expect(result.isError).not.toBe(true);
@@ -104,7 +103,7 @@ describe("Ambient HTTP bridge", () => {
     });
     expect(tools.status).toBe(200);
     const toolsPayload = parseSse(await tools.text()) as { result?: { tools?: unknown[] } };
-    expect(toolsPayload.result?.tools).toHaveLength(8);
+    expect(toolsPayload.result?.tools).toHaveLength(7);
     const deleted = await fetch(`http://127.0.0.1:${port}/mcp`, { method: "DELETE", headers: { "mcp-session-id": sessionId! } });
     expect([200, 204]).toContain(deleted.status);
   });

@@ -27,7 +27,7 @@ NARR = {
   "s5": "Here's the part most demos fake. The agent's host died mid-run. Ambient says unknown — not failed, not a guess. An honest I-don't-know is the feature.",
   "s6": "One briefing across every agent I supervise. What finished, what needs me, what's still running.",
   "s7": "Underneath it's a real M C P server — spec twenty twenty-five, eleven, twenty-five, over streamable H T T P. Any M C P client can supervise; the sim you just saw is one.",
-  "s8": "Ninety tests, typed end to end, runs with zero credentials. The Bedrock path lights up the moment A W S keys exist.",
+  "s8": "Seventy four tests, typed end to end, runs with zero credentials.",
   "s9": "Ambient. Your agents work in the background. Alexa tells you when they need you.",
 }
 
@@ -99,12 +99,12 @@ def write_cards(transcript: str):
     stats = f"""<html><style>{CARD_CSS}</style><body>
       <div class="cap">Verified on this repo</div>
       <div class="stats">
-        <div class="stat"><b>90</b><span>tests · pnpm scan</span></div>
-        <div class="stat"><b>8</b><span>voice-first tools</span></div>
+        <div class="stat"><b>74</b><span>tests · pnpm scan</span></div>
+        <div class="stat"><b>7</b><span>voice-first tools</span></div>
         <div class="stat"><b>0</b><span>credentials to demo</span></div>
         <div class="stat"><b>~11s</b><span>clean clone → first answer</span></div>
       </div>
-      <div class="fine">typecheck + eslint + knip green · runtimes: demo · bedrock · hermes · openclaw</div></body></html>"""
+      <div class="fine">typecheck + eslint + knip green · runtimes: demo</div></body></html>"""
     (WORK / "title.html").write_text(title)
     (WORK / "term.html").write_text(term)
     (WORK / "stats.html").write_text(stats)

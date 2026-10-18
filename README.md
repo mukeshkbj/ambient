@@ -31,20 +31,15 @@ pnpm demo
 # → open http://localhost:3000/sim
 ```
 
-Try: *"Book Lupa for Saturday at 7"* — the task card fills with live steps,
-the approval card asks *"Approve once or deny?"*, and the agent finishes only
-after you answer. Then ask *"What did my agents get done today?"*
+Call `delegate` on `/mcp` with *"Book Lupa for Saturday at 7"* — the task card
+on `/sim` fills with live steps, the approval card asks *"Approve once or
+deny?"*, and the agent finishes only after you answer. `pnpm smoke:mcp` runs a
+quick client against it.
 
-## With AWS
+## Your own agents
 
-```sh
-AWS_PROFILE=your-profile pnpm dev:bedrock
-# or copy runtimes.example.json → runtimes.json and wire your own endpoints
-```
-
-The Bedrock adapter runs a real Converse tool loop with approval-gated tools
-and transcript persistence. Hermes (WS JSON-RPC) and OpenClaw (protocol v4)
-plug in through the same `AssistantClient` interface — see
+Copy `runtimes.example.json` → `runtimes.json` (or set `AMBIENT_RUNTIMES_FILE`)
+and wire your own endpoints through the `AssistantClient` interface — see
 [`docs/adapters.md`](docs/adapters.md) and [`docs/runtimes.md`](docs/runtimes.md).
 
 ## Architecture
@@ -77,7 +72,7 @@ forever.
 ![CI: pnpm scan green](https://img.shields.io/badge/CI-pnpm%20scan%20green-brightgreen) — `.github/workflows/ci.yml` runs typecheck, eslint, knip, and the test suite on push.
 
 ```sh
-pnpm scan            # typecheck + eslint + knip + 90 tests
+pnpm scan            # typecheck + eslint + knip + 74 tests
 pnpm build
 pnpm check:runtime <id>   # live reachability verdict per runtime
 ```
@@ -90,11 +85,8 @@ session eviction, Alexa signature verification) is covered by
 
 ## Limits, stated plainly
 
-- **Bedrock needs AWS credentials** and a Nova-capable region — its live
-  receipt is marked *blocked* in `acceptance.md` because this build machine
-  has none; the adapter is unit-tested against a mocked Converse loop.
-- **Hermes / OpenClaw** need their gateways reachable; a sleeping laptop means
-  an offline runtime — and Ambient will say *offline*, not pretend.
+- **The demo adapter is scripted** — deterministic, no network, no
+  credentials. Real assistants plug in through `AssistantClient`.
 - **AWS deployment** is prepared (`pnpm infra:synth`, `docs/deployment.md`)
   but the TLS deploy itself is pending account-owner approval.
 - **The `/sim` host** stands in for the gated Alexa+ toolkit — it is a real

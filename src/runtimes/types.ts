@@ -1,4 +1,3 @@
-import type WebSocket from "ws";
 import type { CallOutcome } from "../calls/types.js";
 import type { RuntimeState } from "../types.js";
 
@@ -24,18 +23,6 @@ export type AssistantEvent =
   | Event<"tool.start" | "tool.complete", { name?: string }>
   | Event<"status.update", { text?: string; name?: string; summary?: string; message?: string }>
   | Event<"approval.request", ApprovalPayload>;
-
-/**
- * Raw shape a transport emits before an adapter canonicalizes it — wire
- * protocols use snake_case and their own event names; the AssistantEvent
- * union only exists after the adapter's mapping layer.
- */
-export type AssistantWireEvent = {
-  type: string;
-  sessionId?: string;
-  payload: Record<string, unknown>;
-  seq?: number;
-};
 
 export type SubmitResult = { state: "accepted" | "streaming" };
 export type SteerResult = { state: string };
@@ -64,7 +51,7 @@ export type SavedSession = {
 
 export type ActiveSession = {
   id: string;
-  /** Durable id the live session can resume into (Hermes session_key, OpenClaw key). */
+  /** Durable id the live session can resume into. */
   durableId?: string;
   title?: string;
   status?: string;
@@ -93,8 +80,8 @@ export type RuntimeDescriptor = {
 export type AssistantClient = {
   readonly capabilities: RuntimeCapabilities;
   /**
-   * True when runtimeSessionIds are bound to a live connection and die with it
-   * (Hermes). Discovery clears stored live ids so stale ones are re-bound.
+   * True when runtimeSessionIds are bound to a live connection and die with it.
+   * Discovery clears stored live ids so stale ones are re-bound.
    * Adapters whose session ids are durable (HTTP APIs, session keys) leave this
    * unset — clearing would force a resume that some cannot perform.
    */
@@ -112,11 +99,6 @@ export type AssistantClient = {
   onEvent(listener: (event: AssistantEvent) => void): () => void;
   onConnectionState(listener: (state: RuntimeState) => void): () => void;
   onReplayGap?(listener: (gap: ReplayGap) => void): () => void;
-};
-
-export type ConnectorConnection = {
-  attach(socket: WebSocket): Promise<void>;
-  close(): Promise<void>;
 };
 
 /** Shared listener plumbing for adapters that emit AssistantEvents and connection states. */

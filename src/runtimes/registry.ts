@@ -1,12 +1,9 @@
 import { ConversationEngine } from "../conversations.js";
 import type { AppConfig, RuntimeConfigEntry } from "../config.js";
-import { HermesClient, HermesConnection } from "../hermes.js";
 import type { AmbientStore } from "../store.js";
 import type { Approval, RunView, RuntimeState } from "../types.js";
-import { BedrockClient } from "./bedrock.js";
 import { DemoClient } from "./demo.js";
-import { OpenClawClient, OpenClawConnection } from "./openclaw.js";
-import type { AssistantClient, ConnectorConnection, RuntimeDescriptor } from "./types.js";
+import type { AssistantClient, RuntimeDescriptor } from "./types.js";
 
 export type RuntimeEntry = {
   descriptor: RuntimeDescriptor;
@@ -14,7 +11,6 @@ export type RuntimeEntry = {
   engine: ConversationEngine;
   start(): void;
   close(): Promise<void>;
-  connector?: { token: string; connection: ConnectorConnection };
 };
 
 export type AssistantInfo = RuntimeDescriptor & {
@@ -224,14 +220,6 @@ export class RuntimeRegistry {
     this.store.setMeta(key, value);
   }
 
-  connectors(): Map<string, { token: string; connection: ConnectorConnection }> {
-    const map = new Map<string, { token: string; connection: ConnectorConnection }>();
-    for (const entry of this.entries.values()) {
-      if (entry.connector) map.set(entry.descriptor.id, entry.connector);
-    }
-    return map;
-  }
-
   startAll(): void {
     for (const entry of this.entries.values()) {
       // A restarted process can't have verified in-flight work: anything left
@@ -245,61 +233,6 @@ export class RuntimeRegistry {
   async close(): Promise<void> {
     for (const entry of this.entries.values()) await entry.close();
   }
-}
-
-function hermesRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore): RuntimeEntry {
-  const token = item.tokenEnv ? env[item.tokenEnv] : undefined;
-  const connectorToken = item.connectorTokenEnv ? env[item.connectorTokenEnv] : undefined;
-  if (!item.endpoint && !connectorToken) {
-    throw new Error(`Runtime "${item.id}" needs an endpoint or ${item.connectorTokenEnv ?? "a connector token env"} to be reachable`);
-  }
-  const connection = new HermesConnection({
-    url: item.endpoint ?? "ws://ambient-connector.invalid",
-    ...(token ? { token } : {})
-  });
-  const client = new HermesClient(connection);
-  const engine = new ConversationEngine(client, store, {
-    runtime: { id: item.id, label: item.label, kind: item.kind, state: "unknown", updatedAt: new Date().toISOString() }
-  });
-  const discover = async () => {
-    try {
-      await engine.discover();
-    } catch {
-      engine.setRuntimeState("offline");
-    }
-  };
-  let reconnect: NodeJS.Timeout | undefined;
-  const start = item.endpoint
-    ? () => {
-        const connect = async () => {
-          try {
-            await connection.connect();
-            await discover();
-          } catch {
-            engine.setRuntimeState("offline");
-          }
-        };
-        void connect();
-        reconnect = setInterval(() => {
-          if (!connection.isConnected) void connect();
-        }, 5_000);
-        reconnect.unref();
-      }
-    : () => {
-        connection.on("open", () => void discover());
-      };
-  return {
-    descriptor: { id: item.id, label: item.label, kind: item.kind, adapter: "hermes", capabilities: client.capabilities },
-    client,
-    engine,
-    start,
-    close: async () => {
-      if (reconnect) clearInterval(reconnect);
-      engine.close();
-      await connection.close();
-    },
-    ...(connectorToken ? { connector: { token: connectorToken, connection } } : {})
-  };
 }
 
 type ClosableClient = AssistantClient & { close?(): void | Promise<void> };
@@ -354,67 +287,15 @@ function polledRuntime(item: RuntimeConfigEntry, env: Record<string, string | un
     });
 }
 
-function openclawRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore): RuntimeEntry {
-  if (!item.endpoint) throw new Error(`Runtime "${item.id}" (openclaw) needs an endpoint, e.g. ws://127.0.0.1:18789`);
-  const token = item.tokenEnv ? env[item.tokenEnv] : undefined;
-  const connection = new OpenClawConnection({
-    url: item.endpoint,
-    ...(token ? { token } : {}),
-    ...(numberOption(item, "requestTimeoutMs") ? { requestTimeoutMs: numberOption(item, "requestTimeoutMs")! } : {})
-  });
-  const client = new OpenClawClient(connection, {
-    ...(numberOption(item, "runTimeoutMs") ? { runTimeoutMs: numberOption(item, "runTimeoutMs")! } : {})
-  });
-  const engine = engineFor(item, store, client);
-  let reconnect: NodeJS.Timeout | undefined;
-  const discover = () => {
-    engine.discover().catch(() => undefined);
-  };
-  return entryFor(item, client, engine,
-    () => {
-      connection.on("open", discover);
-      const connect = () => {
-        connection.connect().catch(() => engine.setRuntimeState("offline"));
-      };
-      connect();
-      reconnect = setInterval(() => {
-        if (!connection.isConnected) connect();
-      }, 5_000);
-      reconnect.unref();
-    },
-    async () => {
-      if (reconnect) clearInterval(reconnect);
-      engine.close();
-      await connection.close();
-    });
-}
-
 function demoRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore): RuntimeEntry {
   const client = new DemoClient({
-    ...(item.options?.script ? { script: item.options.script } : {}),
     ...(numberOption(item, "speedMs") ? { speedMs: numberOption(item, "speedMs")! } : {})
   });
   return polledRuntime(item, env, store, client);
 }
 
-function bedrockRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore, dataDir?: string): RuntimeEntry {
-  const client = new BedrockClient({
-    runtimeId: item.id,
-    store,
-    env,
-    ...(item.options?.model ? { model: item.options.model } : {}),
-    ...(item.options?.region ? { region: item.options.region } : {}),
-    ...(dataDir ? { dataDir } : {}),
-    ...(numberOption(item, "maxTurns") ? { maxTurns: numberOption(item, "maxTurns")! } : {})
-  });
-  return polledRuntime(item, env, store, client);
-}
-
 const ADAPTERS: Record<string, (item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore, dataDir?: string) => RuntimeEntry> = {
-  hermes: hermesRuntime,
-  demo: demoRuntime,
-  bedrock: bedrockRuntime,
-  openclaw: openclawRuntime
+  demo: demoRuntime
 };
 
 export function buildRuntimeRegistry(

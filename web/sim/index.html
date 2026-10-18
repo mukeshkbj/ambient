@@ -41,14 +41,9 @@ main{flex:1;display:grid;grid-template-columns:380px 1fr;min-height:0}
 .msg.agent{align-self:flex-start;background:var(--panel2);border-bottom-left-radius:4px}
 .msg.event{align-self:center;background:none;color:var(--dim);font-size:12px;padding:2px}
 .msg.event b{color:var(--fg)}
-.inputrow{display:flex;gap:8px}
-.inputrow input{flex:1;font:inherit;background:var(--panel);border:1px solid var(--line);border-radius:10px;
-  padding:10px 13px;color:var(--fg);outline:none}
-.inputrow input:focus{border-color:var(--cyan)}
 button.act{font:inherit;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:10px;
   padding:10px 14px;cursor:pointer}
 button.act:hover{border-color:var(--cyan)}
-button.mic.listening{border-color:var(--red);color:var(--red)}
 /* device panel */
 .devicepanel{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;min-width:0}
 .screen{position:relative;border:1px solid var(--line);border-radius:14px;background:#000;
@@ -77,13 +72,8 @@ button.mic.listening{border-color:var(--red);color:var(--red)}
 <main>
   <section class="voice">
     <div class="orbwrap"><div class="ring" id="ring"></div><div class="orb" id="orb"></div></div>
-    <div class="state" id="state">Say something — or type below</div>
+    <div class="state" id="state">Watching your agents</div>
     <div class="transcript" id="transcript"><div class="msg event">Your agents work in the background. I'll tell you when they need you.</div></div>
-    <div class="inputrow">
-      <input id="utter" placeholder="e.g. Book a table for Saturday" autocomplete="off" autofocus>
-      <button class="act mic" id="mic" title="Voice input">&#9679;</button>
-      <button class="act" id="send">Ask</button>
-    </div>
   </section>
   <section class="devicepanel">
     <div class="devlabel" id="devlabel"></div>
@@ -154,34 +144,6 @@ function addMsg(text, cls){
   return div;
 }
 
-// turns
-async function send(utterance){
-  utterance = utterance.trim(); if (!utterance) return;
-  addMsg(utterance, "user"); $("utter").value = "";
-  $("state").textContent = "Thinking…"; $("orb").classList.add("listening");
-  try {
-    const r = await fetch("/sim/api/turn", {method:"POST",headers:{"content-type":"application/json"},
-      body:JSON.stringify({utterance, device: state.device})}).then(r => r.json());
-    if (r.speech) { addMsg(r.speech, "agent"); say(r.speech); }
-    else if (r.error) addMsg("Error: " + r.error, "agent");
-    if (r.ui && r.ui.html) loadView(r.ui.resourceUri, r.ui.html, r.structuredContent);
-  } catch (e) { addMsg("Couldn't reach the Ambient server.", "agent"); }
-  finally { $("orb").classList.remove("listening"); $("state").textContent = "Say something — or type below"; }
-}
-$("send").onclick = () => send($("utter").value);
-$("utter").addEventListener("keydown", e => { if (e.key === "Enter") send($("utter").value); });
-
-// voice input
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-$("mic").style.display = SR ? "" : "none";
-if (SR) $("mic").onclick = () => {
-  const rec = new SR(); rec.lang = "en-US"; rec.interimResults = false;
-  rec.onstart = () => { state.listening = true; $("mic").classList.add("listening"); $("state").textContent = "Listening…"; };
-  rec.onend = () => { state.listening = false; $("mic").classList.remove("listening"); };
-  rec.onresult = e => send(e.results[0][0].transcript);
-  rec.start();
-};
-
 // MCP Apps host: load a ui:// resource into the device frame and answer its protocol calls
 function loadView(uri, html, structured){
   state.viewResource = uri;
@@ -239,7 +201,6 @@ events.onmessage = e => {
     if (ev.view) {
       state.lastStructured = ev.view;
       if (state.viewResource === "ui://ambient/task") pushStructured(ev.view);
-      else if (state.viewResource === "ui://ambient/dashboard") refreshDashboard();
     }
     if (!state.viewResource) openTaskView();
   }
@@ -250,11 +211,6 @@ function pushStructured(structured){
   const v = $("view").contentWindow;
   if (v) v.postMessage({ jsonrpc:"2.0", method:"ui/notifications/tool-result",
     params:{ structuredContent: structured ?? {} } }, "*");
-}
-async function refreshDashboard(){
-  const r = await fetch("/sim/api/tool", {method:"POST",headers:{"content-type":"application/json"},
-    body:JSON.stringify({name:"dashboard",arguments:{}})}).then(r=>r.json());
-  if (r.structuredContent) pushStructured(r.structuredContent);
 }
 // A run started — show the task view right away instead of waiting for the turn to end.
 async function openTaskView(){

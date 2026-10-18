@@ -22,3 +22,4 @@ See `phase-00-preflight.md` in the plan.
 - 2026-10-18: user stopped all lanes. Direction under review: consent layer judged to lack a demo moment. Plan only until the user confirms a direction.
 - 2026-10-18: direction changed to "Alexa, handle the call" (Twilio ConversationRelay + Anthropic API). Plan written; nothing launched.
 - 2026-10-18: deep plan written (overview, 12 phases, testing, Twilio and Alexa references, codebase map). Nothing launched.
+- 2026-10-18: phase 1 (subtract) done on this checkout: v1 adapters (hermes, openclaw, bedrock, connector, sim-router, dashboard tool) deleted; `demo` is the only adapter, `TASK_HTML`/`HOST_BOOT` moved to `src/task-view.ts`, `/sim/api/turn` and the sim input box removed, `ADAPTERS` = `{demo}`. `pnpm scan`/`pnpm build` green, 74 tests. `ws` kept (knip-ignored) for a later phase. Infra: `AmbientStack`, `/opt/ambient`, Nova IAM + connector secret removed.

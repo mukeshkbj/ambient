@@ -316,7 +316,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
       return response(errorText(error), attributes);
     }
   }
-  if (name === "AskIntent" || name === "ProvideRequestIntent" || name === "StartWorkIntent" || name === "AskHermesIntent" || name === "ProvideHermesRequestIntent" || name === "StartHermesWorkIntent") {
+  if (name === "AskIntent" || name === "ProvideRequestIntent" || name === "StartWorkIntent") {
     const instruction = slotValue(intent, "request", "instruction", "text");
     if (!instruction) return response("What should I ask your assistant to do?", attributes);
     const picked = pickAssistant(intent, attributes, dependencies);

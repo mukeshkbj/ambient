@@ -6,22 +6,19 @@ credentials and private transcripts out of the repository.
 
 ## Observed locally
 
-- Multi-runtime registry: four adapters (Bedrock, Hermes, OpenClaw, Demo) build
-  from one `runtimes.json`; `/healthz` reports each runtime's state and
-  capabilities; selection is sticky via `agents` (`use`).
-- Eight customer-intent MCP tools over authenticated Streamable HTTP
+- Multi-runtime registry: runtimes build from one `runtimes.json`; `/healthz`
+  reports each runtime's state and capabilities; selection is sticky via
+  `agents` (`use`).
+- Seven customer-intent MCP tools over authenticated Streamable HTTP
   (`2025-11-25`, SSE responses so in-call elicitation has a channel):
-  `delegate`, `status`, `approve`, `stop`, `agents`, `briefing`,
-  `delegate_task` (task-augmented), and
-  `dashboard`, which serves `ui://ambient/dashboard` (`text/html;profile=mcp-app`)
-  plus a full structured snapshot. Task results carry
+  `delegate`, `status`, `approve`, `stop`, `agents`, `briefing`, and
+  `delegate_task` (task-augmented). Task results carry
   `_meta.ui.resourceUri` = `ui://ambient/task`.
 - `pnpm check:runtime` ran live against local HTTP endpoints for `townie` and
   `muse` (adapters removed 2026-10-11; historical receipts are in git history).
-- Contract tests pin each adapter's wire shape: OpenClaw `connect`/`hello-ok`
-  handshake + `agent`/`agent.wait` + `exec.approval.requested` → approval event;
-  Bedrock Converse tool loop with approval-gated tools, abort-cancel, and
-  transcript resume; Demo scripts through the engine.
+- The `hermes`, `openclaw`, and `bedrock` adapters and the `dashboard` tool
+  were removed 2026-10-18 (receipts in git history); `demo` is the only
+  adapter in this phase.
 - Engine honesty: offline runtimes mark active work `unknown`; approval ids are
   runtime-namespaced; unsupported controls (steer/cancel/approvals on adapters
   without them) fail with explicit errors.
@@ -31,14 +28,11 @@ credentials and private transcripts out of the repository.
   "Nothing is running" once a run is `unknown`. Verified live over
   `pnpm demo` with a raw SDK client — no id strings appear in any `speech`
   field (golden tests pin this).
-- `pnpm scan` green: typecheck, eslint, knip, 90 tests.
-- The installed Hermes gateway accepts the pinned WebSocket connection, replays
-  observed events by sequence, and surfaces replay gaps as `unknown` work.
+- `pnpm scan` green: typecheck, eslint, knip, 74 tests.
 - Alexa+ simulator (2026-10-12): `/sim` serves a voice panel + device frame; it
   is a real MCP client on the loopback `/mcp` (Streamable HTTP, declares the
-  `elicitation` capability). Natural-language turns route through a keyword
-  router (Bedrock `toolConfig` when `BEDROCK_ROUTER_*` is configured) onto the
-  semantic tools — never by id.
+  `elicitation` capability). The page calls the semantic tools directly —
+  never by id.
 - Simulated approval, observed live: `delegate` ran "Book a table at Lupa",
   the run went `waiting_approval`, `server.server.elicitInput` held an in-call
   elicitation open on the tool call's SSE stream, the browser card resolved it
@@ -54,7 +48,7 @@ credentials and private transcripts out of the repository.
 - MCP App views do the `ui/initialize` handshake and read
   `hostContext.deviceClass` (`ui/notifications/host-context-changed` re-fits
   them when the sim device switches — verified: Fire TV renders the large
-  variant). The old 2.5 s dashboard polling is gone; refreshes are pushed.
+  variant).
 - Known edge: a `status` call on a `waiting_approval` run also elicits (by
   design — voice clients get asked in-band); two in-flight calls can hold one
   elicitation each for the same approval. The first browser answer wins the
@@ -84,13 +78,11 @@ credentials and private transcripts out of the repository.
   carrier phrases on every SearchQuery sample, `about` slots instead of id
   slots, and a matching `en-US` locale alongside `en-GB`.
 - AssistantClient type tightening (2026-10-12): `AssistantEvent` is a
-  discriminated union (7 typed variants); `AssistantWireEvent` is the loose
-  transport shape canonicalized inside `src/hermes.ts` — the only file that
-  still names `session_key`/`request_id`/`started_at`. `submitPrompt` returns
+  discriminated union (7 typed variants). `submitPrompt` returns
   `{state:"accepted"|"streaming"}`; `steer`/`interrupt`/`respondToApproval`/
   `listPendingApprovals` return typed results. `ActiveSession.session_key` →
   `durableId`; session rows are camelCase at the adapter boundary.
-  `pnpm scan && pnpm build` green — 90 tests / 19 files..
+  `pnpm scan && pnpm build` green.
 - Submission assets (2026-10-12): architecture diagram authored from repo
   structure (`docs/media/ambient-architecture.json` → validated 9/9 showcase
   checks → `ambient-architecture.html` + `architecture.png`); approval-moment
@@ -107,7 +99,7 @@ credentials and private transcripts out of the repository.
   and `scripts/smoke-tasks.ts` verified it live over Streamable HTTP.
 - CDK synth (2026-10-12): `pnpm infra:synth` emits a complete template —
   EC2 + Elastic IP, dedicated VPC/subnets/routes/security group, IAM role,
-  and two Secrets Manager secrets (connector + OAuth). Synth only; `cdk
+  and a Secrets Manager OAuth secret. Synth only; `cdk
   deploy` awaits account-owner approval (paid resources).
 - Demo video (2026-10-12): `docs/media/ambient-demo.mp4` — 109.7 s, built by
   `scripts/video/build.py`: Playwright recordings of the real `/sim` (status,
@@ -121,13 +113,11 @@ credentials and private transcripts out of the repository.
 | Adapter | Contract-tested | Live-verified | Gate |
 |---|---|---|---|
 | demo | yes (engine-driven) | n/a — deterministic, no service | — |
-| bedrock | yes (mocked Converse) | **blocked** — no AWS credentials on this machine (no `aws` CLI, no `~/.aws`, no `AWS_*` env; checked 2026-10-11) | AWS credentials + Bedrock model access |
-| hermes | yes | yes (2026-09-06) | — |
-| openclaw | yes (fake socket) | no | self-hosted gateway + operator token |
 
-Removed 2026-10-11 (unverified, trademark risk): `grokbot`, `muse`, `townie`,
-`instinct`. Their code and historical receipts remain in git history
-(last present in 51775a0).
+Removed 2026-10-18: `hermes`, `openclaw`, `bedrock` (with the `dashboard`
+tool and the server-side connector). Removed 2026-10-11 (unverified,
+trademark risk): `grokbot`, `muse`, `townie`, `instinct`. Their code and
+historical receipts remain in git history.
 
 ## Still required for the hackathon submission
 
@@ -143,5 +133,5 @@ Removed 2026-10-11 (unverified, trademark risk): `grokbot`, `muse`, `townie`,
 - Run a real end-to-end task with steer, approval, and cancellation on a live
   assistant; record `check:runtime` receipts for each configured runtime.
 - Deploy the bridge with HTTPS on AWS; capture the authenticated path.
-- Test connector loss and bridge restart without replaying an uncertain
+- Test runtime loss and bridge restart without replaying an uncertain
   mutation, including a pending approval that survives reconnect.

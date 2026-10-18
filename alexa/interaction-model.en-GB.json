@@ -187,10 +187,7 @@
           "name": "AssistantName",
           "values": [
             { "name": { "value": "my agent", "synonyms": ["the agent", "default agent"] } },
-            { "name": { "value": "my coding agent", "synonyms": ["the coder", "coding agent"] } },
-            { "name": { "value": "hermes", "synonyms": ["my hermes", "the hermes"] } },
-            { "name": { "value": "openclaw", "synonyms": ["open claw", "claw"] } },
-            { "name": { "value": "nova", "synonyms": ["my nova", "bedrock", "bedrock agent"] } }
+            { "name": { "value": "my coding agent", "synonyms": ["the coder", "coding agent"] } }
           ]
         }
       ]

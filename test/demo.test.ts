@@ -46,17 +46,6 @@ describe("DemoClient", () => {
     store.close();
   });
 
-  it("marks deploy work unknown when the agent goes offline", async () => {
-    const store = new AmbientStore();
-    const client = new DemoClient({ speedMs: 1 });
-    const engine = engineFor(client, store);
-    const run = await engine.ask("Deploy the change", undefined, true);
-    await waitFor(() => engine.getWork(run.id).status === "unknown");
-    await waitFor(() => engine.runtime().state === "online");
-    expect(engine.getWork(run.id).status).toBe("unknown");
-    store.close();
-  });
-
   it("reports pending approvals for listPendingApprovals and survives cancel", async () => {
     const store = new AmbientStore();
     const client = new DemoClient({ speedMs: 1 });

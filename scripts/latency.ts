@@ -8,7 +8,7 @@ const tools = (process.env.LATENCY_TOOLS ?? "status,agents").split(",").map(name
 const transport = new StreamableHTTPClientTransport(new URL(endpoint), token ? {
   requestInit: { headers: { authorization: `Bearer ${token}` } }
 } : undefined);
-const client = new Client({ name: "hermes-ambient-latency", version: "0.1.0" });
+const client = new Client({ name: "ambient-latency", version: "0.1.0" });
 const report: Record<string, unknown>[] = [];
 
 try {

@@ -1,43 +1,16 @@
 [
   {
-    "id": "nova",
-    "label": "Nova",
-    "kind": "cloud",
-    "adapter": "bedrock",
-    "default": true,
-    "options": {
-      "model": "us.amazon.nova-lite-v1:0",
-      "region": "us-east-1"
-    }
-  },
-  {
-    "id": "hermes",
-    "label": "Hermes",
-    "kind": "local",
-    "adapter": "hermes",
-    "endpoint": "ws://127.0.0.1:9129/api/ws",
-    "tokenEnv": "HERMES_WS_TOKEN"
-  },
-  {
-    "id": "hermes-cloud",
-    "label": "Hermes Cloud",
-    "kind": "cloud",
-    "adapter": "hermes",
-    "connectorTokenEnv": "CONNECTOR_TOKEN"
-  },
-  {
-    "id": "openclaw",
-    "label": "OpenClaw",
-    "kind": "local",
-    "adapter": "openclaw",
-    "endpoint": "ws://127.0.0.1:18789",
-    "tokenEnv": "OPENCLAW_TOKEN"
-  },
-  {
     "id": "planner",
     "label": "Demo Agent",
     "kind": "cloud",
     "adapter": "demo",
+    "default": true,
     "options": { "speedMs": "1200" }
+  },
+  {
+    "id": "coder",
+    "label": "Coding Agent",
+    "kind": "local",
+    "adapter": "demo"
   }
 ]

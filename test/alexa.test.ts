@@ -16,14 +16,14 @@ function engine() {
     cancel: vi.fn(),
     listApprovals: vi.fn().mockReturnValue([]),
     respondToApproval: vi.fn(),
-    runtime: vi.fn().mockReturnValue({ id: "local", label: "My Hermes", kind: "local", state: "online", updatedAt: "2026-09-06T00:00:00.000Z" })
+    runtime: vi.fn().mockReturnValue({ id: "local", label: "My Agent", kind: "local", state: "online", updatedAt: "2026-09-06T00:00:00.000Z" })
   } as unknown as ConversationEngine;
 }
 
 function dependencies(fake: ConversationEngine): AlexaSkillDependencies & { store: AmbientStore } {
   const store = new AmbientStore();
   const entry: RuntimeEntry = {
-    descriptor: { id: "local", label: "My Hermes", kind: "local", adapter: "fake", capabilities: fakeAssistant().client.capabilities },
+    descriptor: { id: "local", label: "My Agent", kind: "local", adapter: "fake", capabilities: fakeAssistant().client.capabilities },
     client: fakeAssistant().client,
     engine: fake,
     start: () => undefined,
@@ -95,7 +95,7 @@ describe("Alexa custom skill", () => {
     const deps = dependencies(fake);
 
     const listed = await handleAlexaRequest(request("ListApprovalsIntent"), deps);
-    expect(listed.response.outputSpeech.ssml).toContain("My Hermes");
+    expect(listed.response.outputSpeech.ssml).toContain("My Agent");
     await handleAlexaRequest(request("AMAZON.YesIntent", {}, listed.sessionAttributes ?? {}), deps);
     expect(fake.respondToApproval).toHaveBeenCalledWith("local:approval-1", "once");
     deps.store.close();
@@ -106,7 +106,7 @@ describe("Alexa custom skill", () => {
     vi.mocked(fake.ask).mockResolvedValue(run());
     const deps = dependencies(fake);
 
-    const asked = await handleAlexaRequest(request("AskIntent", { request: "check my day", assistant: "hermes" }), deps);
+    const asked = await handleAlexaRequest(request("AskIntent", { request: "check my day", assistant: "agent" }), deps);
     expect(fake.ask).toHaveBeenCalledWith("check my day", undefined, false, { waitMs: 0 });
     expect(asked.sessionAttributes?.assistant).toBe("local");
     deps.store.close();
@@ -117,17 +117,17 @@ describe("Alexa custom skill", () => {
     const deps = dependencies(fake);
 
     const listed = await handleAlexaRequest(request("ListAssistantsIntent"), deps);
-    expect(listed.response.outputSpeech.ssml).toContain("My Hermes");
+    expect(listed.response.outputSpeech.ssml).toContain("My Agent");
 
-    const selected = await handleAlexaRequest(request("SelectAssistantIntent", { assistant: "hermes" }), deps);
-    expect(selected.response.outputSpeech.ssml).toContain("My Hermes");
+    const selected = await handleAlexaRequest(request("SelectAssistantIntent", { assistant: "agent" }), deps);
+    expect(selected.response.outputSpeech.ssml).toContain("My Agent");
     expect(deps.registry.selectedId()).toBe("local");
     deps.store.close();
   });
 
   it("rejects a request from another Alexa skill", async () => {
     const fake = engine();
-    const payload = request("RuntimeStatusIntent", { assistant: "hermes" });
+    const payload = request("RuntimeStatusIntent", { assistant: "agent" });
     payload.session.application.applicationId = "other-skill";
     const deps = dependencies(fake);
     await expect(handleAlexaRequest(payload, deps))
