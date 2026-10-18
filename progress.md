@@ -26,7 +26,7 @@ Branch: `hackathon/household-consent`. Nothing is pushed.
 | 6 | AssemblyAI line | Landed `41fb071` (not yet run against the live API) | 15 tests: per-call stored agent (greeting = disclosure, LLM = our endpoint), token minting, chat-completions shim streams exactly what the reducer says, queued speech via `reply.create`, interruption, hang-up, no-answer timeout, a whole scripted call through the room, and HTTP routes with the per-call secret. Business answer page `web/call/index.html` (screenshot `docs/media/call-business-ringing.png`) |
 | 7 | Alexa intents and cue | Landed (Devin draft, reviewed, cherry-picked) | 10 tests (7 alexa + 3 cue). `pnpm scan` and `pnpm build` green. Echo Dot run pending: needs Voice Monkey token and the phase-0 invocation check. Fixed a pre-existing eslint failure in `scripts/smoke-mcp.ts` (`no-base-to-string` on `unknown`) so scan could run green. |
 | 8 | Discovery and memory | Landed (Devin draft, reviewed, cherry-picked) | 7 tests: discovery via web search + a strict `report_candidates` tool (not `output_config.format`, which conflicts with web-search citations), dial approval per candidate, user-given number skips the dial approval, memory feeds the next brief, the fourth call to a number in a day is refused. Real discovery needs `ANTHROPIC_API_KEY` |
-| 9 | Sim around a live call | Landed `2126fbc`, redesigned `3d4b576` and `1b5096f` | 11 screenshots in `docs/media/sim-*.png` (light, dark, mobile), each inspected by eye. Critic rounds vs Apple iOS 26 Call Screening / Hold Assist: round 1 and 2 Apple 3-1 (we win trust). Round 3 running after putting the decision on the device card (MCP App `tools/call`) |
+| 9 | Sim around a live call | Landed `2126fbc`; redesigned through `bd5e1c8` | 12 screenshots in `docs/media/` (light, dark, mobile, business page), each inspected by eye after every change. Critic rounds 1-5 vs Apple: Apple 3-1 each time (we win trust). Round 6 running |
 | 10 | AWS | Needs AWS spend approval | |
 
 ## Evidence: zero-key call through /mcp (2026-10-18)
@@ -47,10 +47,10 @@ Known voice defects to fix in the voice-UX pass: the approval repeats the amount
 
 | Piece | Critic | State |
 |---|---|---|
-| Call reducer honesty | 3 Sonnet 5.5 adversarial reviews | 19 holes found and closed, all regression tests |
-| Simulator UI | Blind critic vs Apple iOS 26 call screens | Rounds 1-3: Apple 3-1 (we win trust; delight tied in round 3). Round 4 running after the needs-you card became one complete decision (limit, offers, decline consequence) |
+| Call reducer honesty | 3 Sonnet 5.5 adversarial reviews, then structural rounds 1-3 | Every hole found is a regression test. Round 3 (`81577c2`) moved pricing to money-shaped amounts only (`pricesIn`), bound agreement to the turn that named the price, and excluded rates |
+| Simulator UI | Blind critic vs Apple iOS 26 call screens | Rounds 1-5: Apple 3-1 (we win trust). Round 5 fixes landed in `bd5e1c8`; round 6 running |
 | Voice copy | Smoke transcript | Approval asks once with "?", steer says "Okay, I'll tell Joe's Plumbing.", status names the business |
-| Repo as an AI reviewer reads it | Structural review (Sonnet 5.5) | Round 1 scored Technical Implementation 3/5: voice-line message loss, "confirmed" holes, stringly-typed business name, in-flight dial limits. All fixed with tests (`ee6ec6d`); round 2 running. README, CONTRIBUTING, privacy, deployment rewritten; architecture figure added |
+| Repo as an AI reviewer reads it | Structural review (Sonnet 5.5) | Round 1: 3/5, fixed in `ee6ec6d`. Round 2: 3.5/5, fixed in `b00f750`, `5d9c4a8`, `de30e8d` (page key, constant-time secret, 413, retire vendor agent). Round 3: 3.5/5 (my round-2 price fix broke negotiation), fixed in `81577c2`. Round 4 running |
 | Friction log | Self-review | 15 entries, all reproduced; 6 back-dated entries corrected to their commit date |
 
 ## Needs the user
@@ -64,6 +64,7 @@ Known voice defects to fix in the voice-UX pass: the approval repeats the amount
 
 ## Log
 
+- 2026-10-18: structural rounds 2-3 and UI round 5 fixed (`b00f750` through `81577c2`); 326 tests, scan and build green, smoke ok, both demo paths confirm in the screenshot run.
 - 2026-10-18: plan written; L0 fixes merged (`8143d5e`).
 - 2026-10-18: implementation started. Phases 3, 4, 1 landed; Windows demo path fixed.
 - 2026-10-18: UI round-4 fixes: approval `when` on the card, hold timer, booked check, "You offered", mobile card first while the call needs you; 292 tests, scan and build green.
