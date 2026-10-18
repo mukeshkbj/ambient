@@ -151,6 +151,7 @@ export function taskCard(view: RunView, label: string): Record<string, unknown> 
     task: {
       id: view.id,
       title: view.title,
+      instruction: view.instruction,
       status: view.status,
       steps: view.steps,
       ...(view.progress ? { progress: view.progress } : {}),

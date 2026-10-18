@@ -53,6 +53,7 @@
     --device:oklch(0.32 0.008 255);
     --lift:0 0 0 1px oklch(1 0 0 / .08);
   }
+  .show8{box-shadow:inset 0 0 0 1px oklch(1 0 0 / .12),var(--lift)}
 }
 *{box-sizing:border-box;margin:0}
 html,body{height:100%}
@@ -73,8 +74,7 @@ header{display:flex;align-items:center;gap:16px;padding:16px 24px 12px;min-heigh
 .toggle svg{width:18px;height:18px}
 .pill{display:none;align-items:center;gap:8px;min-height:36px;padding:0 14px;border-radius:999px;background:var(--call-soft);color:var(--call-text);font-weight:600}
 .pill i{width:8px;height:8px;border-radius:50%;background:currentColor}
-body[data-phase="live"] .pill,body[data-phase="needs"] .pill{display:inline-flex}
-body[data-phase="needs"] .pill{background:var(--needs-soft);color:var(--needs-ink)}
+body[data-phase="live"] .pill{display:inline-flex}
 
 main{flex:1;display:grid;grid-template-columns:minmax(330px,380px) minmax(0,1fr) 280px;gap:24px;padding:4px 24px 24px;min-height:0}
 
@@ -178,6 +178,7 @@ body[data-phase="needs"] .tv .devlabel{visibility:hidden}
   main{grid-template-columns:1fr;padding:4px 16px 16px}
   .call{min-height:72vh}
   .room{grid-template-columns:1fr}
+  .show8{aspect-ratio:5/8}
   .kitchen{min-height:auto}
   body[data-phase="needs"] .kitchen{order:-1}
   body[data-phase="needs"] .call{min-height:0}
@@ -320,13 +321,15 @@ function renderTranscript(steps, biz) {
     nodes.push(`<div class="bubble ${role}">${esc(text)}</div>`);
     lastWho = who;
   }
-  const html = nodes.join("") || `<div class="empty"><strong>Nobody wants to make this call.</strong><span>Ambient phones Joe's Plumbing, books the sink repair under your $150 limit, and asks you before it agrees to anything more.</span></div>`;
+  const html = nodes.join("") || `<div class="empty"><strong>The call shows here, word for word.</strong><span>You see what Ambient says and what Joe's Plumbing says back, as it happens.</span></div>`;
   if (box.dataset.html !== html) { box.dataset.html = html; box.innerHTML = html; }
   requestAnimationFrame(() => {
     box.scrollTop = box.scrollHeight;
     box.classList.toggle("scrolled", box.scrollTop > 0);
   });
 }
+
+addEventListener("resize", () => { const box = $("transcript"); box.scrollTop = box.scrollHeight; });
 
 function render() {
   const t = task(), ap = approval(), steps = t?.steps ?? [], biz = t ? t.subject ?? businessOf(steps) : "Joe's Plumbing", o = t?.outcome;
@@ -363,7 +366,7 @@ function render() {
 
   clearInterval(state.tick);
   const tickTimer = () => {
-    if (!t || !connected) { $("timer").textContent = ""; return; }
+    if (!t || !connected || ap) { $("timer").textContent = ""; return; }
     const end = TERMINAL.has(t.status) ? Date.parse(t.updatedAt) : Date.now();
     $("timer").textContent = "· " + clock(end - Date.parse(t.createdAt));
   };
