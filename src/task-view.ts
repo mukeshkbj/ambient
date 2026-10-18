@@ -39,6 +39,7 @@ button:focus-visible{outline:2px solid var(--call);outline-offset:3px}
 .sep{color:var(--dim)}
 .check{display:none;width:2.2em;height:2.2em;border-radius:50%;background:var(--done);color:var(--bg);place-items:center}
 .check svg{width:62%;height:62%;fill:none;stroke:currentColor;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:24;stroke-dashoffset:0}
+body.booked .chip::before{display:none}
 body.booked .check{display:grid;animation:land 420ms cubic-bezier(0.2,0,0,1) both}
 body.booked .check path{animation:draw 600ms 180ms cubic-bezier(0.2,0,0,1) both}
 @keyframes land{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
@@ -68,7 +69,7 @@ body[data-device="tv"] .stake{font-size:1.15em;line-height:1.3;white-space:nowra
 body[data-device="tv"] .tvline{display:block}
 .tvline{display:none;font-size:max(13px,.7em);font-weight:650;color:var(--needs);letter-spacing:.02em}
 @media (max-width:480px){
- body:not([data-device="tv"]){font-size:15px;padding:22px 20px;gap:12px;overflow:auto}
+ body:not([data-device="tv"]){font-size:15px;padding:24px 20px;gap:12px;overflow:auto;justify-content:flex-start}
  body:not([data-device="tv"]) .stake{font-size:2.1em}
  body:not([data-device="tv"]) .sep{display:none}
  body:not([data-device="tv"]) .when{display:block}
@@ -104,6 +105,7 @@ const usd=n=>"$"+Number(n).toLocaleString("en-US",{maximumFractionDigits:2});
 const clock=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");};
 const DEMO="Call Joe's Plumbing and book a visit tomorrow to fix the kitchen sink, keep it under 150";
 function errand(title){const m=/\\bto ([a-z][^,.]{2,48})/i.exec(title||"");return m?cap(m[1].trim()):"";}
+function limitOf(text){const m=/\\b(?:under|below|up to|no more than|max(?:imum)?)\\s+\\$?(\\d[\\d,]*)/i.exec(text||"");return m?"limit $"+m[1]:"";}
 function business(steps){for(const s of steps){const m=/^(?:Calling|Connected to) (.+)$/.exec(s);if(m)return m[1];}return "";}
 function speaker(s,biz){const who=["Ambient",biz].find(n=>n&&s.startsWith(n+": "));if(who)return{who,text:s.slice(who.length+2)};const m=/^([^:]{1,40}): (.+)$/.exec(s);return m?{who:m[1],text:m[2]}:null;}
 function speakers(steps,biz){return steps.map(s=>speaker(s,biz)).filter(Boolean);}
@@ -142,23 +144,29 @@ function render(d){
   const hold=()=>{$("clock").textContent=Number.isFinite(since)?"On hold "+clock(Date.now()-since):"";};
   if(ap.kind!=="dial"){hold();tick=setInterval(hold,1000);}
   buttons([{label:ap.amountUsd!==undefined?"Approve "+usd(ap.amountUsd):"Approve",kind:"primary",run:()=>act("approve",{decision:"once"})},
-   ...offers(ap).map(v=>({label:"Offer "+usd(v),kind:"offer",run:()=>act("delegate",{task:"offer "+v})})),
+   ...offers(ap).map(v=>({label:"Offer "+usd(v)+" instead",kind:"offer",run:()=>act("delegate",{task:"offer "+v})})),
    {label:"Decline",kind:"quiet",run:()=>act("approve",{decision:"deny"})}]);
-  hint.textContent=ap.kind==="dial"?"":"Ambient keeps "+biz+" on the line while you decide. Declining ends the call politely, and nothing is booked.";}
+  }
  else if(o){const ok=o.kind==="confirmed";chip.className="chip "+(ok?"done":"warn");
   if(ok)document.body.classList.add("booked");
   chip.textContent=ok?"Booked \\u00b7 confirmed by "+biz:o.kind==="unconfirmed"?"Not confirmed":o.kind==="declined"?"Declined":"No deal";
   if(ok){$("what").textContent=what?biz+" \\u00b7 "+what:biz;setStake(o.amountUsd,cap(o.when||biz));}
   else stake.textContent=biz;
   sub.textContent=ok?(theirs?"In their words: \\u201c"+theirs.text+"\\u201d":"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed. Nothing was booked.":cap(o.reason)+". Nothing was booked.";
+  const mine=said.filter(l=>l.who!=="Ambient"&&l.who!==biz);
+  if(ok)hint.textContent=mine.some(l=>/ approved: /.test(l.text))?"You approved this price from home.":mine.some(l=>/^offer\\b/i.test(l.text))?"You offered this price from home.":limitOf(t.instruction)?"Within your "+limitOf(t.instruction).slice(6)+" limit.":"";
   if(!ok){if(theirs)foot([{who:"Last from "+biz,text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
    buttons([{label:"Call again",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);}}
  else if(live){chip.className="chip";chip.textContent=connected?"On the phone":"Calling";
+  $("what").textContent=[what,limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");
   stake.textContent=biz;
-  sub.textContent=owner?ownerSaid(owner,biz):connected?biz+" answered. Ambient said it is an AI.":"Ringing\\u2026 Ambient will say it is an AI first.";
-  foot(said.filter(l=>l.who==="Ambient"||l.who===biz).slice(-3).map(l=>({who:l.who,text:esc(cap(l.text))})));}
+  sub.textContent=owner?ownerSaid(owner,biz):theirs?"\\u201c"+cap(theirs.text)+"\\u201d":connected?biz+" answered. Ambient said it is an AI.":"Ringing\\u2026 Ambient will say it is an AI first.";
+  const began=Date.parse(t.createdAt||"");
+  const tickCall=()=>{$("clock").textContent=connected&&Number.isFinite(began)?clock(Date.now()-began):"";};
+  tickCall();tick=setInterval(tickCall,1000);}
  else{chip.className="chip idle";chip.textContent="Ready";stake.textContent="Nobody wants to make this call.";
   sub.textContent="Ambient makes it for you. It says it is an AI, and it asks you before it spends over your limit.";
+  $("what").textContent="Fix the kitchen sink \\u00b7 limit $150";
   buttons([{label:"Call Joe's Plumbing",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);
   hint.textContent="Or say \\u201cAlexa, tell Ambient to call Joe's Plumbing.\\u201d";}}
 render({});
