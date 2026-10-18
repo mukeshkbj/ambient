@@ -355,6 +355,7 @@ export class ConversationEngine {
         ...(value(event.payload.description) ? { description: value(event.payload.description)! } : {}),
         ...(typeof event.payload.amountUsd === "number" ? { amountUsd: event.payload.amountUsd } : {}),
         ...(typeof event.payload.limitUsd === "number" ? { limitUsd: event.payload.limitUsd } : {}),
+        ...(value(event.payload.when) ? { when: value(event.payload.when)! } : {}),
         ...(event.payload.kind ? { kind: event.payload.kind } : {}),
         choices: Array.isArray(event.payload.choices)
           ? event.payload.choices.filter((choice): choice is string => typeof choice === "string")

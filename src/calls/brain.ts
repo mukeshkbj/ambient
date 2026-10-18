@@ -21,7 +21,8 @@ const TOOLS: BetaTool[] = [
       type: "object",
       properties: {
         question: { type: "string", description: "One short question the owner can answer yes or no, or with an instruction." },
-        amount_usd: { type: "number", description: "The price in dollars the question is about, if any." }
+        amount_usd: { type: "number", description: "The price in dollars the question is about, if any." },
+        when: { type: "string", description: "The time the business offered, as they said it, if any." }
       },
       required: ["question"],
       additionalProperties: false
@@ -60,7 +61,7 @@ const TOOLS: BetaTool[] = [
   }
 ];
 
-const AskOwner = z.object({ question: z.string().min(1), amount_usd: z.number().positive().optional() });
+const AskOwner = z.object({ question: z.string().min(1), amount_usd: z.number().positive().optional(), when: z.string().min(1).optional() });
 const EndCall = z.object({
   outcome: z.enum(["confirmed", "declined", "no_deal"]),
   summary: z.string().min(1),
@@ -74,8 +75,8 @@ function toStep(name: string, input: unknown): BrainStep | undefined {
     case "ask_owner": {
       const parsed = AskOwner.safeParse(input);
       if (!parsed.success) return undefined;
-      const { question, amount_usd } = parsed.data;
-      return { kind: "ask_owner", question, ...(amount_usd !== undefined ? { amountUsd: amount_usd } : {}) };
+      const { question, amount_usd, when } = parsed.data;
+      return { kind: "ask_owner", question, ...(amount_usd !== undefined ? { amountUsd: amount_usd } : {}), ...(when !== undefined ? { when } : {}) };
     }
     case "end_call": {
       const parsed = EndCall.safeParse(input);

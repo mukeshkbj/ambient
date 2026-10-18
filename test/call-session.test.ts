@@ -172,6 +172,11 @@ describe("rule 3: a price above the limit needs the owner", () => {
     expect(spoken(effects)).toContain("One moment, let me check with Maya.");
   });
 
+  it("carries the proposed time with the owner question", () => {
+    const { effects } = play([answered, heard("It'll be 180"), confirm(180, "Tuesday at ten", "Tuesday at ten")]);
+    expect(emitted(effects, "approval.request")[0]?.payload).toMatchObject({ amountUsd: 180, when: "Tuesday at ten" });
+  });
+
   it("checks dollar amounts in the summary when the brain omits amountUsd", () => {
     const { state } = play([answered, heard("It's $400"), confirm(undefined, "Booked Tuesday for $400")]);
     expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 400 });

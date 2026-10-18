@@ -138,7 +138,7 @@ function brainStep(state: CallState, brain: BrainStep, now: string): Transition 
       return { state: brain.last ? flushDraft(drafted, now) : drafted, effects };
     }
     case "ask_owner":
-      return askOwner(state, brain.question, brain.amountUsd, now);
+      return askOwner(state, brain.question, brain.amountUsd, now, false, brain.when);
     case "remember":
       return { state, effects: [{ kind: "remember", fact: brain.fact }] };
     case "end_call":
@@ -158,7 +158,7 @@ function confirm(state: CallState, outcome: Extract<CallOutcome, { kind: "confir
   }
   if (charge !== undefined && charge > limit && !state.approvedUsd.includes(charge)) {
     const question = `${brief.business.name} wants ${dollarsInWords(charge)}, over your limit of ${dollarsInWords(limit)}. Should I agree?`;
-    return askOwner(state, question, charge, now);
+    return askOwner(state, question, charge, now, false, outcome.when);
   }
   const flushed = flushDraft(state, now);
   if (!evidenced(flushed, charge)) {
@@ -193,7 +193,7 @@ function close(state: CallState, outcome: Exclude<CallOutcome, { kind: "unconfir
   return end(withTurn(flushDraft(state, now), "agent", closing, now), outcome, [say(closing), { kind: "hang_up" }]);
 }
 
-function askOwner(state: CallState, question: string, amountUsd: number | undefined, now: string, unpriced = false): Transition {
+function askOwner(state: CallState, question: string, amountUsd: number | undefined, now: string, unpriced = false, when?: string): Transition {
   const asks = state.asks + 1;
   const requestId = `${state.callId}:ask-${asks}`;
   const line = `One moment, let me check with ${state.brief.ownerName}.`;
@@ -208,7 +208,7 @@ function askOwner(state: CallState, question: string, amountUsd: number | undefi
         kind: "emit",
         event: {
           type: "approval.request",
-          payload: { requestId, command: question, description: question, choices: ["once", "deny"], kind: amountUsd !== undefined ? "spend" : "other", ...amount, ...limit }
+          payload: { requestId, command: question, description: question, choices: ["once", "deny"], kind: amountUsd !== undefined ? "spend" : "other", ...amount, ...limit, ...(when ? { when } : {}) }
         }
       }
     ]

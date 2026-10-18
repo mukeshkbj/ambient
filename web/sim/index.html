@@ -79,7 +79,7 @@ body[data-phase="needs"] .pill{background:var(--needs-soft);color:var(--needs-in
 main{flex:1;display:grid;grid-template-columns:minmax(330px,380px) minmax(0,1fr) 280px;gap:24px;padding:4px 24px 24px;min-height:0}
 
 .call{background:var(--surface);border-radius:var(--r-panel);box-shadow:var(--lift);display:flex;flex-direction:column;min-height:0;overflow:hidden;transition:filter 250ms var(--ease)}
-body[data-phase="needs"] .call{filter:saturate(.3)}
+
 .callhead{display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px 20px 14px;text-align:center}
 .sim{font-size:12px;font-weight:600;color:var(--ink-3);background:var(--sunk);padding:2px 10px;border-radius:999px}
 .avatar{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);color:var(--ink-2);font-weight:600;font-size:16px;margin-top:6px}
@@ -158,6 +158,10 @@ body[data-phase="needs"] .screen .title{opacity:0}
 @media (hover:hover){.ghost:hover{background:var(--sunk)}}
 .liveonly{display:none}
 body[data-phase="live"] .liveonly,body[data-phase="needs"] .liveonly{display:block}
+body[data-connected="false"] .liveonly{display:none}
+.endedonly{display:none}
+body[data-phase="ended"] .endedonly{display:block}
+body[data-phase="needs"] .tv .devlabel{visibility:hidden}
 .mic{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:var(--r-ctl);border:1.5px solid var(--call);background:transparent;color:var(--call-text);cursor:pointer;font-weight:600}
 .mic svg{width:18px;height:18px}
 .mic[aria-pressed="true"]{background:var(--call);color:var(--call-ink)}
@@ -174,6 +178,9 @@ body[data-phase="live"] .liveonly,body[data-phase="needs"] .liveonly{display:blo
   main{grid-template-columns:1fr;padding:4px 16px 16px}
   .call{min-height:72vh}
   .room{grid-template-columns:1fr}
+  .kitchen{min-height:auto}
+  body[data-phase="needs"] .kitchen{order:-1}
+  body[data-phase="needs"] .call{min-height:0}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none !important;transition:none !important;scroll-behavior:auto !important}
@@ -236,6 +243,7 @@ body[data-phase="live"] .liveonly,body[data-phase="needs"] .liveonly{display:blo
       <span id="micLabel">Hold to talk</span>
     </button>
     <button class="ghost liveonly" id="statusBtn" type="button">“How's the call going?”</button>
+    <button class="ghost endedonly" id="again" type="button">Start a new demo call</button>
     <p class="hint liveonly">Or hold to talk: “approve”, “offer one sixty”, “hang up”.</p>
   </section>
 </main>
@@ -302,7 +310,8 @@ function renderTranscript(steps, biz) {
     const role = who === "Ambient" ? "agent" : who === biz ? "business" : "owner";
     if (role === "owner") {
       const decided = /^\S+ (approved|declined): /.exec(text);
-      nodes.push(`<div class="note">${decided ? `${esc(who)} ${decided[1]} it from home` : `${esc(who)}, from home: “${esc(sentence(text))}”`}</div>`);
+      const offer = /^offer\s+\$?(\d+)/i.exec(text);
+      nodes.push(`<div class="note">${decided ? `${esc(who)} ${decided[1]} it from home` : offer ? `${esc(who)} offered ${usd(offer[1])} from home` : `${esc(who)}, from home: “${esc(sentence(text))}”`}</div>`);
       lastWho = "";
       continue;
     }
@@ -323,6 +332,7 @@ function render() {
   const connected = steps.some(s => s.startsWith("Connected to"));
   const phase = !t ? "idle" : ap ? "needs" : TERMINAL.has(t.status) ? "ended" : "live";
   document.body.dataset.phase = phase;
+  document.body.dataset.connected = String(connected);
   $("biz").textContent = biz;
   $("avatar").textContent = initials(biz);
   $("callstate").innerHTML = !t ? "Not called yet" : phase === "needs" ? "<b>On hold for Maya</b>" : phase === "ended" ? (t.status === "cancelled" ? "You ended the call" : "Call ended") : connected ? "On the phone" : "Ringing…";
@@ -371,6 +381,7 @@ async function decide(decision) {
   }
 }
 $("statusBtn").onclick = async () => speak((await tool("status")).speech);
+$("again").onclick = () => startCall(DEMO_TASK);
 $("hangup").onclick = async () => speak((await tool("stop")).speech);
 function chime() {
   if (!state.sound) return;

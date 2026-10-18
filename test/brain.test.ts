@@ -72,6 +72,14 @@ describe("claudeBrain", () => {
     ]);
   });
 
+  it("maps ask_owner with a proposed time", async () => {
+    const events = [...tool(0, "ask_owner", { question: "Tuesday at ten for 180?", amount_usd: 180, when: "Tuesday at ten" }), stop("tool_use")];
+    const brain = claudeBrain({ stream: fakeStream(events), model: "claude-opus-5-5" });
+    expect(await collect(brain.respond(state, new AbortController().signal))).toEqual([
+      { kind: "ask_owner", question: "Tuesday at ten for 180?", amountUsd: 180, when: "Tuesday at ten" }
+    ]);
+  });
+
   it("maps end_call and remember", async () => {
     const events = [
       ...tool(0, "remember", { fact: "Joe's charges a call-out fee" }),

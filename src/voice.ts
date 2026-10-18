@@ -138,6 +138,7 @@ function approvalSummary(approval: Approval, label: string): Record<string, unkn
     ...(approval.description ? { description: approval.description } : {}),
     ...(approval.amountUsd !== undefined ? { amountUsd: approval.amountUsd } : {}),
     ...(approval.limitUsd !== undefined ? { limitUsd: approval.limitUsd } : {}),
+    ...(approval.when ? { when: approval.when } : {}),
     ...(approval.kind ? { kind: approval.kind } : {}),
     choices: approval.choices,
     agent: label,

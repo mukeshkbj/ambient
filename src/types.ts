@@ -65,6 +65,7 @@ export type Approval = {
   description?: string;
   amountUsd?: number;
   limitUsd?: number;
+  when?: string;
   kind?: ApprovalKind;
   choices: string[];
   createdAt: string;

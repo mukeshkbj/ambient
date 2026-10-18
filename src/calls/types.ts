@@ -40,7 +40,7 @@ export type CallInput =
 
 export type BrainStep =
   | { kind: "say"; text: string; last: boolean }
-  | { kind: "ask_owner"; question: string; amountUsd?: number }
+  | { kind: "ask_owner"; question: string; amountUsd?: number; when?: string }
   | { kind: "remember"; fact: string }
   | { kind: "end_call"; outcome: Exclude<CallOutcome, { kind: "unconfirmed" }> };
 

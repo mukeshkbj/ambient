@@ -66,6 +66,7 @@ Known voice defects to fix in the voice-UX pass: the approval repeats the amount
 
 - 2026-10-18: plan written; L0 fixes merged (`8143d5e`).
 - 2026-10-18: implementation started. Phases 3, 4, 1 landed; Windows demo path fixed.
+- 2026-10-18: UI round-4 fixes: approval `when` on the card, hold timer, booked check, "You offered", mobile card first while the call needs you; 292 tests, scan and build green.
 - 2026-10-18: UI rounds 3-4, structural review fixes (`ee6ec6d`), architecture figure; 289 tests, smoke ok.
 - 2026-10-18: phase 6 (AssemblyAI line) landed; UI critic rounds 1-2; docs rewrite (`baf3487`).
 - 2026-10-18: reducer round-2 review fixes (`fab717c`); phase 9 sim rebuilt (`2126fbc`); phase 8 landed.

@@ -286,13 +286,14 @@ describe("ConversationEngine", () => {
         choices: ["once", "deny"],
         amountUsd: 180,
         limitUsd: 150,
+        when: "Tuesday at ten",
         kind: "spend"
       }
     });
     await new Promise(resolve => setImmediate(resolve));
     expect(engine.getWork(run.id)).toMatchObject({
       status: "waiting_approval",
-      approval: { requestId: "req-9", amountUsd: 180, limitUsd: 150, kind: "spend" }
+      approval: { requestId: "req-9", amountUsd: 180, limitUsd: 150, when: "Tuesday at ten", kind: "spend" }
     });
     store.close();
   });
