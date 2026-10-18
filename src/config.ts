@@ -6,7 +6,7 @@ const RuntimeEntrySchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
   kind: z.enum(["local", "cloud"]).default("local"),
-  adapter: z.string().min(1).default("demo"),
+  adapter: z.string().min(1).default("caller"),
   endpoint: z.string().min(1).optional(),
   tokenEnv: z.string().min(1).optional(),
   options: z.record(z.string(), z.string()).optional(),

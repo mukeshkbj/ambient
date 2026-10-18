@@ -1,15 +1,10 @@
 [
   {
-    "id": "planner",
-    "label": "My Agent",
+    "id": "caller",
+    "label": "Ambient",
     "kind": "cloud",
-    "adapter": "demo",
-    "default": true
-  },
-  {
-    "id": "coder",
-    "label": "Coding Agent",
-    "kind": "local",
-    "adapter": "demo"
+    "adapter": "caller",
+    "default": true,
+    "options": { "line": "simulated", "brain": "scripted", "business": "Joe's Plumbing", "phone": "+14155550134" }
   }
 ]

@@ -1,26 +1,57 @@
-# progress.md: Ambient v2 (household consent layer)
+# progress.md: Ambient v2, "Alexa, handle the call"
 
-Plan: `docs/plans/2026-10-18-handle-the-call/overview.md` (supersedes the consent design). Deadline Fri 2026-10-23 12:00 PT; submit Thu 2026-10-22.
-Integration branch: `hackathon/household-consent`. Each lane works on its own branch in a worktree; the orchestrator merges.
+Plan: `docs/plans/2026-10-18-handle-the-call/overview.md`. Deadline Fri 2026-10-23 12:00 PT; submit Thu 2026-10-22.
+Branch: `hackathon/household-consent`. Nothing is pushed.
 
-## Review evidence (2026-10-18)
+## Decisions taken this session (2026-10-18)
 
-Judge personas scored v1 10.5 / 12 / 13 of 20. Confirmed defects: `/sim` mounted before `authorize()` (`src/server.ts:289` vs `:409`); `elicitInput` without `relatedRequestId` (`src/mcp.ts:75`); task cancel does not cancel the run; flagship utterance misroutes to `agents` (`src/sim-router.ts:56`); friction-log entries dated 10-16/10-19 but committed 10-12; CDK env block likely fails `readConfig`. Competitor KiroWhisper does the v1 pitch on a real Echo.
+- **Phone path: AssemblyAI, no Twilio.** The user has no Twilio budget. AssemblyAI cannot dial out (its SIP path is inbound only), so phase 6 builds the AssemblyAI Voice Agent line where the business joins through a browser link (a phone's browser works). The `Line` seam keeps a Twilio Media Streams bridge possible later. The real-phone-rings moment is not available without paid Twilio.
+- Subagents: Devin `swe-2-high` drafts (the catalog has no "SWE 2 Max"); Opus 5.5 (lead) or `claude-sonnet-5-5` reviews and cleans.
+- `step(state, input, now)` takes the clock as an argument instead of `state.now`; `startCall(brief, callId)` takes a call id so approval request ids are unique per runtime.
 
-## Lanes
+## Baseline (2026-10-18, before any change)
 
-See the phase table in the plan overview. None are running. Keep: `lane/L0-p0` (6228b0f: /sim auth, elicitation on the call's stream, task cancel). The consent-layer branches (`lane/L1-attention`, `lane/L3-household-agent`, `t3/*`) are obsolete.
+`corepack enable; pnpm install; pnpm scan`: typecheck, eslint, knip green; 94 tests in 20 files pass.
+
+## Phases
+
+| # | Phase | State | Evidence |
+|---|---|---|---|
+| 1 | Subtract v1 adapters | Landed `38aa26d` (Devin draft, reviewed) | scan green; `pnpm demo` + `pnpm smoke:mcp` list 7 tools; grep for hermes/openclaw/nova/dashboard in src, test, scripts is empty |
+| 1b | Windows demo fix | Landed `1ffda6a` | `pnpm demo` failed twice on Windows (cmd.exe env syntax; entry guard); both fixed and logged in the friction log |
+| 2 | Engine support for calls | Landed (Devin draft `d9921fe`, reviewed, cherry-picked) | approval amount and kind, run outcome, newest open approval, steer resolves approvals; 8 tests |
+| 3 | Call session reducer | Landed `1c14609`, revised `3ab7db3` after two Sonnet 5.5 reviews | 89 tests. Reviews reproduced 11 honesty holes (negated owner amounts authorized spend, stale brain output, cut-off disclosure, unbounded owner wait, redaction bypasses); each is now a regression test. Round-2 review running |
+| 4 | Brain | Landed `99379e2` | 20 tests with a stubbed stream. `pnpm brain:latency` not run: it spends API money |
+| 5 | Caller runtime + simulated line | Landed | 6 engine tests + 8 shell tests. `pnpm demo` + `pnpm smoke:mcp` runs a full simulated call through /mcp (transcript below) |
+| 6 | AssemblyAI line | After 9 | |
+| 7 | Alexa intents and cue | | |
+| 8 | Discovery and memory | | |
+| 9 | Sim around a live call | | |
+| 10 | AWS | Needs AWS spend approval | |
+
+## Evidence: zero-key call through /mcp (2026-10-18)
+
+```
+> delegate {"task":"Call Joe's Plumbing and book a visit to fix the kitchen sink, keep it under 150"}
+  Alexa: Ambient needs your OK: Joe's Plumbing can come Tuesday at ten for one hundred eighty dollars, over your one hundred fifty dollars limit. Should I book it. That's one hundred eighty dollars. Say approve to allow it once, or deny.
+> delegate {"task":"offer 160"}
+  Alexa: Noted — passed that to Ambient while it works on "Call Joe's Plumbing and book".
+> status
+  Alexa: Joe's Plumbing confirmed Tuesday at ten for one hundred sixty dollars.
+smoke: ok
+```
+
+Known voice defects to fix in the voice-UX pass: the approval repeats the amount and loses its question mark; the steer reply quotes a truncated title.
 
 ## Needs the user
 
-See `phase-00-preflight.md` in the plan.
+- Keys, tested at the end: `ANTHROPIC_API_KEY` (brain, latency receipt), `ASSEMBLYAI_API_KEY` (phase 6), Voice Monkey token (phase 7 cue).
+- Approval to spend: `pnpm brain:latency` (about 10 short Claude calls), AssemblyAI minutes for a real call test, AWS deploy (phase 10).
+- Phase 0: whether the custom skill invokes on your Echo Dot under Alexa+.
+- Phase 11: creating the public GitHub repo and submitting on Devpost.
+- Open question from the plan: if p95 time to first word on `claude-opus-5-5` exceeds 1.5 s, may in-call turns use `claude-haiku-5-5`?
 
 ## Log
 
-- 2026-10-18: review done, design written, lanes defined.
-- 2026-10-18: launched L0, L1, L3, L4 as worktree subagents (claude-sonnet-5-5).
-- 2026-10-18: user stopped all lanes. Direction under review: consent layer judged to lack a demo moment. Plan only until the user confirms a direction.
-- 2026-10-18: direction changed to "Alexa, handle the call" (Twilio ConversationRelay + Anthropic API). Plan written; nothing launched.
-- 2026-10-18: deep plan written (overview, 12 phases, testing, Twilio and Alexa references, codebase map). Nothing launched.
-- 2026-10-18: phase 1 (subtract) done on this checkout: v1 adapters (hermes, openclaw, bedrock, connector, sim-router, dashboard tool) deleted; `demo` is the only adapter, `TASK_HTML`/`HOST_BOOT` moved to `src/task-view.ts`, `/sim/api/turn` and the sim input box removed, `ADAPTERS` = `{demo}`. `pnpm scan`/`pnpm build` green, 74 tests. `ws` kept (knip-ignored) for a later phase. Infra: `AmbientStack`, `/opt/ambient`, Nova IAM + connector secret removed.
-- 2026-10-18: phase 2 (engine calls) done on this checkout: `Approval` gained `amountUsd`/`kind` (`ApprovalKind` exported), `Run`/`RunView` gained `outcome`, `approvals`/`runs` gained `amount_usd`/`kind`/`outcome_json` columns with an explicit-column approvals rebuild, views attach the newest open approval, `steer` resolves open approvals, `respondToApproval` stays waiting while another approval is open, voice speaks the stake and the outcome. `pnpm scan`/`pnpm build` green, 144 tests.
+- 2026-10-18: plan written; L0 fixes merged (`8143d5e`).
+- 2026-10-18: implementation started. Phases 3, 4, 1 landed; Windows demo path fixed.

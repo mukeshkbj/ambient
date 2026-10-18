@@ -43,7 +43,7 @@ describe("honest-state regressions", () => {
 
     const registry = buildRuntimeRegistry({
       defaultRuntimeId: "agent",
-      runtimes: [{ id: "agent", label: "Agent", kind: "local", adapter: "demo" }]
+      runtimes: [{ id: "agent", label: "Agent", kind: "local", adapter: "caller" }]
     }, {}, store);
     registry.startAll();
     expect(store.run("r1")!.status).toBe("unknown");
@@ -54,18 +54,22 @@ describe("honest-state regressions", () => {
 });
 
 describe("buildRuntimeRegistry adapter dispatch", () => {
-  it("builds every supported adapter and rejects unknown ones", async () => {
+  it("builds the caller adapter and rejects unknown adapters, lines, and brains", async () => {
     const store = new AmbientStore();
     const registry = buildRuntimeRegistry({
-      defaultRuntimeId: "planner",
-      runtimes: [
-        { id: "planner", label: "Demo Agent", kind: "cloud", adapter: "demo" },
-        { id: "coder", label: "Coding Agent", kind: "local", adapter: "demo" }
-      ]
+      defaultRuntimeId: "caller",
+      runtimes: [{ id: "caller", label: "Ambient", kind: "cloud", adapter: "caller", options: { line: "simulated", brain: "scripted" } }]
     }, {}, store);
-    expect(registry.list().map(item => item.id).sort()).toEqual(["coder", "planner"]);
-    expect(registry.entry("planner")!.client.capabilities.approvals).toBe(true);
+    expect(registry.list().map(item => item.id)).toEqual(["caller"]);
+    expect(registry.entry("caller")!.client.capabilities).toMatchObject({ approvals: true, steer: true, cancel: true });
     await registry.close();
+
+    for (const options of [{ line: "carrier-pigeon" }, { brain: "ouija" }]) {
+      expect(() => buildRuntimeRegistry({
+        defaultRuntimeId: "x",
+        runtimes: [{ id: "x", label: "X", kind: "local", adapter: "caller", options }]
+      }, {}, store)).toThrow("not available");
+    }
 
     expect(() => buildRuntimeRegistry({
       defaultRuntimeId: "x",

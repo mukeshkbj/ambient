@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { readConfig } from "../src/config.js";
 
-const planner = { id: "planner", label: "My Agent", kind: "cloud", adapter: "demo", default: true };
+const planner = { id: "planner", label: "My Agent", kind: "cloud", adapter: "caller", default: true };
 
 let dir: string | undefined;
 
@@ -22,11 +22,11 @@ function runtimesFile(entries: unknown[]): string {
 
 describe("readConfig", () => {
   it("reads runtimes from AMBIENT_RUNTIMES_FILE", () => {
-    expect(readConfig({ AMBIENT_RUNTIMES_FILE: runtimesFile([planner, { id: "coder", label: "Coding Agent", adapter: "demo" }]) })).toMatchObject({
+    expect(readConfig({ AMBIENT_RUNTIMES_FILE: runtimesFile([planner, { id: "coder", label: "Coding Agent", adapter: "caller" }]) })).toMatchObject({
       port: 3000,
       defaultRuntimeId: "planner",
       allowUnauthenticated: false,
-      runtimes: [planner, { id: "coder", label: "Coding Agent", kind: "local", adapter: "demo" }]
+      runtimes: [planner, { id: "coder", label: "Coding Agent", kind: "local", adapter: "caller" }]
     });
   });
 
