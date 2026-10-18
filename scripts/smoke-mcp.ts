@@ -8,10 +8,10 @@ const transport = new StreamableHTTPClientTransport(new URL(endpoint), token ? {
 } : undefined);
 const client = new Client({ name: "ambient-smoke", version: "0.1.0" });
 
-type Result = { structuredContent?: Record<string, unknown>; content?: Array<{ type: string; text?: string }> };
+type Result = { structuredContent?: { speech?: string; status?: string }; content?: Array<{ type: string; text?: string }> };
 
-const speech = (result: Result) => String(result.structuredContent?.speech ?? result.content?.find(item => item.type === "text")?.text ?? "");
-const status = (result: Result) => String(result.structuredContent?.status ?? "");
+const speech = (result: Result) => result.structuredContent?.speech ?? result.content?.find(item => item.type === "text")?.text ?? "";
+const status = (result: Result) => result.structuredContent?.status ?? "";
 
 async function call(name: string, args: Record<string, unknown> = {}): Promise<Result> {
   const result = await client.callTool({ name, arguments: args }) as Result;
