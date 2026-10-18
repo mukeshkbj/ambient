@@ -38,6 +38,7 @@ export class CallRoom implements Line {
   private draft = "";
   private seenUserTurns = 0;
   private answered = false;
+  private sessions = 0;
   private ended = false;
   private joinTimer: NodeJS.Timeout | undefined;
 
@@ -68,6 +69,7 @@ export class CallRoom implements Line {
 
   async session(): Promise<{ token: string; agentId: string; ownerName: string }> {
     if (!this.agentId) throw new Error("This call is not ready yet");
+    if (++this.sessions > 3) throw new Error("This call was already answered");
     return { token: await this.options.ai.mintToken(), agentId: this.agentId, ownerName: this.ownerName };
   }
 

@@ -74,6 +74,14 @@ describe("CallRooms line", () => {
     expect(inputs).toEqual([{ kind: "answered" }]);
   });
 
+  it("mints at most three browser tokens per call", async () => {
+    const { rooms, line } = setup();
+    await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
+    const room = rooms.room("call-1")!;
+    for (let index = 0; index < 3; index++) await room.session();
+    await expect(room.session()).rejects.toThrow("already answered");
+  });
+
   it("turns each new business turn into heard and streams back exactly what the call says", async () => {
     const { rooms, line, inputs } = setup();
     await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
