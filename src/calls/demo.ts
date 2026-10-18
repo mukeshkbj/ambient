@@ -49,7 +49,7 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
       ? [{ kind: "say", text: "That works. Please go ahead and book Tuesday at ten.", last: true }]
       : [{
           kind: "ask_owner",
-          question: `Joe's Plumbing can come Tuesday at ten for one hundred eighty dollars, over your ${dollarsInWords(state.brief.maxUsd ?? 0)} limit. Should I book it?`,
+          question: `Joe's Plumbing can come Tuesday at ten for one hundred eighty dollars, over your limit of ${dollarsInWords(state.brief.maxUsd ?? 0)}. Should I book it?`,
           amountUsd: 180
         }]
   },

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { RuntimeRegistry } from "./runtimes/registry.js";
+import { taskCard } from "./voice.js";
 
 export type SimDependencies = {
   registry: RuntimeRegistry;
@@ -75,12 +76,6 @@ export class SimHost {
         this.emitAttention();
         return new Promise(resolve => {
           this.pendingElicits.set(id, { message, resolve });
-          setTimeout(() => {
-            if (this.pendingElicits.delete(id)) {
-              this.emitAttention();
-              resolve({ action: "decline" });
-            }
-          }, 60_000);
         });
       });
       return client;
@@ -105,27 +100,17 @@ export class SimHost {
       const entry = this.options.registry.entry(info.id)!;
       this.unwatch.push(entry.engine.onRunChanged(runId => {
         const run = runId === "*" ? undefined : entry.engine.listRuns(50).find(item => item.id === runId);
-        if (run) {
-          this.emit({
-            type: "run",
-            run: { title: run.title, status: run.status, assistant: info.label },
-            view: {
-              task: {
-                title: run.title,
-                status: run.status,
-                ...(run.steps.length ? { steps: run.steps } : {}),
-                ...(run.progress ? { progress: run.progress } : {}),
-                ...(run.answer ? { answer: run.answer } : {}),
-                ...(run.failure ? { failure: run.failure } : {})
-              },
-              ...(run.approval
-                ? { approvals: [{ agent: info.label, command: run.approval.command, ...(run.approval.description ? { description: run.approval.description } : {}) }] }
-                : {})
-            }
-          });
-        }
+        if (run) this.emit({ type: "run", run: { title: run.title, status: run.status, assistant: info.label }, view: taskCard(run, info.label) });
+        if (this.options.registry.pendingApprovals().length === 0) this.declineStaleElicits();
         this.emitAttention();
       }));
+    }
+  }
+
+  private declineStaleElicits(): void {
+    for (const [id, elicit] of this.pendingElicits) {
+      this.pendingElicits.delete(id);
+      elicit.resolve({ action: "decline" });
     }
   }
 
@@ -139,6 +124,11 @@ export class SimHost {
   onEvent(listener: (event: SimEvent) => void): () => void {
     this.listeners.add(listener);
     // A page that (re)loads while an approval is open still needs the card.
+    const latest = this.options.registry.latestRun();
+    if (latest) {
+      const label = this.options.registry.label(latest.runtimeId);
+      listener({ type: "run", run: { title: latest.title, status: latest.status, assistant: label }, view: taskCard(latest, label) });
+    }
     listener({ type: "attention", pending: this.attentionCount() });
     for (const [id, elicit] of this.pendingElicits) {
       listener({ type: "elicit", id, message: elicit.message });

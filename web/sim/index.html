@@ -3,237 +3,482 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ambient — Alexa+ simulator</title>
+<title>Ambient · Alexa, handle the call</title>
 <style>
 :root{
-  --bg:#05070d;--panel:#0d1220;--panel2:#121828;--line:#1f2942;--fg:#e8edf6;--dim:#8b96ad;
-  --cyan:#4cc9f0;--blue:#4361ee;--amber:#ffb454;--red:#ff6b6b;--green:#4ade80;
-  --glow:0 0 60px rgba(76,201,240,.35);
+  color-scheme:light dark;
+  --canvas:oklch(0.968 0.004 80);
+  --surface:oklch(0.995 0.002 80);
+  --sunk:oklch(0.94 0.005 80);
+  --line:oklch(0.89 0.006 80);
+  --ink:oklch(0.22 0.012 255);
+  --ink-2:oklch(0.45 0.012 255);
+  --ink-3:oklch(0.58 0.01 255);
+  --call:oklch(0.50 0.14 245);
+  --call-ink:oklch(0.99 0 0);
+  --call-soft:oklch(0.93 0.035 240);
+  --needs:oklch(0.80 0.16 82);
+  --needs-ink:oklch(0.30 0.07 70);
+  --needs-soft:oklch(0.95 0.06 90);
+  --done:oklch(0.62 0.15 152);
+  --done-soft:oklch(0.94 0.05 152);
+  --warn-soft:oklch(0.95 0.04 70);
+  --warn-ink:oklch(0.42 0.09 60);
+  --device:oklch(0.25 0.008 255);
+  --screen:oklch(0.16 0.008 255);
+  --lift:0 0 0 1px oklch(0 0 0 / .06), 0 1px 2px -1px oklch(0 0 0 / .08), 0 6px 16px -4px oklch(0 0 0 / .08);
+  --ease:cubic-bezier(0.2, 0, 0, 1);
+  --r-card:20px;--r-ctl:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --canvas:oklch(0.17 0.006 255);
+    --surface:oklch(0.215 0.008 255);
+    --sunk:oklch(0.19 0.007 255);
+    --line:oklch(0.30 0.01 255);
+    --ink:oklch(0.95 0.004 255);
+    --ink-2:oklch(0.76 0.01 255);
+    --ink-3:oklch(0.64 0.01 255);
+    --call:oklch(0.58 0.14 245);
+    --call-soft:oklch(0.30 0.06 245);
+    --needs:oklch(0.82 0.15 85);
+    --needs-ink:oklch(0.90 0.10 88);
+    --needs-soft:oklch(0.30 0.06 80);
+    --done:oklch(0.72 0.15 152);
+    --done-soft:oklch(0.28 0.05 152);
+    --warn-soft:oklch(0.29 0.05 70);
+    --warn-ink:oklch(0.86 0.09 75);
+    --device:oklch(0.30 0.008 255);
+    --lift:0 0 0 1px oklch(1 0 0 / .07);
+  }
 }
 *{box-sizing:border-box;margin:0}
-body{background:radial-gradient(1200px 700px at 30% -10%,#101a33 0%,var(--bg) 55%);color:var(--fg);
-  font:15px/1.5 -apple-system,"SF Pro Text",system-ui,sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--line)}
-header .brand{font-weight:700;letter-spacing:.22em;font-size:13px;color:var(--cyan)}
-header .sub{color:var(--dim);font-size:12px}
-.devices{margin-left:auto;display:flex;gap:6px}
-.devices button{font:12px/1 inherit;padding:7px 12px;border-radius:99px;border:1px solid var(--line);
-  background:var(--panel);color:var(--dim);cursor:pointer;transition:.15s}
-.devices button.on{border-color:var(--cyan);color:var(--fg);background:var(--panel2)}
-main{flex:1;display:grid;grid-template-columns:380px 1fr;min-height:0}
-/* voice panel */
-.voice{border-right:1px solid var(--line);display:flex;flex-direction:column;padding:20px;gap:16px}
-.orbwrap{position:relative;width:170px;height:170px;margin:8px auto}
-.ring{position:absolute;inset:-14px;border-radius:50%;border:3px solid transparent;transition:.3s}
-.ring.attention{border-color:var(--amber);animation:pulse 1.6s ease-in-out infinite}
-@keyframes pulse{0%,100%{box-shadow:0 0 18px rgba(255,180,84,.25)}50%{box-shadow:0 0 42px rgba(255,180,84,.65)}}
-.orb{position:absolute;inset:0;border-radius:50%;
-  background:radial-gradient(circle at 32% 30%,#67e8f9 0%,var(--blue) 55%,#131b3a 100%);
-  box-shadow:var(--glow),inset 0 0 30px rgba(0,0,0,.45);transition:.3s}
-.orb.listening{animation:spin 3s linear infinite}
-.orb.speaking{animation:breathe 1.1s ease-in-out infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-.state{text-align:center;color:var(--dim);font-size:13px;min-height:20px}
-.transcript{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-right:4px}
-.msg{max-width:92%;padding:9px 13px;border-radius:14px;font-size:14px;white-space:pre-wrap}
-.msg.user{align-self:flex-end;background:var(--blue);border-bottom-right-radius:4px}
-.msg.agent{align-self:flex-start;background:var(--panel2);border-bottom-left-radius:4px}
-.msg.event{align-self:center;background:none;color:var(--dim);font-size:12px;padding:2px}
-.msg.event b{color:var(--fg)}
-button.act{font:inherit;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:10px;
-  padding:10px 14px;cursor:pointer}
-button.act:hover{border-color:var(--cyan)}
-/* device panel */
-.devicepanel{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;min-width:0}
-.screen{position:relative;border:1px solid var(--line);border-radius:14px;background:#000;
-  overflow:hidden;box-shadow:0 18px 60px rgba(0,0,0,.5);transition:width .3s,height .3s}
-.screen iframe{width:100%;height:100%;border:0;display:block}
-.screen .empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  color:var(--dim);font-size:13px;text-align:center;padding:20px}
-.devlabel{color:var(--dim);font-size:12px;letter-spacing:.1em}
-/* elicitation card */
-.elicit{position:fixed;right:24px;bottom:24px;width:320px;background:var(--panel2);border:1px solid var(--amber);
-  border-radius:14px;padding:14px;display:none;box-shadow:0 12px 40px rgba(0,0,0,.6);z-index:10}
-.elicit.show{display:block}
-.elicit p{font-size:13px;margin-bottom:10px}
-.elicit .row{display:flex;gap:8px}
-.elicit button{flex:1;font:inherit;padding:8px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
-.elicit button.approve{border-color:var(--green);color:var(--green)}
-.elicit button.deny{border-color:var(--red);color:var(--red)}
+html,body{height:100%}
+body{background:var(--canvas);color:var(--ink);font:400 15px/1.5 -apple-system,"SF Pro Text",system-ui,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;min-height:100%}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--call);outline-offset:2px}
+
+header{display:flex;align-items:center;gap:16px;padding:14px 24px}
+.mark{display:flex;align-items:center;gap:10px;font-weight:650;font-size:17px;letter-spacing:-.01em}
+.mark i{width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 50% 45%,var(--canvas) 0 42%,transparent 44%),conic-gradient(from 200deg,var(--call),oklch(0.72 0.12 210),var(--call))}
+.tagline{color:var(--ink-2);font-size:14px}
+.tagline b{color:var(--ink);font-weight:550}
+.spacer{flex:1}
+.toggle{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--r-ctl);border:0;background:transparent;color:var(--ink-2);cursor:pointer;min-height:40px}
+.toggle:hover{background:var(--sunk)}
+.toggle svg{width:18px;height:18px}
+.primary{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 18px;border-radius:var(--r-ctl);border:0;cursor:pointer;
+  background:var(--call);color:var(--call-ink);font-weight:600;transition:transform 150ms ease-out, opacity 150ms ease-out}
+.primary:active{transform:scale(.96)}
+.primary[disabled]{opacity:.5;cursor:not-allowed}
+.primary svg{width:18px;height:18px}
+
+main{flex:1;display:grid;grid-template-columns:minmax(360px,420px) minmax(0,1fr) 300px;gap:24px;padding:4px 24px 24px;min-height:0}
+
+/* the call */
+.call{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--lift);display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.callhead{display:grid;grid-template-columns:52px 1fr;gap:4px 14px;align-items:center;padding:20px 20px 16px;border-bottom:1px solid var(--line)}
+.avatar{grid-row:span 2;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);color:var(--ink-2);font-weight:600;font-size:17px}
+.biz{font-size:19px;font-weight:650;letter-spacing:-.01em;line-height:1.2}
+.callstate{display:flex;gap:8px;align-items:center;color:var(--ink-2);font-size:14px}
+.callstate .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
+.call[data-phase="live"] .callstate .dot{background:var(--done)}
+.call[data-phase="needs"] .callstate .dot{background:var(--needs)}
+.timer{font-variant-numeric:tabular-nums;color:var(--ink-3)}
+.transcript{flex:1;overflow-y:auto;padding:18px 16px 12px;display:flex;flex-direction:column;gap:8px;scroll-behavior:smooth}
+.bubble{max-width:84%;padding:9px 13px;border-radius:18px;font-size:14.5px;line-height:1.4;text-wrap:pretty}
+.bubble.business{align-self:flex-start;background:var(--sunk);border-bottom-left-radius:6px}
+.bubble.agent{align-self:flex-end;background:var(--call);color:var(--call-ink);border-bottom-right-radius:6px}
+.who{font-size:11.5px;color:var(--ink-3);margin:6px 6px -4px;font-weight:500}
+.who.agent{align-self:flex-end}.who.business{align-self:flex-start}
+.tag{align-self:flex-end;font-size:11.5px;color:var(--done);font-weight:600;margin:-2px 6px 4px}
+.note{align-self:center;max-width:90%;margin:6px 0;padding:6px 12px;border-radius:999px;background:var(--needs-soft);color:var(--needs-ink);font-size:13px;font-weight:500;text-align:center}
+.sys{align-self:center;color:var(--ink-3);font-size:12.5px;margin:4px 0}
+.empty{margin:auto;max-width:300px;text-align:center;color:var(--ink-2);display:flex;flex-direction:column;gap:10px;align-items:center}
+.empty strong{color:var(--ink);font-size:16px;font-weight:600}
+.empty kbd{font:inherit;color:var(--ink);font-weight:550}
+.outcome{margin:0 12px 12px;padding:14px 16px;border-radius:14px;display:none;gap:4px;flex-direction:column}
+.outcome.show{display:flex}
+.outcome.ok{background:var(--done-soft)}
+.outcome.not{background:var(--warn-soft)}
+.outcome .label{font-size:12px;font-weight:650;letter-spacing:.06em;text-transform:uppercase}
+.outcome.ok .label{color:var(--done)}
+.outcome.not .label{color:var(--warn-ink)}
+.outcome p{font-size:15px;font-weight:550;text-wrap:pretty}
+
+/* the room */
+.room{display:flex;flex-direction:column;gap:20px;min-height:0}
+.device{display:flex;flex-direction:column;gap:8px;min-width:0}
+.devlabel{font-size:12.5px;color:var(--ink-3)}
+.devlabel b{color:var(--ink-2);font-weight:550}
+.show8{background:var(--device);padding:14px;border-radius:22px;box-shadow:var(--lift);aspect-ratio:16/10.6;width:100%}
+.show8 iframe,.tv iframe{width:100%;height:100%;border:0;display:block;border-radius:10px;background:var(--screen)}
+.tvrow{display:grid;grid-template-columns:minmax(0,420px) 1fr;gap:20px;align-items:end}
+.tv{position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:
+  linear-gradient(180deg,oklch(0.30 0.02 250),oklch(0.22 0.02 260));box-shadow:var(--lift);border:6px solid var(--device)}
+.tv .film{position:absolute;left:5%;top:7%;color:oklch(1 0 0 / .38);font-size:12px;letter-spacing:.04em}
+.tv .corner{position:absolute;right:4%;bottom:7%;width:52%;aspect-ratio:2/1;border-radius:8px;overflow:hidden;box-shadow:0 8px 24px oklch(0 0 0 / .45);
+  opacity:0;transform:translateY(8px);transition:opacity 250ms var(--ease),transform 250ms var(--ease)}
+.tv[data-on="true"] .corner{opacity:1;transform:none}
+.legend{color:var(--ink-3);font-size:12.5px;line-height:1.5;padding-bottom:4px}
+
+/* you */
+.you{display:flex;flex-direction:column;gap:18px;min-height:0}
+.dotwrap{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--lift);padding:22px 18px 18px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.speaker{position:relative;width:150px;height:128px}
+.pool{position:absolute;left:0;right:0;bottom:0;height:26px;border-radius:50%;background:oklch(0 0 0 / .10);filter:blur(4px);transition:background-color 300ms var(--ease)}
+.sphere{position:absolute;left:21px;top:0;width:108px;height:108px;border-radius:50%;overflow:hidden;
+  background:radial-gradient(circle at 36% 28%,oklch(0.46 0.006 255),oklch(0.26 0.006 255) 58%,oklch(0.17 0.006 255))}
+.lightbar{position:absolute;left:21px;width:108px;bottom:13px;height:30px;border-radius:0 0 54px 54px / 0 0 30px 30px;
+  background:linear-gradient(180deg,transparent 0 55%,oklch(0.52 0.01 255) 55% 72%,transparent 72%);transition:filter 300ms var(--ease)}
+.speaker[data-ring="working"] .lightbar{background:linear-gradient(180deg,transparent 0 55%,oklch(0.74 0.13 225) 55% 72%,transparent 72%);filter:drop-shadow(0 0 6px oklch(0.74 0.13 225));animation:breathe 2.4s ease-in-out infinite}
+.speaker[data-ring="needs"] .lightbar{background:linear-gradient(180deg,transparent 0 55%,var(--needs) 55% 72%,transparent 72%);filter:drop-shadow(0 0 8px var(--needs));animation:breathe 1.2s ease-in-out infinite}
+.speaker[data-ring="done"] .lightbar{background:linear-gradient(180deg,transparent 0 55%,var(--done) 55% 72%,transparent 72%);filter:drop-shadow(0 0 6px var(--done))}
+.speaker[data-ring="working"] .pool{background:oklch(0.74 0.13 225 / .35)}
+.speaker[data-ring="needs"] .pool{background:oklch(0.80 0.16 82 / .55)}
+.speaker[data-ring="done"] .pool{background:oklch(0.62 0.15 152 / .35)}
+@keyframes breathe{50%{opacity:.55}}
+.ringstate{font-size:13px;font-weight:600;color:var(--ink-2)}
+.speaker[data-ring="needs"] + .ringstate{color:var(--needs-ink)}
+.caption{align-self:stretch;min-height:64px;background:var(--sunk);border-radius:14px;padding:10px 12px;font-size:13.5px;line-height:1.4;color:var(--ink-2);text-wrap:pretty}
+.caption b{display:block;font-size:11.5px;font-weight:600;color:var(--ink-3);margin-bottom:2px}
+.caption.live{background:var(--needs-soft);color:var(--needs-ink)}
+.caption.live b{color:var(--needs-ink)}
+.controls{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--lift);padding:16px;display:flex;flex-direction:column;gap:12px}
+.controls h2{font-size:13px;font-weight:600;color:var(--ink-2)}
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ctl{min-height:44px;padding:0 12px;border-radius:var(--r-ctl);border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:550;font-size:14px;
+  transition:background-color 120ms ease-out,transform 150ms ease-out}
+.ctl:active{transform:scale(.96)}
+@media (hover:hover){.ctl:hover:not([disabled]){background:var(--sunk)}}
+.ctl[disabled]{opacity:.45;cursor:not-allowed}
+.ctl.approve:not([disabled]){border-color:var(--done);color:var(--done)}
+.ctl.wide{grid-column:span 2}
+.offer{display:none;gap:8px}
+.offer.show{display:flex}
+.offer label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.offer input{flex:1;min-width:0;min-height:44px;border-radius:var(--r-ctl);border:1px solid var(--line);background:var(--sunk);color:var(--ink);padding:0 12px;font:inherit;font-size:16px;font-variant-numeric:tabular-nums}
+.mic{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:999px;border:0;background:var(--sunk);cursor:pointer;font-weight:600;color:var(--ink)}
+.mic svg{width:18px;height:18px}
+.mic[aria-pressed="true"]{background:var(--call);color:var(--call-ink)}
+.mic[disabled]{opacity:.45;cursor:not-allowed}
+.hint{font-size:12px;color:var(--ink-3);text-align:center}
+
+@media (max-width:1180px){
+  main{grid-template-columns:minmax(0,1fr) 300px}
+  .room{grid-column:1 / -1;order:3}
+}
+@media (max-width:760px){
+  header{flex-wrap:wrap}
+  .tagline{order:3;flex-basis:100%}
+  main{grid-template-columns:1fr;padding:4px 16px 16px}
+  .call{min-height:70vh}
+  .tvrow{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important;scroll-behavior:auto !important}
+}
 </style>
 </head>
 <body>
 <header>
-  <span class="brand">AMBIENT</span>
-  <span class="sub">Alexa+ simulator — a real MCP client on <code>/mcp</code></span>
-  <nav class="devices" id="devices"></nav>
+  <div class="mark"><i aria-hidden="true"></i>Ambient</div>
+  <p class="tagline"><b>Alexa, handle the call.</b> Zero-key demo: the business is simulated, every action is a real MCP tool call.</p>
+  <div class="spacer"></div>
+  <button class="toggle" id="sound" aria-pressed="true" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path id="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+    <span id="soundLabel">Alexa voice on</span>
+  </button>
+  <button class="primary" id="start" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>
+    <span id="startLabel">Start demo call</span>
+  </button>
 </header>
+
 <main>
-  <section class="voice">
-    <div class="orbwrap"><div class="ring" id="ring"></div><div class="orb" id="orb"></div></div>
-    <div class="state" id="state">Watching your agents</div>
-    <div class="transcript" id="transcript"><div class="msg event">Your agents work in the background. I'll tell you when they need you.</div></div>
+  <section class="call" id="call" data-phase="idle" aria-label="The call">
+    <div class="callhead">
+      <div class="avatar" id="avatar" aria-hidden="true">JP</div>
+      <div class="biz" id="biz">Joe's Plumbing</div>
+      <div class="callstate"><span class="dot" aria-hidden="true"></span><span id="callstate">Not called yet</span><span class="timer" id="timer"></span></div>
+    </div>
+    <div class="transcript" id="transcript" aria-live="polite">
+      <div class="empty" id="empty">
+        <strong>Nobody wants to make this call.</strong>
+        <span>Ambient will phone Joe's Plumbing to book a sink repair, stay under your $150 limit, and ask you before it agrees to anything more.</span>
+        <span>Press <kbd>Start demo call</kbd>, or say <kbd>“Alexa, tell Ambient to call Joe's Plumbing.”</kbd></span>
+      </div>
+    </div>
+    <div class="outcome" id="outcome" role="status"><span class="label" id="outcomeLabel"></span><p id="outcomeText"></p></div>
   </section>
-  <section class="devicepanel">
-    <div class="devlabel" id="devlabel"></div>
-    <div class="screen" id="screen">
-      <iframe id="view" title="MCP App view"></iframe>
-      <div class="empty" id="empty">No display output yet.<br>Ask something that needs a visual.</div>
+
+  <section class="room" aria-label="The room">
+    <div class="device">
+      <div class="show8"><iframe id="show8" title="Echo Show 8 screen" data-device="display" data-w="1280" data-h="800"></iframe></div>
+      <span class="devlabel"><b>Echo Show 8</b> · kitchen. The same MCP App card Alexa+ renders, at its real aspect ratio.</span>
+    </div>
+    <div class="tvrow">
+      <div class="device">
+        <div class="tv" id="tv" data-on="false"><div class="film">Movie night</div><div class="corner"><iframe id="tvcard" title="Fire TV corner card" data-device="tv" data-w="640" data-h="360"></iframe></div></div>
+        <span class="devlabel"><b>Fire TV</b> · living room. A corner card appears only when the call needs you.</span>
+      </div>
+      <p class="legend">Light on the speaker: <b>blue</b> while Ambient is on the phone, <b>yellow</b> when the call needs you, <b>green</b> when the business confirmed.</p>
+    </div>
+  </section>
+
+  <section class="you" aria-label="You">
+    <div class="dotwrap">
+      <div class="speaker" id="speaker" data-ring="idle" aria-hidden="true"><div class="pool"></div><div class="sphere"></div><div class="lightbar"></div></div>
+      <span class="ringstate" id="ringstate">Echo Dot · idle</span>
+      <div class="caption" id="caption" aria-live="assertive"><b>Alexa</b><span id="captionText">Nothing to say yet.</span></div>
+    </div>
+    <div class="controls">
+      <h2>Answer from the kitchen</h2>
+      <div class="quick">
+        <button class="ctl approve" id="approve" type="button" disabled>Approve</button>
+        <button class="ctl" id="deny" type="button" disabled>Deny</button>
+        <button class="ctl" id="offerBtn" type="button" disabled aria-expanded="false" aria-controls="offer">Offer…</button>
+        <button class="ctl" id="statusBtn" type="button" disabled>How's it going?</button>
+        <button class="ctl wide" id="hangup" type="button" disabled>Hang up</button>
+      </div>
+      <form class="offer" id="offer">
+        <label for="amount">Offer amount in dollars</label>
+        <input id="amount" inputmode="numeric" autocomplete="off" value="160" pattern="[0-9]*">
+        <button class="ctl" type="submit">Tell them</button>
+      </form>
+      <button class="mic" id="mic" type="button" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg>
+        <span id="micLabel">Hold to talk to Alexa</span>
+      </button>
+      <p class="hint" id="micHint">Try “approve”, “offer one sixty”, or “how's the call going?”</p>
     </div>
   </section>
 </main>
-<div class="elicit" id="elicit">
-  <p id="elicitMsg"></p>
-  <div class="row">
-    <button class="approve" data-d="approve_once">Approve once</button>
-    <button class="deny" data-d="deny">Deny</button>
-    <button data-d="decline">Later</button>
-  </div>
-</div>
+
 <script>
-const DEVICES = {
-  "voice-only":  { cls:"voice",   label:"Voice only" },
-  "mobile":      { cls:"mobile",  label:"Mobile",      w:393,  h:852  },
-  "echo-show-8": { cls:"display", label:"Echo Show 8", w:960,  h:480  },
-  "echo-show-15":{ cls:"display", label:"Echo Show 15",w:1280, h:800  },
-  "fire-tv":     { cls:"tv",      label:"Fire TV",     w:1920, h:1080 }
-};
-const state = { device:"echo-show-8", elicit:null, viewResource:null, listening:false };
 const $ = id => document.getElementById(id);
+const DEMO_TASK = "Call Joe's Plumbing and book a visit tomorrow to fix the kitchen sink, keep it under 150";
+const TERMINAL = new Set(["completed", "failed", "cancelled", "unknown"]);
+const state = { card: null, elicitId: null, sound: true, tick: null, lastCue: "" };
 
-// device switcher
-const nav = $("devices");
-for (const id of Object.keys(DEVICES)) {
-  const b = document.createElement("button");
-  b.textContent = DEVICES[id].label; b.dataset.d = id;
-  b.onclick = () => setDevice(id);
-  nav.appendChild(b);
-}
-function setDevice(id){
-  state.device = id;
-  nav.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.d === id));
-  const d = DEVICES[id], screen = $("screen"), view = $("view");
-  $("devlabel").textContent = d.label + (d.w ? ` — ${d.w}×${d.h}` : "");
-  if (d.w) { screen.style.width = "min("+d.w+"px,90%)"; screen.style.height = "";
-    const ratio = d.h/d.w; screen.style.height = Math.min(innerHeight*.72, screen.getBoundingClientRect().width*ratio)+"px";
-    view.style.display=""; }
-  else { screen.style.width="0"; screen.style.height="0"; screen.style.border="0"; }
-  const win = view.contentWindow;
-  if (win && state.viewResource) win.postMessage({ jsonrpc:"2.0",
-    method:"ui/notifications/host-context-changed", params:{ hostContext: hostContext() } }, "*");
-}
-setDevice(state.device);
-addEventListener("resize", () => setDevice(state.device));
-
-// transcript + speech
-const synth = window.speechSynthesis;
-function say(text){
-  if (!synth || !text) return;
-  synth.cancel();
-  const u = new SpeechSynthesisUtterance(text); u.rate = 1.02;
-  u.onstart = () => $("orb").classList.add("speaking");
-  u.onend = () => $("orb").classList.remove("speaking");
-  synth.speak(u);
-}
-function addMsg(text, cls){
-  const div = document.createElement("div");
-  div.className = "msg " + cls; div.textContent = text;
-  $("transcript").appendChild(div);
-  div.scrollIntoView({behavior:"smooth",block:"end"});
-  return div;
+async function tool(name, args = {}) {
+  const r = await fetch("/sim/api/tool", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, arguments: args }) });
+  return r.ok ? r.json() : { speech: "Sorry, that didn't go through.", isError: true };
 }
 
-// MCP Apps host: load a ui:// resource into the device frame and answer its protocol calls
-function loadView(uri, html, structured){
-  state.viewResource = uri;
-  if (structured) state.lastStructured = structured;
-  $("empty").style.display = "none";
-  $("view").dataset.payload = JSON.stringify(state.lastStructured ?? {});
-  $("view").srcdoc = html;
+function speak(text) {
+  if (!text) return;
+  $("captionText").textContent = text;
+  if (!state.sound || !window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1.04;
+  speechSynthesis.speak(u);
 }
-$("view").addEventListener("load", () => {
-  const win = $("view").contentWindow;
-  if (win && state.lastStructured) win.postMessage({ jsonrpc:"2.0",
-    method:"ui/notifications/tool-result", params:{ structuredContent: state.lastStructured } }, "*");
-});
-function hostContext(){
-  const d = DEVICES[state.device], screen = $("screen").getBoundingClientRect();
-  return {
-    deviceClass: d.cls,
-    device: state.device,
-    theme: "dark",
-    displayDimensions: d.w ? { width: d.w, height: d.h } : { width: Math.round(screen.width), height: Math.round(screen.height) },
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-  };
+
+$("sound").onclick = () => {
+  state.sound = !state.sound;
+  $("sound").setAttribute("aria-pressed", String(state.sound));
+  $("soundLabel").textContent = state.sound ? "Alexa voice on" : "Alexa voice off";
+  $("wave").style.display = state.sound ? "" : "none";
+  if (!state.sound && window.speechSynthesis) speechSynthesis.cancel();
+};
+
+function task() { return state.card?.task ?? null; }
+function approval() { return state.card?.approvals?.[0] ?? null; }
+function live() { const t = task(); return !!t && !TERMINAL.has(t.status); }
+function businessOf(steps) {
+  for (const s of steps) { const m = /^(?:Calling|Connected to) (.+)$/.exec(s); if (m) return m[1]; }
+  return "Joe's Plumbing";
 }
-addEventListener("message", async e => {
-  const m = e.data;
-  if (!m || m.jsonrpc !== "2.0" || e.source !== $("view").contentWindow) return;
-  const reply = (result) => e.source.postMessage({ jsonrpc:"2.0", id:m.id, result }, "*");
-  if (m.id !== undefined && m.method === "ui/initialize") {
-    reply({ protocolVersion:"2025-11-25", hostInfo:{ name:"Ambient Sim", version:"0.1.0" }, hostContext: hostContext() });
-    const payload = $("view").dataset.payload;
-    if (payload) e.source.postMessage({ jsonrpc:"2.0", method:"ui/notifications/tool-result", params:{ structuredContent: JSON.parse(payload) } }, "*");
-    return;
-  }
-  if (m.id !== undefined && m.method === "tools/call") {
-    try {
-      const r = await fetch("/sim/api/tool", {method:"POST",headers:{"content-type":"application/json"},
-        body:JSON.stringify({ name:m.params?.name, arguments:m.params?.arguments ?? {} })}).then(r => r.json());
-      reply({ content:[{type:"text",text:r.speech ?? ""}], structuredContent: r.structuredContent ?? {}, isError: r.isError === true });
-      if (r.speech) { addMsg(r.speech, "agent"); say(r.speech); }
-      if (r.ui && r.ui.html) loadView(r.ui.resourceUri, r.ui.html, r.structuredContent);
-    } catch (err) {
-      e.source.postMessage({ jsonrpc:"2.0", id:m.id, error:{ code:-32000, message:String(err?.message||err) } }, "*");
+function initials(name) { return name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join(""); }
+function clock(ms) { const s = Math.max(0, Math.floor(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
+
+function renderTranscript(steps, biz) {
+  const box = $("transcript");
+  const nodes = [];
+  let lastWho = "";
+  for (const line of steps) {
+    const m = /^([^:]{1,40}): (.+)$/.exec(line);
+    if (!m) {
+      if (/^Calling /.test(line)) nodes.push(`<div class="sys">Dialing ${esc(line.slice(8))}…</div>`);
+      else if (/^Connected to /.test(line)) nodes.push(`<div class="sys">${esc(line)}</div>`);
+      continue;
     }
+    const [, who, text] = m;
+    const role = who === "Ambient" ? "agent" : who === biz ? "business" : "owner";
+    if (role === "owner") {
+      const decided = /^\S+ (approved|declined): /.exec(text);
+      nodes.push(`<div class="note">${decided ? `${esc(who)} ${decided[1]} it from the kitchen` : `${esc(who)}, from the kitchen: “${esc(text)}”`}</div>`);
+      lastWho = "";
+      continue;
+    }
+    if (who !== lastWho) nodes.push(`<div class="who ${role}">${role === "agent" ? "Ambient (AI)" : esc(who)}</div>`);
+    nodes.push(`<div class="bubble ${role}">${esc(text)}</div>`);
+    if (role === "agent" && /^Hi, this is an AI assistant/.test(text)) nodes.push(`<div class="tag">✓ AI disclosure, first words on the call</div>`);
+    lastWho = who;
+  }
+  const html = nodes.join("");
+  if (box.dataset.html !== html) {
+    box.dataset.html = html;
+    box.innerHTML = html || $("emptyTpl").innerHTML;
+  }
+  requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
+}
+
+function render() {
+  const t = task(), ap = approval(), steps = t?.steps ?? [], biz = businessOf(steps), o = t?.outcome;
+  const connected = steps.some(s => s.startsWith("Connected to"));
+  const phase = !t ? "idle" : ap ? "needs" : TERMINAL.has(t.status) ? "ended" : "live";
+  $("call").dataset.phase = phase;
+  $("biz").textContent = biz;
+  $("avatar").textContent = initials(biz);
+  $("callstate").textContent = !t ? "Not called yet"
+    : phase === "needs" ? "On hold while you decide"
+    : phase === "ended" ? (t.status === "cancelled" ? "You hung up" : "Call ended")
+    : connected ? "On the phone" : "Ringing…";
+  if (t) renderTranscript(steps, biz);
+
+  const out = $("outcome");
+  if (o) {
+    const ok = o.kind === "confirmed";
+    out.className = "outcome show " + (ok ? "ok" : "not");
+    $("outcomeLabel").textContent = ok ? `Confirmed by ${biz}` : o.kind === "unconfirmed" ? "Not confirmed" : o.kind === "declined" ? "They declined" : "No deal";
+    $("outcomeText").textContent = ok ? o.summary : `${o.reason.charAt(0).toUpperCase()}${o.reason.slice(1)}. Nothing was booked.`;
+  } else if (t?.status === "cancelled") {
+    out.className = "outcome show not"; $("outcomeLabel").textContent = "Stopped"; $("outcomeText").textContent = "You ended the call. Nothing was booked.";
+  } else out.className = "outcome";
+
+  const ring = !t ? "idle" : ap ? "needs" : o?.kind === "confirmed" ? "done" : live() ? "working" : "idle";
+  $("speaker").dataset.ring = ring;
+  $("ringstate").textContent = { idle: "Echo Dot · idle", working: "Echo Dot · Ambient is on the phone", needs: "Echo Dot · the call needs you", done: "Echo Dot · booked" }[ring];
+  $("tv").dataset.on = String(!!ap);
+  $("caption").classList.toggle("live", !!ap);
+
+  const active = live();
+  $("start").disabled = active;
+  $("startLabel").textContent = active ? "Call in progress" : t ? "Start another call" : "Start demo call";
+  $("approve").disabled = !ap; $("deny").disabled = !ap;
+  $("offerBtn").disabled = !active; $("statusBtn").disabled = !t; $("hangup").disabled = !active;
+  if (!active) toggleOffer(false);
+
+  clearInterval(state.tick);
+  const tickTimer = () => {
+    if (!t || !connected) { $("timer").textContent = ""; return; }
+    const end = TERMINAL.has(t.status) ? Date.parse(t.updatedAt) : Date.now();
+    $("timer").textContent = clock(end - Date.parse(t.createdAt));
+  };
+  tickTimer();
+  if (active) state.tick = setInterval(tickTimer, 1000);
+
+  if (ap) {
+    const cue = `${ap.description ?? ap.command} Say approve, or offer a number.`;
+    if (cue !== state.lastCue) { state.lastCue = cue; speak(cue); }
+  }
+  pushCards();
+}
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+async function decide(decision) {
+  if (state.elicitId) {
+    const id = state.elicitId; state.elicitId = null;
+    await fetch("/sim/api/elicit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, decision: decision === "deny" ? "deny" : "approve_once" }) });
+    speak(decision === "deny" ? "Okay, I'll tell them no." : "Okay, I'll book it.");
+  } else {
+    const r = await tool("approve", { decision });
+    speak(r.speech);
+  }
+}
+$("approve").onclick = () => decide("once");
+$("deny").onclick = () => decide("deny");
+$("statusBtn").onclick = async () => speak((await tool("status")).speech);
+$("hangup").onclick = async () => speak((await tool("stop")).speech);
+$("start").onclick = () => {
+  state.card = null; state.lastCue = "";
+  $("transcript").dataset.html = "";
+  speak("Calling Joe's Plumbing now. I'll tell you if they need you.");
+  tool("delegate", { task: DEMO_TASK, newConversation: true }).then(r => { if (!state.card) speak(r.speech); });
+};
+function toggleOffer(open) {
+  $("offer").classList.toggle("show", open);
+  $("offerBtn").setAttribute("aria-expanded", String(open));
+  if (open) $("amount").select();
+}
+$("offerBtn").onclick = () => toggleOffer(!$("offer").classList.contains("show"));
+$("offer").onsubmit = async e => {
+  e.preventDefault();
+  const amount = $("amount").value.replace(/[^\d]/g, "");
+  if (!amount) return;
+  toggleOffer(false);
+  await steer(`offer ${amount}`);
+};
+async function steer(text) {
+  await tool("delegate", { task: text });
+  speak("Told them.");
+}
+
+async function heard(text) {
+  const t = text.toLowerCase().trim();
+  $("captionText").textContent = `You: “${text}”`;
+  if (/^(yes|approve|ok|okay|book it|go ahead)\b/.test(t) && approval()) return decide("once");
+  if (/^(no|deny|don't)\b/.test(t) && approval()) return decide("deny");
+  if (/hang up|end the call|stop/.test(t)) return speak((await tool("stop")).speech);
+  if (/how('s| is)|what('s| is) (happening|up)|status|what did they say/.test(t)) return speak((await tool("status")).speech);
+  if (live()) return steer(text.replace(/^(tell (him|her|them)|say)\s+/i, ""));
+  speak("Calling now. I'll tell you if they need you.");
+  tool("delegate", { task: text.replace(/^(alexa,?\s*)?(tell|ask) ambient (to )?/i, ""), newConversation: true });
+}
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!Recognition) {
+  $("mic").disabled = true;
+  $("micLabel").textContent = "Voice needs Chrome or Edge";
+} else {
+  const rec = new Recognition();
+  rec.lang = "en-US"; rec.interimResults = false;
+  rec.onresult = e => heard(e.results[0][0].transcript);
+  rec.onend = () => { $("mic").setAttribute("aria-pressed", "false"); $("micLabel").textContent = "Hold to talk to Alexa"; };
+  const start = () => { try { rec.start(); $("mic").setAttribute("aria-pressed", "true"); $("micLabel").textContent = "Listening…"; } catch {} };
+  const stop = () => { try { rec.stop(); } catch {} };
+  $("mic").addEventListener("pointerdown", start);
+  $("mic").addEventListener("pointerup", stop);
+  $("mic").addEventListener("pointerleave", stop);
+  $("mic").addEventListener("keydown", e => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); start(); } });
+  $("mic").addEventListener("keyup", e => { if (e.key === " " || e.key === "Enter") stop(); });
+}
+
+const frames = [$("show8"), $("tvcard")];
+function hostContext(frame) {
+  return { deviceClass: frame.dataset.device, theme: "dark", displayDimensions: { width: Number(frame.dataset.w), height: Number(frame.dataset.h) }, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
+}
+function pushCards() {
+  if (!state.card) return;
+  for (const f of frames) f.contentWindow?.postMessage({ jsonrpc: "2.0", method: "ui/notifications/tool-result", params: { structuredContent: state.card } }, "*");
+}
+addEventListener("message", e => {
+  const frame = frames.find(f => f.contentWindow === e.source);
+  const m = e.data;
+  if (!frame || !m || m.jsonrpc !== "2.0" || m.id === undefined) return;
+  if (m.method === "ui/initialize") {
+    e.source.postMessage({ jsonrpc: "2.0", id: m.id, result: { protocolVersion: "2025-11-25", hostInfo: { name: "Ambient sim", version: "0.2.0" }, hostContext: hostContext(frame) } }, "*");
+    if (state.card) e.source.postMessage({ jsonrpc: "2.0", method: "ui/notifications/tool-result", params: { structuredContent: state.card } }, "*");
     return;
   }
-  if (m.id !== undefined) reply({}); // any other ui/* request → empty ack
+  e.source.postMessage({ jsonrpc: "2.0", id: m.id, result: {} }, "*");
+});
+fetch("/sim/api/resource?uri=" + encodeURIComponent("ui://ambient/task")).then(r => r.ok ? r.json() : null).then(r => {
+  if (r?.html) for (const f of frames) f.srcdoc = r.html;
 });
 
-// live events: run ticks + needs-you ring + elicitation card
 const events = new EventSource("/sim/api/events");
 events.onmessage = e => {
   const ev = JSON.parse(e.data);
-  if (ev.type === "run" && ev.run) {
-    addMsg(`${ev.run.assistant ? ev.run.assistant + " — " : ""}"${ev.run.title}" → ${ev.run.status.replace("_"," ")}`, "event");
-    if (ev.view) {
-      state.lastStructured = ev.view;
-      if (state.viewResource === "ui://ambient/task") pushStructured(ev.view);
-    }
-    if (!state.viewResource) openTaskView();
-  }
-  if (ev.type === "attention") $("ring").classList.toggle("attention", ev.pending > 0);
-  if (ev.type === "elicit") showElicit(ev);
+  if (ev.type === "run" && ev.view) { state.card = ev.view; render(); }
+  if (ev.type === "elicit") state.elicitId = ev.id;
 };
-function pushStructured(structured){
-  const v = $("view").contentWindow;
-  if (v) v.postMessage({ jsonrpc:"2.0", method:"ui/notifications/tool-result",
-    params:{ structuredContent: structured ?? {} } }, "*");
-}
-// A run started — show the task view right away instead of waiting for the turn to end.
-async function openTaskView(){
-  try {
-    const r = await fetch("/sim/api/resource?uri=" + encodeURIComponent("ui://ambient/task")).then(r => r.ok ? r.json() : undefined);
-    if (r && r.html) loadView(r.resourceUri, r.html, state.lastStructured);
-  } catch {}
-}
-function showElicit(ev){
-  state.elicit = ev.id;
-  $("elicitMsg").textContent = ev.message;
-  $("elicit").classList.add("show");
-  $("ring").classList.add("attention");
-  $("state").textContent = "Your approval is needed";
-  say(ev.message);
-}
-document.querySelectorAll("#elicit button").forEach(b => b.onclick = async () => {
-  if (!state.elicit) return;
-  await fetch("/sim/api/elicit", {method:"POST",headers:{"content-type":"application/json"},
-    body:JSON.stringify({ id: state.elicit, decision: b.dataset.d })});
-  state.elicit = null;
-  $("elicit").classList.remove("show");
-});
+render();
 </script>
+<template id="emptyTpl"><div class="empty"><strong>Dialing…</strong></div></template>
 </body>
 </html>

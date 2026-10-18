@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Screenshot the /sim Alexa+ simulator across device classes and flows.
+"""Screenshot the /sim page through a full simulated call.
 
-Usage: python3 scripts/shots-sim.py [base_url]
-Requires a running demo server (pnpm demo) and playwright + chromium installed.
+Usage: python scripts/shots-sim.py [base_url]
+Needs a fresh `pnpm demo` server, and playwright with chromium installed.
 """
 import asyncio
 import sys
@@ -14,58 +14,58 @@ BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:3000"
 OUT = Path(__file__).resolve().parent.parent / "docs" / "media"
 
 
-async def say(page, text):
-    await page.fill("#utter", text)
-    await page.click("#send")
+async def phase(page, value, timeout=30000):
+    await page.wait_for_selector(f'#call[data-phase="{value}"]', timeout=timeout)
 
 
-async def wait_agent_reply(page, timeout=45000):
-    """Wait for a new agent bubble. Works for fast acks and slow turns alike."""
-    before = await page.locator(".msg.agent").count()
-    await page.wait_for_function(
-        f"document.querySelectorAll('.msg.agent').length > {before}", timeout=timeout
-    )
-    return await page.locator(".msg.agent").last.inner_text()
+async def shot(page, name):
+    await asyncio.sleep(0.6)
+    await page.screenshot(path=OUT / f"sim-{name}.png")
+    print("saved", name)
 
 
 async def main():
     OUT.mkdir(parents=True, exist_ok=True)
     async with async_playwright() as p:
         browser = await p.chromium.launch()
-        page = await browser.new_page(viewport={"width": 1500, "height": 900})
-        page.on("pageerror", lambda e: print("pageerror:", str(e)[:200]))
-        await page.goto(f"{BASE}/sim")
-        await page.wait_for_selector(".orb")
-        await asyncio.sleep(0.5)
-        await page.screenshot(path=OUT / "sim-echo-show-8.png")
-
-        # delegate a booking → run goes to waiting_approval → elicit card + ring
-        await say(page, "Book a table at Lupa for 4 on Saturday at 7pm")
-        await page.wait_for_selector("#elicit.show", timeout=30000)
-        await asyncio.sleep(0.5)
-        await page.screenshot(path=OUT / "sim-needs-you.png")
-
-        # approve it — the elicitation resolves through the real MCP path
-        await page.click("#elicit .approve")
-        reply = await wait_agent_reply(page)
-        print("approved →", reply[:100])
-        await asyncio.sleep(1.2)  # let the task view re-render to completed
-        await page.screenshot(path=OUT / "sim-approved.png")
-
-        # briefing
-        await say(page, "What's happening?")
-        reply = await wait_agent_reply(page)
-        print("briefing →", reply[:100])
-        await asyncio.sleep(1.0)
-
-        # device classes
-        for device in ["mobile", "echo-show-15", "fire-tv", "voice-only"]:
-            await page.click(f"#devices button[data-d='{device}']")
-            await asyncio.sleep(0.7)
-            await page.screenshot(path=OUT / f"sim-{device}.png")
-
+        for scheme in ("light", "dark"):
+            page = await browser.new_page(viewport={"width": 1440, "height": 900}, color_scheme=scheme)
+            page.on("pageerror", lambda e: print("pageerror:", str(e)[:200]))
+            await page.goto(f"{BASE}/sim")
+            await page.click("#sound")
+            if scheme == "dark":
+                await page.click("#start")
+                await phase(page, "needs")
+                await shot(page, "needs-you-dark")
+                await page.click("#hangup")
+                await phase(page, "ended")
+                await page.close()
+                continue
+            await shot(page, "idle")
+            await page.click("#start")
+            await page.wait_for_function("document.getElementById('callstate').textContent.startsWith('Ringing')", timeout=10000)
+            await page.screenshot(path=OUT / "sim-ringing.png")
+            print("saved ringing")
+            await page.wait_for_selector(".bubble.business", timeout=15000)
+            await shot(page, "talking")
+            await phase(page, "needs")
+            await shot(page, "needs-you")
+            await page.click("#offerBtn")
+            await page.fill("#amount", "160")
+            await page.click("#offer button[type=submit]")
+            await page.wait_for_selector(".note", timeout=10000)
+            await shot(page, "steered")
+            await page.wait_for_selector(".outcome.ok", timeout=30000)
+            await shot(page, "confirmed")
+            await page.click("#start")
+            await phase(page, "needs")
+            await page.click("#hangup")
+            await page.wait_for_selector(".outcome.not", timeout=15000)
+            await shot(page, "unconfirmed")
+            await page.set_viewport_size({"width": 390, "height": 844})
+            await shot(page, "mobile")
+            await page.close()
         await browser.close()
-        print("saved", len(list(OUT.glob("sim-*.png"))), "screenshots to", OUT)
 
 
 asyncio.run(main())

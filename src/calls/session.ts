@@ -43,8 +43,9 @@ export function startCall(brief: CallBrief, callId: string): Transition {
 
 export function step(state: CallState, input: CallInput, now: string): Transition {
   const next = transition(state, input, now);
-  const added = next.state.turns.slice(state.turns.length);
-  return { state: next.state, effects: [...next.effects, ...added.map(turn => status(transcriptLine(state.brief, turn), turn.speaker))] };
+  const transcript = next.state.turns.slice(state.turns.length).map(turn => status(transcriptLine(state.brief, turn), turn.speaker));
+  const isCompletion = (effect: CallEffect) => effect.kind === "emit" && effect.event.type === "message.complete";
+  return { state: next.state, effects: [...next.effects.filter(effect => !isCompletion(effect)), ...transcript, ...next.effects.filter(isCompletion)] };
 }
 
 function transition(state: CallState, input: CallInput, now: string): Transition {
@@ -148,7 +149,7 @@ function confirm(state: CallState, outcome: Extract<CallOutcome, { kind: "confir
       `Okay. ${owner} won't go ahead at that price, so we'll leave it there. Thanks for your time, goodbye.`);
   }
   if (charge !== undefined && charge > limit && !state.approvedUsd.includes(charge)) {
-    const question = `${brief.business.name} wants ${dollarsInWords(charge)}, over your ${dollarsInWords(limit)} limit. Agree to it?`;
+    const question = `${brief.business.name} wants ${dollarsInWords(charge)}, over your limit of ${dollarsInWords(limit)}. Should I agree?`;
     return askOwner(state, question, charge, now);
   }
   const flushed = flushDraft(state, now);

@@ -5,6 +5,12 @@
     "kind": "cloud",
     "adapter": "caller",
     "default": true,
-    "options": { "line": "simulated", "brain": "scripted", "business": "Joe's Plumbing", "phone": "+14155550134" }
+    "options": {
+      "line": "simulated",
+      "brain": "scripted",
+      "business": "Joe's Plumbing",
+      "phone": "+14155550134",
+      "speedMs": "1100"
+    }
   }
 ]

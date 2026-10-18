@@ -102,9 +102,29 @@ function approvalSummary(approval: Approval, label: string): Record<string, unkn
     id: approval.id,
     command: approval.command,
     ...(approval.description ? { description: approval.description } : {}),
+    ...(approval.amountUsd !== undefined ? { amountUsd: approval.amountUsd } : {}),
+    ...(approval.kind ? { kind: approval.kind } : {}),
     choices: approval.choices,
     agent: label,
     createdAt: approval.createdAt
+  };
+}
+
+export function taskCard(view: RunView, label: string): Record<string, unknown> {
+  return {
+    task: {
+      id: view.id,
+      title: view.title,
+      status: view.status,
+      steps: view.steps,
+      ...(view.progress ? { progress: view.progress } : {}),
+      ...(view.answer ? { answer: view.answer } : {}),
+      ...(view.failure ? { failure: view.failure } : {}),
+      ...(view.outcome ? { outcome: view.outcome } : {}),
+      createdAt: view.createdAt,
+      updatedAt: view.updatedAt
+    },
+    ...(view.approval ? { approvals: [approvalSummary(view.approval, label)] } : {})
   };
 }
 
@@ -116,15 +136,7 @@ export function runResult(view: RunView, ctx: SpeakContext, text = speak(view, c
       speech: text,
       status: view.status,
       assistant: ctx.label,
-      task: {
-        title: view.title,
-        status: view.status,
-        steps: view.steps,
-        ...(view.progress ? { progress: view.progress } : {}),
-        ...(view.answer ? { answer: view.answer } : {}),
-        ...(view.failure ? { failure: view.failure } : {})
-      },
-      ...(view.approval ? { approvals: [approvalSummary(view.approval, ctx.label)] } : {}),
+      ...taskCard(view, ctx.label),
       ids: {
         run: view.id,
         conversation: view.conversationId,
