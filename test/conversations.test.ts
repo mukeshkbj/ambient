@@ -251,4 +251,134 @@ describe("ConversationEngine", () => {
     expect(engine.getWork(run.id)).toMatchObject({ status: "completed", answer: "Recovered" });
     store.close();
   });
+
+  it("stores an approval's amount and kind on the run view", async () => {
+    const agent = fakeAgent();
+    const store = new AmbientStore();
+    const engine = new ConversationEngine(agent.client, store, {
+      runtime: { id: "local", label: "My Agent", kind: "local", state: "unknown", updatedAt: "2026-09-06T10:00:00.000Z" },
+      now: () => "2026-09-06T10:00:00.000Z",
+      id: (() => { let n = 0; return () => `id-${++n}`; })()
+    });
+    const run = await engine.ask("Call the plumber", undefined, true);
+    agent.emit({
+      type: "approval.request",
+      sessionId: "runtime-1",
+      payload: {
+        requestId: "req-9",
+        command: "agree to the quote",
+        description: "The plumber wants more than the limit",
+        choices: ["once", "deny"],
+        amountUsd: 180,
+        kind: "spend"
+      }
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    expect(engine.getWork(run.id)).toMatchObject({
+      status: "waiting_approval",
+      approval: { requestId: "req-9", amountUsd: 180, kind: "spend" }
+    });
+    store.close();
+  });
+
+  it("keeps a second open approval on the run when the first response settles late", async () => {
+    const agent = fakeAgent();
+    let ack: ((value: { resolved: number }) => void) | undefined;
+    agent.client.respondToApproval = vi.fn().mockImplementation(
+      () => new Promise<{ resolved: number }>(resolve => { ack = resolve; })
+    );
+    const store = new AmbientStore();
+    const engine = new ConversationEngine(agent.client, store, {
+      runtime: { id: "local", label: "My Agent", kind: "local", state: "unknown", updatedAt: "2026-09-06T10:00:00.000Z" },
+      now: () => "2026-09-06T10:00:00.000Z",
+      id: (() => { let n = 0; return () => `id-${++n}`; })()
+    });
+    const run = await engine.ask("Call the plumber", undefined, true);
+    agent.emit({
+      type: "approval.request",
+      sessionId: "runtime-1",
+      payload: { requestId: "req-a", command: "agree to the first quote", choices: ["once", "deny"] }
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    const pending = engine.respondToApproval("local:req-a", "once");
+    agent.emit({
+      type: "approval.request",
+      sessionId: "runtime-1",
+      payload: { requestId: "req-b", command: "agree to the second quote", choices: ["once", "deny"] }
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    ack!({ resolved: 1 });
+    await pending;
+    const view = engine.getWork(run.id);
+    expect(view.status).toBe("waiting_approval");
+    expect(view.approval?.requestId).toBe("req-b");
+    store.close();
+  });
+
+  it("stores the call outcome on a completed run", async () => {
+    const agent = fakeAgent();
+    const store = new AmbientStore();
+    const engine = new ConversationEngine(agent.client, store, {
+      runtime: { id: "local", label: "My Agent", kind: "local", state: "unknown", updatedAt: "2026-09-06T10:00:00.000Z" },
+      now: () => "2026-09-06T10:00:00.000Z",
+      id: (() => { let n = 0; return () => `id-${++n}`; })()
+    });
+    const run = await engine.ask("Call the plumber", undefined, true);
+    agent.emit({
+      type: "message.complete",
+      sessionId: "runtime-1",
+      payload: { text: "The line went quiet", status: "complete", outcome: { kind: "unconfirmed", reason: "line ended" } }
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    const view = engine.getWork(run.id);
+    expect(view.status).toBe("completed");
+    expect(view.outcome?.kind).toBe("unconfirmed");
+    store.close();
+  });
+
+  it("keeps a cancel_requested run cancel_requested when an approval arrives", async () => {
+    const agent = fakeAgent();
+    agent.client.interrupt = vi.fn().mockResolvedValue({ state: "acknowledged" });
+    const store = new AmbientStore();
+    const engine = new ConversationEngine(agent.client, store, {
+      runtime: { id: "local", label: "My Agent", kind: "local", state: "unknown", updatedAt: "2026-09-06T10:00:00.000Z" },
+      now: () => "2026-09-06T10:00:00.000Z",
+      id: (() => { let n = 0; return () => `id-${++n}`; })()
+    });
+    const run = await engine.ask("Call the plumber", undefined, true);
+    await engine.cancel(run.id);
+    expect(engine.getWork(run.id).status).toBe("cancel_requested");
+    agent.emit({
+      type: "approval.request",
+      sessionId: "runtime-1",
+      payload: { requestId: "req-late", command: "one more thing", choices: ["once", "deny"] }
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    expect(engine.getWork(run.id).status).toBe("cancel_requested");
+    store.close();
+  });
+
+  it("steering a waiting run resolves its approval and returns it to running", async () => {
+    const agent = fakeAgent();
+    const store = new AmbientStore();
+    const engine = new ConversationEngine(agent.client, store, {
+      runtime: { id: "local", label: "My Agent", kind: "local", state: "unknown", updatedAt: "2026-09-06T10:00:00.000Z" },
+      now: () => "2026-09-06T10:00:00.000Z",
+      id: (() => { let n = 0; return () => `id-${++n}`; })()
+    });
+    const run = await engine.ask("Call the plumber", undefined, true);
+    agent.emit({
+      type: "approval.request",
+      sessionId: "runtime-1",
+      payload: { requestId: "req-5", command: "agree to the quote", choices: ["once", "deny"] }
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    expect(engine.getWork(run.id).status).toBe("waiting_approval");
+    const view = await engine.steer(run.id, "Offer one sixty");
+    expect(agent.client.steer).toHaveBeenCalledWith("runtime-1", "Offer one sixty");
+    expect(view.status).toBe("running");
+    expect(view.approval).toBeUndefined();
+    expect(store.approvalById("local:req-5")?.resolvedAt).toBeDefined();
+    store.close();
+  });
 });

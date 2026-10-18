@@ -11,7 +11,7 @@ export type ApprovalPayload = {
   kind?: ApprovalKind;
 };
 
-type ApprovalKind = "spend" | "dial" | "other";
+export type ApprovalKind = "spend" | "dial" | "other";
 
 type Event<T extends string, P> = { type: T; sessionId?: string; payload: P; seq?: number };
 

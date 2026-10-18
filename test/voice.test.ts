@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { runResult, speak, titleFor } from "../src/voice.js";
+import { approvalAsk, runResult, speak, titleFor } from "../src/voice.js";
 import type { RunView } from "../src/types.js";
 
 // UUIDs, runtime-namespaced ids ("planner:ap-91f2"), and opaque request ids.
@@ -94,6 +94,36 @@ describe("speak", () => {
       expect(text).not.toContain("ap-91f2");
       expect(text).not.toContain("live-4412");
     }
+  });
+
+  it("speaks an unconfirmed call outcome without assuming the booking", () => {
+    const text = speak(view({ status: "completed", outcome: { kind: "unconfirmed", reason: "line ended" } }), ctx);
+    expect(text).toBe("The call ended before they confirmed, so I won't assume it's booked.");
+    expect(text).not.toMatch(ID_LIKE);
+    expect(text).not.toMatch(/\b\d+\b/);
+  });
+
+  it("leads the approval ask with the stake in words", () => {
+    const text = approvalAsk(view({
+      status: "waiting_approval",
+      approval: {
+        id: "planner:ap-91f2",
+        runId: "61d7aa1b-3a8a-4f9e-9a5d-2f0d8a3cc04f",
+        runtimeId: "planner",
+        durableSessionId: "sess-9812",
+        liveSessionId: "live-4412",
+        requestId: "ap-91f2",
+        command: "agree to the quote",
+        description: "The plumber wants a deposit over the limit",
+        choices: ["once", "deny"],
+        amountUsd: 180,
+        kind: "spend",
+        createdAt: "2026-10-11T10:00:00.000Z"
+      }
+    }), ctx);
+    expect(text).toContain("one hundred eighty dollars");
+    expect(text).not.toMatch(ID_LIKE);
+    expect(text).not.toMatch(/\b\d+\b/);
   });
 
   it("keeps ids out of spoken text while structured content stays complete", () => {

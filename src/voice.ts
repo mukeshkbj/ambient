@@ -1,4 +1,5 @@
 import type { Approval, RuntimeState, RunView } from "./types.js";
+import { dollarsInWords } from "./words.js";
 
 // Words that open an instruction but don't identify it.
 const FILLER = new Set(["please", "can", "could", "you", "hey", "ok", "okay", "just", "um"]);
@@ -40,6 +41,9 @@ export type SpeakContext = {
 /** The approval ask on its own — used as the elicitation message. */
 export function approvalAsk(view: RunView, ctx: SpeakContext): string {
   const request = view.approval?.description ?? view.approval?.command;
+  if (request && view.approval?.amountUsd !== undefined) {
+    return `${ctx.label} needs your OK: ${stripEnd(request)}. That's ${dollarsInWords(view.approval.amountUsd)}.`;
+  }
   return request
     ? `${ctx.label} is asking: ${stripEnd(request)}.`
     : `${ctx.label} needs your approval to continue "${view.title}".`;
@@ -53,8 +57,13 @@ export function speak(view: RunView, ctx: SpeakContext): string {
   const label = ctx.label;
   const title = `"${view.title}"`;
   switch (view.status) {
-    case "completed":
+    case "completed": {
+      const outcome = view.outcome;
+      if (outcome?.kind === "confirmed") return clampSentences(outcome.summary);
+      if (outcome?.kind === "unconfirmed") return "The call ended before they confirmed, so I won't assume it's booked.";
+      if (outcome) return clampSentences(`${stripEnd(outcome.reason)}.`);
       return clampSentences(view.answer ?? `${label} finished ${title}.`);
+    }
     case "failed": {
       const reason = stripEnd(clampSentences(view.failure ?? view.answer ?? "It hit an error.", 1));
       return `${label} couldn't finish ${title}: ${reason}.`;

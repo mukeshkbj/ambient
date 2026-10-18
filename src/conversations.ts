@@ -280,7 +280,8 @@ export class ConversationEngine {
     if (!text) throw new Error(`A steering instruction for ${this.label()} is required`);
     if (!this.assistant.steer) throw new Error(`${this.label()} does not support steering work`);
     await this.assistant.steer(run.liveSessionId, text);
-    if (run.status === "queued" || run.status === "accepted") {
+    if (run.status === "waiting_approval") this.store.resolveApprovalsForRun(run.id, this.now());
+    if (run.status === "queued" || run.status === "accepted" || run.status === "waiting_approval") {
       this.updateRun(run.id, { status: "running", updatedAt: this.now() });
     }
     return this.store.view(run.id)!;
@@ -319,8 +320,8 @@ export class ConversationEngine {
       this.store.resolveApprovalForRuntime(this.options.runtime.id, approval.requestId, this.now());
       this.emitChanged(run.id);
       // The assistant may already have finished the run while we awaited its ack;
-      // only move a still-waiting run back to running.
-      if (this.store.run(run.id)?.status === "waiting_approval") {
+      // only move a still-waiting run back to running when no other approval is open.
+      if (this.store.run(run.id)?.status === "waiting_approval" && !this.store.openApprovalForRun(run.id)) {
         this.updateRun(run.id, { status: "running", updatedAt: this.now() });
       }
       return this.store.view(run.id)!;
@@ -352,26 +353,39 @@ export class ConversationEngine {
         requestId,
         command: value(event.payload.command) ?? `${this.label()} requested approval`,
         ...(value(event.payload.description) ? { description: value(event.payload.description)! } : {}),
+        ...(typeof event.payload.amountUsd === "number" ? { amountUsd: event.payload.amountUsd } : {}),
+        ...(event.payload.kind ? { kind: event.payload.kind } : {}),
         choices: Array.isArray(event.payload.choices)
           ? event.payload.choices.filter((choice): choice is string => typeof choice === "string")
           : ["once", "deny"],
         createdAt: timestamp
       };
       this.store.createOrUpdateApproval(approval);
-      this.updateRun(run.id, { status: "waiting_approval", progress: approval.description ?? approval.command, updatedAt: timestamp });
+      this.updateRun(run.id, {
+        ...(run.status !== "cancel_requested" ? { status: "waiting_approval" as const } : {}),
+        progress: approval.description ?? approval.command,
+        updatedAt: timestamp
+      });
       return;
     }
     if (event.type === "message.complete") {
       const status = value(event.payload.status);
       const answer = eventText(event) ?? `${this.label()} completed the request`;
+      const outcome = event.payload.outcome;
       if (run.status === "cancel_requested") {
-        this.updateRun(run.id, { status: "cancelled", answer, updatedAt: timestamp });
+        this.updateRun(run.id, { status: "cancelled", answer, ...(outcome ? { outcome } : {}), updatedAt: timestamp });
       } else if (status === "error" || value(event.payload.error)) {
-        this.updateRun(run.id, { status: "failed", answer, failure: value(event.payload.error) ?? answer, updatedAt: timestamp });
+        this.updateRun(run.id, {
+          status: "failed",
+          answer,
+          failure: value(event.payload.error) ?? answer,
+          ...(outcome ? { outcome } : {}),
+          updatedAt: timestamp
+        });
       } else if (status === "cancelled" || status === "canceled") {
-        this.updateRun(run.id, { status: "cancelled", answer, updatedAt: timestamp });
+        this.updateRun(run.id, { status: "cancelled", answer, ...(outcome ? { outcome } : {}), updatedAt: timestamp });
       } else {
-        this.updateRun(run.id, { status: "completed", answer, updatedAt: timestamp });
+        this.updateRun(run.id, { status: "completed", answer, ...(outcome ? { outcome } : {}), updatedAt: timestamp });
       }
       this.store.resolveApprovalsForRun(run.id, timestamp);
       return;

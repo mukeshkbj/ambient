@@ -1,6 +1,8 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import type { CallOutcome } from "./calls/types.js";
+import type { ApprovalKind } from "./runtimes/types.js";
 import type { Approval, Conversation, Run, RunStatus, Runtime, RuntimeId, RuntimeState, RunView } from "./types.js";
 
 type Row = Record<string, unknown>;
@@ -42,7 +44,17 @@ function stepsList(value: unknown): string[] {
   }
 }
 
+function outcomeValue(value: unknown): CallOutcome | undefined {
+  if (typeof value !== "string" || !value) return undefined;
+  try {
+    return JSON.parse(value) as CallOutcome;
+  } catch {
+    return undefined;
+  }
+}
+
 function run(row: Row): Run {
+  const outcome = outcomeValue(row.outcome_json);
   return {
     id: text(row.id),
     conversationId: text(row.conversation_id),
@@ -56,6 +68,7 @@ function run(row: Row): Run {
     ...(optionalText(row.answer) ? { answer: text(row.answer) } : {}),
     ...(optionalText(row.progress) ? { progress: text(row.progress) } : {}),
     ...(optionalText(row.failure) ? { failure: text(row.failure) } : {}),
+    ...(outcome ? { outcome } : {}),
     createdAt: text(row.created_at),
     updatedAt: text(row.updated_at)
   };
@@ -72,6 +85,8 @@ function approval(row: Row): Approval {
     requestId: text(row.request_id),
     command: text(row.command),
     ...(optionalText(row.description) ? { description: text(row.description) } : {}),
+    ...(typeof row.amount_usd === "number" ? { amountUsd: row.amount_usd } : {}),
+    ...(optionalText(row.kind) ? { kind: text(row.kind) as ApprovalKind } : {}),
     choices: Array.isArray(choices) ? choices.filter((value): value is string => typeof value === "string") : [],
     createdAt: text(row.created_at),
     ...(optionalText(row.resolved_at) ? { resolvedAt: text(row.resolved_at) } : {})
@@ -135,6 +150,7 @@ export class AmbientStore {
         answer TEXT,
         progress TEXT,
         failure TEXT,
+        outcome_json TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
@@ -148,6 +164,8 @@ export class AmbientStore {
         command TEXT NOT NULL,
         description TEXT,
         choices_json TEXT NOT NULL,
+        amount_usd REAL,
+        kind TEXT,
         created_at TEXT NOT NULL,
         resolved_at TEXT,
         UNIQUE(runtime_id, request_id)
@@ -190,6 +208,7 @@ export class AmbientStore {
     );
     if (!columns.has("title")) this.db.exec("ALTER TABLE runs ADD COLUMN title TEXT");
     if (!columns.has("steps_json")) this.db.exec("ALTER TABLE runs ADD COLUMN steps_json TEXT");
+    if (!columns.has("outcome_json")) this.db.exec("ALTER TABLE runs ADD COLUMN outcome_json TEXT");
   }
 
   // approvals.request_id used to carry a global UNIQUE constraint, which breaks
@@ -201,29 +220,42 @@ export class AmbientStore {
       const columns = this.db.prepare("SELECT name FROM pragma_index_info(?)").all(text(index.name)) as Row[];
       return columns.length === 1 && text(columns[0]!.name) === "request_id";
     });
-    if (!stale) return;
-    this.db.exec(`
-      BEGIN;
-      CREATE TABLE approvals_next (
-        id TEXT PRIMARY KEY,
-        run_id TEXT NOT NULL,
-        runtime_id TEXT NOT NULL,
-        durable_session_id TEXT NOT NULL,
-        live_session_id TEXT NOT NULL,
-        request_id TEXT NOT NULL,
-        command TEXT NOT NULL,
-        description TEXT,
-        choices_json TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        resolved_at TEXT,
-        UNIQUE(runtime_id, request_id)
-      );
-      INSERT INTO approvals_next SELECT * FROM approvals;
-      DROP TABLE approvals;
-      ALTER TABLE approvals_next RENAME TO approvals;
-      CREATE INDEX approvals_open_idx ON approvals(runtime_id, resolved_at);
-      COMMIT;
-    `);
+    if (stale) {
+      this.db.exec(`
+        BEGIN;
+        CREATE TABLE approvals_next (
+          id TEXT PRIMARY KEY,
+          run_id TEXT NOT NULL,
+          runtime_id TEXT NOT NULL,
+          durable_session_id TEXT NOT NULL,
+          live_session_id TEXT NOT NULL,
+          request_id TEXT NOT NULL,
+          command TEXT NOT NULL,
+          description TEXT,
+          choices_json TEXT NOT NULL,
+          amount_usd REAL,
+          kind TEXT,
+          created_at TEXT NOT NULL,
+          resolved_at TEXT,
+          UNIQUE(runtime_id, request_id)
+        );
+        INSERT INTO approvals_next
+          (id, run_id, runtime_id, durable_session_id, live_session_id, request_id, command,
+           description, choices_json, created_at, resolved_at)
+        SELECT id, run_id, runtime_id, durable_session_id, live_session_id, request_id, command,
+          description, choices_json, created_at, resolved_at
+        FROM approvals;
+        DROP TABLE approvals;
+        ALTER TABLE approvals_next RENAME TO approvals;
+        CREATE INDEX approvals_open_idx ON approvals(runtime_id, resolved_at);
+        COMMIT;
+      `);
+    }
+    const columns = new Set(
+      (this.db.prepare("SELECT name FROM pragma_table_info('approvals')").all() as Row[]).map(column => text(column.name))
+    );
+    if (!columns.has("amount_usd")) this.db.exec("ALTER TABLE approvals ADD COLUMN amount_usd REAL");
+    if (!columns.has("kind")) this.db.exec("ALTER TABLE approvals ADD COLUMN kind TEXT");
   }
 
   private purge(retentionDays: number): void {
@@ -326,8 +358,8 @@ export class AmbientStore {
     this.db.prepare(`
       INSERT INTO runs
         (id, conversation_id, runtime_id, durable_session_id, live_session_id, instruction, title, steps_json,
-         status, answer, progress, failure, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         status, answer, progress, failure, outcome_json, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       value.id,
       value.conversationId,
@@ -341,6 +373,7 @@ export class AmbientStore {
       value.answer ?? null,
       value.progress ?? null,
       value.failure ?? null,
+      value.outcome ? JSON.stringify(value.outcome) : null,
       value.createdAt,
       value.updatedAt
     );
@@ -380,7 +413,7 @@ export class AmbientStore {
     if (runtimeIds.length === 0) return [];
     const rows = this.db.prepare(`
       SELECT * FROM approvals WHERE resolved_at IS NULL
-        AND runtime_id IN (${this.placeholders(runtimeIds.length)}) ORDER BY created_at
+        AND runtime_id IN (${this.placeholders(runtimeIds.length)}) ORDER BY created_at, rowid
     `).all(...runtimeIds) as Row[];
     return rows.map(approval);
   }
@@ -390,7 +423,7 @@ export class AmbientStore {
     const runs = this.recentRuns(runtimeIds, limit, since);
     const pending = this.openApprovals(runtimeIds);
     const byRun = new Map<string, Approval>();
-    for (const item of pending) if (!byRun.has(item.runId)) byRun.set(item.runId, item);
+    for (const item of pending) byRun.set(item.runId, item);
     return runs.map(value => this.asView(value, byRun.get(value.id)));
   }
 
@@ -470,18 +503,21 @@ export class AmbientStore {
     answer?: string | null;
     progress?: string | null;
     failure?: string | null;
+    outcome?: CallOutcome | null;
     liveSessionId?: string;
     updatedAt: string;
   }): Run {
     const current = this.run(id);
     if (!current) throw new Error(`Run ${id} not found`);
     const progress = changes.progress === undefined ? current.progress : changes.progress ?? undefined;
+    const outcome = changes.outcome === undefined ? current.outcome : changes.outcome ?? undefined;
     // Keep a bounded step history so task views can show what the agent has done.
     const steps = progress && progress !== current.progress
       ? [...(current.steps ?? []), progress].slice(-30)
       : current.steps ?? [];
     this.db.prepare(`
-      UPDATE runs SET status = ?, answer = ?, progress = ?, failure = ?, live_session_id = ?, steps_json = ?, updated_at = ?
+      UPDATE runs SET status = ?, answer = ?, progress = ?, failure = ?, live_session_id = ?, steps_json = ?,
+        outcome_json = ?, updated_at = ?
       WHERE id = ?
     `).run(
       changes.status ?? current.status,
@@ -490,6 +526,7 @@ export class AmbientStore {
       changes.failure === undefined ? current.failure ?? null : changes.failure,
       changes.liveSessionId ?? current.liveSessionId,
       JSON.stringify(steps),
+      outcome ? JSON.stringify(outcome) : null,
       changes.updatedAt,
       id
     );
@@ -500,10 +537,11 @@ export class AmbientStore {
     this.db.prepare(`
       INSERT INTO approvals
         (id, run_id, runtime_id, durable_session_id, live_session_id, request_id, command,
-         description, choices_json, created_at, resolved_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         description, choices_json, amount_usd, kind, created_at, resolved_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(runtime_id, request_id) DO UPDATE SET command = excluded.command,
-        description = excluded.description, choices_json = excluded.choices_json, resolved_at = NULL
+        description = excluded.description, choices_json = excluded.choices_json,
+        amount_usd = excluded.amount_usd, kind = excluded.kind, resolved_at = NULL
     `).run(
       value.id,
       value.runId,
@@ -514,6 +552,8 @@ export class AmbientStore {
       value.command,
       value.description ?? null,
       JSON.stringify(value.choices),
+      value.amountUsd ?? null,
+      value.kind ?? null,
       value.createdAt,
       value.resolvedAt ?? null
     );
@@ -548,11 +588,17 @@ export class AmbientStore {
       .run(resolvedAt, runId);
   }
 
+  openApprovalForRun(runId: string): Approval | undefined {
+    const row = this.db.prepare(
+      "SELECT * FROM approvals WHERE run_id = ? AND resolved_at IS NULL ORDER BY created_at DESC, rowid DESC LIMIT 1"
+    ).get(runId) as Row | undefined;
+    return row ? approval(row) : undefined;
+  }
+
   view(runId: string): RunView | undefined {
     const value = this.run(runId);
     if (!value) return undefined;
-    const pending = this.listApprovals(value.runtimeId).find(item => item.runId === runId);
-    return this.asView(value, pending);
+    return this.asView(value, this.openApprovalForRun(runId));
   }
 
   appendTranscript(runtimeId: RuntimeId, durableSessionId: string, role: string, json: string): void {

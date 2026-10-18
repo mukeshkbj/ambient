@@ -1,3 +1,6 @@
+import type { CallOutcome } from "./calls/types.js";
+import type { ApprovalKind } from "./runtimes/types.js";
+
 export type RuntimeId = string;
 
 export type RuntimeState = "online" | "offline" | "unknown";
@@ -45,6 +48,7 @@ export type Run = {
   answer?: string;
   progress?: string;
   failure?: string;
+  outcome?: CallOutcome;
   createdAt: string;
   updatedAt: string;
 };
@@ -58,6 +62,8 @@ export type Approval = {
   requestId: string;
   command: string;
   description?: string;
+  amountUsd?: number;
+  kind?: ApprovalKind;
   choices: string[];
   createdAt: string;
   resolvedAt?: string;
