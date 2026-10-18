@@ -1,77 +1,48 @@
 # Contributing
 
-Ambient is a voice-first gateway for background AI agents: assistants work
-asynchronously, and Alexa (or the `/sim` simulator) tells you when they need
-attention — approvals, completions, disconnects.
+Ambient makes phone calls for a household. Alexa starts the call, asks the owner when the call needs a decision, and reports only what the business confirmed.
 
 ## Setup
 
-Requires **Node ≥ 22.13** and **pnpm 10**.
+Ambient needs Node 22.13 or later and pnpm 10.
 
 ```bash
 corepack enable          # or: npm i -g pnpm@10.33.0
 pnpm install
+pnpm demo                # http://127.0.0.1:3000/sim, /mcp, /healthz
 ```
 
-Run the zero-credential demo (deterministic, no AWS or API keys needed):
-
-```bash
-pnpm demo
-# → http://127.0.0.1:3000/sim   Alexa+ simulator (real MCP client)
-# → http://127.0.0.1:3000/mcp   Streamable HTTP MCP endpoint
-# → http://127.0.0.1:3000/healthz
-```
+The demo needs no keys. The business is simulated and the brain is scripted.
 
 ## Verification
 
 ```bash
-pnpm scan        # typecheck + eslint + knip + tests — the gate
-pnpm typecheck   # tsc --noEmit
-pnpm test        # vitest
-pnpm build       # tsc -p tsconfig.json → dist/
+pnpm scan        # typecheck, eslint, knip, vitest: the gate
+pnpm build
+pnpm smoke:mcp   # a full simulated call through /mcp (start pnpm demo first)
 ```
 
-Run `pnpm scan && pnpm build` before opening a change for review; both must be
-green. Tests live in `test/` and run in-process — no external services are
-required for the suite.
+Run `pnpm scan` and `pnpm build` before a change is reviewed. Both must pass. The tests run in-process and need no external service.
 
-## Architecture in one paragraph
+## Where things live
 
-`src/conversations.ts` (`ConversationEngine`) owns the run lifecycle:
-queued → accepted → running → waiting_approval → terminal, plus `unknown`
-when a runtime disconnects mid-run. Runtimes plug in through `AssistantClient`
-(`src/runtimes/types.ts`); each adapter maps its wire protocol onto the
-canonical `AssistantEvent` union inside its own file. `src/mcp.ts` exposes the
-voice-first tool surface (delegate, status, approve, stop, agents, briefing)
-over Streamable HTTP MCP; `src/alexa.ts` serves the Alexa skill endpoint;
-`src/sim.ts` + `web/sim/` are the browser simulator — a real MCP client on
-loopback, not a mock.
+| Path | Job |
+|---|---|
+| `src/calls/session.ts` | The pure call reducer, `step(state, input, now)`. All call logic and every honesty rule. |
+| `src/calls/rules.ts` | Disclosure text, digit redaction, amount parsing, dial limits. |
+| `src/calls/call.ts` | The shell that runs the reducer's effects against a line and a brain. |
+| `src/calls/brain.ts`, `prompt.ts` | Claude and scripted brains. |
+| `src/calls/line.ts`, `rooms.ts` | The simulated line and the AssemblyAI voice line. |
+| `src/runtimes/caller.ts` | A call as a run in the engine (`AssistantClient`). |
+| `src/conversations.ts` | The run lifecycle engine. |
+| `src/mcp.ts`, `src/alexa.ts`, `src/sim.ts` | MCP tools, the Alexa skill, and the simulator host. |
+| `src/voice.ts` | Every spoken sentence. |
 
-## Adding a runtime adapter
+## Rules
 
-See [`docs/adapters.md`](docs/adapters.md). In short: implement
-`AssistantClient` against `src/runtimes/types.ts`, keep every wire field
-inside your adapter, register it in `src/runtimes/registry.ts`, and add
-contract tests that drive it through a fake socket or a mocked sender — the
-`demo` adapter is the smallest working example.
-
-Only claim an adapter is verified when it has been exercised against the real
-service, and record the receipt in `docs/acceptance.md`. Adapters we cannot
-verify are removed, not shipped.
-
-## Voice rules
-
-Spoken output never contains internal ids — sessions, runs, approvals, or
-conversation ids. `test/voice.test.ts` enforces this with a golden corpus;
-if your change adds speech, run it through `src/voice.ts` and keep the corpus
-green.
-
-## Honesty rules
-
-- `unknown` is a legitimate run status. Do not turn a disconnected runtime's
-  fate into `failed` or `completed`.
-- `docs/acceptance.md` records only receipts actually produced on this repo.
-- `docs/friction-log.md` logs only friction actually reproduced.
-- Security middleware (origin allowlists, DNS-rebinding protection, Alexa
-  signature verification) is load-bearing — do not weaken it to make a test
-  pass.
+- A change to call behavior starts with a failing test in `test/call-session.test.ts`. The reducer stays pure: no clock, no network, no model.
+- Spoken output never contains an internal id. `test/voice.test.ts` checks this.
+- "Confirmed" means the business confirmed. A call that ends any other way is reported as unconfirmed.
+- `docs/friction-log.md` records only friction that was actually reproduced, dated the day it was written.
+- Do not weaken the security middleware (origin allowlists, DNS-rebinding protection, Alexa signature verification, the per-call secret on the voice endpoint) to make a test pass.
+- No code comments. Names and tests carry the meaning.

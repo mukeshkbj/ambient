@@ -24,7 +24,8 @@
     "latency": "tsx scripts/latency.ts",
     "infra:synth": "cdk synth",
     "infra:typecheck": "tsc -p infra/tsconfig.json --noEmit",
-    "brain:latency": "tsx scripts/brain-latency.ts"
+    "brain:latency": "tsx scripts/brain-latency.ts",
+    "call": "tsx --env-file=.env src/server.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

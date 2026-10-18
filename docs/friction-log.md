@@ -2,6 +2,8 @@
 
 Record an entry while a failure is reproducible. Do not invent entries for failures that have not occurred.
 
+Dates are the day the entry was committed. On 2026-10-18 six entries dated 2026-10-16 and 2026-10-19 were corrected to 2026-10-12, the date of the commit that added them (`9fc671a`).
+
 ## Entry template
 
 ### YYYY-MM-DD HH:MM — tool or SDK
@@ -16,7 +18,7 @@ Record an entry while a failure is reproducible. Do not invent entries for failu
 
 ---
 
-### 2026-10-16 — MCP TypeScript SDK (`@modelcontextprotocol/sdk` 1.30): `elicitInput` silently requires SSE responses
+### 2026-10-12 — MCP TypeScript SDK (`@modelcontextprotocol/sdk` 1.30): `elicitInput` silently requires SSE responses
 
 - **Task:** Send an approval elicitation to the client inside a `tools/call` (`server.server.elicitInput`) while the transport ran with `enableJsonResponse: true`.
 - **Steps:** Enable JSON responses; call the `delegate` tool with a client that advertises `capabilities.elicitation`; the server calls `elicitInput` mid-call.
@@ -26,7 +28,7 @@ Record an entry while a failure is reproducible. Do not invent entries for failu
 - **Workaround:** Run the transport with `enableJsonResponse: false`. Every response then arrives as SSE `data:` frames, which forced a rewrite of test and script response parsing.
 - **Suggestion:** `StreamableHTTPServerTransport` should throw when `elicitInput` (or any in-call server→client request) is attempted under `enableJsonResponse: true`, instead of queueing a request that can never be delivered.
 
-### 2026-10-16 — MCP TypeScript SDK: only one in-call elicitation per outstanding request
+### 2026-10-12 — MCP TypeScript SDK: only one in-call elicitation per outstanding request
 
 - **Task:** A second eliciting tool call (`status`) issued while a `delegate` call's `elicitInput` was still open.
 - **Steps:** Browser approves the open elicitation via `sim/api/elicit` → POST returns 200; the original `tools/call` never resolves.
@@ -36,7 +38,7 @@ Record an entry while a failure is reproducible. Do not invent entries for failu
 - **Workaround:** Never issue a second eliciting request while one is outstanding — `/sim` now pushes task-view refreshes on SSE run events instead of calling `status` for refresh.
 - **Suggestion:** Document the constraint on `elicitInput`, or have the SDK multiplex concurrent in-call requests by id so callers don't have to serialize eliciting tools by hand.
 
-### 2026-10-19 — MCP TypeScript SDK 1.30: transport security options deprecated mid-build
+### 2026-10-12 — MCP TypeScript SDK 1.30: transport security options deprecated mid-build
 
 - **Task:** Turn on DNS-rebinding protection and host/origin allowlists on `StreamableHTTPServerTransport`.
 - **Steps:** Follow the documented `allowedOrigins` / `allowedHosts` / `enableDnsRebindingProtection` constructor options.
@@ -46,7 +48,7 @@ Record an entry while a failure is reproducible. Do not invent entries for failu
 - **Workaround:** Enforced origin/host allowlists as explicit middleware in `src/server.ts` ahead of the transport — same checks, ours to own.
 - **Suggestion:** Name the replacement in the deprecation notice, or keep the options stable until the successor API ships.
 
-### 2026-10-19 — MCP Apps spec vs Alexa docs: where does `ui.resourceUri` live?
+### 2026-10-12 — MCP Apps spec vs Alexa docs: where does `ui.resourceUri` live?
 
 - **Task:** Attach an MCP App view to a tool result.
 - **Steps:** Compare the MCP Apps spec (resource URI on the tool *definition*) with the Alexa-side docs (`_meta.ui` on tool *results*), plus the deprecated flat `ui/resourceUri` key.
@@ -56,7 +58,7 @@ Record an entry while a failure is reproducible. Do not invent entries for failu
 - **Workaround:** Emit `_meta.ui.resourceUri` on tool results and register the `ui://ambient/task` resource; the bundled sim host renders it, which is the only verifiable contract available.
 - **Suggestion:** Publish the exact field path Alexa+ reads, with a minimal working tool result example.
 
-### 2026-10-19 — Alexa+ documentation: protocol version ambiguity
+### 2026-10-12 — Alexa+ documentation: protocol version ambiguity
 
 - **Task:** Decide which MCP `protocolVersion` to negotiate for the Alexa+ client lifecycle.
 - **Steps:** Read the Alexa+ client lifecycle documentation and the hackathon rules together.
@@ -66,7 +68,7 @@ Record an entry while a failure is reproducible. Do not invent entries for failu
 - **Workaround:** The server advertises `2025-11-25` (its real supported spec); MCP version negotiation tolerates a newer client.
 - **Suggestion:** Update the lifecycle doc to the hackathon-required version, or state that Alexa+ negotiates whatever the server advertises.
 
-### 2026-10-19 — Alexa+ documentation vs MCP authorization spec: `WWW-Authenticate`
+### 2026-10-12 — Alexa+ documentation vs MCP authorization spec: `WWW-Authenticate`
 
 - **Task:** Decide how an unauthorized client discovers OAuth endpoints on our MCP server.
 - **Steps:** Read the Alexa+ guidance on unsupported headers alongside the MCP authorization spec.
@@ -125,3 +127,43 @@ Record an entry while a failure is reproducible. Do not invent entries for failu
 - **Severity:** Critical
 - **Workaround:** Compare against `pathToFileURL(process.argv[1]).href`.
 - **Suggestion:** Node could ship `import.meta.main` (as Deno and Bun do) so scripts stop hand-rolling this check.
+
+### 2026-10-18 — AssemblyAI Voice Agent API: the bring-your-own-LLM request is undocumented
+
+- **Task:** Point an AssemblyAI voice agent at our own OpenAI-compatible `/chat/completions` endpoint, so our call reducer decides every word the agent says.
+- **Steps:** Read the "Connect your own LLM" page, the events reference, and the AsyncAPI spec for the Voice Agent API.
+- **Expected:** The request AssemblyAI sends to our endpoint: body shape (is the agent's system prompt included, how history is shaped), the auth header, `stream` flags, timeouts, and whether `tools` are forwarded.
+- **Actual:** None of these are documented. The page states only that AssemblyAI calls `POST {base_url}/chat/completions`, that streaming is required, and that `base_url` must be public HTTPS. The agent-create response field for the new id is also not shown. We had to write the endpoint defensively (read every `user` message, accept string or part-array content, read `agent_id` then `id`).
+- **Severity:** Important
+- **Workaround:** Treat the request as OpenAI-shaped, compare user-message counts to find new turns, and stream OpenAI chunks back. Plan to log one real request before the demo.
+- **Suggestion:** Publish one recorded request and response for the BYO-LLM call, including headers.
+
+### 2026-10-18 — AssemblyAI Voice Agent API: docs disagree on event fields, and the official Twilio example uses a retired endpoint
+
+- **Task:** Handle user transcripts and replies in the browser page that streams audio to the Voice Agent.
+- **Steps:** Compare `transcript.user.delta` and `reply.started` across the events reference and the message-sequence page; compare the endpoint in `AssemblyAI/voice-agent-api-twilio-example` with the docs.
+- **Expected:** One field name per event and one endpoint.
+- **Actual:** The events reference gives `transcript.user.delta` a `text` field; the message-sequence page shows `delta`. `reply.started`/`reply.done` carry ids on one page and none on the other. The example repo's README bridges to `wss://agents.assemblyai.com/v1/realtime`; every doc page uses `/v1/ws`.
+- **Severity:** Nice-to-have
+- **Workaround:** The page reads `event.text ?? event.delta` and uses `/v1/ws`.
+- **Suggestion:** Generate both doc pages and the example from the AsyncAPI spec.
+
+### 2026-10-18 — AssemblyAI Voice Agent API: a per-call greeting needs a stored agent per call
+
+- **Task:** Make the first sentence of every call an exact AI disclosure that names the household member ("calling for Maya").
+- **Steps:** `greeting` is spoken verbatim and skips the LLM, which is what we need. But bring-your-own-LLM is only available on a stored agent, and a session bound with `agent_id` cannot set any inline field, including `greeting`.
+- **Expected:** A per-session greeting override on a stored agent.
+- **Actual:** To vary the disclosure per call we create a stored agent per call (`POST /v1/agents`) before the business answers. That adds a REST round trip and leaves agents behind.
+- **Severity:** Nice-to-have
+- **Workaround:** One stored agent per call (`src/calls/rooms.ts`).
+- **Suggestion:** Allow `greeting` (and `system_prompt`) next to `agent_id` in the first `session.update`.
+
+### 2026-10-18 — TypeScript 5.9: `Array.prototype.findLast` needs `lib: ES2023` although Node 22 ships it
+
+- **Task:** Find the latest business turn in the call transcript with `turns.findLast(...)`.
+- **Steps:** `pnpm typecheck` with `"target": "ES2022"` and `"lib": ["ES2022", ...]` on Node 22.
+- **Expected:** The method Node 22 supports type-checks.
+- **Actual:** `TS2550: Property 'findLast' does not exist on type 'CallTurn[]'. Do you need to change your target library?` The first workaround (`[...turns].reverse().find(...)`) copies the array on every call.
+- **Severity:** Nice-to-have
+- **Workaround:** Set `"lib": ["ES2023", "DOM", "DOM.Iterable"]`; Node 22 is already the floor in `engines`.
+- **Suggestion:** A `@tsconfig/node22` base used by `tsc --init` when `engines.node` says 22.

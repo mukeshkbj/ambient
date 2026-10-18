@@ -1,101 +1,106 @@
 # Ambient
 
-**Your AI agents work in the background. Alexa tells you when they need you.**
+**Alexa, handle the call.**
 
-Ambient is an ambient supervisor for a fleet of personal agents: they run for
-minutes or hours — coding, booking, deploying — and when they hit a decision
-only you can make, Alexa (or the bundled simulator) speaks up. Approvals are
-elicited, disconnects are reported honestly as *unknown*, and no spoken reply
-ever contains an internal id.
+Alexa+ can book anything that has an API. Ambient calls everything that does not. You ask Alexa to call the plumber. An AI agent makes the call, says first that it is an AI, and talks to the business. If the price goes over your limit, Alexa asks you in the kitchen. You say "offer one sixty". The agent says it on the call. At the end, Alexa reports only what the business confirmed.
 
-![Delegate a task, get asked to approve, approve by voice](docs/media/sim-approval.gif)
-
-**Demo video:** [`docs/media/ambient-demo.mp4`](docs/media/ambient-demo.mp4) — 1:50, narrated, every beat captured live from the sim.
+![The call needs you: the Echo Show asks to approve $180 while the business is on hold](docs/media/sim-needs-you.png)
 
 | | |
 |---|---|
-| **Track** | Alexa+ — primary track |
-| **Compliance** | Self-hosted MCP server · MCP spec **2025-11-25** · Streamable HTTP |
-| **Entry point** | `src/server.ts` → `createMcpServer` in `src/mcp.ts` |
-| **Simulated Alexa+ host** | `/sim` — a real MCP client, not a mock |
-| **Also** | `/alexa` signature-verified skill endpoint · `ui://ambient/task` MCP App views |
-| **MCP Tasks** | `delegate_task` (experimental `taskSupport: "optional"`) — task-capable clients get a handle; `tasks/get` polls the run, `waiting_approval` maps to `input_required` |
+| **Track** | Alexa+ |
+| **Surfaces** | MCP server on `/mcp` (spec 2025-11-25, Streamable HTTP) · custom skill on `/alexa` · MCP App card `ui://ambient/task` · simulator on `/sim` |
+| **Brain** | Claude Opus 5.5 (`claude-opus-5-5`) through the Anthropic API, or a scripted brain for the zero-key demo |
+| **Voice line** | AssemblyAI Voice Agent API, with our own endpoint as its LLM |
+| **Entry point** | `src/server.ts` |
 
 ## Run it in 60 seconds
 
-Zero credentials, fully deterministic:
+The demo needs no keys and no accounts. The business is simulated. Every action is a real MCP tool call.
 
 ```sh
+corepack enable
 pnpm install
 pnpm demo
-# → open http://localhost:3000/sim
+# open http://127.0.0.1:3000/sim and tap "Call Joe's Plumbing"
 ```
 
-Call `delegate` on `/mcp` with *"Book Lupa for Saturday at 7"* — the task card
-on `/sim` fills with live steps, the approval card asks *"Approve once or
-deny?"*, and the agent finishes only after you answer. `pnpm smoke:mcp` runs a
-quick client against it.
+`pnpm smoke:mcp` drives the same call through `/mcp` from the command line. It fails unless the call ends confirmed at the price the owner offered:
 
-## Your own agents
+```text
+> delegate {"task":"Call Joe's Plumbing and book a visit to fix the kitchen sink, keep it under 150"}
+  Alexa: Joe's Plumbing can come Tuesday at ten for one hundred eighty dollars, over your limit of one hundred fifty dollars. Should I book it? Say approve, deny, or offer a different amount.
+> delegate {"task":"offer 160"}
+  Alexa: Okay, I'll tell Joe's Plumbing.
+> status
+  Alexa: Joe's Plumbing confirmed Tuesday at ten for one hundred sixty dollars.
+smoke: ok, the simulated call ended confirmed at the steered price
+```
 
-Copy `runtimes.example.json` → `runtimes.json` (or set `AMBIENT_RUNTIMES_FILE`)
-and wire your own endpoints through the `AssistantClient` interface — see
-[`docs/adapters.md`](docs/adapters.md) and [`docs/runtimes.md`](docs/runtimes.md).
+## How a call works
 
-## Architecture
+One pure function owns the call: `step(state, input, now)` in [`src/calls/session.ts`](src/calls/session.ts). It takes the current state and one input (the business spoke, the brain produced words, the owner decided, the line dropped) and returns the next state and a list of effects (say these words, think, hang up, tell the engine). It has no clock, no network, and no model inside it. Every honesty rule below is a table test against it.
 
-[![Ambient architecture](docs/media/architecture.png)](docs/media/ambient-architecture.html)
+A thin shell, [`src/calls/call.ts`](src/calls/call.ts), runs the effects. Two seams plug into it:
 
-*[Interactive version](docs/media/ambient-architecture.html) — every box is a
-real module in this repo.*
+- **The line** carries speech as text. [`simulatedLine`](src/calls/line.ts) plays Joe's Plumbing for the demo. [`CallRoom`](src/calls/rooms.ts) is the real voice line.
+- **The brain** decides what to say. [`claudeBrain`](src/calls/brain.ts) streams one turn from Claude with three strict tools: `ask_owner`, `end_call`, and `remember`. [`scriptedBrain`](src/calls/brain.ts) replays rules for the demo.
 
-## Honesty guarantees
+A call is a run in the existing engine ([`src/conversations.ts`](src/conversations.ts)), so the MCP tools, the Alexa skill, and the simulator all see the same state.
 
-| Run state | What Alexa says (`speak()` in `src/voice.ts`) |
+## Honesty rules
+
+Each rule is enforced in the reducer and covered by tests in [`test/call-session.test.ts`](test/call-session.test.ts).
+
+| Rule | What the code does |
 |---|---|
-| `queued` / `accepted` / `running` | "*Agent* is working on *task* — *latest step*. Say 'what's the status' any time." |
-| `waiting_approval` | "*Agent* is asking: *request*. Say approve to allow it once, or deny." |
-| `completed` | The agent's own answer, clamped to two sentences — never an id. |
-| `failed` | "*Agent* couldn't finish *task*: *reason*." |
-| `cancelled` | "*Agent* stopped *task*." |
-| `cancel_requested` | "Asking *agent* to stop *task*." |
-| `unknown` | "*Agent* lost the connection during *task*, so the outcome is unknown. It won't retry by itself — ask again when it's back." |
-| Runtime `offline` | "*Agent* is offline; *task* is marked *status* until it reconnects." |
+| 1. The first words are an AI disclosure | The line speaks "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else. |
+| 2. "Confirmed" means the business confirmed | Only the brain's `end_call` can confirm. The amount must appear in a business line that does not refuse, or the business must say yes right after the agent states it. Otherwise the agent asks once to confirm, then ends the call as unconfirmed. A dropped line is always unconfirmed. |
+| 3. A price above the limit needs the owner | The reducer turns an over-limit confirmation into a question for the owner. Only a clear offer ("offer 160", "one sixty") counts as approval. "Don't pay 180" does not. A declined price ends the call with no deal. |
+| 4. No card numbers | Runs of 12 or more digits, spoken or written, become "that number". The check holds digits back across stream chunks, so a number split over several chunks is still caught. |
+| 5. Dialing an unknown business needs approval | A business found by web search gets a "Call them?" approval. A number the user gives is dialed directly. |
+| 6. Call limits | At most 3 calls to one number and 20 calls in total per 24 hours, on real lines. |
 
-`unknown` is a first-class status: when a runtime drops mid-run Ambient says
-so instead of guessing, and `stop` refuses to touch work whose fate it can't
-see. Approval snapshots reconcile after every reconnect so nothing waits
-forever.
+Three adversarial reviews tried to break these rules. They found 19 ways. Each one is now a regression test.
+
+## The house
+
+- **Echo Dot.** The custom skill ([`src/alexa.ts`](src/alexa.ts), [`alexa/interaction-model.en-US.json`](alexa/interaction-model.en-US.json)) starts, steers, approves, and ends calls in one sentence each. When a call needs the owner, a Voice Monkey announcement speaks the question and Proactive Events adds a notification ([`src/cue.ts`](src/cue.ts)).
+- **Echo Show and Fire TV.** The MCP App card leads with the stake ("$180 · Joe's Plumbing"). On a screen it carries "Approve $180" and "Decline", which call the `approve` tool through the host.
+- **Memory.** Each call is stored in SQLite. The next call to the same business starts with what the last one learned ("Remembered from Oct 18 — confirmed, quoted one hundred sixty dollars").
+
+## Real calls
+
+There is no phone network in this version. AssemblyAI cannot dial out, and a paid Twilio account was out of budget. Instead, the business answers on a web link, which a phone browser opens like an incoming call:
+
+![The business's answer page: an incoming call from Ambient, labelled AI assistant](docs/media/call-business-ringing.png)
+
+For each call, [`src/calls/rooms.ts`](src/calls/rooms.ts) creates an AssemblyAI agent. The agent's greeting is the disclosure, spoken word for word. Its LLM is our own endpoint, `/call/<id>/v1/chat/completions`. That endpoint passes each business turn into the reducer and streams back exactly what the reducer says. The honesty rules therefore hold on the real voice line too. The page streams audio straight to AssemblyAI with a single-use token, so the API key stays on the server.
+
+```sh
+cp .env.example .env
+# in .env: ANTHROPIC_API_KEY, ASSEMBLYAI_API_KEY, an https PUBLIC_BASE_URL,
+# and AMBIENT_RUNTIMES_FILE=runtimes.call.json
+pnpm call
+```
 
 ## Verification
 
-![CI: pnpm scan green](https://img.shields.io/badge/CI-pnpm%20scan%20green-brightgreen) — `.github/workflows/ci.yml` runs typecheck, eslint, knip, and the test suite on push.
-
 ```sh
-pnpm scan            # typecheck + eslint + knip + 74 tests
+pnpm scan    # typecheck, eslint, knip, and 277 tests
 pnpm build
-pnpm check:runtime <id>   # live reachability verdict per runtime
+pnpm smoke:mcp            # a full simulated call through /mcp
+python scripts/shots-sim.py   # every call state, light and dark, into docs/media/
+pnpm brain:latency        # time to first word on Claude (needs ANTHROPIC_API_KEY)
 ```
-
-A golden speech corpus (`test/voice.test.ts`) regex-rejects ids in every
-spoken string; security middleware (origin/host allowlists, DNS-rebinding,
-session eviction, Alexa signature verification) is covered by
-`test/security.test.ts`. Honest receipts live in
-[`docs/acceptance.md`](docs/acceptance.md).
 
 ## Limits, stated plainly
 
-- **The demo adapter is scripted** — deterministic, no network, no
-  credentials. Real assistants plug in through `AssistantClient`.
-- **AWS deployment** is prepared (`pnpm infra:synth`, `docs/deployment.md`)
-  but the TLS deploy itself is pending account-owner approval.
-- **The `/sim` host** stands in for the gated Alexa+ toolkit — it is a real
-  MCP client over loopback, so everything it does is standards-verifiable.
+- The real voice line has not yet run against the live AssemblyAI API. The request AssemblyAI sends to our endpoint is undocumented, so the endpoint reads it defensively ([friction log](docs/friction-log.md)).
+- `pnpm brain:latency` has not run yet, so the time to the first word on a live call is not measured.
+- The Echo Dot flow needs the custom skill deployed to a public HTTPS host. The AWS stack is prepared (`pnpm infra:synth`) but not deployed.
+- The simulator stands in for the Alexa+ host. It is a real MCP client over loopback.
 
 ## Docs
 
-[CONTRIBUTING](CONTRIBUTING.md) · [adapters](docs/adapters.md) ·
-[acceptance](docs/acceptance.md) · [friction log](docs/friction-log.md) ·
-[product feedback](docs/product-feedback.md) ·
-[video script](docs/video-script.md) · [submission](docs/submission.md) ·
-[demo runbook](docs/demo-runbook.md)
+[Plan](docs/plans/2026-10-18-handle-the-call/overview.md) · [AssemblyAI reference](docs/plans/2026-10-18-handle-the-call/reference-assemblyai.md) · [Alexa reference](docs/plans/2026-10-18-handle-the-call/reference-alexa.md) · [friction log](docs/friction-log.md) · [product feedback](docs/product-feedback.md) · [CONTRIBUTING](CONTRIBUTING.md)
