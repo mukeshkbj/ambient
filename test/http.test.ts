@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { RuntimeRegistry } from "../src/runtimes/registry.js";
 import { createAmbientHttpServer, type AmbientHttpDependencies } from "../src/server.js";
+import type { SimHost } from "../src/sim.js";
 import { AmbientStore } from "../src/store.js";
 import { fakeAssistant, fakeRuntimeEntry } from "./fake.js";
 
@@ -134,5 +135,21 @@ describe("Ambient HTTP bridge", () => {
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-03-26", capabilities: {}, clientInfo: { name: "test", version: "0.1.0" } } })
     });
     expect(response.status).toBe(401);
+  });
+
+  it("requires the local token on /sim/api when one is configured", async () => {
+    const token = "a-local-token-that-is-long-enough";
+    const callTool = vi.fn().mockResolvedValue({ ok: true });
+    const http = build({ accessToken: token, sim: { callTool } as unknown as SimHost });
+    const port = await listen(http);
+    const call = (headers: Record<string, string>) => fetch(`http://127.0.0.1:${port}/sim/api/tool`, {
+      method: "POST",
+      headers: { "content-type": "application/json", ...headers },
+      body: JSON.stringify({ name: "status", arguments: {} })
+    });
+    expect((await call({})).status).toBe(401);
+    expect(callTool).not.toHaveBeenCalled();
+    expect((await call({ authorization: `Bearer ${token}` })).status).toBe(200);
+    expect(callTool).toHaveBeenCalledOnce();
   });
 });

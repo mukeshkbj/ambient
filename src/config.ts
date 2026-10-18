@@ -18,6 +18,7 @@ export type RuntimeConfigEntry = z.infer<typeof RuntimeEntrySchema>;
 
 const EnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
+  AMBIENT_HOST: z.string().min(1).default("0.0.0.0"),
   PUBLIC_BASE_URL: z.string().url().default("http://127.0.0.1:3000"),
   AMBIENT_ALLOWED_ORIGINS: z.string().optional(),
   AMBIENT_ALLOWED_HOSTS: z.string().optional(),
@@ -45,6 +46,7 @@ const EnvSchema = z.object({
 
 export type AppConfig = {
   port: number;
+  host: string;
   publicBaseUrl: string;
   allowedOrigins: string[];
   allowedHosts: string[];
@@ -124,6 +126,7 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     (value ?? "").split(",").map(item => item.trim()).filter(Boolean);
   return {
     port: parsed.PORT,
+    host: parsed.AMBIENT_HOST,
     publicBaseUrl: baseUrl,
     // DNS-rebinding allowlists: the public origin/host plus loopback for local
     // clients; extend with AMBIENT_ALLOWED_ORIGINS / AMBIENT_ALLOWED_HOSTS.

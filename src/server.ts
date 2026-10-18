@@ -288,6 +288,10 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
     }
     if (dependencies.sim && (url.pathname === "/sim" || url.pathname.startsWith("/sim/"))) {
       const sim = dependencies.sim;
+      if (url.pathname.startsWith("/sim/api/") && !(await authorize(dependencies, request, undefined))) {
+        writeJson(response, 401, { error: "unauthorized" });
+        return;
+      }
       if (url.pathname === "/sim/api/events" && request.method === "GET") {
         response.writeHead(200, {
           "content-type": "text/event-stream",
@@ -535,7 +539,7 @@ export async function startFromEnvironment(env: Record<string, string | undefine
     allowedHosts: config.allowedHosts,
     allowUnauthenticated: !auth && !config.accessToken && config.allowUnauthenticated
   });
-  await new Promise<void>(resolve => http.server.listen(config.port, "0.0.0.0", resolve));
+  await new Promise<void>(resolve => http.server.listen(config.port, config.host, resolve));
   registry.startAll();
   return async () => {
     sim.close();
