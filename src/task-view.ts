@@ -70,7 +70,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
 const usd=n=>"$"+Number(n).toLocaleString("en-US",{maximumFractionDigits:2});
-const DEMO="Call Joe\\u2019s Plumbing and book a visit tomorrow to fix the kitchen sink, keep it under 150";
+const DEMO="Call Joe's Plumbing and book a visit tomorrow to fix the kitchen sink, keep it under 150";
 const HOW=["Ambient phones the business and says it is an AI, first thing.","Over your limit? It puts them on hold and asks you, right here.","You hear only what the business actually confirmed."];
 function business(steps){for(const s of steps){const m=/^(?:Calling|Connected to) (.+)$/.exec(s);if(m)return m[1];}return "";}
 function speakers(steps){return steps.map(s=>/^([^:]{1,40}): (.+)$/.exec(s)).filter(Boolean).map(m=>({who:m[1],text:m[2]}));}
@@ -80,7 +80,7 @@ function offers(ap){const limit=ap.limitUsd,amount=ap.amountUsd;if(limit===undef
 function buttons(list){const box=$("actions");box.innerHTML="";
  for(const b of list){const el=document.createElement("button");el.type="button";el.textContent=b.label;if(b.kind)el.className=b.kind;el.onclick=()=>{el.disabled=true;b.run();};box.appendChild(el);}}
 function render(d){
- const t=d.task||{},steps=t.steps||[],ap=(d.approvals||[])[0],o=t.outcome,biz=business(steps)||"Joe\\u2019s Plumbing";
+ const t=d.task||{},steps=t.steps||[],ap=(d.approvals||[])[0],o=t.outcome,biz=t.subject||business(steps)||"the business";
  const live=t.status&&!["completed","failed","cancelled","unknown"].includes(t.status);
  const chip=$("chip"),stake=$("stake"),sub=$("sub"),hint=$("hint"),box=$("lines");
  const said=speakers(steps),owner=said.filter(l=>l.who!=="Ambient"&&l.who!==biz).at(-1);

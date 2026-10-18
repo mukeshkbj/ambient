@@ -52,18 +52,18 @@ A call is a run in the existing engine ([`src/conversations.ts`](src/conversatio
 
 ## Honesty rules
 
-Each rule is enforced in the reducer and covered by tests in [`test/call-session.test.ts`](test/call-session.test.ts).
+Rules 1 to 4 are enforced in the reducer and tested in [`test/call-session.test.ts`](test/call-session.test.ts). Rules 5 and 6 are enforced in the caller runtime and tested in [`test/caller.test.ts`](test/caller.test.ts).
 
 | Rule | What the code does |
 |---|---|
 | 1. The first words are an AI disclosure | The line speaks "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else. |
-| 2. "Confirmed" means the business confirmed | Only the brain's `end_call` can confirm. The amount must appear in a business line that does not refuse, or the business must say yes right after the agent states it. Otherwise the agent asks once to confirm, then ends the call as unconfirmed. A dropped line is always unconfirmed. |
-| 3. A price above the limit needs the owner | The reducer turns an over-limit confirmation into a question for the owner. Only a clear offer ("offer 160", "one sixty") counts as approval. "Don't pay 180" does not. A declined price ends the call with no deal. |
+| 2. "Confirmed" means the business confirmed | Only the brain's `end_call` can confirm. After the price is said on the line, the business must agree ("works", "booked", "yes"), and its last line must not refuse. Otherwise the agent asks once to confirm, then ends the call as unconfirmed. A dropped line is always unconfirmed. |
+| 3. A price above the limit needs the owner | The reducer turns an over-limit confirmation into a question for the owner. Only a clear offer ("offer 160", "one sixty") counts as approval. "Don't pay 180" does not. A declined price ends the call with no deal. A deal with no price also needs the owner. |
 | 4. No card numbers | Runs of 12 or more digits, spoken or written, become "that number". The check holds digits back across stream chunks, so a number split over several chunks is still caught. |
 | 5. Dialing an unknown business needs approval | A business found by web search gets a "Call them?" approval. A number the user gives is dialed directly. |
-| 6. Call limits | At most 3 calls to one number and 20 calls in total per 24 hours, on real lines. |
+| 6. Call limits | At most 3 calls to one number and 20 calls in total per 24 hours, on real lines, counting calls still in progress. |
 
-Three adversarial reviews tried to break these rules. They found 19 ways. Each one is now a regression test.
+Four adversarial reviews tried to break these rules and the voice line. Each defect they reproduced is now a regression test.
 
 ## The house
 
@@ -89,7 +89,7 @@ pnpm call
 ## Verification
 
 ```sh
-pnpm scan    # typecheck, eslint, knip, and 277 tests
+pnpm scan    # typecheck, eslint, knip, and 289 tests
 pnpm build
 pnpm smoke:mcp            # a full simulated call through /mcp
 python scripts/shots-sim.py   # every call state, light and dark, into docs/media/

@@ -39,6 +39,7 @@ export type SpeakContext = {
 };
 
 function callee(view: RunView): string | undefined {
+  if (view.subject) return view.subject;
   for (const step of view.steps) {
     const match = /^(?:Calling|Connected to) (.+)$/.exec(step);
     if (match) return match[1];
@@ -155,6 +156,7 @@ export function taskCard(view: RunView, label: string): Record<string, unknown> 
       ...(view.answer ? { answer: view.answer } : {}),
       ...(view.failure ? { failure: view.failure } : {}),
       ...(view.outcome ? { outcome: view.outcome } : {}),
+      ...(view.subject ? { subject: view.subject } : {}),
       createdAt: view.createdAt,
       updatedAt: view.updatedAt
     },

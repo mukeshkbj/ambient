@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { scriptedBrain, type Brain } from "../src/calls/brain.js";
 import type { Candidate } from "../src/calls/discover.js";
 import { DEMO_SCRIPT, JOES_PLUMBING, JOES_PLUMBING_HANGS_UP } from "../src/calls/demo.js";
-import { simulatedLine, type BusinessPersona } from "../src/calls/line.js";
+import { simulatedLine, type BusinessPersona, type Line } from "../src/calls/line.js";
 import { parsePhoneNumber } from "../src/calls/types.js";
 import { ConversationEngine } from "../src/conversations.js";
 import { CallerClient, spendingLimit } from "../src/runtimes/caller.js";
@@ -167,6 +167,41 @@ describe("CallerClient discovery and memory", () => {
     client.close();
     engine.close();
     memory.close();
+  });
+
+  it("counts calls still in progress against the daily limit", async () => {
+    const silent: Line = { dial: () => Promise.resolve(), say: () => {}, hangUp: () => {}, onInput: () => () => {} };
+    const store = new AmbientStore();
+    const client = new CallerClient({
+      household: { ownerName: "Maya", maxUsdDefault: 200, facts: [] },
+      business: { name: "Joe's Plumbing", phone: parsePhoneNumber("4155550134") },
+      line: () => silent,
+      brain: scriptedBrain(DEMO_SCRIPT),
+      memory: store
+    });
+    const outcomes: unknown[] = [];
+    client.onEvent(event => { if (event.type === "message.complete") outcomes.push(event.payload.outcome); });
+    for (let index = 0; index < 4; index++) {
+      const session = await client.createSession();
+      await client.submitPrompt(session.runtimeSessionId, "Call Joe's Plumbing");
+    }
+    await new Promise(resolve => setTimeout(resolve, 10));
+    expect(outcomes).toEqual([{ kind: "no_deal", reason: "call limit reached" }]);
+    client.close();
+    store.close();
+  });
+
+  it("stops looking for a business when the run is cancelled mid-search", async () => {
+    let finish: (value: Candidate[]) => void = () => {};
+    const { client, engine, close } = setup(JOES_PLUMBING, { discover: () => new Promise(resolve => { finish = resolve; }) });
+    const dials: string[] = [];
+    client.onEvent(event => { if (event.type === "approval.request") dials.push(event.payload.requestId); });
+    const run = await engine.ask("find a plumber for tomorrow", undefined, true);
+    await engine.cancel(run.id);
+    finish([{ name: "Pete's Pipes", phone: parsePhoneNumber("4155550199"), why: "Close by" }]);
+    await new Promise(resolve => setTimeout(resolve, 10));
+    expect(dials).toEqual([]);
+    close();
   });
 
   it("does not limit calls to the simulated business", async () => {

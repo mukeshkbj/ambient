@@ -84,7 +84,9 @@ export async function handleCallRoute(rooms: CallRooms, assetsDir: string, reque
       return true;
     }
   } catch (error) {
-    json(response, 500, { error: error instanceof Error ? error.message : String(error) });
+    if (response.headersSent) response.end();
+    else if (error instanceof SyntaxError) json(response, 400, { error: "Request body is not valid JSON." });
+    else json(response, 500, { error: "The call could not handle that request." });
     return true;
   }
   json(response, 405, { error: "Method not allowed" });

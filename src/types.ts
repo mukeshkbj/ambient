@@ -49,6 +49,7 @@ export type Run = {
   progress?: string;
   failure?: string;
   outcome?: CallOutcome;
+  subject?: string;
   createdAt: string;
   updatedAt: string;
 };

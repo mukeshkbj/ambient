@@ -252,6 +252,21 @@ describe("ConversationEngine", () => {
     store.close();
   });
 
+  it("keeps the subject a runtime names in a status update", async () => {
+    const agent = fakeAgent();
+    const store = new AmbientStore();
+    const engine = new ConversationEngine(agent.client, store, {
+      runtime: { id: "local", label: "My Agent", kind: "local", state: "unknown", updatedAt: "2026-09-06T10:00:00.000Z" },
+      now: () => "2026-09-06T10:00:00.000Z",
+      id: (() => { let n = 0; return () => `id-${++n}`; })()
+    });
+    const run = await engine.ask("Call the plumber", undefined, true);
+    agent.emit({ type: "status.update", sessionId: "runtime-1", payload: { text: "Calling Pete's Pipes", subject: "Pete's Pipes" } });
+    await new Promise(resolve => setImmediate(resolve));
+    expect(engine.getWork(run.id).subject).toBe("Pete's Pipes");
+    store.close();
+  });
+
   it("stores an approval's amount and kind on the run view", async () => {
     const agent = fakeAgent();
     const store = new AmbientStore();

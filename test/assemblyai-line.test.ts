@@ -118,6 +118,34 @@ describe("CallRooms line", () => {
     expect(reply.done()).toBe(true);
   });
 
+  it("passes on the business's new words even when it flushes a queued reply", async () => {
+    const { rooms, line, inputs } = setup();
+    await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
+    const room = rooms.room("call-1")!;
+    room.attach(() => {});
+    line.say("Thanks for waiting.", true);
+    const reply = writer();
+    room.chat({ messages: [user("Hello? Anyone there?")] }, `Bearer ${room.secret}`, reply.sink);
+    expect(reply.text()).toBe("Thanks for waiting.");
+    expect(inputs.at(-1)).toEqual({ kind: "heard", text: "Hello? Anyone there?" });
+  });
+
+  it("finishes the line when the page never confirms the hang-up", async () => {
+    const sent: Sent[] = [];
+    const rooms = new CallRooms({ ai: assemblyAi({ apiKey: "k", fetch: fakeFetch(sent) }), publicBaseUrl: "https://a.example.com", hangUpTimeoutMs: 20 });
+    const line = rooms.line();
+    const inputs: LineInput[] = [];
+    line.onInput(input => inputs.push(input));
+    await line.dial(parsePhoneNumber("4155550134"), "call-4", "Maya");
+    const room = rooms.room("call-4")!;
+    room.attach(() => {});
+    room.pageEvent({ type: "ready" });
+    line.hangUp();
+    await new Promise(resolve => setTimeout(resolve, 60));
+    expect(inputs.at(-1)).toEqual({ kind: "line_ended", reason: "hangup" });
+    expect(rooms.room("call-4")).toBeUndefined();
+  });
+
   it("ends an empty reply when the call has nothing to say yet", async () => {
     const { rooms, line } = setup();
     await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");

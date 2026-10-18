@@ -81,6 +81,7 @@ function run(row: Row): Run {
     ...(optionalText(row.progress) ? { progress: text(row.progress) } : {}),
     ...(optionalText(row.failure) ? { failure: text(row.failure) } : {}),
     ...(outcome ? { outcome } : {}),
+    ...(optionalText(row.subject) ? { subject: text(row.subject) } : {}),
     createdAt: text(row.created_at),
     updatedAt: text(row.updated_at)
   };
@@ -164,6 +165,7 @@ export class AmbientStore {
         progress TEXT,
         failure TEXT,
         outcome_json TEXT,
+        subject TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
@@ -239,6 +241,7 @@ export class AmbientStore {
     if (!columns.has("title")) this.db.exec("ALTER TABLE runs ADD COLUMN title TEXT");
     if (!columns.has("steps_json")) this.db.exec("ALTER TABLE runs ADD COLUMN steps_json TEXT");
     if (!columns.has("outcome_json")) this.db.exec("ALTER TABLE runs ADD COLUMN outcome_json TEXT");
+    if (!columns.has("subject")) this.db.exec("ALTER TABLE runs ADD COLUMN subject TEXT");
   }
 
   // approvals.request_id used to carry a global UNIQUE constraint, which breaks
@@ -536,6 +539,7 @@ export class AmbientStore {
     progress?: string | null;
     failure?: string | null;
     outcome?: CallOutcome | null;
+    subject?: string;
     liveSessionId?: string;
     updatedAt: string;
   }): Run {
@@ -549,7 +553,7 @@ export class AmbientStore {
       : current.steps ?? [];
     this.db.prepare(`
       UPDATE runs SET status = ?, answer = ?, progress = ?, failure = ?, live_session_id = ?, steps_json = ?,
-        outcome_json = ?, updated_at = ?
+        outcome_json = ?, subject = ?, updated_at = ?
       WHERE id = ?
     `).run(
       changes.status ?? current.status,
@@ -559,6 +563,7 @@ export class AmbientStore {
       changes.liveSessionId ?? current.liveSessionId,
       JSON.stringify(steps),
       outcome ? JSON.stringify(outcome) : null,
+      changes.subject ?? current.subject ?? null,
       changes.updatedAt,
       id
     );

@@ -14,6 +14,7 @@ type RoomsOptions = {
   voice?: string;
   joinTimeoutMs?: number;
   chatTimeoutMs?: number;
+  hangUpTimeoutMs?: number;
 };
 
 const AGENT_PROMPT = "You relay a phone call. Reply with exactly the text you are given.";
@@ -108,6 +109,7 @@ export class CallRoom implements Line {
       this.queued = "";
       writer.write(chatChunk(text));
       this.endWriter(writer);
+      for (const heard of fresh) this.send({ kind: "heard", text: heard });
       return true;
     }
     const timer = setTimeout(() => this.closePending(), this.options.chatTimeoutMs ?? 8_000);
@@ -138,6 +140,7 @@ export class CallRoom implements Line {
       return;
     }
     this.notify({ type: "hangup" });
+    setTimeout(() => this.finish("hangup"), this.options.hangUpTimeoutMs ?? 20_000).unref();
   }
 
   onInput(listener: (input: LineInput) => void): () => void {

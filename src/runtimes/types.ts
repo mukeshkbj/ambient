@@ -22,7 +22,7 @@ export type AssistantEvent =
   | Event<"message.delta" | "message.interim", { text?: string }>
   | Event<"message.complete", { text?: string; status?: string; error?: string; outcome?: CallOutcome }>
   | Event<"tool.start" | "tool.complete", { name?: string }>
-  | Event<"status.update", { text?: string; name?: string; summary?: string; message?: string }>
+  | Event<"status.update", { text?: string; name?: string; summary?: string; message?: string; subject?: string }>
   | Event<"approval.request", ApprovalPayload>;
 
 export type SubmitResult = { state: "accepted" | "streaming" };

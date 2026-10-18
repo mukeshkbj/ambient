@@ -71,7 +71,7 @@ body[data-state="ringing"] .avatar::after,body[data-state="speaking"] .avatar::a
 <script>
 const $ = id => document.getElementById(id);
 const base = location.pathname.replace(/\/$/, "");
-const call = { ws: null, ctx: null, mic: null, node: null, sources: new Set(), playAt: 0, replying: false, endAfterReply: false, ended: false, started: 0, timer: null };
+const call = { ws: null, ctx: null, mic: null, node: null, sources: new Set(), playAt: 0, replying: false, expectReply: false, endAfterReply: false, ended: false, started: 0, timer: null };
 
 const WORKLET = `
 class Mic extends AudioWorkletProcessor {
@@ -156,10 +156,14 @@ fetch(base + "/info").then(r => r.ok ? r.json() : null).then(info => {
 const events = new EventSource(base + "/events");
 events.onmessage = e => {
   const event = JSON.parse(e.data);
-  if (event.type === "speak" && call.ws?.readyState === 1) call.ws.send(JSON.stringify({ type: "reply.create" }));
+  if (event.type === "speak" && call.ws?.readyState === 1) {
+    call.expectReply = true;
+    call.ws.send(JSON.stringify({ type: "reply.create" }));
+  }
   if (event.type === "hangup") {
     call.endAfterReply = true;
-    if (!call.replying && call.sources.size === 0) setTimeout(() => end("Ambient ended the call"), 400);
+    if (!call.replying && !call.expectReply && call.sources.size === 0) setTimeout(() => end("Ambient ended the call"), 400);
+    setTimeout(() => end("Ambient ended the call"), 12000);
   }
 };
 
@@ -202,7 +206,7 @@ $("answer").onclick = async () => {
           post("/event", { type: "ready" });
           break;
         }
-        case "reply.started": call.replying = true; document.body.dataset.state = "speaking"; break;
+        case "reply.started": call.replying = true; call.expectReply = false; document.body.dataset.state = "speaking"; break;
         case "reply.audio": play(event.data); break;
         case "transcript.agent":
           caption("Ambient · AI", event.text, "agent");

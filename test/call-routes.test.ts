@@ -55,6 +55,7 @@ describe("call routes", () => {
     expect(await (await fetch(`${base}/session`, { method: "POST" })).json()).toEqual({ token: "tok", agentId: "agent-9", ownerName: "Maya" });
     expect((await fetch(`${base}/event`, { method: "POST", body: JSON.stringify({ type: "ready" }) })).status).toBe(200);
     expect((await fetch(`${base}/event`, { method: "POST", body: JSON.stringify({ type: "bogus" }) })).status).toBe(400);
+    expect((await fetch(`${base}/event`, { method: "POST", body: "{not json" })).status).toBe(400);
     expect(inputs).toEqual([{ kind: "answered" }]);
   });
 

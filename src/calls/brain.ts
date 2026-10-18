@@ -25,7 +25,9 @@ const TOOLS: BetaTool[] = [
       },
       required: ["question"],
       additionalProperties: false
-    }
+    },
+    strict: true,
+    eager_input_streaming: true
   },
   {
     name: "end_call",
@@ -40,7 +42,9 @@ const TOOLS: BetaTool[] = [
       },
       required: ["outcome", "summary"],
       additionalProperties: false
-    }
+    },
+    strict: true,
+    eager_input_streaming: true
   },
   {
     name: "remember",
@@ -50,9 +54,11 @@ const TOOLS: BetaTool[] = [
       properties: { fact: { type: "string" } },
       required: ["fact"],
       additionalProperties: false
-    }
+    },
+    strict: true,
+    eager_input_streaming: true
   }
-].map(tool => ({ ...tool, strict: true, eager_input_streaming: true }) as BetaTool);
+];
 
 const AskOwner = z.object({ question: z.string().min(1), amount_usd: z.number().positive().optional() });
 const EndCall = z.object({

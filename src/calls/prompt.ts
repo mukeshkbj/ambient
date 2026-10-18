@@ -26,7 +26,7 @@ export function systemPrompt(brief: CallBrief): string {
 function asMessage(turn: CallTurn, ownerName: string): BetaMessageParam {
   if (turn.speaker === "agent") return { role: "assistant", content: turn.text };
   if (turn.speaker === "owner") return { role: "user", content: `[Note from ${ownerName}, not spoken on the call] ${turn.text}` };
-  return { role: "user", content: turn.text };
+  return { role: "user", content: turn.text.replace(/\[[^\]]*\]/g, "").trim() };
 }
 
 export function toMessages(state: CallState): BetaMessageParam[] {

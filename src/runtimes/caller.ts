@@ -98,6 +98,8 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
 
   private readonly calls = new Map<string, CallHandle>();
   private readonly pendingDials = new Map<string, PendingDial>();
+  private readonly inFlight = new Map<string, PlacedCall>();
+  private readonly cancelled = new Set<string>();
   private closed = false;
 
   constructor(private readonly options: CallerOptions) {
@@ -168,6 +170,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
   }
 
   interrupt(sessionId: string): Promise<InterruptResult> {
+    this.cancelled.add(sessionId);
     const pending = this.pendingDials.get(sessionId);
     if (pending) {
       this.pendingDials.delete(sessionId);
@@ -198,7 +201,9 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
       return;
     }
     this.emit({ type: "status.update", sessionId, payload: { text: "Looking for a business near you." } });
-    const candidates = this.ranked(await this.options.discover(instruction, household));
+    const found = await this.options.discover(instruction, household);
+    if (this.cancelled.has(sessionId)) return;
+    const candidates = this.ranked(found);
     for (const [index, candidate] of candidates.entries()) {
       const decision = await this.askToDial(sessionId, `${sessionId}:dial-${index}`, this.dialQuestion(candidate));
       if (decision === "cancel") return;
@@ -249,7 +254,10 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
 
   private dial(sessionId: string, business: { name: string; phone: PhoneNumber }, instruction: string, maxUsd: number | undefined): void {
     const { household, memory } = this.options;
-    const limit = this.options.limitDials === false ? { ok: true as const } : checkDialLimits(memory?.placedCalls() ?? [], business.phone, new Date().toISOString());
+    if (this.cancelled.has(sessionId)) return;
+    const now = new Date().toISOString();
+    const placed = [...(memory?.placedCalls() ?? []), ...this.inFlight.values()];
+    const limit = this.options.limitDials === false ? { ok: true as const } : checkDialLimits(placed, business.phone, now);
     if (!limit.ok) {
       this.emit({
         type: "message.complete",
@@ -265,7 +273,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
       ...(maxUsd !== undefined ? { maxUsd } : {}),
       facts: [...householdFacts(household), ...(memory?.facts(business.phone) ?? []), ...this.pastCalls(business.phone)]
     };
-    this.emit({ type: "status.update", sessionId, payload: { text: `Calling ${business.name}` } });
+    this.emit({ type: "status.update", sessionId, payload: { text: `Calling ${business.name}`, subject: business.name } });
     const last = memory?.history(business.phone)[0];
     if (last) this.emit({ type: "status.update", sessionId, payload: { text: `Remembered from ${dayLabel(last.at)} — ${describeOutcome(last.outcome)}` } });
     const line = this.options.line();
@@ -279,9 +287,11 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
       ...(this.options.tickMs !== undefined ? { tickMs: this.options.tickMs } : {})
     });
     this.calls.set(sessionId, call);
+    this.inFlight.set(sessionId, { to: business.phone, startedAt: now });
     if (line.joinUrl) this.emit({ type: "status.update", sessionId, payload: { text: `Waiting for ${business.name} to answer at ${line.joinUrl}` } });
     void call.done.then(state => {
       this.calls.delete(sessionId);
+      this.inFlight.delete(sessionId);
       if (memory && !this.closed && state.phase.kind === "ended") {
         memory.recordCall({
           runId: sessionId,

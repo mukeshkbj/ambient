@@ -117,6 +117,11 @@ describe("speak", () => {
       expect(speak(call({ status: "waiting_approval", approval }), { label: "Ambient" })).toBe(`${question} Say approve, deny, or offer a different amount.`);
     });
 
+    it("names the business from the run's subject even after early steps scroll away", () => {
+      const view0 = view({ title: "Find a plumber", subject: "Pete's Pipes", status: "running", steps: ["Pete's Pipes: Hello?"] });
+      expect(speak(view0, { label: "Ambient" })).toBe("Ambient is on the phone with Pete's Pipes. They just said: Hello?");
+    });
+
     it("says who it is calling before they answer", () => {
       expect(speak(call({ status: "running" }), { label: "Ambient" })).toBe("Ambient is calling Joe's Plumbing now.");
     });

@@ -396,6 +396,7 @@ export class ConversationEngine {
       this.updateRun(run.id, {
         ...(run.status === "queued" || run.status === "accepted" ? { status: "running" as const } : {}),
         ...(progress ? { progress } : {}),
+        ...(event.type === "status.update" && value(event.payload.subject) ? { subject: value(event.payload.subject)! } : {}),
         updatedAt: timestamp
       });
     }
