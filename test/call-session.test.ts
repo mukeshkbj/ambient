@@ -376,8 +376,59 @@ describe("round 4 review findings", () => {
 
   it("does not take an hourly rate as the total", () => {
     const { state, effects } = play([answered, heard("Sure, it's $90 an hour, two hour minimum."), confirm(90)]);
+    expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 90 });
+    expect(emitted(effects, "approval.request")[0]?.payload).toMatchObject({ description: expect.stringMatching(/as a rate, not a total/) });
+  });
+
+  it.each([
+    ["the model under-reports", "It'll be $200.", 140],
+    ["the model reports honestly", "It'll be $200.", 200]
+  ])("never lets the agent's address line stand in for the price (%s)", (_, quote, claimed) => {
+    const { state } = play([answered, heard(quote), say("Okay. The address is 12 Elm Street."), heard("Got it, Tuesday works."), confirm(claimed)]);
+    expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 200 });
+  });
+
+  it("keeps the business's price, and asks again, when the yes answered the address", () => {
+    const { state, effects } = play([answered, heard("It'll be $140."), say("Great. The address is 12 Elm Street."), heard("Sure."), confirm(140)]);
     expect(state.phase.kind).toBe("talking");
-    expect(spoken(effects).at(-1)).toBe("Just to confirm, that's ninety dollars?");
+    expect(spoken(effects).at(-1)).toBe("Just to confirm, that's one hundred forty dollars?");
+  });
+
+  it("does not accept a made-up price because a street number matches it", () => {
+    const { state } = play([answered, heard("It's $300."), say("What is your address?"), heard("100 Oak. Yes sure."), confirm(100)]);
+    expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 300 });
+  });
+
+  it.each([["The repair is $1.5k.", 1500], ["About 2 grand.", 2000]])("reads thousands written as k or grand: %s", (line, amount) => {
+    const { state } = play([answered, heard(`Sure. ${line}`), confirm(amount)]);
+    expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: amount });
+  });
+
+  it.each(["Yeah, no, that's too low.", "Absolutely not.", "Right, not at that price.", "Okay, that's too much.", "Yes, that's a no from me."])(
+    "does not take a refusal that opens with a yes word as agreement: %s",
+    reply => {
+      const { state } = play([answered, heard("It's $140."), say("So one hundred forty dollars for Tuesday?"), heard(reply), confirm(140)]);
+      expect(state.phase).not.toMatchObject({ outcome: { kind: "confirmed" } });
+    }
+  );
+
+  it.each([
+    ["Sure, it's $75 for the call-out and $120 for parts.", 195],
+    ["Sure, it's $150, and another 30 for parts.", 180],
+    ["Sure, it's $150 to $200 depending on the pipe.", 200]
+  ])("checks the whole quote against the limit, not one part: %s", (line, total) => {
+    const { state } = play([answered, heard(line), confirm(75)]);
+    expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: total });
+  });
+
+  it("asks the owner before agreeing to an hourly rate", () => {
+    const { state } = play([answered, heard("Sure, it's $90 an hour, three hours minimum."), say("Just to confirm, that's ninety dollars?"), heard("Yes."), confirm(90)]);
+    expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 90 });
+  });
+
+  it("treats a flat price per visit as the price", () => {
+    const { state } = play([answered, heard("Sure, it's $120 a visit."), confirm(120)]);
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 120 } });
   });
 
   it("ends without a deal after the owner declines a deal with no price", () => {

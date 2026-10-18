@@ -97,8 +97,8 @@ export function offerIn(text: string): number | undefined {
 
 const AFFIRMATIVE = /\b(yes|yeah|yep|yup|sure|correct|right|ok|okay|deal|fine|works|sounds good|confirmed|booked|perfect|great|absolutely|can do|will do|you got it|alright|all set|see you)\b/i;
 const LEADING_YES = /^\W*(yes|yeah|yep|yup|sure|correct|right|ok|okay|alright|absolutely|perfect|great|deal|you got it)\b/i;
-const REFUSAL = /\b(no|not|nope|nah|never|sorry|can'?t|cannot|won'?t|don'?t|unfortunately)\b|n't\b/i;
-const HARD_REFUSAL = /\b(can'?t|cannot|won'?t|don'?t|unfortunately|unable|not able|not possible|no way)\b/i;
+const REFUSAL = /\b(no|not|nope|nah|never|sorry|can'?t|cannot|won'?t|don'?t|unfortunately|too (much|low|high|expensive|steep|pricey))\b|n't\b/i;
+const FIRST_SENTENCE_NO = /\b(no|not|nope|nah|never|too|can'?t|cannot|won'?t|don'?t|unfortunately|unable)\b|n't\b/i;
 const POLITE = /\b(no problem|not a problem|no worries|not at all|no trouble)\b/gi;
 
 const HOLDING = /\b(hold on|hang on|one (sec|second|moment|minute)|just a (sec|second|moment|minute)|give me a (sec|second|moment|minute)|let me (check|see|ask)|check with|ask my|get back to you|call you back)\b/i;
@@ -111,20 +111,24 @@ export function noteFromCall(fact: string): string | undefined {
 export function affirms(text: string): boolean {
   if (HOLDING.test(text)) return false;
   const plain = text.replace(POLITE, "");
-  return (LEADING_YES.test(plain) && !HARD_REFUSAL.test(plain)) || (AFFIRMATIVE.test(plain) && !REFUSAL.test(plain));
+  const first = plain.split(/[.!?;]/)[0] ?? "";
+  return (LEADING_YES.test(plain) && !FIRST_SENTENCE_NO.test(first)) || (AFFIRMATIVE.test(plain) && !REFUSAL.test(plain));
 }
 
 export function refuses(text: string): boolean {
   return REFUSAL.test(text.replace(POLITE, "")) && !affirms(text);
 }
 
-const PRICE_BEFORE = new Set(["be", "is", "it's", "its", "that's", "was", "cost", "costs", "charge", "charges", "fee", "price", "total", "quote", "run", "runs", "pay", "for", "only", "just", "about", "around", "do"]);
+const PRICE_BEFORE = new Set(["be", "is", "it's", "its", "that's", "was", "cost", "costs", "charge", "charges", "fee", "price", "total", "quote", "run", "runs", "pay", "for", "only", "just", "about", "around", "do", "another", "plus", "extra"]);
 const PRICE_AFTER = new Set(["dollar", "dollars", "bucks", "usd"]);
+const THOUSANDS = new Set(["k", "grand"]);
 const NOT_PRICE_AFTER = new Set(["hour", "hours", "hr", "hrs", "minute", "minutes", "min", "mins", "day", "days", "week", "weeks", "month", "months", "year", "years", "am", "pm", "a", "p", "o'clock", "percent", "%", "mile", "miles", "people", "time", "times", ":"]);
 const JOINERS = new Set(["a", "and"]);
-const RATE_UNITS = new Set(["hour", "hr", "day", "visit", "item", "unit", "piece", "foot", "room"]);
+const RATE_UNITS = new Set(["hour", "hr", "day", "item", "unit", "piece", "foot", "room"]);
+const RANGE = /\b(to|or|between|up to|from)\b|\d\s*-\s*\$?\d/i;
+const ADDING = /\b(and|plus|another|extra|on top)\b/i;
 
-type Mention = { value: number; priced: boolean; rate: boolean };
+type Mention = { value: number; priced: boolean; strict: boolean; rate: boolean; address: boolean };
 
 function isRate(tokens: string[], end: number): boolean {
   const at = PRICE_AFTER.has(tokens[end] ?? "") ? end + 1 : end;
@@ -132,16 +136,27 @@ function isRate(tokens: string[], end: number): boolean {
   return ["per", "each", "hourly", "/"].includes(next) || ((next === "an" || next === "a") && RATE_UNITS.has(tokens[at + 1] ?? ""));
 }
 
-export function pricesIn(text: string): number[] {
-  return mentions(text).filter(item => item.priced && !item.rate).map(item => item.value);
+function pricesIn(text: string, strict = false): number[] {
+  return mentions(text).filter(item => (strict ? item.strict : item.priced) && !item.rate && !item.address).map(item => item.value);
+}
+
+export function quoteIn(text: string, strict = false): number | undefined {
+  const prices = pricesIn(text, strict);
+  if (prices.length === 0) return undefined;
+  return prices.length > 1 && ADDING.test(text) && !RANGE.test(text) ? prices.reduce((sum, price) => sum + price, 0) : Math.max(...prices);
 }
 
 export function ratesIn(text: string): number[] {
   return mentions(text).filter(item => item.rate).map(item => item.value);
 }
 
+export function spokenAmountsIn(text: string): number[] {
+  return mentions(text).filter(item => !item.address).map(item => item.value);
+}
+
 function mentions(text: string): Mention[] {
-  const tokens = (text.toLowerCase().match(/\$|\d[\d,]*(?:\.\d+)?|[a-z]+(?:'[a-z]+)?|[^\s\w]/g) ?? []).filter(token => token !== "-");
+  const raw = (text.match(/\$|\d[\d,]*(?:\.\d+)?|[A-Za-z]+(?:'[A-Za-z]+)?|[^\s\w]/g) ?? []).filter(token => token !== "-");
+  const tokens = raw.map(token => token.toLowerCase());
   const found: Mention[] = [];
   let at = 0;
   while (at < tokens.length) {
@@ -157,9 +172,12 @@ function mentions(text: string): Mention[] {
     at = end;
     const before = tokens[start - 1] ?? "";
     const after = tokens[end] ?? "";
-    const priced = before === "$" || PRICE_AFTER.has(after) || (PRICE_BEFORE.has(before) && !NOT_PRICE_AFTER.has(after));
-    const rate = isRate(tokens, end);
-    for (const value of amountsIn(tokens.slice(start, end).join(" ")).slice(0, 1)) found.push({ value, priced, rate });
+    const scale = THOUSANDS.has(after) ? 1000 : 1;
+    const strict = before === "$" || PRICE_AFTER.has(after) || scale > 1;
+    const priced = strict || (PRICE_BEFORE.has(before) && !NOT_PRICE_AFTER.has(after));
+    const address = before !== "$" && /^[A-Z][a-z]/.test(raw[end] ?? "");
+    const rate = isRate(tokens, scale > 1 ? end + 1 : end);
+    for (const value of amountsIn(tokens.slice(start, end).join(" ")).slice(0, 1)) found.push({ value: value * scale, priced, strict, rate, address });
   }
   return found;
 }

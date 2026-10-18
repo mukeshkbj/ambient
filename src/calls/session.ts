@@ -1,5 +1,5 @@
 import { dollarsInWords } from "../words.js";
-import { affirms, amountsIn, chargedIn, disclosure, HOLD_LINE_MS, holdTrailingDigits, offerIn, OWNER_PATIENCE_MS, pricesIn, ratesIn, redactDigits, refuses } from "./rules.js";
+import { affirms, amountsIn, chargedIn, disclosure, HOLD_LINE_MS, holdTrailingDigits, offerIn, OWNER_PATIENCE_MS, quoteIn, ratesIn, redactDigits, refuses, spokenAmountsIn } from "./rules.js";
 import type { BrainStep, CallBrief, CallEffect, CallInput, CallOutcome, CallPhase, CallTurn, Speaker } from "./types.js";
 
 export type CallState = {
@@ -152,17 +152,23 @@ function confirm(state: CallState, outcome: Extract<CallOutcome, { kind: "confir
   const { brief } = state;
   const owner = brief.ownerName;
   const line = state.turns.filter(turn => turn.speaker !== "owner");
-  const pricedAt = line.findLastIndex(turn => pricesIn(turn.text).length > 0);
-  const onLine = pricedAt >= 0 ? pricesIn(line[pricedAt]!.text) : [];
-  const saidSince = line.slice(pricedAt + 1).flatMap(turn => amountsIn(turn.text));
+  const quoteOf = (turn: CallTurn) => quoteIn(turn.text, turn.speaker === "agent");
+  const pricedAt = line.findLastIndex(turn => quoteOf(turn) !== undefined);
+  const quote = pricedAt >= 0 ? quoteOf(line[pricedAt]!) : undefined;
+  const repeated = line.slice(pricedAt + 1).filter(turn => turn.speaker === "business").flatMap(turn => spokenAmountsIn(turn.text));
   const claimed = [...(outcome.amountUsd !== undefined ? [outcome.amountUsd] : []), ...chargedIn(outcome.summary)].filter(amount => Number.isFinite(amount) && amount > 0);
-  const charge = onLine.length > 0
-    ? claimed.find(amount => onLine.includes(amount) || saidSince.includes(amount)) ?? Math.max(...onLine)
-    : claimed.length > 0 ? Math.max(...claimed) : undefined;
+  const backed = claimed.find(amount => amount === quote || repeated.includes(amount));
+  const candidates = [...(quote !== undefined ? [quote] : []), ...claimed];
+  const charge = backed ?? (candidates.length > 0 ? Math.max(...candidates) : undefined);
   const limit = brief.maxUsd ?? 0;
   if (charge !== undefined && state.deniedUsd.includes(charge)) {
     return close(state, { kind: "no_deal", reason: `${owner} declined ${dollarsInWords(charge)}` }, now,
       `Okay. ${owner} won't go ahead at that price, so we'll leave it there. Thanks for your time, goodbye.`);
+  }
+  const rated = line.some(turn => turn.speaker === "business" && ratesIn(turn.text).includes(charge ?? Number.NaN));
+  if (charge !== undefined && rated && !state.approvedUsd.includes(charge)) {
+    const question = `${brief.business.name} quoted ${dollarsInWords(charge)} as a rate, not a total. Should I agree?`;
+    return askOwner(state, question, charge, now, false, outcome.when);
   }
   if (charge !== undefined && charge > limit && !state.approvedUsd.includes(charge)) {
     const question = `${brief.business.name} wants ${dollarsInWords(charge)}, over your limit of ${dollarsInWords(limit)}. Should I agree?`;
