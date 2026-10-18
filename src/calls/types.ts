@@ -1,0 +1,61 @@
+import type { AssistantEvent } from "../runtimes/types.js";
+
+export type PhoneNumber = string & { readonly brand: "E164" };
+
+export type CallBrief = {
+  goal: string;
+  business: { name: string; phone: PhoneNumber };
+  ownerName: string;
+  maxUsd?: number;
+  facts: string[];
+};
+
+export type Speaker = "agent" | "business" | "owner";
+export type CallTurn = { speaker: Speaker; text: string; at: string };
+
+export type CallOutcome =
+  | { kind: "confirmed"; summary: string; amountUsd?: number; when?: string }
+  | { kind: "declined"; reason: string }
+  | { kind: "no_deal"; reason: string }
+  | { kind: "unconfirmed"; reason: string };
+
+export type CallPhase =
+  | { kind: "dialing" }
+  | { kind: "talking" }
+  | { kind: "waiting_for_owner"; requestId: string; question: string; amountUsd?: number }
+  | { kind: "ended"; outcome: CallOutcome };
+
+type LineInput =
+  | { kind: "answered" }
+  | { kind: "heard"; text: string }
+  | { kind: "interrupted"; spokenSoFar: string }
+  | { kind: "line_ended"; reason: "hangup" | "no_answer" | "busy" | "failed" };
+
+export type CallInput =
+  | LineInput
+  | { kind: "brain"; step: BrainStep }
+  | { kind: "owner_said"; text: string }
+  | { kind: "owner_decided"; requestId: string; decision: "once" | "deny" }
+  | { kind: "hold_tick" };
+
+export type BrainStep =
+  | { kind: "say"; text: string; last: boolean }
+  | { kind: "ask_owner"; question: string; amountUsd?: number }
+  | { kind: "remember"; fact: string }
+  | { kind: "end_call"; outcome: Exclude<CallOutcome, { kind: "unconfirmed" }> };
+
+export type CallEffect =
+  | { kind: "say"; text: string; last: boolean }
+  | { kind: "think" }
+  | { kind: "hang_up" }
+  | { kind: "emit"; event: AssistantEvent };
+
+export function parsePhoneNumber(raw: string): PhoneNumber {
+  const trimmed = raw.trim();
+  const digits = trimmed.replace(/\D/g, "");
+  if (/[a-z]/i.test(trimmed)) throw new Error(`Not a phone number: ${raw}`);
+  if (trimmed.startsWith("+") && digits.length >= 8 && digits.length <= 15) return `+${digits}` as PhoneNumber;
+  if (digits.length === 10) return `+1${digits}` as PhoneNumber;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}` as PhoneNumber;
+  throw new Error(`Not a phone number: ${raw}`);
+}

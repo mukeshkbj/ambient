@@ -1,4 +1,5 @@
 import type WebSocket from "ws";
+import type { CallOutcome } from "../calls/types.js";
 import type { RuntimeState } from "../types.js";
 
 /** Canonical approval payload — adapters map their wire fields into this. */
@@ -7,7 +8,11 @@ export type ApprovalPayload = {
   command: string;
   description?: string;
   choices?: string[];
+  amountUsd?: number;
+  kind?: ApprovalKind;
 };
+
+type ApprovalKind = "spend" | "dial" | "other";
 
 type Event<T extends string, P> = { type: T; sessionId?: string; payload: P; seq?: number };
 
@@ -15,7 +20,7 @@ type Event<T extends string, P> = { type: T; sessionId?: string; payload: P; seq
 export type AssistantEvent =
   | Event<"message.start", { kind?: string }>
   | Event<"message.delta" | "message.interim", { text?: string }>
-  | Event<"message.complete", { text?: string; status?: string; error?: string }>
+  | Event<"message.complete", { text?: string; status?: string; error?: string; outcome?: CallOutcome }>
   | Event<"tool.start" | "tool.complete", { name?: string }>
   | Event<"status.update", { text?: string; name?: string; summary?: string; message?: string }>
   | Event<"approval.request", ApprovalPayload>;
