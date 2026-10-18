@@ -105,3 +105,23 @@ Record an entry while a failure is reproducible. Do not invent entries for failu
 - **Severity:** Important
 - **Workaround:** Run with `PUBLIC_BASE_URL=http://127.0.0.1:<port>` (or add the origin via `AMBIENT_ALLOWED_ORIGINS`) whenever `PORT` differs.
 - **Suggestion:** For loopback dev, derive the origin allowlist from the bound port automatically — `PUBLIC_BASE_URL` and `PORT` disagreeing is an easy trap. (Self-friction, not an Amazon tool.)
+
+### 2026-10-18 — pnpm 10 on Windows: inline env assignments in `package.json` scripts fail
+
+- **Task:** Run the zero-key judge path, `pnpm demo`, on a Windows 11 PC (Node 24.21, pnpm 10.33.0).
+- **Steps:** `pnpm demo`, where the script was `AMBIENT_HOST=127.0.0.1 AMBIENT_RUNTIMES_FILE=runtimes.demo.json ALLOW_UNAUTHENTICATED=true tsx src/server.ts`.
+- **Expected:** The demo server starts, as it does on macOS and Linux.
+- **Actual:** `'AMBIENT_HOST' is not recognized as an internal or external command`. pnpm runs scripts through `cmd.exe` on Windows, which has no `VAR=value cmd` syntax. The judge path failed on the first command.
+- **Severity:** Critical
+- **Workaround:** Move the variables to a committed `demo.env` and run `tsx --env-file=demo.env src/server.ts`. Node's `--env-file` behaves the same on every OS and needs no `cross-env` dependency.
+- **Suggestion:** pnpm could warn when a script starts with a POSIX env assignment and `script-shell` is unset on Windows.
+
+### 2026-10-18 — Node.js ESM on Windows: the `import.meta.url === file://${argv[1]}` entry guard never matches
+
+- **Task:** Start the server after the `demo.env` fix above.
+- **Steps:** `pnpm demo` on Windows. `src/server.ts` started only when `import.meta.url === \`file://${process.argv[1]}\``.
+- **Expected:** The server listens on port 3000.
+- **Actual:** The process exited with code 0 and printed nothing. On Windows, `import.meta.url` is `file:///C:/Users/...` while `argv[1]` is `C:\Users\...`, so the guard is false and nothing runs. No error makes the cause visible.
+- **Severity:** Critical
+- **Workaround:** Compare against `pathToFileURL(process.argv[1]).href`.
+- **Suggestion:** Node could ship `import.meta.main` (as Deno and Bun do) so scripts stop hand-rolling this check.

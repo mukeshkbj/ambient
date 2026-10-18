@@ -11,7 +11,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/server.ts",
-    "demo": "AMBIENT_HOST=127.0.0.1 AMBIENT_RUNTIMES_FILE=runtimes.demo.json ALLOW_UNAUTHENTICATED=true tsx src/server.ts",
+    "demo": "tsx --env-file=demo.env src/server.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",

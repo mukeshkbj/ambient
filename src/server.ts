@@ -2,7 +2,7 @@ import { randomUUID, timingSafeEqual } from "node:crypto";
 import { existsSync } from "node:fs";
 import { createServer as createHttpServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { readConfig, type AppConfig } from "./config.js";
@@ -497,7 +497,7 @@ export async function startFromEnvironment(env: Record<string, string | undefine
   };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   startFromEnvironment().then(close => {
     const shutdown = () => void close().finally(() => process.exit(0));
     process.once("SIGINT", shutdown);
