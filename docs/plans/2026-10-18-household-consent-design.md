@@ -1,6 +1,6 @@
 # Ambient v2: the household consent layer
 
-Status: approved 2026-10-18 (user delegated the choice). Deadline Fri 2026-10-23 12:00 PT; submit by Thu 2026-10-22.
+Status: superseded on 2026-10-18 by `2026-10-18-handle-the-call-plan.md`. Deadline Fri 2026-10-23 12:00 PT; submit by Thu 2026-10-22.
 
 ## Why we are changing direction
 
