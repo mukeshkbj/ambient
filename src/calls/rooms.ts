@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import { chatChunk, CHAT_DONE, type AssemblyAi } from "./assemblyai.js";
 import type { Line } from "./line.js";
 import { disclosure } from "./rules.js";
@@ -36,9 +36,9 @@ export class CallRoom implements Line {
   private pending: { writer: ChatWriter; timer: NodeJS.Timeout } | undefined;
   private queued = "";
   private draft = "";
-  private seenUserTurns = 0;
+  private heardSoFar: string[] = [];
   private answered = false;
-  private sessions = 0;
+  private readonly pageKeys = new Set<string>();
   private ended = false;
   private joinTimer: NodeJS.Timeout | undefined;
 
@@ -67,10 +67,16 @@ export class CallRoom implements Line {
     return { ownerName: this.ownerName };
   }
 
-  async session(): Promise<{ token: string; agentId: string; ownerName: string }> {
+  async session(): Promise<{ token: string; agentId: string; ownerName: string; pageKey: string }> {
     if (!this.agentId) throw new Error("This call is not ready yet");
-    if (++this.sessions > 3) throw new Error("This call was already answered");
-    return { token: await this.options.ai.mintToken(), agentId: this.agentId, ownerName: this.ownerName };
+    if (this.pageKeys.size >= 3) throw new Error("This call was already answered");
+    const pageKey = randomUUID();
+    this.pageKeys.add(pageKey);
+    return { token: await this.options.ai.mintToken(), agentId: this.agentId, ownerName: this.ownerName, pageKey };
+  }
+
+  acceptsPage(key: string | undefined): boolean {
+    return key !== undefined && this.pageKeys.has(key);
   }
 
   attach(listener: (event: PageEvent) => void): () => void {
@@ -88,6 +94,8 @@ export class CallRoom implements Line {
         this.send({ kind: "answered" });
         return;
       case "interrupted":
+        this.draft = "";
+        this.queued = "";
         this.send({ kind: "interrupted", spokenSoFar: report.spokenSoFar });
         return;
       case "ended":
@@ -96,15 +104,17 @@ export class CallRoom implements Line {
   }
 
   accepts(authorization: string | undefined): boolean {
-    return authorization === `Bearer ${this.secret}`;
+    const expected = Buffer.from(`Bearer ${this.secret}`);
+    const given = Buffer.from(authorization ?? "");
+    return given.length === expected.length && timingSafeEqual(given, expected);
   }
 
   chat(body: unknown, authorization: string | undefined, writer: ChatWriter): boolean {
     if (!this.accepts(authorization)) return false;
     const messages = body && typeof body === "object" && "messages" in body && Array.isArray(body.messages) ? body.messages as { role?: unknown; content?: unknown }[] : [];
     const users = messages.filter(message => message.role === "user").map(message => contentText(message.content).trim());
-    const fresh = users.slice(this.seenUserTurns).filter(Boolean);
-    this.seenUserTurns = users.length;
+    const fresh = this.freshTurns(users);
+    if (fresh.length > 0) this.draft = "";
     this.closePending();
     if (this.queued) {
       const text = this.queued;
@@ -148,6 +158,14 @@ export class CallRoom implements Line {
   onInput(listener: (input: LineInput) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  private freshTurns(users: string[]): string[] {
+    const seen = this.heardSoFar;
+    const intact = seen.length <= users.length && seen.every((text, at) => users[at] === text);
+    const fresh = (intact ? users.slice(seen.length) : users.slice(users.lastIndexOf(seen.at(-1) ?? "") + 1)).filter(Boolean);
+    this.heardSoFar = intact ? users : [...seen, ...fresh];
+    return fresh;
   }
 
   private closePending(): void {

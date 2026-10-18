@@ -85,9 +85,9 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       if (phase.kind === "dialing") return unchanged(state);
       const last = state.turns.findLast(turn => turn.speaker === "agent");
       const said = state.draft || state.held ? state.draft + state.held : last?.text ?? "";
-      if (!said.trim().startsWith(input.spokenSoFar.trim())) return unchanged(state);
-      const cutDisclosure = !state.draft && last?.text === disclosure(brief.ownerName) && input.spokenSoFar.trim() !== last.text;
-      return { state: { ...truncateAgent(state, input.spokenSoFar, now), turn: state.turn + 1, ...(cutDisclosure ? { disclosed: false } : {}) }, effects: [] };
+      const heardText = sharedWords(said, input.spokenSoFar);
+      const cutDisclosure = !state.draft && last?.text === disclosure(brief.ownerName) && heardText !== last.text;
+      return { state: { ...truncateAgent(state, heardText, now), turn: state.turn + 1, ...(cutDisclosure ? { disclosed: false } : {}) }, effects: [] };
     }
     case "line_ended": {
       const reason = phase.kind === "dialing" ? DIAL_FAILURES[input.reason] : DROPPED;
@@ -149,7 +149,9 @@ function brainStep(state: CallState, brain: BrainStep, now: string): Transition 
 function confirm(state: CallState, outcome: Extract<CallOutcome, { kind: "confirmed" }>, now: string): Transition {
   const { brief } = state;
   const owner = brief.ownerName;
-  const charges = [...(outcome.amountUsd !== undefined ? [outcome.amountUsd] : []), ...chargedIn(outcome.summary)].filter(amount => Number.isFinite(amount) && amount > 0);
+  const quote = state.turns.findLast(turn => turn.speaker === "business" && amountsIn(turn.text).length > 0);
+  const charges = [...(outcome.amountUsd !== undefined ? [outcome.amountUsd] : []), ...chargedIn(outcome.summary), ...(quote ? amountsIn(quote.text) : [])]
+    .filter(amount => Number.isFinite(amount) && amount > 0);
   const charge = charges.length > 0 ? Math.max(...charges) : undefined;
   const limit = brief.maxUsd ?? 0;
   if (charge !== undefined && state.deniedUsd.includes(charge)) {
@@ -171,7 +173,7 @@ function confirm(state: CallState, outcome: Extract<CallOutcome, { kind: "confir
     const line = charge !== undefined ? `Just to confirm, that's ${price}${when}?` : `Just to confirm, are we all set${when}?`;
     return { state: { ...withTurn(flushed, "agent", line, now), askedToConfirm: true }, effects: [say(line)] };
   }
-  if (charge === undefined && brief.maxUsd !== undefined && !state.approvedUnpriced) {
+  if (charge === undefined && !state.approvedUnpriced) {
     const when = outcome.when ? ` for ${outcome.when}` : "";
     return askOwner(state, `${brief.business.name} confirmed${when} but gave no price. Should I agree without a price?`, undefined, now, true);
   }
@@ -184,8 +186,10 @@ function evidenced(state: CallState, charge: number | undefined): boolean {
   const lastBusiness = line.findLast(turn => turn.speaker === "business");
   if (!lastBusiness || refuses(lastBusiness.text)) return false;
   if (charge === undefined) return affirms(lastBusiness.text);
-  const first = line.findIndex(turn => amountsIn(turn.text).includes(charge) && !(turn.speaker === "business" && refuses(turn.text)));
-  return first >= 0 && line.slice(first).some(turn => turn.speaker === "business" && affirms(turn.text));
+  const named = line.findLastIndex(turn => amountsIn(turn.text).includes(charge));
+  if (named < 0) return false;
+  const answer = line[named]?.speaker === "business" ? line[named] : line.slice(named + 1).find(turn => turn.speaker === "business");
+  return answer !== undefined && affirms(answer.text);
 }
 
 function close(state: CallState, outcome: Exclude<CallOutcome, { kind: "unconfirmed" }>, now: string, line?: string): Transition {
@@ -236,6 +240,14 @@ function flushDraft(state: CallState, now: string): CallState {
   const text = state.draft.trim();
   const flushed = { ...state, draft: "", held: "" };
   return text ? withTurn(flushed, "agent", text, now) : flushed;
+}
+
+function sharedWords(said: string, reported: string): string {
+  const words = said.trim().split(/\s+/).filter(Boolean);
+  const plain = (word: string) => word.normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}']/gu, "");
+  const heard = reported.trim().split(/\s+/).filter(Boolean).map(plain);
+  const count = words.findIndex((word, at) => at >= heard.length || plain(word) !== heard[at]);
+  return words.slice(0, count < 0 ? words.length : count).join(" ");
 }
 
 function truncateAgent(state: CallState, spokenSoFar: string, now: string): CallState {

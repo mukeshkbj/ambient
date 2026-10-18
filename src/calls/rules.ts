@@ -98,8 +98,15 @@ export function offerIn(text: string): number | undefined {
 const AFFIRMATIVE = /\b(yes|yeah|yep|yup|sure|correct|right|ok|okay|deal|fine|works|sounds good|confirmed|booked|perfect|great|absolutely|can do|will do|you got it|alright|all set|see you)\b/i;
 const REFUSAL = /\b(no|not|nope|nah|never|sorry|can'?t|cannot|won'?t|don'?t|unfortunately)\b|n't\b/i;
 
+const HOLDING = /\b(hold on|hang on|one (sec|second|moment|minute)|just a (sec|second|moment|minute)|give me a (sec|second|moment|minute)|let me (check|see|ask)|check with|ask my|get back to you|call you back)\b/i;
+
+export function noteFromCall(fact: string): string | undefined {
+  const note = fact.replace(/\[[^\]]*\]/g, "").replace(/\s+/g, " ").trim();
+  return note && note.length <= 200 ? note : undefined;
+}
+
 export function affirms(text: string): boolean {
-  return AFFIRMATIVE.test(text) && !REFUSAL.test(text);
+  return AFFIRMATIVE.test(text) && !REFUSAL.test(text) && !HOLDING.test(text);
 }
 
 export function refuses(text: string): boolean {

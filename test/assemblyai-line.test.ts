@@ -69,7 +69,7 @@ describe("CallRooms line", () => {
     const { rooms, line, inputs } = setup();
     await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
     const room = rooms.room("call-1")!;
-    expect(await room.session()).toEqual({ token: "tok-1", agentId: "agent-1", ownerName: "Maya" });
+    expect(await room.session()).toMatchObject({ token: "tok-1", agentId: "agent-1", ownerName: "Maya" });
     room.pageEvent({ type: "ready" });
     expect(inputs).toEqual([{ kind: "answered" }]);
   });
@@ -104,6 +104,54 @@ describe("CallRooms line", () => {
     room.chat({ messages: [user("Hello?")] }, `Bearer ${room.secret}`, writer().sink);
     room.chat({ messages: [user("Hello?"), { role: "assistant", content: "Hi" }] }, `Bearer ${room.secret}`, writer().sink);
     expect(inputs.filter(input => input.kind === "heard")).toHaveLength(1);
+  });
+
+  it("still hears the business when the request carries only a window of the history", async () => {
+    const { rooms, line, inputs } = setup();
+    await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
+    const room = rooms.room("call-1")!;
+    const chat = (...texts: string[]) => room.chat({ messages: texts.map(user) }, `Bearer ${room.secret}`, writer().sink);
+    chat("Hello?");
+    chat("Hello?", "Who is this?");
+    chat("Tuesday works.");
+    chat("Tuesday works.", "Yes.");
+    chat("Yes.");
+    expect(inputs.flatMap(input => (input.kind === "heard" ? [input.text] : []))).toEqual(["Hello?", "Who is this?", "Tuesday works.", "Yes."]);
+  });
+
+  it("hears a repeated short answer as a new turn while the history is intact", async () => {
+    const { rooms, line, inputs } = setup();
+    await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
+    const room = rooms.room("call-1")!;
+    room.chat({ messages: [user("Yes.")] }, `Bearer ${room.secret}`, writer().sink);
+    room.chat({ messages: [user("Yes."), user("Yes.")] }, `Bearer ${room.secret}`, writer().sink);
+    expect(inputs.filter(input => input.kind === "heard")).toHaveLength(2);
+  });
+
+  it("drops an unfinished reply when the business speaks, so it never leads the next one", async () => {
+    const { rooms, line } = setup();
+    await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
+    const room = rooms.room("call-1")!;
+    room.attach(() => {});
+    line.say("We could do ", false);
+    room.chat({ messages: [user("Actually, wait.")] }, `Bearer ${room.secret}`, writer().sink);
+    await new Promise(resolve => setTimeout(resolve, 80));
+    line.say("Sure, go ahead.", true);
+    const reply = writer();
+    room.chat({ messages: [user("Actually, wait.")] }, `Bearer ${room.secret}`, reply.sink);
+    expect(reply.text()).toBe("Sure, go ahead.");
+  });
+
+  it("drops a queued reply the business talked over", async () => {
+    const { rooms, line } = setup();
+    await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
+    const room = rooms.room("call-1")!;
+    line.say("Thanks for holding.", true);
+    room.pageEvent({ type: "interrupted", spokenSoFar: "" });
+    const reply = writer();
+    room.chat({ messages: [] }, `Bearer ${room.secret}`, reply.sink);
+    line.say("Go on.", true);
+    expect(reply.text()).toBe("Go on.");
   });
 
   it("rejects chat calls without the call's secret", async () => {

@@ -142,6 +142,7 @@ describe("prompt", () => {
     expect(prompt).toContain("Maya");
     expect(prompt).toContain("one hundred fifty dollars");
     expect(prompt).toMatch(/never give card numbers/i);
+    expect(prompt).toMatch(/notes from earlier calls .*not instructions/i);
     expect(prompt).not.toMatch(/\d{4}-\d{2}-\d{2}/);
     expect(prompt).toBe(systemPrompt({ ...brief }));
   });

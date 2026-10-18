@@ -5,12 +5,14 @@ import type { CallRooms, PageReport } from "./calls/rooms.js";
 
 const ROUTE = /^\/call\/([0-9a-f-]{36})(\/session|\/info|\/events|\/event|\/v1\/chat\/completions)?$/;
 
+class BodyTooLarge extends Error {}
+
 async function readJson(request: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const chunk of request) {
     size += (chunk as Buffer).length;
-    if (size > 2_000_000) throw new Error("Request body too large");
+    if (size > 2_000_000) throw new BodyTooLarge();
     chunks.push(chunk as Buffer);
   }
   const text = Buffer.concat(chunks).toString("utf8");
@@ -55,6 +57,11 @@ export async function handleCallRoute(rooms: CallRooms, assetsDir: string, reque
       return true;
     }
     if (action === "/event" && request.method === "POST") {
+      const key = request.headers["x-page-key"];
+      if (!room.acceptsPage(typeof key === "string" ? key : undefined)) {
+        json(response, 403, { error: "This page did not answer the call." });
+        return true;
+      }
       const value = report(await readJson(request));
       if (!value) json(response, 400, { error: "Unknown event" });
       else {
@@ -85,6 +92,7 @@ export async function handleCallRoute(rooms: CallRooms, assetsDir: string, reque
     }
   } catch (error) {
     if (response.headersSent) response.end();
+    else if (error instanceof BodyTooLarge) json(response, 413, { error: "Request body is too large." });
     else if (error instanceof SyntaxError) json(response, 400, { error: "Request body is not valid JSON." });
     else json(response, 500, { error: "The call could not handle that request." });
     return true;

@@ -3,7 +3,8 @@ import type { Brain } from "../calls/brain.js";
 import { runCall, type CallHandle } from "../calls/call.js";
 import type { Candidate } from "../calls/discover.js";
 import type { Line } from "../calls/line.js";
-import { amountsIn, checkDialLimits, type PlacedCall } from "../calls/rules.js";
+import { EARLIER_CALL } from "../calls/prompt.js";
+import { amountsIn, checkDialLimits, noteFromCall, type PlacedCall } from "../calls/rules.js";
 import { parsePhoneNumber, type CallBrief, type CallOutcome, type CallRecord, type PhoneNumber } from "../calls/types.js";
 import { householdFacts, type Household } from "../household.js";
 import { dollarsInWords } from "../words.js";
@@ -271,7 +272,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
       business,
       ownerName: household.ownerName,
       ...(maxUsd !== undefined ? { maxUsd } : {}),
-      facts: [...householdFacts(household), ...(memory?.facts(business.phone) ?? []), ...this.pastCalls(business.phone)]
+      facts: [...householdFacts(household), ...(memory?.facts(business.phone) ?? []).map(fact => `${EARLIER_CALL} ${fact}`), ...this.pastCalls(business.phone)]
     };
     this.emit({ type: "status.update", sessionId, payload: { text: `Calling ${business.name}`, subject: business.name } });
     const last = memory?.history(business.phone)[0];
@@ -283,7 +284,10 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
       line,
       brain: this.options.brain,
       emit: event => this.emit({ ...event, sessionId }),
-      ...(memory ? { remember: fact => memory.addFact(business.phone, fact) } : {}),
+      ...(memory ? { remember: fact => {
+        const note = noteFromCall(fact);
+        if (note) memory.addFact(business.phone, note);
+      } } : {}),
       ...(this.options.tickMs !== undefined ? { tickMs: this.options.tickMs } : {})
     });
     this.calls.set(sessionId, call);

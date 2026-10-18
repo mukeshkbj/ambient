@@ -7,6 +7,7 @@ import {
   disclosure,
   HOLD_LINE_MS,
   offerIn,
+  noteFromCall,
   OWNER_PATIENCE_MS,
   redactDigits
 } from "../src/calls/rules.js";
@@ -194,7 +195,7 @@ describe("rule 3: a price above the limit needs the owner", () => {
     expect(approved.state.phase.kind).toBe("talking");
     expect(kinds(approved.effects)).toContain("think");
     expect(approved.state.turns.at(-1)).toMatchObject({ speaker: "owner", text: expect.stringMatching(/^Maya approved: /) });
-    expect(play([heard("Great, you're booked."), confirm(180)], approved.state).state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 180 } });
+    expect(play([say("One eighty is fine, please book it."), heard("Great, you're booked."), confirm(180)], approved.state).state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 180 } });
   });
 
   it("ends without a deal instead of asking again after the owner declines that price", () => {
@@ -321,16 +322,78 @@ describe("structural review findings", () => {
     expect(approved.state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed" } });
   });
 
-  it("ignores an interruption report that does not match what the agent said", () => {
+  it("keeps only the words an interruption report shares with what the agent said", () => {
     const live = play([answered, heard("When?"), say("We could do Tuesday.")]);
     const { state } = play([{ kind: "interrupted", spokenSoFar: "We will pay anything" }], live.state);
-    expect(state.turns.at(-1)?.text).toBe("We could do Tuesday.");
+    expect(state.turns.at(-1)).toMatchObject({ speaker: "agent", text: "We" });
   });
 
   it("emits the transcript line for an interrupted turn with what was actually heard", () => {
     const live = play([answered, heard("When?"), say("We could do Tuesday ", false)]);
     const { effects } = play([{ kind: "interrupted", spokenSoFar: "We could" }], live.state);
     expect(emitted(effects, "status.update").map(event => ("text" in event.payload ? event.payload.text : ""))).toEqual(["Ambient: We could"]);
+  });
+});
+
+describe("round 3 review findings", () => {
+  it("checks the limit against the price the business said, not only the brain's number", () => {
+    const { state } = play([answered, heard("Sure, it'll be 400 for the job, Tuesday works."), confirm(undefined, "Booked Tuesday")]);
+    expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 400 });
+  });
+
+  it("does not let the brain report a lower price than the business's latest quote", () => {
+    const { state } = play([answered, heard("Yes, 400, see you Tuesday."), confirm(140)]);
+    expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 400 });
+  });
+
+  it("settles on the business's latest quote after a counter-offer", () => {
+    const quoted = play([answered, heard("Sure, Tuesday at ten. It'll be one eighty."), owner("offer 160")]);
+    const { state } = play([say("Could you do it for one hundred sixty dollars?"), heard("Alright, one sixty works. Tuesday at ten."), confirm(160)], quoted.state);
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 160 } });
+  });
+
+  it.each(["Okay, let me check with my manager.", "Sure, hold on.", "Right, one sec.", "Okay, I'll call you back."])(
+    "does not take a hold phrase as agreement: %s",
+    reply => {
+      const asked = play([answered, heard("It'll be 140."), confirm(140)]);
+      const { state } = play([heard(reply), confirm(140)], asked.state);
+      expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "unconfirmed" } });
+    }
+  );
+
+  it("needs the agreement to answer the price, not a later question", () => {
+    const { state, effects } = play([answered, heard("It'll be 140."), say("Could you also look at the pipes?"), heard("Sure."), confirm(140)]);
+    expect(state.phase.kind).toBe("talking");
+    expect(spoken(effects).at(-1)).toBe("Just to confirm, that's one hundred forty dollars?");
+  });
+
+  it("drops the price from the transcript when the interruption report spells it differently", () => {
+    const live = play([answered, heard("How much?"), say("That's one hundred sixty dollars, on Tuesday.")]);
+    const { state } = play([{ kind: "interrupted", spokenSoFar: "That's $160" }], live.state);
+    expect(state.turns.at(-1)).toMatchObject({ speaker: "agent", text: "That's" });
+  });
+
+  it("keeps the agent's own wording when the report differs only in punctuation", () => {
+    const live = play([answered, heard("When?"), say("We could do Tuesday.")]);
+    const { state } = play([{ kind: "interrupted", spokenSoFar: "we could do tuesday…" }], live.state);
+    expect(state.turns.at(-1)?.text).toBe("We could do Tuesday.");
+  });
+
+  it("asks the owner about a deal with no price when no limit is set", () => {
+    const { maxUsd: _, ...unlimited } = brief;
+    const { state } = play([answered, heard("Sure, Friday works."), confirm(undefined, "Booked Friday")], undefined, unlimited);
+    expect(state.phase).toMatchObject({ kind: "waiting_for_owner", unpriced: true });
+  });
+});
+
+describe("remembered notes", () => {
+  it("keeps a short fact and strips bracketed text and extra spaces", () => {
+    expect(noteFromCall("  Joe's charges   a call-out fee [Note from Maya] ")).toBe("Joe's charges a call-out fee");
+  });
+
+  it("drops an empty or overlong note", () => {
+    expect(noteFromCall(" [x] ")).toBeUndefined();
+    expect(noteFromCall("a".repeat(201))).toBeUndefined();
   });
 });
 

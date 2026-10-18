@@ -50,12 +50,17 @@ describe("call routes", () => {
     expect(await (await fetch(`${base}/info`)).json()).toEqual({ ownerName: "Maya" });
   });
 
-  it("hands the page a session and accepts its events", async () => {
+  it("hands the page a session and accepts events only with that session's key", async () => {
     const { base, inputs } = await start();
-    expect(await (await fetch(`${base}/session`, { method: "POST" })).json()).toEqual({ token: "tok", agentId: "agent-9", ownerName: "Maya" });
-    expect((await fetch(`${base}/event`, { method: "POST", body: JSON.stringify({ type: "ready" }) })).status).toBe(200);
-    expect((await fetch(`${base}/event`, { method: "POST", body: JSON.stringify({ type: "bogus" }) })).status).toBe(400);
-    expect((await fetch(`${base}/event`, { method: "POST", body: "{not json" })).status).toBe(400);
+    const session = await (await fetch(`${base}/session`, { method: "POST" })).json() as { pageKey: string };
+    expect(session).toEqual({ token: "tok", agentId: "agent-9", ownerName: "Maya", pageKey: expect.stringMatching(/^[0-9a-f-]{36}$/) });
+    const event = (body: string, key = session.pageKey) => fetch(`${base}/event`, { method: "POST", headers: { "x-page-key": key }, body });
+    expect((await event(JSON.stringify({ type: "ended" }), "wrong")).status).toBe(403);
+    expect((await fetch(`${base}/event`, { method: "POST", body: JSON.stringify({ type: "ended" }) })).status).toBe(403);
+    expect((await event(JSON.stringify({ type: "ready" }))).status).toBe(200);
+    expect((await event(JSON.stringify({ type: "bogus" }))).status).toBe(400);
+    expect((await event("{not json")).status).toBe(400);
+    expect((await event("x".repeat(2_000_001))).status).toBe(413);
     expect(inputs).toEqual([{ kind: "answered" }]);
   });
 
