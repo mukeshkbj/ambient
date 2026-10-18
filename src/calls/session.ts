@@ -1,5 +1,5 @@
 import { dollarsInWords, numberInWords } from "../words.js";
-import { affirms, amountsIn, chargedIn, disclosure, HOLD_LINE_MS, holdTrailingDigits, offerIn, OWNER_PATIENCE_MS, qualifies, redactDigits } from "./rules.js";
+import { agreesTo, chargedIn, disclosure, HOLD_LINE_MS, holdTrailingDigits, offerIn, OWNER_PATIENCE_MS, redactDigits } from "./rules.js";
 import type { BrainStep, CallBrief, CallEffect, CallInput, CallOutcome, CallPhase, CallTurn, Speaker } from "./types.js";
 
 export type CallState = {
@@ -21,7 +21,7 @@ export type CallState = {
 };
 
 type Confirmed = Extract<CallOutcome, { kind: "confirmed" }>;
-type ReadBack = { outcome: Confirmed; line: string };
+type ReadBack = { outcome: Confirmed; line: string; terms: string; armed: boolean };
 
 export type Transition = { state: CallState; effects: CallEffect[] };
 
@@ -86,6 +86,10 @@ function transition(state: CallState, input: CallInput, now: string): Transition
         const thought = think(disclosed);
         return { state: thought.state, effects: [say(line), ...thought.effects] };
       }
+      if (state.readBack && !state.readBack.armed) {
+        if (agreesTo(input.text, state.readBack.terms, state.readBack.outcome.amountUsd)) return { state: heard, effects: [] };
+        return think({ ...heard, readBack: undefined, readBacks: state.readBacks - 1 });
+      }
       if (state.readBack) {
         const answered = answerReadBack(heard, state.readBack, input.text, now);
         if (answered) return answered;
@@ -98,7 +102,13 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       const said = state.draft || state.held ? state.draft + state.held : last?.text ?? "";
       const heardText = sharedWords(said, input.spokenSoFar);
       const cutDisclosure = !state.draft && last?.text === disclosure(brief.ownerName) && heardText !== last.text;
-      return { state: { ...truncateAgent(state, heardText, now), turn: state.turn + 1, ...(cutDisclosure ? { disclosed: false } : {}) }, effects: [] };
+      const unheard = state.readBack && !state.readBack.armed ? { readBack: undefined, readBacks: state.readBacks - 1 } : { readBack: undefined };
+      return { state: { ...truncateAgent(state, heardText, now), ...unheard, turn: state.turn + 1, ...(cutDisclosure ? { disclosed: false } : {}) }, effects: [] };
+    }
+    case "played": {
+      const readBack = state.readBack;
+      if (!readBack || readBack.armed || sharedWords(readBack.line, input.text) !== readBack.line.trim()) return unchanged(state);
+      return { state: { ...state, readBack: { ...readBack, armed: true } }, effects: [] };
     }
     case "line_ended": {
       const reason = phase.kind === "dialing" ? DIAL_FAILURES[input.reason] : DROPPED;
@@ -180,24 +190,21 @@ function confirm(state: CallState, outcome: Confirmed, now: string): Transition 
     return askOwner(state, `${brief.business.name} confirmed${when} but gave no price. Should I agree without a price?`, undefined, now, true);
   }
   const flushed = flushDraft(state, now);
-  if (state.readBacks >= 2) {
+  if (state.readBacks >= 3) {
     const line = `I'll have ${owner} follow up to confirm. Thanks for your time, goodbye.`;
     return end(withTurn(flushed, "agent", line, now), { kind: "unconfirmed", reason: "they never clearly confirmed it" }, [say(line), { kind: "hang_up" }]);
   }
   const when = outcome.when ? `, ${outcome.when}` : "";
-  const line = charge !== undefined
-    ? `Just to confirm: ${price(charge)} total${when}. Is that right?`
-    : `Just to confirm: no price is set${when}. Is that right?`;
+  const terms = charge !== undefined ? `${price(charge)} total${when}` : `no price is set${when}`;
+  const line = `Just to confirm: ${terms}. Is that right?`;
   const settled = { ...outcome, ...(charge !== undefined ? { amountUsd: charge } : {}) };
-  return { state: { ...withTurn(flushed, "agent", line, now), readBack: { outcome: settled, line }, readBacks: state.readBacks + 1 }, effects: [say(line)] };
+  return { state: { ...withTurn(flushed, "agent", line, now), readBack: { outcome: settled, line, terms, armed: false }, readBacks: state.readBacks + 1 }, effects: [say(line)] };
 }
 
 function answerReadBack(state: CallState, readBack: ReadBack, reply: string, now: string): Transition | undefined {
   const lastAgent = state.turns.findLast(turn => turn.speaker === "agent");
   if (lastAgent?.text !== readBack.line) return undefined;
-  const allowed = [...amountsIn(readBack.line), ...(readBack.outcome.amountUsd !== undefined ? [readBack.outcome.amountUsd] : [])];
-  const clean = affirms(reply) && !reply.includes("?") && !qualifies(reply) && amountsIn(reply).every(amount => allowed.includes(amount));
-  return clean ? close({ ...state, readBack: undefined }, readBack.outcome, now) : undefined;
+  return agreesTo(reply, readBack.terms, readBack.outcome.amountUsd) ? close({ ...state, readBack: undefined }, readBack.outcome, now) : undefined;
 }
 
 function price(amount: number): string {

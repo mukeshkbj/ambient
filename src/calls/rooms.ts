@@ -5,7 +5,7 @@ import { disclosure } from "./rules.js";
 import type { LineInput, PhoneNumber } from "./types.js";
 
 export type PageEvent = { type: "speak" } | { type: "hangup" };
-export type PageReport = { type: "ready" } | { type: "interrupted"; spokenSoFar: string } | { type: "ended" };
+export type PageReport = { type: "ready" } | { type: "interrupted"; spokenSoFar: string } | { type: "played"; text: string } | { type: "ended" };
 export type ChatWriter = { write(chunk: string): void; end(): void };
 
 type RoomsOptions = {
@@ -97,6 +97,9 @@ export class CallRoom implements Line {
         this.draft = "";
         this.queued = "";
         this.send({ kind: "interrupted", spokenSoFar: report.spokenSoFar });
+        return;
+      case "played":
+        this.send({ kind: "played", text: report.text });
         return;
       case "ended":
         this.finish("hangup");

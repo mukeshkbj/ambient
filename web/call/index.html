@@ -72,7 +72,7 @@ body[data-state="ringing"] .avatar::after,body[data-state="speaking"] .avatar::a
 <script>
 const $ = id => document.getElementById(id);
 const base = location.pathname.replace(/\/$/, "");
-const call = { ws: null, ctx: null, mic: null, node: null, sources: new Set(), playAt: 0, replying: false, expectReply: false, endAfterReply: false, ended: false, started: 0, timer: null, pageKey: "" };
+const call = { ws: null, ctx: null, mic: null, node: null, sources: new Set(), playAt: 0, replying: false, expectReply: false, endAfterReply: false, ended: false, started: 0, timer: null, pageKey: "", agentText: "", flushes: 0 };
 
 const WORKLET = `
 class Mic extends AudioWorkletProcessor {
@@ -134,6 +134,7 @@ function flushPlayback() {
   for (const source of call.sources) { try { source.stop(); } catch {} }
   call.sources.clear();
   call.playAt = 0;
+  call.flushes += 1;
 }
 
 function end(reason) {
@@ -212,6 +213,7 @@ $("answer").onclick = async () => {
         case "reply.audio": play(event.data); break;
         case "transcript.agent":
           caption("Ambient · AI", event.text, "agent");
+          call.agentText = event.text;
           if (event.interrupted) post("/event", { type: "interrupted", spokenSoFar: event.text });
           break;
         case "transcript.user": caption("You", event.text ?? event.delta ?? "", "user"); break;
@@ -220,6 +222,10 @@ $("answer").onclick = async () => {
           call.replying = false;
           document.body.dataset.state = "live";
           if (event.status === "interrupted") flushPlayback();
+          else {
+            const text = call.agentText, flushes = call.flushes;
+            setTimeout(() => { if (call.flushes === flushes) post("/event", { type: "played", text }); }, Math.max(0, (call.playAt - call.ctx.currentTime) * 1000));
+          }
           if (call.endAfterReply) setTimeout(() => end("Ambient ended the call"), Math.max(400, (call.playAt - call.ctx.currentTime) * 1000 + 300));
           break;
         case "session.error": caption("Ambient", `Connection problem: ${event.message ?? event.code}`, "agent"); break;

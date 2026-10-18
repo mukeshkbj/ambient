@@ -95,32 +95,45 @@ export function offerIn(text: string): number | undefined {
   return OFFER_CUE.test(text) || AMOUNT_ONLY.test(text) ? amounts[0] : undefined;
 }
 
-const AFFIRMATIVE = /\b(yes|yeah|yep|yup|sure|correct|right|ok|okay|deal|fine|works|sounds good|confirmed|booked|perfect|great|absolutely|can do|will do|you got it|alright|all set|see you)\b/i;
-const LEADING_YES = /^\W*(yes|yeah|yep|yup|sure|correct|right|ok|okay|alright|absolutely|perfect|great|deal|you got it)\b/i;
-const REFUSAL = /\b(no|not|nope|nah|never|sorry|can'?t|cannot|won'?t|don'?t|unfortunately|too (much|low|high|expensive|steep|pricey))\b|n't\b/i;
-const FIRST_SENTENCE_NO = /\b(no|not|nope|nah|never|too|can'?t|cannot|won'?t|don'?t|unfortunately|unable)\b|n't\b/i;
-const POLITE = /\b(no problem|not a problem|no worries|not at all|no trouble)\b/gi;
-const PLAIN_YES = /\b(no problem|not a problem|no worries|that'?ll work|of course|mm-?hmm|uh-?huh|you bet|that's right)\b/i;
+const AGREEMENT = [
+  "that's right", "that is right", "that's correct", "that is correct", "that's it", "sounds good", "sounds great", "looks good", "see you then", "see you",
+  "you bet", "of course", "that'll work", "that works", "works for me", "no problem", "not a problem", "no worries", "all set", "you're all set", "you got it",
+  "you're booked", "thank you", "sure thing", "all right", "mm-hmm", "mm hmm", "uh-huh", "uh huh", "yes", "yeah", "yep", "yup", "correct", "right", "sure",
+  "okay", "ok", "alright", "perfect", "great", "exactly", "definitely", "certainly", "absolutely", "mhm", "indeed", "fine", "deal", "booked"
+].sort((a, b) => b.length - a.length);
+const AGREEMENT_PATTERN = new RegExp(`(?:^|\\s)(?:${AGREEMENT.join("|")})(?=\\s|$)`, "g");
+const FILLER = new Set(["and", "then", "so", "oh", "um", "uh", "well", "sorry", "sir", "ma'am", "thanks", "good", "bye", "goodbye", "we'll", "the"]);
 
-const HOLDING = /\b(hold on|hang on|one (sec|second|moment|minute)|just a (sec|second|moment|minute)|give me a (sec|second|moment|minute)|let me (check|see|ask)|check with|ask my|get back to you|call you back)\b/i;
+function plainWords(text: string): string {
+  return text
+    .normalize("NFKC")
+    .replace(/[’‘]/g, "'")
+    .toLowerCase()
+    .replace(/(\d+):00\b/g, "$1")
+    .replace(/[^a-z0-9'$.\s-]/g, " ")
+    .replace(/(?<!\d)\.|\.(?!\d)/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function agreesTo(reply: string, terms: string, amountUsd: number | undefined): boolean {
+  if (reply.includes("?")) return false;
+  const words = plainWords(reply);
+  const agreed = words.match(AGREEMENT_PATTERN) ?? [];
+  if (agreed.length === 0) return false;
+  const known = new Set(plainWords(terms).split(" "));
+  const amounts = [...amountsIn(terms), ...(amountUsd !== undefined ? [amountUsd] : [])];
+  const allowed = (part: string) => {
+    const number = part.replace(/^\$/, "");
+    if (/^\d+(\.\d+)?$/.test(number)) return amounts.includes(Number(number));
+    return FILLER.has(part) || known.has(part);
+  };
+  return words.replace(AGREEMENT_PATTERN, " ").split(" ").filter(Boolean).every(token => token.split("-").filter(Boolean).every(allowed));
+}
 
 export function noteFromCall(fact: string): string | undefined {
   const note = fact.replace(/\[[^\]]*\]/g, "").replace(/\s+/g, " ").trim();
   return note && note.length <= 200 ? note : undefined;
-}
-
-export function affirms(text: string): boolean {
-  if (HOLDING.test(text)) return false;
-  const plain = text.replace(POLITE, "");
-  const first = plain.split(/[.!?;]/)[0] ?? "";
-  const yes = AFFIRMATIVE.test(plain) || PLAIN_YES.test(text);
-  return (LEADING_YES.test(plain) && !FIRST_SENTENCE_NO.test(first)) || (yes && !REFUSAL.test(plain));
-}
-
-const QUALIFIER = /\b(estimate|estimated|starting|minimum|at least|plus|extra|parts|tax|unless|depends|depending|but|except|boss|manager|per|each|every|hour|hourly|approximately|roughly|around|about|maybe|probably|think|if)\b/i;
-
-export function qualifies(text: string): boolean {
-  return QUALIFIER.test(text);
 }
 
 const money = (raw: string, thousands?: string) => Number(raw.replace(/,/g, "")) * (thousands ? 1000 : 1);

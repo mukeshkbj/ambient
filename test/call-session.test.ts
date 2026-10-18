@@ -34,7 +34,9 @@ function play(inputs: Array<Input | [Input, number]>, from?: CallState, callBrie
   for (const item of inputs) {
     const [input, ms] = Array.isArray(item) ? item : [item, clock + 100];
     clock = ms;
-    const resolved: CallInput = input.kind === "brain" && !("turn" in input) ? { ...input, turn: state.turn } : input;
+    const resolved: CallInput = input.kind === "brain" && !("turn" in input)
+      ? { ...input, turn: state.turn }
+      : input.kind === "played" && !input.text ? { kind: "played", text: state.readBack?.line ?? "" } : input;
     const result = step(state, resolved, at(ms));
     state = result.state;
     effects.push(...result.effects);
@@ -59,7 +61,8 @@ const requestOf = (state: CallState) => {
   if (state.phase.kind !== "waiting_for_owner") throw new Error(`expected waiting_for_owner, got ${state.phase.kind}`);
   return state.phase.requestId;
 };
-const yes = heard("Yes, that's right.");
+const playedBack: Input = { kind: "played", text: "" };
+const yes: Input[] = [playedBack, heard("Yes, that's right.")];
 const quoted = () => play([answered, heard("It'll be 180"), confirm(180)]);
 
 describe("startCall", () => {
@@ -103,7 +106,7 @@ describe("rule 2: confirmed only through the brain, on the line's evidence", () 
     const asked = play([answered, heard("I can do Tuesday for 140"), confirm(140, "Tuesday for $140", "Tuesday")]);
     expect(asked.state.phase.kind).toBe("talking");
     expect(spoken(asked.effects)).toEqual(["Just to confirm: one hundred forty dollars total, Tuesday. Is that right?"]);
-    const { state, effects } = play([yes], asked.state);
+    const { state, effects } = play([...yes], asked.state);
     expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 140 } });
     expect(kinds(effects)).not.toContain("think");
     expect(kinds(effects).filter(kind => kind === "hang_up")).toHaveLength(1);
@@ -113,7 +116,7 @@ describe("rule 2: confirmed only through the brain, on the line's evidence", () 
   });
 
   it("confirms at exactly the limit", () => {
-    expect(play([answered, heard("150 even, that works"), confirm(150), yes]).state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed" } });
+    expect(play([answered, heard("150 even, that works"), confirm(150), ...yes]).state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed" } });
   });
 
   it("never confirms without a business reply to the read-back", () => {
@@ -122,7 +125,7 @@ describe("rule 2: confirmed only through the brain, on the line's evidence", () 
   });
 
   it("goes back to the conversation when the reply to the read-back is not a clean yes", () => {
-    const { state, effects } = play([answered, heard("Sure, it's $140."), confirm(140), heard("Well, it's 140 plus parts.")]);
+    const { state, effects } = play([answered, heard("Sure, it's $140."), confirm(140), playedBack, heard("Well, it's 140 plus parts.")]);
     expect(state.phase.kind).toBe("talking");
     expect(state.readBack).toBeUndefined();
     expect(kinds(effects)).toContain("think");
@@ -198,7 +201,7 @@ describe("rule 3: a price above the limit needs the owner", () => {
     expect(approved.state.phase.kind).toBe("talking");
     expect(kinds(approved.effects)).toContain("think");
     expect(approved.state.turns.at(-1)).toMatchObject({ speaker: "owner", text: expect.stringMatching(/^Maya approved: /) });
-    expect(play([say("One eighty is fine, please book it."), heard("Great, you're booked."), confirm(180), yes], approved.state).state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 180 } });
+    expect(play([say("One eighty is fine, please book it."), heard("Great, you're booked."), confirm(180), ...yes], approved.state).state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 180 } });
   });
 
   it("ends without a deal instead of asking again after the owner declines that price", () => {
@@ -209,7 +212,7 @@ describe("rule 3: a price above the limit needs the owner", () => {
   });
 
   it.each(["offer 160", "tell him one sixty", "160", "one sixty", "$160", "counter at 160"])("treats \"%s\" as authorizing 160", text => {
-    const done = play([owner(text), heard("Fine, 160 it is"), confirm(160), yes], quoted().state);
+    const done = play([owner(text), heard("Fine, 160 it is"), confirm(160), ...yes], quoted().state);
     expect(done.state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 160 } });
   });
 
@@ -250,7 +253,7 @@ describe("round 2 review findings", () => {
 
   it("accepts a yes to its read-back", () => {
     const asked = play([answered, heard("Hi"), confirm(90)]);
-    expect(play([yes], asked.state).state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 90 } });
+    expect(play([...yes], asked.state).state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 90 } });
   });
 
   it("reads back a deal with no price only after the owner allows it", () => {
@@ -260,8 +263,8 @@ describe("round 2 review findings", () => {
     expect(spoken(effects).at(-1)).toBe("Just to confirm: no price is set, Friday 7pm. Is that right?");
   });
 
-  it("stops after two unanswered read-backs and ends unconfirmed", () => {
-    const first = play([answered, heard("Hmm"), confirm(120), heard("Hmm"), confirm(120)]);
+  it("stops after three unanswered read-backs and ends unconfirmed", () => {
+    const first = play([answered, heard("Hmm"), confirm(120), playedBack, heard("Hmm"), confirm(120), playedBack, heard("Hmm"), confirm(120), playedBack]);
     const { state, effects } = play([heard("Hmm"), confirm(120)], first.state);
     expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "unconfirmed", reason: "they never clearly confirmed it" } });
     expect(kinds(effects)).toContain("hang_up");
@@ -289,7 +292,7 @@ describe("round 2 review findings", () => {
   it("lets the owner reverse an earlier decline", () => {
     const asked = play([answered, heard("It's 200"), confirm(200)]);
     const denied = play([{ kind: "owner_decided", requestId: requestOf(asked.state), decision: "deny" }], asked.state);
-    const { state } = play([owner("actually okay, go to 200"), heard("Great, 200 works"), confirm(200), yes], denied.state);
+    const { state } = play([owner("actually okay, go to 200"), heard("Great, 200 works"), confirm(200), ...yes], denied.state);
     expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 200 } });
   });
 
@@ -322,7 +325,7 @@ describe("structural review findings", () => {
     const { state, effects } = play([answered, heard("Sure, we'll bill you after."), confirm(undefined, "Booked Friday 7pm", "Friday 7pm")]);
     expect(state.phase).toMatchObject({ kind: "waiting_for_owner" });
     expect(emitted(effects, "approval.request")[0]?.payload).toMatchObject({ kind: "other", description: expect.stringMatching(/no price/) });
-    const approved = play([{ kind: "owner_decided", requestId: requestOf(state), decision: "once" }, heard("Yes, Friday works."), confirm(undefined, "Booked Friday 7pm", "Friday 7pm"), yes], state);
+    const approved = play([{ kind: "owner_decided", requestId: requestOf(state), decision: "once" }, heard("Yes, Friday works."), confirm(undefined, "Booked Friday 7pm", "Friday 7pm"), ...yes], state);
     expect(approved.state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed" } });
   });
 
@@ -340,10 +343,10 @@ describe("structural review findings", () => {
 });
 
 describe("rule 2b: a deal books only on a clean yes to the read-back", () => {
-  const readBack = (amount: number, quote = "It'll be $140.") => play([answered, heard(quote), confirm(amount)]);
+  const readBack = (amount: number, quote = "It'll be $140.") => play([answered, heard(quote), confirm(amount), playedBack]);
 
   it("records a price negotiated down from the first quote", () => {
-    const { state } = play([answered, heard("That's $180 for Tuesday at three."), say("Could you do one hundred forty dollars?"), heard("Sure, that works."), confirm(140), yes]);
+    const { state } = play([answered, heard("That's $180 for Tuesday at three."), say("Could you do one hundred forty dollars?"), heard("Sure, that works."), confirm(140), ...yes]);
     expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 140 } });
   });
 
@@ -354,20 +357,20 @@ describe("rule 2b: a deal books only on a clean yes to the read-back", () => {
 
   it("does not book a read-back the business only half heard", () => {
     const asked = readBack(140);
-    const { state } = play([{ kind: "interrupted", spokenSoFar: "Just to confirm" }, yes], asked.state);
+    const { state } = play([{ kind: "interrupted", spokenSoFar: "Just to confirm" }, ...yes], asked.state);
     expect(state.phase.kind).toBe("talking");
   });
 
   it("drops the read-back when the owner speaks before the business answers", () => {
     const asked = readBack(140);
-    const { state } = play([owner("wait, not yet"), yes], asked.state);
+    const { state } = play([owner("wait, not yet"), ...yes], asked.state);
     expect(state.phase.kind).toBe("talking");
   });
 
   it.each(["Yes, that's right.", "Yes, no problem.", "Yep, sorry, that's right.", "Sure, not a problem.", "That'll work.", "Of course.", "Mm-hmm.", "Yes, see you Tuesday."])(
     "books on a plain yes: %s",
     reply => {
-      const { state } = play([answered, heard("It'll be $140."), confirm(140, "Tuesday for $140", "Tuesday"), heard(reply)]);
+      const { state } = play([answered, heard("It'll be $140."), confirm(140, "Tuesday for $140", "Tuesday"), playedBack, heard(reply)]);
       expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 140 } });
     }
   );
@@ -523,7 +526,7 @@ describe("the rest of the table", () => {
   });
 
   it("emits the closing line's transcript before the run completes", () => {
-    const { effects } = play([answered, heard("Tuesday for 140 works"), confirm(140), yes]);
+    const { effects } = play([answered, heard("Tuesday for 140 works"), confirm(140), ...yes]);
     const order = effects.flatMap(effect => (effect.kind === "emit" ? [effect.event.type === "message.complete" ? "complete" : String("text" in effect.event.payload ? effect.event.payload.text : "")] : []));
     expect(order.slice(-2)).toEqual(["Ambient: Great, thank you so much. Goodbye.", "complete"]);
   });
@@ -553,7 +556,7 @@ describe("the rest of the table", () => {
   });
 
   it("changes nothing once the call has ended", () => {
-    const ended = play([answered, heard("Tuesday for 140 works"), confirm(140), yes]);
+    const ended = play([answered, heard("Tuesday for 140 works"), confirm(140), ...yes]);
     const inputs: CallInput[] = [
       { kind: "answered" },
       { kind: "heard", text: "hello?" },

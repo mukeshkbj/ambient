@@ -59,6 +59,7 @@ export function simulatedLine(persona: BusinessPersona, options: { speedMs?: num
       if (!last) return;
       const said = utterance;
       utterance = "";
+      later(() => send({ kind: "played", text: said }), 0);
       respond(said);
     },
     hangUp: end,

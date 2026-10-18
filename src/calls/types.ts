@@ -29,6 +29,7 @@ export type LineInput =
   | { kind: "answered" }
   | { kind: "heard"; text: string }
   | { kind: "interrupted"; spokenSoFar: string }
+  | { kind: "played"; text: string }
   | { kind: "line_ended"; reason: "hangup" | "no_answer" | "busy" | "failed" };
 
 export type CallInput =

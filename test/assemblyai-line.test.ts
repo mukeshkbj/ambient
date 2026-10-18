@@ -287,6 +287,7 @@ describe("CallRooms line", () => {
     const said: string[] = [];
     const history: { role: string; content: string }[] = [];
     for (const turn of turns) {
+      if (said.length === 3) room.pageEvent({ type: "played", text: said[2]! });
       history.push(user(turn));
       const reply = writer();
       room.chat({ messages: history }, `Bearer ${room.secret}`, reply.sink);

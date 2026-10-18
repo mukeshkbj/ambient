@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { amountsIn } from "../src/calls/rules.js";
 import { startCall, step, type CallState } from "../src/calls/session.js";
 import { parsePhoneNumber, type CallBrief, type CallInput } from "../src/calls/types.js";
 
@@ -61,9 +62,13 @@ function playCall(seed: number) {
       run({ kind: "owner_decided", requestId: state.phase.requestId, decision: approve ? "once" : "deny" });
       continue;
     }
-    if (state.readBack && next() < 0.7) {
+    if (state.readBack && next() < 0.8) {
+      const order = next();
+      if (order < 0.15) run({ kind: "interrupted", spokenSoFar: "Just to confirm" });
+      else if (order < 0.25) run({ kind: "owner_said", text: "wait a moment" });
+      else if (order < 0.8) run({ kind: "played", text: state.readBack.line });
       const reply: Reply = next() < 0.5 ? { text: pick(CLEAN_YES), clean: true } : { text: pick(NOT_YES), clean: false };
-      replies.push(reply);
+      replies.push({ ...reply, clean: reply.clean && order >= 0.25 && order < 0.8 });
       run({ kind: "heard", text: reply.text });
       continue;
     }
@@ -85,11 +90,16 @@ describe("honesty over generated calls", () => {
       booked += 1;
       const amount = state.phase.outcome.amountUsd;
       const turns = state.turns.filter(turn => turn.speaker !== "owner");
-      const [readBack, reply] = turns.slice(-3, -1);
+      const closing = turns.length - 1;
+      const readBackAt = turns.slice(0, closing).findLastIndex(turn => turn.speaker === "agent");
+      const readBack = turns[readBackAt];
+      const after = turns.slice(readBackAt + 1, closing);
+      const reply = after.at(-1);
+      if (after.some(turn => !(CLEAN_YES as readonly string[]).includes(turn.text))) failures.push(`seed ${seed}: something other than a clean yes followed the read-back`);
       const transcript = turns.map(turn => `${turn.speaker}: ${turn.text}`).join(" | ");
       const fail = (why: string) => failures.push(`seed ${seed}: ${why}: ${transcript}`);
       if (!readBack?.text.startsWith("Just to confirm:")) fail("no read-back before the booking");
-      else if (amount !== undefined && !readBack.text.includes(` total`)) fail("read-back without a total");
+      else if (amount !== undefined && !amountsIn(readBack.text.split(" total")[0] ?? "").includes(amount)) fail(`booked ${amount}, which the read-back did not say`);
       if (replies.at(-1)?.clean !== true || reply?.text !== replies.at(-1)?.text) fail("booked without a clean yes");
       if (amount === undefined ? !approved.includes(undefined) : amount > (limit ?? 0) && !approved.includes(amount)) fail(`booked ${amount} without the owner`);
     }

@@ -57,7 +57,7 @@ Rules 1 to 4 are enforced in the reducer and tested in [`test/call-session.test.
 | Rule | What the code does |
 |---|---|
 | 1. The first words are an AI disclosure | The line speaks "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else. |
-| 2. "Confirmed" means the business confirmed | Only the brain's `end_call` can start a booking. The reducer then reads the terms back word for word ("Just to confirm: one hundred sixty dollars total, Tuesday at ten. Is that right?"). It books only if the business's next turn is a clean yes: no other number, no question, no hold, and no qualifier such as "plus parts", "per hour", or "estimate". Anything else returns to the conversation. After two read-backs without a clean yes, the call ends unconfirmed. A dropped line is always unconfirmed. A seeded test plays 4,000 generated calls and checks that every booking followed a clean yes to a read-back of that exact amount. |
+| 2. "Confirmed" means the business confirmed | Only the brain's `end_call` can start a booking. The reducer then reads the terms back word for word ("Just to confirm: one hundred sixty dollars total, Tuesday at ten. Is that right?"). The read-back counts only after it has fully played; the voice page reports playback, and speech during playback that is not agreement cancels it. It books only if the business's reply is made entirely of agreement words ("yes", "that's right", "sounds good") and the exact amount and time from the read-back. Any other word, number, or a question returns to the conversation. A labelled corpus of 158 replies pins this. After three read-backs without a clean yes, the call ends unconfirmed. A dropped line is always unconfirmed. A seeded test plays 4,000 generated calls and checks that every booking followed a clean yes to a read-back of that exact amount. |
 | 3. A price above the limit needs the owner | The reducer turns an over-limit confirmation into a question for the owner. Only a clear offer ("offer 160", "one sixty") counts as approval. "Don't pay 180" does not. A declined price ends the call with no deal. A deal with no price also needs the owner. |
 | 4. No card numbers | Runs of 12 or more digits, spoken or written, become "that number". The check holds digits back across stream chunks, so a number split over several chunks is still caught. |
 | 5. Dialing an unknown business needs approval | A business found by web search gets a "Call them?" approval. A number the user gives is dialed directly. |
@@ -89,7 +89,7 @@ pnpm call
 ## Verification
 
 ```sh
-pnpm scan    # typecheck, eslint, knip, and 344 tests
+pnpm scan    # typecheck, eslint, knip, and 529 tests
 pnpm build
 pnpm smoke:mcp            # a full simulated call through /mcp
 python scripts/shots-sim.py   # every call state, light and dark, into docs/media/
