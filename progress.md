@@ -24,7 +24,7 @@ Branch: `hackathon/household-consent`. Nothing is pushed.
 | 4 | Brain | Landed `99379e2` | 20 tests with a stubbed stream. `pnpm brain:latency` not run: it spends API money |
 | 5 | Caller runtime + simulated line | Landed | 6 engine tests + 8 shell tests. `pnpm demo` + `pnpm smoke:mcp` runs a full simulated call through /mcp (transcript below) |
 | 6 | AssemblyAI line | After 9 | |
-| 7 | Alexa intents and cue | | |
+| 7 | Alexa intents and cue | Landed | 10 tests (7 alexa + 3 cue). `pnpm scan` and `pnpm build` green. Echo Dot run pending: needs Voice Monkey token and the phase-0 invocation check. Fixed a pre-existing eslint failure in `scripts/smoke-mcp.ts` (`no-base-to-string` on `unknown`) so scan could run green. |
 | 8 | Discovery and memory | | |
 | 9 | Sim around a live call | | |
 | 10 | AWS | Needs AWS spend approval | |
@@ -55,3 +55,4 @@ Known voice defects to fix in the voice-UX pass: the approval repeats the amount
 
 - 2026-10-18: plan written; L0 fixes merged (`8143d5e`).
 - 2026-10-18: implementation started. Phases 3, 4, 1 landed; Windows demo path fixed.
+- 2026-10-18: phase 7 landed — call intents replace the v1 model (both locales), `src/cue.ts` (Voice Monkey announce + Proactive Events MessageAlert behind `combinedCue`), `watchApprovals` in server.ts cues once per new approval id. Needs the Echo Dot run.

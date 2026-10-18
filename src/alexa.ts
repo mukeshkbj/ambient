@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import type { OAuthProvider } from "./auth.js";
 import type { RuntimeEntry, RuntimeRegistry } from "./runtimes/registry.js";
-import type { Conversation, RunView } from "./types.js";
+import type { RunStatus, RunView } from "./types.js";
 import { speak } from "./voice.js";
 
 type AlexaEnvelope = Record<string, unknown>;
@@ -32,6 +32,8 @@ export class AlexaRequestError extends Error {
   }
 }
 
+const ACTIVE_STATUSES: ReadonlySet<RunStatus> = new Set(["queued", "accepted", "running", "waiting_approval", "cancel_requested"]);
+
 function object(value: unknown): AlexaEnvelope | undefined {
   return value && typeof value === "object" && !Array.isArray(value) ? value as AlexaEnvelope : undefined;
 }
@@ -56,12 +58,11 @@ function speech(value: string): { type: "SSML"; ssml: string } {
 }
 
 function response(value: string, sessionAttributes: Record<string, unknown>, shouldEndSession = false): AlexaSkillResponse {
-  const outputSpeech = speech(value);
   return {
     version: "1.0",
     sessionAttributes,
     response: {
-      outputSpeech,
+      outputSpeech: speech(value),
       ...(shouldEndSession ? {} : { reprompt: { outputSpeech: speech("What would you like your assistants to do?") } }),
       shouldEndSession
     }
@@ -138,31 +139,6 @@ async function authorize(envelope: AlexaEnvelope, dependencies: AlexaSkillDepend
   if (!dependencies.allowUnauthenticated) throw new AlexaRequestError(401, "Alexa account linking is required");
 }
 
-function lastWorkId(attributes: Record<string, unknown>, intent: AlexaEnvelope): string | undefined {
-  return slotValue(intent, "workId", "work", "id", "about") ?? text(attributes.lastWorkId);
-}
-
-function lastApprovalId(attributes: Record<string, unknown>, intent: AlexaEnvelope): string | undefined {
-  const explicit = slotValue(intent, "approvalId", "approval", "about");
-  if (explicit) return explicit;
-  const ordinal = slotValue(intent, "approvalNumber", "number");
-  const ids = Array.isArray(attributes.pendingApprovalIds)
-    ? attributes.pendingApprovalIds.filter((value): value is string => typeof value === "string")
-    : [];
-  if (ordinal) {
-    const index = ordinalIndex(ordinal);
-    if (index !== undefined) return ids[index];
-  }
-  return text(attributes.lastApprovalId) ?? (ids.length === 1 ? ids[0] : undefined);
-}
-
-function ordinalIndex(value: string): number | undefined {
-  const normalized = value.trim().toLowerCase();
-  const numeric = Number.parseInt(normalized, 10);
-  if (Number.isInteger(numeric) && numeric > 0) return numeric - 1;
-  return { first: 0, one: 0, second: 1, two: 1, third: 2, three: 2 }[normalized];
-}
-
 function decision(value: string | undefined): "once" | "deny" | undefined {
   const normalized = value?.trim().toLowerCase();
   if (!normalized) return undefined;
@@ -173,51 +149,64 @@ function decision(value: string | undefined): "once" | "deny" | undefined {
 
 function errorText(error: unknown): string {
   const message = error instanceof Error ? error.message.toLowerCase() : "";
-  if (message.includes("unknown assistant")) return error instanceof Error ? error.message : "I do not know that assistant.";
   if (message.includes("not found")) return "I could not find that item.";
-  if (message.includes("already has active")) return "That conversation already has active work.";
-  if (message.includes("already finished")) return "That work is already finished.";
+  if (message.includes("already has active")) return "A call is already in progress.";
+  if (message.includes("already finished")) return "That call is already finished.";
   if (message.includes("unknown")) return "The assistant needs to reconnect before I can do that.";
-  if (message.includes("approval")) return "The assistant could not confirm that approval response.";
-  if (message.includes("does not support")) return error instanceof Error ? error.message : "The assistant does not support that.";
-  return "The assistant could not complete that request.";
+  if (message.includes("approval")) return "I could not pass that decision on.";
+  return "I could not complete that request.";
 }
 
 function runAttributes(attributes: Record<string, unknown>, run: RunView): Record<string, unknown> {
-  const next: Record<string, unknown> = { ...attributes, lastWorkId: run.id, assistant: run.runtimeId };
-  if (run.approval) {
-    next.lastApprovalId = run.approval.id;
-  } else {
-    delete next.lastApprovalId;
-  }
-  return next;
+  return { ...attributes, lastWorkId: run.id };
 }
 
-function conversationMatches(conversations: Conversation[], query: string): Conversation[] {
-  const normalized = query.trim().toLowerCase();
-  const exact = conversations.filter(conversation => conversation.id === query || conversation.title.toLowerCase() === normalized);
-  return exact.length > 0 ? exact : conversations.filter(conversation => conversation.title.toLowerCase().includes(normalized));
-}
+type ActiveCall = { entry: RuntimeEntry; run: RunView };
 
-function pickAssistant(
-  intent: AlexaEnvelope,
-  attributes: Record<string, unknown>,
-  dependencies: AlexaSkillDependencies
-): RuntimeEntry | string {
-  const name = slotValue(intent, "assistant", "assistantName") ?? text(attributes.assistant);
+function defaultEntry(registry: RuntimeRegistry): RuntimeEntry | undefined {
   try {
-    return dependencies.registry.resolve(name);
-  } catch (error) {
-    return error instanceof Error ? error.message : "I do not know that assistant.";
-  }
-}
-
-function findWork(registry: RuntimeRegistry, query: string): RunView | undefined {
-  try {
-    return registry.engineForRun(query).getWork(query);
+    return registry.resolve();
   } catch {
-    return registry.findRun(query);
+    return undefined;
   }
+}
+
+function hintedRun(entry: RuntimeEntry, attributes: Record<string, unknown>): RunView | undefined {
+  const id = text(attributes.lastWorkId);
+  if (!id) return undefined;
+  try {
+    const run = entry.engine.getWork(id);
+    return run.runtimeId === entry.descriptor.id ? run : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function activeCall(registry: RuntimeRegistry, attributes: Record<string, unknown>): ActiveCall | undefined {
+  const entry = defaultEntry(registry);
+  if (!entry) return undefined;
+  const hinted = hintedRun(entry, attributes);
+  const run = hinted && ACTIVE_STATUSES.has(hinted.status)
+    ? hinted
+    : entry.engine.listRuns(50).find(item => ACTIVE_STATUSES.has(item.status));
+  return run ? { entry, run } : undefined;
+}
+
+function startedCall(entry: RuntimeEntry, run: RunView): string {
+  if (ACTIVE_STATUSES.has(run.status) && run.status !== "waiting_approval") {
+    const business = /^calling\s+(.+?)\.?$/i.exec(run.progress ?? "")?.[1];
+    return business
+      ? `Calling ${business} now. I'll tell you if they need you.`
+      : "Calling now. I'll tell you if they need you.";
+  }
+  return speak(run, { label: entry.descriptor.label, state: entry.engine.runtime().state });
+}
+
+function callStatus(target: ActiveCall): string {
+  const ctx = { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state };
+  if (target.run.approval || !ACTIVE_STATUSES.has(target.run.status)) return speak(target.run, ctx);
+  const line = target.run.progress ?? target.run.steps.at(-1);
+  return line ?? `${ctx.label} is still on the call.`;
 }
 
 async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, unknown>, dependencies: AlexaSkillDependencies): Promise<AlexaSkillResponse> {
@@ -225,147 +214,73 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
   if (!name) throw new AlexaRequestError(400, "Alexa intent name is required");
   const registry = dependencies.registry;
   if (name === "AMAZON.HelpIntent") {
-    return response("You can ask an assistant a question, name one directly, ask which assistants are online, check work status, list conversations, steer or cancel work, or list and answer approvals.", attributes);
+    return response("Say call, followed by what you need, and I'll phone them. During the call you can ask how it's going, tell them something, offer an amount, approve or deny, or say hang up.", attributes);
   }
   if (name === "AMAZON.StopIntent" || name === "AMAZON.CancelIntent") {
     return response("Goodbye.", attributes, true);
   }
-  if (name === "AMAZON.YesIntent" || name === "AMAZON.NoIntent") {
-    const approvalId = lastApprovalId(attributes, intent);
-    if (!approvalId) return response("I do not have one pending approval selected. Say list approvals first.", attributes);
+  if (name === "AMAZON.FallbackIntent") {
+    return response("I did not understand that. Say call, followed by what you need, or say help.", attributes);
+  }
+  if (name === "StartCallIntent") {
+    const task = slotValue(intent, "task", "request");
+    if (!task) return response("What should I call about?", attributes);
+    const entry = defaultEntry(registry);
+    if (!entry) return response("I could not reach the assistant.", attributes);
     try {
-      const engine = registry.engineForApproval(approvalId);
-      let run = await engine.respondToApproval(approvalId, name === "AMAZON.YesIntent" ? "once" : "deny");
-      if (dependencies.askWaitMs) run = await engine.waitForRun(run.id, dependencies.askWaitMs);
-      const next = { ...attributes };
-      delete next.lastApprovalId;
-      delete next.pendingApprovalIds;
-      const label = registry.label(run.runtimeId);
-      const prefix = name === "AMAZON.YesIntent" ? "Approved once. " : "Denied. ";
-      return response(prefix + speak(run, { label, state: engine.runtime().state }), runAttributes(next, run));
+      const run = await entry.engine.ask(task, undefined, true, { waitMs: dependencies.askWaitMs ?? 0 });
+      return response(startedCall(entry, run), runAttributes(attributes, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
   }
-  if (name === "AMAZON.FallbackIntent") return response("I did not understand that. Ask an assistant a question or say help.", attributes);
-  if (name === "ListAssistantsIntent") {
-    const assistants = registry.list();
-    if (assistants.length === 0) return response("No assistants are configured.", attributes);
-    const states = assistants.map(item => `${item.label} is ${item.state}`).join(". ");
-    const selected = assistants.find(item => item.selected);
-    return response(`${states}. ${selected ? `Currently using ${selected.label}.` : ""}`, attributes);
-  }
-  if (name === "SelectAssistantIntent") {
-    const wanted = slotValue(intent, "assistant", "assistantName", "name");
-    if (!wanted) return response("Which assistant should I use?", attributes);
+  if (name === "SteerCallIntent" || name === "OfferAmountIntent") {
+    const amount = name === "OfferAmountIntent" ? slotValue(intent, "amount") : undefined;
+    const message = name === "OfferAmountIntent"
+      ? (amount ? `offer ${amount} dollars` : undefined)
+      : slotValue(intent, "message", "instruction");
+    if (!message) return response(name === "OfferAmountIntent" ? "How much should I offer?" : "What should I tell them?", attributes);
+    const target = activeCall(registry, attributes);
+    if (!target) return response("There's no call in progress.", attributes);
     try {
-      const entry = registry.select(wanted);
-      return response(`Using ${entry.descriptor.label} now.`, { ...attributes, assistant: entry.descriptor.id });
+      const run = await target.entry.engine.steer(target.run.id, message);
+      return response("Told them.", runAttributes(attributes, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
   }
-  if (name === "ListConversationsIntent") {
-    const picked = pickAssistant(intent, attributes, dependencies);
-    if (typeof picked === "string") return response(picked, attributes);
-    const conversations = picked.engine.listConversations();
-    if (conversations.length === 0) return response(`There are no saved ${picked.descriptor.label} conversations yet.`, attributes);
-    const names = conversations.slice(0, 5).map(conversation => conversation.title);
-    return response(`I found ${conversations.length} conversation${conversations.length === 1 ? "" : "s"} on ${picked.descriptor.label}: ${names.join(", ")}.`, attributes);
-  }
-  if (name === "SelectConversationIntent") {
-    const picked = pickAssistant(intent, attributes, dependencies);
-    if (typeof picked === "string") return response(picked, attributes);
-    const query = slotValue(intent, "conversation", "conversationName", "name");
-    if (!query) return response(`Which ${picked.descriptor.label} conversation should I select?`, attributes);
-    const matches = conversationMatches(picked.engine.listConversations(), query);
-    if (matches.length === 0) return response(`I could not find that ${picked.descriptor.label} conversation.`, attributes);
-    if (matches.length > 1) return response(`I found more than one conversation matching ${query}. Say the full conversation name.`, attributes);
-    const match = matches[0];
-    if (!match) return response(`I could not find that ${picked.descriptor.label} conversation.`, attributes);
-    const selected = await picked.engine.selectConversation(match.id);
-    return response(`Selected ${selected.title} on ${picked.descriptor.label}.`, { ...attributes, assistant: picked.descriptor.id });
-  }
-  if (name === "ListApprovalsIntent") {
-    const approvals = registry.list().flatMap(item => registry.entry(item.id)!.engine.listApprovals());
-    if (approvals.length === 0) return response("There are no pending approvals.", { ...attributes, pendingApprovalIds: [] });
-    const firstApproval = approvals[0];
-    if (!firstApproval) return response("There are no pending approvals.", { ...attributes, pendingApprovalIds: [] });
-    const descriptions = approvals.slice(0, 3).map((approval, index) => `Approval ${index + 1} from ${registry.label(approval.runtimeId)}: ${approval.description ?? approval.command}`);
-    return response(`I found ${approvals.length} pending approval${approvals.length === 1 ? "" : "s"}. ${descriptions.join(". ")}. Say approve once or deny followed by the approval number.`, {
-      ...attributes,
-      pendingApprovalIds: approvals.map(approval => approval.id),
-      ...(approvals.length === 1 ? { lastApprovalId: firstApproval.id } : {})
-    });
-  }
-  if (name === "RespondApprovalIntent") {
-    const approvalId = lastApprovalId(attributes, intent);
-    const selectedDecision = decision(slotValue(intent, "decision", "choice"));
-    if (!approvalId) return response("Say list approvals first, then give the approval number.", attributes);
-    if (!selectedDecision) return response("Say approve once or deny.", attributes);
+  if (name === "AMAZON.YesIntent" || name === "AMAZON.NoIntent" || name === "RespondApprovalIntent") {
+    const choice = name === "RespondApprovalIntent"
+      ? decision(slotValue(intent, "decision"))
+      : name === "AMAZON.YesIntent" ? "once" : "deny";
+    if (!choice) return response("Say approve or deny.", attributes);
+    const target = activeCall(registry, attributes);
+    const approval = target?.run.approval;
+    if (!target || !approval) return response("There's nothing waiting on your decision.", attributes);
     try {
-      const engine = registry.engineForApproval(approvalId);
-      let run = await engine.respondToApproval(approvalId, selectedDecision);
-      if (dependencies.askWaitMs) run = await engine.waitForRun(run.id, dependencies.askWaitMs);
-      const next = { ...attributes };
-      delete next.lastApprovalId;
-      delete next.pendingApprovalIds;
-      const prefix = selectedDecision === "once" ? "Approved once. " : "Denied. ";
-      return response(prefix + speak(run, { label: registry.label(run.runtimeId), state: engine.runtime().state }), runAttributes(next, run));
+      let run = await target.entry.engine.respondToApproval(approval.id, choice);
+      if (dependencies.askWaitMs) run = await target.entry.engine.waitForRun(run.id, dependencies.askWaitMs);
+      const prefix = choice === "once" ? "Approved once. " : "Denied. ";
+      const ctx = { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state };
+      return response(prefix + speak(run, ctx), runAttributes(attributes, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
   }
-  if (name === "AskIntent" || name === "ProvideRequestIntent" || name === "StartWorkIntent") {
-    const instruction = slotValue(intent, "request", "instruction", "text");
-    if (!instruction) return response("What should I ask your assistant to do?", attributes);
-    const picked = pickAssistant(intent, attributes, dependencies);
-    if (typeof picked === "string") return response(picked, attributes);
+  if (name === "CallStatusIntent") {
+    const target = activeCall(registry, attributes);
+    if (!target) return response("There's no call in progress.", attributes);
+    return response(callStatus(target), attributes);
+  }
+  if (name === "HangUpIntent") {
+    const target = activeCall(registry, attributes);
+    if (!target) return response("There's no call in progress.", attributes);
     try {
-      const run = await picked.engine.ask(instruction, undefined, false, { waitMs: dependencies.askWaitMs ?? 0 });
-      return response(speak(run, { label: picked.descriptor.label, state: picked.engine.runtime().state }), runAttributes({ ...attributes, assistant: picked.descriptor.id }, run));
+      const run = await target.entry.engine.cancel(target.run.id);
+      return response("I ended the call.", runAttributes(attributes, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
-  }
-  if (name === "GetWorkIntent" || name === "GetLastWorkIntent") {
-    const query = lastWorkId(attributes, intent);
-    const named = query ? findWork(registry, query) : undefined;
-    const run = named ?? (name === "GetLastWorkIntent" ? registry.latestRun() : undefined);
-    if (!run) return response(query ? `I could not find work about ${query}.` : "Which work should I check?", attributes);
-    return response(speak(run, { label: registry.label(run.runtimeId) }), runAttributes(attributes, run));
-  }
-  if (name === "SteerWorkIntent") {
-    const query = lastWorkId(attributes, intent);
-    const instruction = slotValue(intent, "instruction", "text", "request");
-    const found = query ? findWork(registry, query) : undefined;
-    if (!found) return response("Which work should I steer?", attributes);
-    if (!instruction) return response("What should I tell the work to do next?", attributes);
-    try {
-      const engine = registry.engineForRun(found.id);
-      const run = await engine.steer(found.id, instruction);
-      return response(speak(run, { label: registry.label(run.runtimeId) }), runAttributes(attributes, run));
-    } catch (error) {
-      return response(errorText(error), attributes);
-    }
-  }
-  if (name === "CancelWorkIntent") {
-    const query = lastWorkId(attributes, intent);
-    const found = query ? findWork(registry, query) : undefined;
-    if (!found) return response("Which work should I cancel?", attributes);
-    try {
-      const engine = registry.engineForRun(found.id);
-      const run = await engine.cancel(found.id);
-      return response(speak(run, { label: registry.label(run.runtimeId) }), runAttributes(attributes, run));
-    } catch (error) {
-      return response(errorText(error), attributes);
-    }
-  }
-  if (name === "RuntimeStatusIntent") {
-    const picked = pickAssistant(intent, attributes, dependencies);
-    if (typeof picked === "string") return response(picked, attributes);
-    const runtime = picked.engine.runtime();
-    return response(`The ${runtime.label} assistant is ${runtime.state}.`, { ...attributes, assistant: picked.descriptor.id });
   }
   return response("I do not know that command yet. Say help for the available commands.", attributes);
 }

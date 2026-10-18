@@ -9,10 +9,13 @@ import { readConfig, type AppConfig } from "./config.js";
 import { OAuthError, OAuthProvider, type Principal } from "./auth.js";
 import { AlexaRequestError, handleAlexaRequest } from "./alexa.js";
 import { verifyAlexaRequest, type AlexaVerifyOptions } from "./alexa-verify.js";
+import { combinedCue, proactiveEventsCue, voiceMonkeyCue, type Cue } from "./cue.js";
 import { createMcpServer } from "./mcp.js";
 import { buildRuntimeRegistry, type RuntimeRegistry } from "./runtimes/registry.js";
 import { SimHost } from "./sim.js";
 import { AmbientStore } from "./store.js";
+import type { RunView } from "./types.js";
+import { approvalAsk } from "./voice.js";
 
 type McpSession = {
   server: McpServer;
@@ -121,6 +124,29 @@ function tokenMatches(value: string | undefined, expected: string): boolean {
   const actual = Buffer.from(value.slice("Bearer ".length));
   const target = Buffer.from(expected);
   return actual.length === target.length && timingSafeEqual(actual, target);
+}
+
+export function watchApprovals(registry: RuntimeRegistry, cue: Cue): () => void {
+  const announced = new Set<string>();
+  const stops = registry.runtimeIds().map(runtimeId => {
+    const entry = registry.entry(runtimeId);
+    if (!entry) return () => undefined;
+    return entry.engine.onRunChanged(runId => {
+      if (runId === "*") return;
+      let view: RunView;
+      try {
+        view = entry.engine.getWork(runId);
+      } catch {
+        return;
+      }
+      if (view.status !== "waiting_approval" || !view.approval || announced.has(view.approval.id)) return;
+      announced.add(view.approval.id);
+      void cue.needsYou(approvalAsk(view, { label: entry.descriptor.label })).catch((error: unknown) => {
+        console.error(error instanceof Error ? error.message : String(error));
+      });
+    });
+  });
+  return () => stops.forEach(stop => stop());
 }
 
 function serviceMethod(method: string): boolean {
@@ -476,6 +502,10 @@ export async function startFromEnvironment(env: Record<string, string | undefine
     assetsDir: simAssets
   });
   sim.watch();
+  const cues: Cue[] = [];
+  if (config.voiceMonkey) cues.push(voiceMonkeyCue(config.voiceMonkey));
+  if (config.proactiveEvents) cues.push(proactiveEventsCue(config.proactiveEvents));
+  const unwatchApprovals = cues.length > 0 ? watchApprovals(registry, combinedCue(cues)) : undefined;
   const http = createAmbientHttpServer({
     registry,
     ...(auth ? { auth } : {}),
@@ -490,6 +520,7 @@ export async function startFromEnvironment(env: Record<string, string | undefine
   await new Promise<void>(resolve => http.server.listen(config.port, config.host, resolve));
   registry.startAll();
   return async () => {
+    unwatchApprovals?.();
     sim.close();
     await registry.close();
     await http.close();

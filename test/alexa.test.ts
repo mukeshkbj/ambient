@@ -1,36 +1,28 @@
-import { describe, expect, it, vi } from "vitest";
-import { handleAlexaRequest, AlexaRequestError, type AlexaSkillDependencies } from "../src/alexa.js";
-import type { ConversationEngine } from "../src/conversations.js";
-import { RuntimeRegistry, type RuntimeEntry } from "../src/runtimes/registry.js";
+import { describe, expect, it } from "vitest";
+import { handleAlexaRequest, AlexaRequestError, type AlexaSkillDependencies, type AlexaSkillResponse } from "../src/alexa.js";
+import { fakeAssistant, fakeRuntimeEntry } from "./fake.js";
+import { RuntimeRegistry } from "../src/runtimes/registry.js";
 import { AmbientStore } from "../src/store.js";
-import { fakeAssistant } from "./fake.js";
 
-function engine() {
-  return {
-    ask: vi.fn(),
-    getWork: vi.fn(),
-    listRuns: vi.fn().mockReturnValue([]),
-    listConversations: vi.fn().mockReturnValue([]),
-    selectConversation: vi.fn(),
-    steer: vi.fn(),
-    cancel: vi.fn(),
-    listApprovals: vi.fn().mockReturnValue([]),
-    respondToApproval: vi.fn(),
-    runtime: vi.fn().mockReturnValue({ id: "local", label: "My Agent", kind: "local", state: "online", updatedAt: "2026-09-06T00:00:00.000Z" })
-  } as unknown as ConversationEngine;
-}
+const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 
-function dependencies(fake: ConversationEngine): AlexaSkillDependencies & { store: AmbientStore } {
+function setup() {
   const store = new AmbientStore();
-  const entry: RuntimeEntry = {
-    descriptor: { id: "local", label: "My Agent", kind: "local", adapter: "fake", capabilities: fakeAssistant().client.capabilities },
-    client: fakeAssistant().client,
-    engine: fake,
-    start: () => undefined,
-    close: async () => undefined
-  };
+  const fake = fakeAssistant();
+  const entry = fakeRuntimeEntry("caller", "Ambient", fake.client, store);
   const registry = new RuntimeRegistry(store, [entry]);
-  return { registry, store, applicationId: "skill-id", allowUnauthenticated: true };
+  const deps: AlexaSkillDependencies = { registry, applicationId: "skill-id", allowUnauthenticated: true };
+  return {
+    store,
+    fake,
+    entry,
+    registry,
+    deps,
+    close: () => {
+      entry.engine.close();
+      store.close();
+    }
+  };
 }
 
 function request(name: string, slots: Record<string, string> = {}, attributes: Record<string, unknown> = {}) {
@@ -45,93 +37,89 @@ function request(name: string, slots: Record<string, string> = {}, attributes: R
   };
 }
 
-const run = (status: "accepted" | "running" | "completed" = "accepted") => ({
-  id: "work-1",
-  conversationId: "conversation-1",
-  runtimeId: "local",
-  durableSessionId: "durable-1",
-  liveSessionId: "live-1",
-  instruction: "check my day",
-  title: "check my day",
-  steps: [] as string[],
-  status,
-  ...(status === "completed" ? { answer: "Your day is clear." } : {}),
-  createdAt: "2026-09-06T00:00:00.000Z",
-  updatedAt: "2026-09-06T00:00:00.000Z"
-});
+function speechOf(result: AlexaSkillResponse): string {
+  const ssml = result.response.outputSpeech.ssml;
+  expect(ssml).not.toMatch(UUID);
+  return ssml;
+}
 
-describe("Alexa custom skill", () => {
-  it("asks the selected assistant and keeps the work reference for a follow-up", async () => {
-    const fake = engine();
-    vi.mocked(fake.ask).mockResolvedValue(run());
-    vi.mocked(fake.getWork).mockReturnValue(run("completed"));
-    const deps = dependencies(fake);
+async function startCall(deps: AlexaSkillDependencies, task = "a plumber for tomorrow") {
+  return handleAlexaRequest(request("StartCallIntent", { task }), deps);
+}
 
-    const asked = await handleAlexaRequest(request("AskIntent", { request: "check my day" }), deps);
-    expect(fake.ask).toHaveBeenCalledWith("check my day", undefined, false, { waitMs: 0 });
-    expect(asked.response.outputSpeech.ssml).toContain("check my day");
-    expect(asked.response.outputSpeech.ssml).not.toContain("work-1");
-
-    deps.store.createRun({ ...run("completed"), answer: "Your day is clear." });
-    const checked = await handleAlexaRequest(request("GetLastWorkIntent", {}, asked.sessionAttributes ?? {}), deps);
-    expect(checked.response.outputSpeech.ssml).toContain("Your day is clear.");
-    deps.store.close();
+describe("Alexa call intents", () => {
+  it("StartCallIntent starts a run on the caller runtime", async () => {
+    const { deps, entry, fake, close } = setup();
+    const result = await startCall(deps);
+    const runs = entry.engine.listRuns();
+    expect(runs).toHaveLength(1);
+    expect(runs[0]).toMatchObject({ runtimeId: "caller", instruction: "a plumber for tomorrow" });
+    expect(fake.client.createSession).toHaveBeenCalled();
+    expect(speechOf(result)).toContain("Calling");
+    expect(speechOf(result)).toContain("tell you if they need you");
+    close();
   });
 
-  it("maps a listed approval to its exact namespaced approval id", async () => {
-    const fake = engine();
-    vi.mocked(fake.listApprovals).mockReturnValue([{
-      id: "local:approval-1",
-      runId: "work-1",
-      runtimeId: "local",
-      durableSessionId: "durable-1",
-      liveSessionId: "live-1",
-      requestId: "approval-1",
-      command: "send the draft",
-      choices: ["once", "deny"],
-      createdAt: "2026-09-06T00:00:00.000Z"
-    }]);
-    vi.mocked(fake.respondToApproval).mockResolvedValue(run("running"));
-    const deps = dependencies(fake);
-
-    const listed = await handleAlexaRequest(request("ListApprovalsIntent"), deps);
-    expect(listed.response.outputSpeech.ssml).toContain("My Agent");
-    await handleAlexaRequest(request("AMAZON.YesIntent", {}, listed.sessionAttributes ?? {}), deps);
-    expect(fake.respondToApproval).toHaveBeenCalledWith("local:approval-1", "once");
-    deps.store.close();
+  it("SteerCallIntent in a fresh session steers the active call", async () => {
+    const { deps, fake, close } = setup();
+    await startCall(deps);
+    const result = await handleAlexaRequest(request("SteerCallIntent", { message: "tell him one sixty" }), deps);
+    expect(fake.client.steer).toHaveBeenCalledWith("runtime-1", "tell him one sixty");
+    expect(speechOf(result)).toContain("Told them.");
+    close();
   });
 
-  it("routes an ask to the named assistant slot", async () => {
-    const fake = engine();
-    vi.mocked(fake.ask).mockResolvedValue(run());
-    const deps = dependencies(fake);
-
-    const asked = await handleAlexaRequest(request("AskIntent", { request: "check my day", assistant: "agent" }), deps);
-    expect(fake.ask).toHaveBeenCalledWith("check my day", undefined, false, { waitMs: 0 });
-    expect(asked.sessionAttributes?.assistant).toBe("local");
-    deps.store.close();
+  it("OfferAmountIntent steers with an exact amount sentence", async () => {
+    const { deps, fake, close } = setup();
+    await startCall(deps);
+    const result = await handleAlexaRequest(request("OfferAmountIntent", { amount: "160" }), deps);
+    expect(fake.client.steer).toHaveBeenCalledWith("runtime-1", "offer 160 dollars");
+    expect(speechOf(result)).toContain("Told them.");
+    close();
   });
 
-  it("lists assistants and switches the selection", async () => {
-    const fake = engine();
-    const deps = dependencies(fake);
+  it("AMAZON.YesIntent in a fresh session approves the newest open approval of the active call", async () => {
+    const { deps, fake, close } = setup();
+    await startCall(deps);
+    fake.emit({
+      type: "approval.request",
+      sessionId: "runtime-1",
+      payload: { requestId: "req-1", command: "book at one hundred eighty dollars", amountUsd: 180, kind: "spend" }
+    });
+    const result = await handleAlexaRequest(request("AMAZON.YesIntent"), deps);
+    expect(fake.client.respondToApproval).toHaveBeenCalledWith("runtime-1", "req-1", "once");
+    expect(speechOf(result)).toContain("Approved");
+    close();
+  });
 
-    const listed = await handleAlexaRequest(request("ListAssistantsIntent"), deps);
-    expect(listed.response.outputSpeech.ssml).toContain("My Agent");
+  it("AMAZON.NoIntent in a fresh session denies the newest open approval of the active call", async () => {
+    const { deps, fake, close } = setup();
+    await startCall(deps);
+    fake.emit({
+      type: "approval.request",
+      sessionId: "runtime-1",
+      payload: { requestId: "req-1", command: "book at one hundred eighty dollars", amountUsd: 180, kind: "spend" }
+    });
+    const result = await handleAlexaRequest(request("AMAZON.NoIntent"), deps);
+    expect(fake.client.respondToApproval).toHaveBeenCalledWith("runtime-1", "req-1", "deny");
+    expect(speechOf(result)).toContain("Denied");
+    close();
+  });
 
-    const selected = await handleAlexaRequest(request("SelectAssistantIntent", { assistant: "agent" }), deps);
-    expect(selected.response.outputSpeech.ssml).toContain("My Agent");
-    expect(deps.registry.selectedId()).toBe("local");
-    deps.store.close();
+  it("SteerCallIntent with no active call says there is no call in progress", async () => {
+    const { deps, fake, close } = setup();
+    const result = await handleAlexaRequest(request("SteerCallIntent", { message: "tell him one sixty" }), deps);
+    expect(speechOf(result)).toContain("no call in progress.");
+    expect(fake.client.steer).not.toHaveBeenCalled();
+    close();
   });
 
   it("rejects a request from another Alexa skill", async () => {
-    const fake = engine();
-    const payload = request("RuntimeStatusIntent", { assistant: "agent" });
+    const { deps, close } = setup();
+    const payload = request("CallStatusIntent");
     payload.session.application.applicationId = "other-skill";
-    const deps = dependencies(fake);
     await expect(handleAlexaRequest(payload, deps))
       .rejects.toMatchObject({ status: 401 } satisfies Partial<AlexaRequestError>);
-    deps.store.close();
+    close();
   });
 });

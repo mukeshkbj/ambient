@@ -34,7 +34,11 @@ const EnvSchema = z.object({
   ALEXA_CLIENT_ID: z.string().min(1).optional(),
   ALEXA_CLIENT_SECRET: z.string().min(16).optional(),
   ALEXA_REDIRECT_URIS: z.string().optional(),
-  DEMO_LINK_CODE: z.string().min(8).optional()
+  DEMO_LINK_CODE: z.string().min(8).optional(),
+  VOICEMONKEY_TOKEN: z.string().min(1).optional(),
+  VOICEMONKEY_DEVICE: z.string().min(1).optional(),
+  ALEXA_CLIENT_ID_EVENTS: z.string().min(1).optional(),
+  ALEXA_CLIENT_SECRET_EVENTS: z.string().min(1).optional()
 });
 
 export type AppConfig = {
@@ -61,6 +65,8 @@ export type AppConfig = {
     redirectUris: string[];
     demoLinkCode?: string;
   };
+  voiceMonkey?: { token: string; device: string };
+  proactiveEvents?: { clientId: string; clientSecret: string };
 };
 
 function runtimeEntries(runtimesFile: string): RuntimeConfigEntry[] {
@@ -90,6 +96,14 @@ export function readConfig(env: Record<string, string | undefined> = process.env
   const hasOAuth = oauthValues.some(Boolean);
   if (hasOAuth && oauthValues.some(value => !value)) {
     throw new Error("OAUTH_ISSUER, OAUTH_SIGNING_SECRET, ALEXA_CLIENT_ID, ALEXA_CLIENT_SECRET, and ALEXA_REDIRECT_URIS are required together");
+  }
+  const voiceMonkeyValues = [parsed.VOICEMONKEY_TOKEN, parsed.VOICEMONKEY_DEVICE];
+  if (voiceMonkeyValues.some(Boolean) && voiceMonkeyValues.some(value => !value)) {
+    throw new Error("VOICEMONKEY_TOKEN and VOICEMONKEY_DEVICE are required together");
+  }
+  const eventsValues = [parsed.ALEXA_CLIENT_ID_EVENTS, parsed.ALEXA_CLIENT_SECRET_EVENTS];
+  if (eventsValues.some(Boolean) && eventsValues.some(value => !value)) {
+    throw new Error("ALEXA_CLIENT_ID_EVENTS and ALEXA_CLIENT_SECRET_EVENTS are required together");
   }
   const baseUrl = parsed.PUBLIC_BASE_URL.replace(/\/$/, "");
   const oauth = hasOAuth ? {
@@ -130,6 +144,12 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     allowUnauthenticated: parsed.ALLOW_UNAUTHENTICATED,
     ...(parsed.ALEXA_SKILL_ID ? { alexaSkillId: parsed.ALEXA_SKILL_ID } : {}),
     alexaVerifySignature: parsed.ALEXA_VERIFY_SIGNATURE,
-    ...(oauth ? { oauth } : {})
+    ...(oauth ? { oauth } : {}),
+    ...(parsed.VOICEMONKEY_TOKEN && parsed.VOICEMONKEY_DEVICE
+      ? { voiceMonkey: { token: parsed.VOICEMONKEY_TOKEN, device: parsed.VOICEMONKEY_DEVICE } }
+      : {}),
+    ...(parsed.ALEXA_CLIENT_ID_EVENTS && parsed.ALEXA_CLIENT_SECRET_EVENTS
+      ? { proactiveEvents: { clientId: parsed.ALEXA_CLIENT_ID_EVENTS, clientSecret: parsed.ALEXA_CLIENT_SECRET_EVENTS } }
+      : {})
   };
 }

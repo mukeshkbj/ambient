@@ -1,0 +1,44 @@
+{
+  "manifest": {
+    "publishingInformation": {
+      "locales": {
+        "en-US": {
+          "name": "Ambient",
+          "summary": "Ambient makes the phone call you do not want to make.",
+          "description": "Ask Ambient to call a business. It talks to a person, checks with you before agreeing to spend, and tells you what was confirmed.",
+          "examplePhrases": [
+            "Alexa, tell Ambient to call Joe's Plumbing",
+            "Alexa, ask Ambient how's the call going",
+            "Alexa, tell Ambient offer one sixty"
+          ],
+          "keywords": ["calls", "phone", "assistant"]
+        },
+        "en-GB": {
+          "name": "Ambient",
+          "summary": "Ambient makes the phone call you do not want to make.",
+          "description": "Ask Ambient to call a business. It talks to a person, checks with you before agreeing to spend, and tells you what was confirmed.",
+          "examplePhrases": [
+            "Alexa, tell Ambient to call Joe's Plumbing",
+            "Alexa, ask Ambient how's the call going",
+            "Alexa, tell Ambient offer one sixty"
+          ],
+          "keywords": ["calls", "phone", "assistant"]
+        }
+      },
+      "isAvailableWorldwide": false,
+      "distributionCountries": ["US", "GB"]
+    },
+    "apis": {
+      "custom": {}
+    },
+    "permissions": [
+      { "name": "alexa::devices:all:notifications:write" }
+    ],
+    "events": {
+      "publications": [
+        { "eventName": "AMAZON.MessageAlert.Activated" }
+      ]
+    },
+    "manifestVersion": "1.0"
+  }
+}
