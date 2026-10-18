@@ -27,9 +27,11 @@
     "smoke:mcp": "tsx scripts/smoke-mcp.ts",
     "latency": "tsx scripts/latency.ts",
     "infra:synth": "cdk synth",
-    "infra:typecheck": "tsc -p infra/tsconfig.json --noEmit"
+    "infra:typecheck": "tsc -p infra/tsconfig.json --noEmit",
+    "brain:latency": "tsx scripts/brain-latency.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
     "@aws-sdk/client-bedrock-runtime": "3.1146.0",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "jose": "^6.1.0",
