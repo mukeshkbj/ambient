@@ -15,6 +15,15 @@ export type McpDependencies = {
 
 const CANCELLABLE: ReadonlySet<RunStatus> = new Set(["queued", "accepted", "running", "waiting_approval", "cancel_requested"]);
 
+class CancellingTaskStore extends InMemoryTaskStore {
+  readonly onCancel = new Map<string, () => Promise<unknown>>();
+
+  override async updateTaskStatus(...args: Parameters<InMemoryTaskStore["updateTaskStatus"]>): Promise<void> {
+    await super.updateTaskStatus(...args);
+    if (args[1] === "cancelled") await this.onCancel.get(args[0])?.();
+  }
+}
+
 function failure(error: unknown) {
   return {
     isError: true,
@@ -48,7 +57,7 @@ function pendingSpeech(candidates: PendingApproval[]): string {
 }
 
 export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): McpServer {
-  const taskStore = new InMemoryTaskStore();
+  const taskStore = new CancellingTaskStore();
   const server = new McpServer(
     { name: "Ambient", version: "0.1.0" },
     {
@@ -158,8 +167,15 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
     const label = entry.descriptor.label;
     let unwatch: (() => void) | undefined;
     let runId = "";
+    let cancelRequested = false;
+    const cancelRun = (): Promise<unknown> => entry.engine.cancel(runId).catch(() => undefined);
+    taskStore.onCancel.set(taskId, async () => {
+      cancelRequested = true;
+      if (runId) await cancelRun();
+    });
     const finish = async (): Promise<void> => {
       unwatch?.();
+      taskStore.onCancel.delete(taskId);
       const view = entry.engine.getWork(runId);
       const failed = view.status === "failed" || view.status === "unknown" || view.status === "cancelled";
       await store.storeTaskResult(taskId, failed ? "failed" : "completed",
@@ -168,6 +184,7 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
     try {
       const view = await entry.engine.ask(instruction, conversationId, newConversation ?? false, { waitMs: 0 });
       runId = view.id;
+      if (cancelRequested) await cancelRun();
       const push = async (current: RunView): Promise<void> => {
         const mapped = taskStatus(current.status);
         await store.updateTaskStatus(taskId, mapped, taskStatusMessage(current, label)).catch(() => undefined);
@@ -185,6 +202,7 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
       if (["completed", "failed", "cancelled", "unknown"].includes(current.status)) await finish();
     } catch (error) {
       unwatch?.();
+      taskStore.onCancel.delete(taskId);
       await store.storeTaskResult(taskId, "failed", failure(error)).catch(() => undefined);
     }
   };

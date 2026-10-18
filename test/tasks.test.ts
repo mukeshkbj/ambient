@@ -155,4 +155,19 @@ describe("MCP tasks", () => {
       await close();
     }
   });
+
+  it.each([["after the run exists", true], ["before the run exists", false]])("cancelling the task cancels the engine run %s", async (_name, waitForRun) => {
+    const { client, assistant, engine, close } = await makePair();
+    try {
+      await client.listTools();
+      const stream = client.experimental.tasks.callToolStream({ name: "delegate_task", arguments: { task: "Long background job" } });
+      const created = (await stream.next()).value as StreamMessage;
+      if (waitForRun) await waitFor(() => engine().listRuns(1).length === 1);
+      expect((await client.experimental.tasks.cancelTask(created.task!.taskId)).status).toBe("cancelled");
+      await waitFor(() => engine().listRuns(1)[0]?.status === "cancelled");
+      expect(assistant.client.interrupt).toHaveBeenCalledOnce();
+    } finally {
+      await close();
+    }
+  });
 });
