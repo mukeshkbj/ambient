@@ -52,7 +52,7 @@ describe("approval via MCP elicitation", () => {
       expect(params.requestedSchema).toMatchObject({
         type: "object",
         required: ["decision"],
-        properties: { decision: { enum: ["approve_once", "deny"] } }
+        properties: { decision: { oneOf: [{ const: "approve_once" }, { const: "deny" }] } }
       });
       return { action: "accept", content: { decision: "approve_once" } };
     });

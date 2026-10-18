@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { InMemoryTaskMessageQueue, InMemoryTaskStore } from "@modelcontextprotocol/sdk/experimental/tasks/stores/in-memory.js";
 import type { RequestTaskStore } from "@modelcontextprotocol/sdk/shared/protocol.js";
-import type { Task } from "@modelcontextprotocol/sdk/types.js";
+import type { RequestId, Task } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { DASHBOARD_HTML, dashboardSnapshot, TASK_HTML } from "./dashboard.js";
 import type { PendingApproval, RuntimeEntry, RuntimeRegistry } from "./runtimes/registry.js";
@@ -66,7 +66,7 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
   );
 
   /** When the run is waiting on a person, try elicitation; otherwise stay pending. */
-  const elicitApproval = async (entry: RuntimeEntry, view: RunView): Promise<boolean> => {
+  const elicitApproval = async (entry: RuntimeEntry, view: RunView, requestId: RequestId): Promise<boolean> => {
     const approval = view.approval;
     if (view.status !== "waiting_approval" || !approval) return false;
     const capabilities = server.server.getClientCapabilities();
@@ -82,13 +82,15 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
               type: "string",
               title: "Decision",
               description: `Allow or refuse: ${approval.command}`,
-              enum: ["approve_once", "deny"],
-              enumNames: ["Approve once", "Deny"]
+              oneOf: [
+                { const: "approve_once", title: "Approve once" },
+                { const: "deny", title: "Deny" }
+              ]
             }
           },
           required: ["decision"]
         }
-      });
+      }, { relatedRequestId: requestId });
       if (result.action !== "accept") return false;
       await entry.engine.respondToApproval(approval.id, result.content?.decision === "deny" ? "deny" : "once");
       return true;
@@ -97,8 +99,8 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
     }
   };
 
-  const settleApproval = async (entry: RuntimeEntry, view: RunView): Promise<ReturnType<typeof runResult>> => {
-    if (await elicitApproval(entry, view)) {
+  const settleApproval = async (entry: RuntimeEntry, view: RunView, requestId: RequestId): Promise<ReturnType<typeof runResult>> => {
+    if (await elicitApproval(entry, view, requestId)) {
       view = await entry.engine.waitForRun(view.id, askWaitMs);
     }
     return runResult(view, { label: entry.descriptor.label, state: entry.engine.runtime().state });
@@ -113,7 +115,7 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
       conversationId: z.string().min(1).optional().describe("Exact conversation id for programmatic clients; voice never needs it"),
       newConversation: z.boolean().optional().describe("Start a fresh conversation instead of continuing the selected one")
     }
-  }, async ({ task, agent, conversationId, newConversation }) => {
+  }, async ({ task, agent, conversationId, newConversation }, extra) => {
     try {
       const entry = registry.resolve(agent);
       const active = entry.engine.activeRunForNextAsk(conversationId);
@@ -125,7 +127,7 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
         return runResult(view, { label: entry.descriptor.label }, `Noted — passed that to ${entry.descriptor.label} while it works on "${view.title}".`);
       }
       const view = await entry.engine.ask(task, conversationId, newConversation ?? false, { waitMs: askWaitMs });
-      return await settleApproval(entry, view);
+      return await settleApproval(entry, view, extra.requestId);
     } catch (error) {
       return failure(error);
     }
@@ -217,7 +219,7 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
       about: z.string().min(1).optional().describe("Words from the task — 'dinner', 'flights', 'deploy'. Never an id."),
       agent: z.string().min(1).optional().describe("Agent name to scope the search")
     }
-  }, async ({ about, agent }) => {
+  }, async ({ about, agent }, extra) => {
     try {
       let view: RunView | undefined;
       if (agent) {
@@ -234,7 +236,7 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
         return say(about ? `I can't find any work about ${about}.` : "Nothing is running yet — delegate something to get started.", { status: "idle" });
       }
       const entry = registry.entry(view.runtimeId)!;
-      return await settleApproval(entry, view);
+      return await settleApproval(entry, view, extra.requestId);
     } catch (error) {
       return failure(error);
     }
