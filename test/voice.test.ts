@@ -126,8 +126,8 @@ describe("speak", () => {
       expect(speak(call({ status: "running", steps }), { label: "Ambient" })).toBe("Ambient is on the phone with Joe's Plumbing. They just said: We can come Tuesday at ten.");
     });
 
-    it("says nothing was booked when you hang up", () => {
-      expect(speak(call({ status: "cancelled" }), { label: "Ambient" })).toBe("I hung up on Joe's Plumbing. Nothing was booked.");
+    it("says the owner ended the call and nothing was booked", () => {
+      expect(speak(call({ status: "cancelled" }), { label: "Ambient" })).toBe("You ended the call before Joe's Plumbing confirmed. Nothing was booked.");
     });
 
     it("confirms a steer by naming who will hear it", () => {

@@ -3,7 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { join } from "node:path";
 import type { CallRooms, PageReport } from "./calls/rooms.js";
 
-const ROUTE = /^\/call\/([0-9a-f-]{36})(\/session|\/events|\/event|\/v1\/chat\/completions)?$/;
+const ROUTE = /^\/call\/([0-9a-f-]{36})(\/session|\/info|\/events|\/event|\/v1\/chat\/completions)?$/;
 
 async function readJson(request: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
@@ -46,6 +46,10 @@ export async function handleCallRoute(rooms: CallRooms, assetsDir: string, reque
     return true;
   }
   try {
+    if (action === "/info" && request.method === "GET") {
+      json(response, 200, room.info());
+      return true;
+    }
     if (action === "/session" && request.method === "POST") {
       json(response, 200, await room.session());
       return true;

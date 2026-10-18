@@ -8,6 +8,7 @@ export type ApprovalPayload = {
   description?: string;
   choices?: string[];
   amountUsd?: number;
+  limitUsd?: number;
   kind?: ApprovalKind;
 };
 

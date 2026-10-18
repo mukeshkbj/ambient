@@ -77,7 +77,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
       const choices = view.approval?.kind === "dial" ? "Say yes to place the call, or no." : "Say approve, deny, or offer a different amount.";
       return `${approvalAsk(view, ctx)} ${choices}`;
     }
-    if (view.status === "cancelled") return `I hung up on ${business}. Nothing was booked.`;
+    if (view.status === "cancelled") return `You ended the call before ${business} confirmed. Nothing was booked.`;
     if (view.status === "running" || view.status === "accepted" || view.status === "queued") {
       const heard = lastLineFrom(view, business);
       if (heard) return `${label} is on the phone with ${business}. They just said: ${clampSentences(heard)}`;
@@ -136,6 +136,7 @@ function approvalSummary(approval: Approval, label: string): Record<string, unkn
     command: approval.command,
     ...(approval.description ? { description: approval.description } : {}),
     ...(approval.amountUsd !== undefined ? { amountUsd: approval.amountUsd } : {}),
+    ...(approval.limitUsd !== undefined ? { limitUsd: approval.limitUsd } : {}),
     ...(approval.kind ? { kind: approval.kind } : {}),
     choices: approval.choices,
     agent: label,

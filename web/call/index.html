@@ -28,7 +28,7 @@ h1{font-size:34px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
 .ai{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--ai);border:1px solid oklch(0.80 0.11 225 / .4);border-radius:999px;padding:4px 12px}
 .why{max-width:320px;color:var(--ink-2);font-size:15px}
 .avatar{margin:40px 0 0;width:112px;height:112px;border-radius:50%;display:grid;place-items:center;background:oklch(0.26 0.015 250);color:var(--ink-2);font-size:40px;font-weight:600;position:relative}
-.avatar::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:2px solid oklch(0.80 0.11 225 / .35);opacity:0}
+.avatar::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:2px solid oklch(0.80 0.11 225 / .8);opacity:0}
 body[data-state="ringing"] .avatar::after,body[data-state="speaking"] .avatar::after{animation:ring 1.8s cubic-bezier(0.2,0,0,1) infinite}
 @keyframes ring{0%{opacity:.9;transform:scale(.92)}100%{opacity:0;transform:scale(1.18)}}
 .captions{margin-top:28px;width:100%;max-width:380px;min-height:120px;display:flex;flex-direction:column;gap:10px;justify-content:flex-end}
@@ -148,6 +148,10 @@ function end(reason) {
   $("ringingActions").classList.add("hidden");
   $("note").textContent = "You can close this page.";
 }
+
+fetch(base + "/info").then(r => r.ok ? r.json() : null).then(info => {
+  if (info?.ownerName) $("why").textContent = `Calling for ${info.ownerName}. This call is transcribed.`;
+}).catch(() => {});
 
 const events = new EventSource(base + "/events");
 events.onmessage = e => {

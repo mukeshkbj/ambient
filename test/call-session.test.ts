@@ -168,7 +168,7 @@ describe("rule 3: a price above the limit needs the owner", () => {
     const { state, effects } = quoted();
     expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 180 });
     expect(kinds(effects)).not.toContain("hang_up");
-    expect(emitted(effects, "approval.request")[0]?.payload).toMatchObject({ requestId: requestOf(state), amountUsd: 180, kind: "spend", choices: ["once", "deny"] });
+    expect(emitted(effects, "approval.request")[0]?.payload).toMatchObject({ requestId: requestOf(state), amountUsd: 180, limitUsd: 150, kind: "spend", choices: ["once", "deny"] });
     expect(spoken(effects)).toContain("One moment, let me check with Maya.");
   });
 

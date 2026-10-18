@@ -354,6 +354,7 @@ export class ConversationEngine {
         command: value(event.payload.command) ?? `${this.label()} requested approval`,
         ...(value(event.payload.description) ? { description: value(event.payload.description)! } : {}),
         ...(typeof event.payload.amountUsd === "number" ? { amountUsd: event.payload.amountUsd } : {}),
+        ...(typeof event.payload.limitUsd === "number" ? { limitUsd: event.payload.limitUsd } : {}),
         ...(event.payload.kind ? { kind: event.payload.kind } : {}),
         choices: Array.isArray(event.payload.choices)
           ? event.payload.choices.filter((choice): choice is string => typeof choice === "string")

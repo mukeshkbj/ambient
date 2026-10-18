@@ -193,6 +193,7 @@ function askOwner(state: CallState, question: string, amountUsd: number | undefi
   const requestId = `${state.callId}:ask-${asks}`;
   const line = `One moment, let me check with ${state.brief.ownerName}.`;
   const amount = amountUsd !== undefined ? { amountUsd } : {};
+  const limit = state.brief.maxUsd !== undefined ? { limitUsd: state.brief.maxUsd } : {};
   const waiting = withTurn(flushDraft(state, now), "agent", line, now);
   return {
     state: { ...waiting, asks, phase: { kind: "waiting_for_owner", requestId, question, ...amount, since: now, lastHoldLine: now } },
@@ -202,7 +203,7 @@ function askOwner(state: CallState, question: string, amountUsd: number | undefi
         kind: "emit",
         event: {
           type: "approval.request",
-          payload: { requestId, command: question, description: question, choices: ["once", "deny"], kind: amountUsd !== undefined ? "spend" : "other", ...amount }
+          payload: { requestId, command: question, description: question, choices: ["once", "deny"], kind: amountUsd !== undefined ? "spend" : "other", ...amount, ...limit }
         }
       }
     ]

@@ -98,6 +98,7 @@ function approval(row: Row): Approval {
     command: text(row.command),
     ...(optionalText(row.description) ? { description: text(row.description) } : {}),
     ...(typeof row.amount_usd === "number" ? { amountUsd: row.amount_usd } : {}),
+    ...(typeof row.limit_usd === "number" ? { limitUsd: row.limit_usd } : {}),
     ...(optionalText(row.kind) ? { kind: text(row.kind) as ApprovalKind } : {}),
     choices: Array.isArray(choices) ? choices.filter((value): value is string => typeof value === "string") : [],
     createdAt: text(row.created_at),
@@ -177,6 +178,7 @@ export class AmbientStore {
         description TEXT,
         choices_json TEXT NOT NULL,
         amount_usd REAL,
+        limit_usd REAL,
         kind TEXT,
         created_at TEXT NOT NULL,
         resolved_at TEXT,
@@ -262,6 +264,7 @@ export class AmbientStore {
           description TEXT,
           choices_json TEXT NOT NULL,
           amount_usd REAL,
+          limit_usd REAL,
           kind TEXT,
           created_at TEXT NOT NULL,
           resolved_at TEXT,
@@ -284,6 +287,7 @@ export class AmbientStore {
     );
     if (!columns.has("amount_usd")) this.db.exec("ALTER TABLE approvals ADD COLUMN amount_usd REAL");
     if (!columns.has("kind")) this.db.exec("ALTER TABLE approvals ADD COLUMN kind TEXT");
+    if (!columns.has("limit_usd")) this.db.exec("ALTER TABLE approvals ADD COLUMN limit_usd REAL");
   }
 
   private purge(retentionDays: number): void {
@@ -565,11 +569,11 @@ export class AmbientStore {
     this.db.prepare(`
       INSERT INTO approvals
         (id, run_id, runtime_id, durable_session_id, live_session_id, request_id, command,
-         description, choices_json, amount_usd, kind, created_at, resolved_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         description, choices_json, amount_usd, limit_usd, kind, created_at, resolved_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(runtime_id, request_id) DO UPDATE SET command = excluded.command,
         description = excluded.description, choices_json = excluded.choices_json,
-        amount_usd = excluded.amount_usd, kind = excluded.kind, resolved_at = NULL
+        amount_usd = excluded.amount_usd, limit_usd = excluded.limit_usd, kind = excluded.kind, resolved_at = NULL
     `).run(
       value.id,
       value.runId,
@@ -581,6 +585,7 @@ export class AmbientStore {
       value.description ?? null,
       JSON.stringify(value.choices),
       value.amountUsd ?? null,
+      value.limitUsd ?? null,
       value.kind ?? null,
       value.createdAt,
       value.resolvedAt ?? null

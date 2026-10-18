@@ -270,13 +270,14 @@ describe("ConversationEngine", () => {
         description: "The plumber wants more than the limit",
         choices: ["once", "deny"],
         amountUsd: 180,
+        limitUsd: 150,
         kind: "spend"
       }
     });
     await new Promise(resolve => setImmediate(resolve));
     expect(engine.getWork(run.id)).toMatchObject({
       status: "waiting_approval",
-      approval: { requestId: "req-9", amountUsd: 180, kind: "spend" }
+      approval: { requestId: "req-9", amountUsd: 180, limitUsd: 150, kind: "spend" }
     });
     store.close();
   });

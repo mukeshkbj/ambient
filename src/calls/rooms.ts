@@ -61,6 +61,10 @@ export class CallRoom implements Line {
     this.joinTimer.unref();
   }
 
+  info(): { ownerName: string } {
+    return { ownerName: this.ownerName };
+  }
+
   async session(): Promise<{ token: string; agentId: string; ownerName: string }> {
     if (!this.agentId) throw new Error("This call is not ready yet");
     return { token: await this.options.ai.mintToken(), agentId: this.agentId, ownerName: this.ownerName };

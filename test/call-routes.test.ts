@@ -45,6 +45,11 @@ describe("call routes", () => {
     expect(await gone.text()).toContain("This call has ended");
   });
 
+  it("tells the page who the call is for before anyone answers", async () => {
+    const { base } = await start();
+    expect(await (await fetch(`${base}/info`)).json()).toEqual({ ownerName: "Maya" });
+  });
+
   it("hands the page a session and accepts its events", async () => {
     const { base, inputs } = await start();
     expect(await (await fetch(`${base}/session`, { method: "POST" })).json()).toEqual({ token: "tok", agentId: "agent-9", ownerName: "Maya" });

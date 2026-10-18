@@ -22,26 +22,27 @@ export const TASK_HTML = `<!doctype html>
  --go:oklch(0.52 0.13 152);--btn:oklch(0.26 0.01 255)}
 *{box-sizing:border-box;margin:0}
 html,body{height:100%}
-body{background:var(--bg);color:var(--fg);font:400 clamp(12px,2.4vw,28px)/1.35 -apple-system,"SF Pro Text",system-ui,sans-serif;
+body{background:var(--bg);color:var(--fg);font:400 clamp(12px,2.9vw,32px)/1.35 -apple-system,"SF Pro Text",system-ui,sans-serif;
  -webkit-font-smoothing:antialiased;padding:5vw 6vw;display:flex;flex-direction:column;gap:2.4vw;overflow:hidden}
 button{font:inherit;color:inherit;cursor:pointer;border:0}
 button:focus-visible{outline:2px solid var(--call);outline-offset:3px}
 .chip{display:inline-flex;align-items:center;gap:.5em;font-size:.6em;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--call)}
 .chip::before{content:"";width:.7em;height:.7em;border-radius:50%;background:currentColor}
 .chip.needs{color:var(--needs)}.chip.done{color:var(--done)}.chip.warn{color:var(--warn)}.chip.idle{color:var(--dim)}
-.stake{font-size:2.2em;font-weight:650;letter-spacing:-.02em;line-height:1.05;font-variant-numeric:tabular-nums;text-wrap:balance}
+.stake{font-size:2.3em;font-weight:650;letter-spacing:-.02em;line-height:1.05;font-variant-numeric:tabular-nums;text-wrap:balance}
 .sub{font-size:1em;color:var(--dim);text-wrap:pretty;max-width:32em}
 .actions{display:flex;gap:.6em;flex-wrap:wrap;margin-top:.4em}
 .actions:empty{display:none}
-.actions button{min-height:2.4em;padding:0 1.2em;border-radius:.6em;background:var(--btn);font-weight:600;font-size:.9em}
-.actions button.primary{background:var(--go);color:#fff;font-size:1em;padding:0 1.6em}
+.actions button{min-height:2.4em;padding:0 .95em;border-radius:.6em;background:var(--btn);font-weight:600;font-size:.9em}
+.actions button.primary{background:var(--go);color:#fff;font-size:1em;padding:0 1.5em}
+.actions button.offer{background:transparent;box-shadow:inset 0 0 0 1px var(--faint)}
 .actions button.call{background:var(--fg);color:var(--bg)}
 .actions button:active{transform:scale(.97)}
 .hint{font-size:.78em;color:var(--dim)}
 .hint:empty{display:none}
 .lines[hidden]{display:none}
-.lines{margin-top:auto;display:flex;flex-direction:column;gap:.45em;font-size:.72em;border-top:1px solid var(--faint);padding-top:1em}
-.line{display:grid;grid-template-columns:7.5em 1fr;gap:.8em;color:var(--dim)}
+.lines{margin-top:auto;display:flex;flex-direction:column;gap:.45em;font-size:.8em;border-top:1px solid var(--faint);padding-top:1em}
+.line{display:grid;grid-template-columns:8em 1fr;gap:.8em;color:var(--dim)}
 .line b{font-weight:600;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .line span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .lines.how{margin-top:.6em;border-top:0;padding-top:0;font-size:.9em;gap:.6em}
@@ -49,7 +50,8 @@ button:focus-visible{outline:2px solid var(--call);outline-offset:3px}
 .lines.how b{color:var(--call)}
 body[data-device="tv"]{font-size:clamp(12px,5.2vw,40px);padding:0 6vw;gap:1.4vw;justify-content:center}
 body[data-device="tv"] .lines,body[data-device="tv"] .sub,body[data-device="tv"] .hint,body[data-device="tv"] .actions{display:none}
-body[data-device="tv"] .stake{font-size:1.15em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body[data-device="tv"] .chip{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+body[data-device="tv"] .stake{font-size:1.15em;line-height:1.3;padding-bottom:.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style></head><body>
 <span class="chip idle" id="chip">Ready</span>
 <div class="stake" id="stake"></div>
@@ -73,6 +75,8 @@ const HOW=["Ambient phones the business and says it is an AI, first thing.","Ove
 function business(steps){for(const s of steps){const m=/^(?:Calling|Connected to) (.+)$/.exec(s);if(m)return m[1];}return "";}
 function speakers(steps){return steps.map(s=>/^([^:]{1,40}): (.+)$/.exec(s)).filter(Boolean).map(m=>({who:m[1],text:m[2]}));}
 function act(name,args){return rpc("tools/call",{name,arguments:args}).catch(()=>undefined);}
+function offers(ap){const limit=ap.limitUsd,amount=ap.amountUsd;if(limit===undefined||amount===undefined)return [];
+ const out=[];for(let v=limit+10;v<amount&&out.length<2;v+=10)out.push(v);return out;}
 function buttons(list){const box=$("actions");box.innerHTML="";
  for(const b of list){const el=document.createElement("button");el.type="button";el.textContent=b.label;if(b.kind)el.className=b.kind;el.onclick=()=>{el.disabled=true;b.run();};box.appendChild(el);}}
 function render(d){
@@ -83,25 +87,29 @@ function render(d){
  box.className="lines";hint.textContent="";buttons([]);
  if(ap){chip.className="chip needs";chip.textContent="Needs you";
   stake.textContent=(ap.amountUsd!==undefined?usd(ap.amountUsd)+" \\u00b7 ":"")+biz;
-  sub.textContent=ap.kind==="dial"?"Place this call?":"Over your limit. They are on hold.";
-  buttons([{label:ap.amountUsd!==undefined?"Approve "+usd(ap.amountUsd):"Approve",kind:"primary",run:()=>act("approve",{decision:"once"})},{label:"Decline",run:()=>act("approve",{decision:"deny"})}]);
-  hint.textContent="Or say \\u201cAlexa, tell Ambient offer one sixty.\\u201d";}
+  if(ap.amountUsd!==undefined&&ap.limitUsd!==undefined)chip.textContent="Needs you \\u00b7 "+usd(ap.amountUsd-ap.limitUsd)+" over your "+usd(ap.limitUsd)+" limit";
+  sub.textContent=ap.kind==="dial"?"Place this call?":biz+" is on hold.";
+  buttons([{label:"Approve",kind:"primary",run:()=>act("approve",{decision:"once"})},
+   ...offers(ap).map(v=>({label:"Offer "+usd(v),kind:"offer",run:()=>act("delegate",{task:"offer "+v})})),
+   {label:"Decline",run:()=>act("approve",{decision:"deny"})}]);
+  hint.textContent=ap.kind==="dial"?"":"Decline ends the call. Nothing is booked.";}
  else if(o){const ok=o.kind==="confirmed";chip.className="chip "+(ok?"done":"warn");
   chip.textContent=ok?"Confirmed by "+biz:o.kind==="unconfirmed"?"Not confirmed":o.kind==="declined"?"Declined":"No deal";
   stake.textContent=ok?((o.amountUsd!==undefined?usd(o.amountUsd)+" \\u00b7 ":"")+cap(o.when||biz)):biz;
   const theirs=said.filter(l=>l.who===biz).at(-1);
-  sub.textContent=ok?(theirs?"In their words: “"+theirs.text+"”":"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call. Nothing was booked.":"Nothing was booked.";
+  sub.textContent=ok?(theirs?"In their words: “"+theirs.text+"”":"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed. Nothing was booked.":"Nothing was booked.";
   buttons([{label:"Call again",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);}
  else if(live){chip.className="chip";chip.textContent=steps.some(s=>s.startsWith("Connected to"))?"On the phone":"Calling";
   stake.textContent=biz;
   const decided=owner&&/^\\S+ (approved|declined): /.exec(owner.text);
-  sub.textContent=decided?"You "+decided[1]+" it.":owner?"You told them: \\u201c"+cap(owner.text)+"\\u201d":"I\\u2019ll tell you if they need you.";}
+  const connected=steps.some(s=>s.startsWith("Connected to"));
+  sub.textContent=decided?"You "+decided[1]+" it.":owner?"You told them: \\u201c"+cap(owner.text)+"\\u201d":connected?biz+" answered. Ambient said it is an AI.":"Ringing\\u2026";}
  else{chip.className="chip idle";chip.textContent="Ready";stake.textContent="Alexa, handle the call.";
   sub.textContent="Say \\u201cAlexa, tell Ambient to call Joe\\u2019s Plumbing,\\u201d or tap below.";
   buttons([{label:"Call Joe\\u2019s Plumbing",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);
   box.hidden=false;box.className="lines how";box.innerHTML=HOW.map((x,i)=>'<div class="line"><b>'+(i+1)+'</b><span>'+x+'</span></div>').join("");return;}
  const lines=said.slice(-3);
- box.hidden=lines.length===0||!!o;
+ box.hidden=lines.length===0||!!o||!!ap;
  box.innerHTML=lines.map(l=>'<div class="line"><b>'+esc(l.who)+'</b><span>'+esc(cap(l.text))+'</span></div>').join("");}
 render({});
 boot();
