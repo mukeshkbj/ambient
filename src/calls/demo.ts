@@ -7,6 +7,7 @@ export const JOES_PLUMBING: BusinessPersona = {
   name: "Joe's Plumbing",
   opening: "Oh, okay. Joe's Plumbing, this is Joe. How can I help?",
   rules: [
+    { when: /^just to confirm\b/i, reply: "Yes, that's right. See you then." },
     { when: /\b(one (hundred )?sixty|160)\b/i, reply: "Alright, one sixty works. I'll put you down for Tuesday at ten." },
     { when: /\b(go ahead|book it|that works)\b/i, reply: "Great, you're booked for Tuesday at ten. That's one eighty." },
     { when: /\b(sink|leak|visit|plumb)/i, reply: "Sure, we can come Tuesday at ten. It'll be one eighty for the call-out and the repair." }

@@ -152,7 +152,8 @@ function render(d){
   chip.textContent=ok?"Booked \\u00b7 confirmed by "+biz:o.kind==="unconfirmed"?"Not confirmed":o.kind==="declined"?"Declined":"No deal";
   if(ok){$("what").textContent=what?biz+" \\u00b7 "+what:biz;setStake(o.amountUsd,cap(o.when||biz));}
   else stake.textContent=biz;
-  sub.textContent=ok?(theirs?"In their words: \\u201c"+theirs.text+"\\u201d":"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed. Nothing was booked.":cap(o.reason)+". Nothing was booked.";
+  const readBack=said.some(l=>l.who==="Ambient"&&l.text.startsWith("Just to confirm:"));
+  sub.textContent=ok?(theirs?(readBack?"Ambient read back the total and the time. "+biz+" said \\u201c"+theirs.text+"\\u201d":"In their words: \\u201c"+theirs.text+"\\u201d"):"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed. Nothing was booked.":cap(o.reason)+". Nothing was booked.";
   const mine=said.filter(l=>l.who!=="Ambient"&&l.who!==biz);
   if(ok)hint.textContent=mine.some(l=>/ approved: /.test(l.text))?"You approved this price from home.":mine.some(l=>/^offer\\b/i.test(l.text))?"You offered this price from home.":limitOf(t.instruction)?"Within your "+limitOf(t.instruction).slice(6)+" limit.":"";
   if(!ok){if(theirs)foot([{who:"Last from "+biz,text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
