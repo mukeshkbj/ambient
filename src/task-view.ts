@@ -23,16 +23,16 @@ export const TASK_HTML = `<!doctype html>
 *{box-sizing:border-box;margin:0}
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font:400 clamp(12px,3.2vw,40px)/1.35 -apple-system,"SF Pro Text",system-ui,sans-serif;
- -webkit-font-smoothing:antialiased;padding:5vw 6vw 4.5vw;display:flex;flex-direction:column;justify-content:center;gap:2.2vw;overflow:hidden}
+ -webkit-font-smoothing:antialiased;padding:7vw 6vw 4.5vw;display:flex;flex-direction:column;justify-content:flex-start;gap:2.2vw;overflow:hidden}
 button{font:inherit;color:inherit;cursor:pointer;border:0}
 button:focus-visible{outline:2px solid var(--call);outline-offset:3px}
 .top{display:flex;align-items:center;gap:.8em}
-.chip{display:inline-flex;align-items:center;gap:.5em;font-size:max(13px,.58em);font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--call)}
+.chip{display:inline-flex;align-items:center;gap:.5em;font-size:max(15px,.58em);font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--call)}
 .chip::before{content:"";width:.7em;height:.7em;border-radius:50%;background:currentColor}
 .chip.needs{color:var(--needs)}.chip.done{color:var(--done)}.chip.warn{color:var(--warn)}.chip.idle{color:var(--dim)}
 .chip.needs::before{animation:breathe 2.4s ease-in-out infinite}
 @keyframes breathe{50%{opacity:.35;transform:scale(.8)}}
-.clock{margin-left:auto;font-size:max(13px,.62em);font-weight:600;font-variant-numeric:tabular-nums}
+.clock{margin-left:auto;font-size:max(15px,.62em);font-weight:600;font-variant-numeric:tabular-nums}
 .clock:empty{display:none}
 .what{font-size:1em;font-weight:600;margin-bottom:-.5em}
 .what:empty{display:none}
@@ -40,6 +40,7 @@ button:focus-visible{outline:2px solid var(--call);outline-offset:3px}
 .check{display:none;width:2.2em;height:2.2em;border-radius:50%;background:var(--done);color:var(--bg);place-items:center}
 .check svg{width:62%;height:62%;fill:none;stroke:currentColor;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:24;stroke-dashoffset:0}
 body.booked .chip::before{display:none}
+body.booked{background:radial-gradient(circle at 8% 22%,oklch(0.72 0.17 150 / .16),transparent 55%) var(--bg)}
 body.booked .check{display:grid;animation:land 420ms cubic-bezier(0.2,0,0,1) both}
 body.booked .check path{animation:draw 600ms 180ms cubic-bezier(0.2,0,0,1) both}
 @keyframes land{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
@@ -50,8 +51,8 @@ body.booked .check path{animation:draw 600ms 180ms cubic-bezier(0.2,0,0,1) both}
 .sub{font-size:.95em;color:var(--dim);text-wrap:pretty;max-width:34em;font-variant-numeric:tabular-nums}
 .actions{display:flex;gap:.5em;flex-wrap:wrap;align-items:center;margin-top:.3em}
 .actions:empty{display:none}
-.actions button{min-height:2.5em;padding:0 1em;border-radius:.55em;background:var(--btn);font-weight:600;font-size:.88em}
-.actions button.primary{background:var(--go);color:#fff;font-size:.95em;padding:0 1.4em}
+.actions button{min-height:2.5em;padding:0 1em;border-radius:.55em;background:var(--btn);font-weight:600;font-size:.95em}
+.actions button.primary{background:var(--go);color:#fff;padding:0 1.4em}
 .actions button.offer{background:transparent;box-shadow:inset 0 0 0 1.5px oklch(1 0 0 / .4)}
 .actions button.quiet{background:transparent;color:var(--stop);padding:0 .8em}
 .actions button.call{background:var(--fg);color:var(--bg)}
@@ -67,7 +68,7 @@ body[data-device="tv"]{font-size:clamp(12px,6vw,40px);padding:0 7vw;gap:0;justif
 body[data-device="tv"] .top,body[data-device="tv"] .what,body[data-device="tv"] .over,body[data-device="tv"] .foot,body[data-device="tv"] .sub,body[data-device="tv"] .hint,body[data-device="tv"] .actions{display:none}
 body[data-device="tv"] .stake{font-size:1.15em;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 body[data-device="tv"] .tvline{display:block}
-.tvline{display:none;font-size:max(13px,.7em);font-weight:650;color:var(--needs);letter-spacing:.02em}
+.tvline{display:none;font-size:max(15px,.7em);font-weight:650;color:var(--needs);letter-spacing:.02em}
 @media (max-width:480px){
  body:not([data-device="tv"]){font-size:15px;padding:24px 20px;gap:12px;overflow:auto;justify-content:flex-start}
  body:not([data-device="tv"]) .stake{font-size:2.1em}
@@ -139,9 +140,9 @@ function render(d){
   $("what").textContent=what;
   setStake(ap.amountUsd,ap.when?cap(ap.when):biz);
   if(ap.amountUsd!==undefined&&ap.limitUsd!==undefined)over.textContent=usd(ap.amountUsd-ap.limitUsd)+" over your "+usd(ap.limitUsd)+" limit";
-  const since=Date.parse(ap.createdAt||"");
+  const began=Date.parse(t.createdAt||"");
   sub.textContent=ap.kind==="dial"?"Place this call?":biz+" is holding.";
-  const hold=()=>{$("clock").textContent=Number.isFinite(since)?"On hold "+clock(Date.now()-since):"";};
+  const hold=()=>{$("clock").textContent=Number.isFinite(began)?clock(Date.now()-began):"";};
   if(ap.kind!=="dial"){hold();tick=setInterval(hold,1000);}
   buttons([{label:ap.amountUsd!==undefined?"Approve "+usd(ap.amountUsd):"Approve",kind:"primary",run:()=>act("approve",{decision:"once"})},
    ...offers(ap).map(v=>({label:"Offer "+usd(v)+" instead",kind:"offer",run:()=>act("delegate",{task:"offer "+v})})),
@@ -151,17 +152,19 @@ function render(d){
   if(ok)document.body.classList.add("booked");
   chip.textContent=ok?"Booked \\u00b7 confirmed by "+biz:o.kind==="unconfirmed"?"Not confirmed":o.kind==="declined"?"Declined":"No deal";
   if(ok){$("what").textContent=what?biz+" \\u00b7 "+what:biz;setStake(o.amountUsd,cap(o.when||biz));}
-  else stake.textContent=biz;
+  else{stake.textContent=biz;$("what").textContent=[what,limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");}
   const readBack=said.some(l=>l.who==="Ambient"&&l.text.startsWith("Just to confirm:"));
   sub.textContent=ok?(theirs?(readBack?"Ambient read back the total and the time. "+biz+" said \\u201c"+theirs.text+"\\u201d":"In their words: \\u201c"+theirs.text+"\\u201d"):"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed. Nothing was booked.":cap(o.reason)+". Nothing was booked.";
   const mine=said.filter(l=>l.who!=="Ambient"&&l.who!==biz);
   if(ok)hint.textContent=mine.some(l=>/ approved: /.test(l.text))?"You approved this price from home.":mine.some(l=>/^offer\\b/i.test(l.text))?"You offered this price from home.":limitOf(t.instruction)?"Within your "+limitOf(t.instruction).slice(6)+" limit.":"";
   if(!ok){if(theirs)foot([{who:"Last from "+biz,text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
-   buttons([{label:"Call again",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);}}
+   buttons([{label:"Call "+biz+" again",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);}}
  else if(live){chip.className="chip";chip.textContent=connected?"On the phone":"Calling";
-  $("what").textContent=[what,limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");
+  const offered=owner?/^offer\\s+\\$?(\\d+)/i.exec(owner.text):null;
+  $("what").textContent=[what,offered?limitOf(t.instruction)+" \\u00b7 you raised it to "+usd(offered[1]):limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");
   stake.textContent=biz;
-  sub.textContent=owner?ownerSaid(owner,biz):theirs?"\\u201c"+cap(theirs.text)+"\\u201d":connected?biz+" answered. Ambient said it is an AI.":"Ringing\\u2026 Ambient will say it is an AI first.";
+  const asked=said.filter(l=>l.who==="Ambient"&&/dollars/.test(l.text)).at(-1);
+  sub.textContent=offered&&asked?"Ambient asked: \\u201c"+asked.text+"\\u201d":owner?ownerSaid(owner,biz):theirs?"\\u201c"+cap(theirs.text)+"\\u201d":connected?biz+" answered. Ambient said it is an AI.":"Ringing\\u2026 Ambient will say it is an AI first.";
   const began=Date.parse(t.createdAt||"");
   const tickCall=()=>{$("clock").textContent=connected&&Number.isFinite(began)?clock(Date.now()-began):"";};
   tickCall();tick=setInterval(tickCall,1000);}

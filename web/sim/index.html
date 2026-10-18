@@ -73,9 +73,9 @@ header{display:flex;align-items:center;gap:16px;padding:16px 24px 12px;min-heigh
 .toggle{display:inline-flex;align-items:center;gap:8px;padding:0 12px;border-radius:var(--r-ctl);border:0;background:transparent;color:var(--ink-2);cursor:pointer;min-height:40px}
 @media (hover:hover){.toggle:hover{background:var(--sunk)}}
 .toggle svg{width:18px;height:18px}
-.pill{display:none;align-items:center;gap:8px;min-height:36px;padding:0 14px;border-radius:999px;background:var(--call-soft);color:var(--call-text);font-weight:600}
+.pill{display:inline-flex;visibility:hidden;justify-content:center;min-width:168px;align-items:center;gap:8px;min-height:36px;padding:0 14px;border-radius:999px;background:var(--call-soft);color:var(--call-text);font-weight:600}
 .pill i{width:8px;height:8px;border-radius:50%;background:currentColor}
-body[data-phase="live"] .pill,body[data-phase="needs"] .pill{display:inline-flex}
+body[data-phase="live"] .pill,body[data-phase="needs"] .pill{visibility:visible}
 body[data-phase="needs"] .pill{background:var(--needs-soft);color:var(--needs-ink)}
 
 main{flex:1;display:grid;grid-template-columns:minmax(330px,380px) minmax(0,1fr) 280px;gap:24px;padding:4px 24px 24px;min-height:0}
@@ -176,7 +176,9 @@ body[data-phase="needs"] .tv .devlabel{visibility:hidden}
 }
 @media (max-width:760px){
   header{flex-wrap:wrap}
-  .tagline{order:3;flex-basis:100%}
+  .tagline{display:none}
+  .pill{min-width:0}
+  body:not([data-phase="live"]):not([data-phase="needs"]) .pill{display:none}
   main{grid-template-columns:1fr;padding:4px 16px 16px}
   .call{min-height:72vh}
   .room{grid-template-columns:1fr}
@@ -341,7 +343,7 @@ function render() {
   $("biz").textContent = biz;
   $("avatar").textContent = initials(biz);
   $("callstate").innerHTML = !t ? "Not called yet" : phase === "needs" ? "<b>On hold for Maya</b>" : phase === "ended" ? (t.status === "cancelled" ? "You ended the call" : "Call ended") : connected ? "On the phone" : "Ringing…";
-  $("pillText").textContent = phase === "needs" ? "Needs you" : connected ? "On the phone" : "Calling…";
+  $("pillText").textContent = phase === "needs" ? (ap?.amountUsd !== undefined ? `Needs you · ${usd(ap.amountUsd)}` : "Needs you") : connected ? "On the phone" : "Calling…";
   $("proof").classList.toggle("show", steps.some(s => s.startsWith("Ambient: Hi, this is an AI assistant")));
   renderTranscript(steps, biz);
 
