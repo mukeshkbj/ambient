@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Screenshot the /sim page through a full simulated call.
+"""Screenshot the /sim page through full simulated calls.
 
 Usage: python scripts/shots-sim.py [base_url]
 Needs a fresh `pnpm demo` server, and playwright with chromium installed.
 """
 import asyncio
+import re
 import sys
 from pathlib import Path
 
@@ -19,9 +20,13 @@ async def phase(page, value, timeout=30000):
 
 
 async def shot(page, name):
-    await asyncio.sleep(0.6)
+    await asyncio.sleep(0.7)
     await page.screenshot(path=OUT / f"sim-{name}.png")
     print("saved", name)
+
+
+async def tap(page, label):
+    await page.frame_locator("#show8").get_by_role("button", name=re.compile(label)).click()
 
 
 async def main():
@@ -33,8 +38,9 @@ async def main():
             page.on("pageerror", lambda e: print("pageerror:", str(e)[:200]))
             await page.goto(f"{BASE}/sim")
             await page.click("#sound")
+            await page.frame_locator("#show8").get_by_role("button").first.wait_for()
             if scheme == "dark":
-                await page.click("#start")
+                await tap(page, "^Call (Joe|again)")
                 await phase(page, "needs")
                 await shot(page, "needs-you-dark")
                 await page.click("#hangup")
@@ -42,7 +48,7 @@ async def main():
                 await page.close()
                 continue
             await shot(page, "idle")
-            await page.click("#start")
+            await tap(page, "^Call Joe")
             await page.wait_for_function("document.getElementById('callstate').textContent.startsWith('Ringing')", timeout=10000)
             await page.screenshot(path=OUT / "sim-ringing.png")
             print("saved ringing")
@@ -57,7 +63,12 @@ async def main():
             await shot(page, "steered")
             await page.wait_for_selector(".outcome.ok", timeout=30000)
             await shot(page, "confirmed")
-            await page.click("#start")
+            await tap(page, "Call again")
+            await phase(page, "needs")
+            await tap(page, "^Approve")
+            await page.wait_for_selector(".outcome.ok", timeout=30000)
+            await shot(page, "approved")
+            await tap(page, "Call again")
             await phase(page, "needs")
             await page.click("#hangup")
             await page.wait_for_selector(".outcome.not", timeout=15000)
