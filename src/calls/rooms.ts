@@ -162,9 +162,11 @@ export class CallRoom implements Line {
 
   private freshTurns(users: string[]): string[] {
     const seen = this.heardSoFar;
-    const intact = seen.length <= users.length && seen.every((text, at) => users[at] === text);
-    const fresh = (intact ? users.slice(seen.length) : users.slice(users.lastIndexOf(seen.at(-1) ?? "") + 1)).filter(Boolean);
-    this.heardSoFar = intact ? users : [...seen, ...fresh];
+    const lines = (size: number) => users.slice(0, size).every((text, at) => seen[seen.length - size + at] === text);
+    let overlap = Math.min(seen.length, users.length);
+    while (overlap > 0 && !lines(overlap)) overlap -= 1;
+    const fresh = (overlap === 0 && seen.length > 0 ? users.slice(-1) : users.slice(overlap)).filter(Boolean);
+    this.heardSoFar = [...seen, ...fresh];
     return fresh;
   }
 

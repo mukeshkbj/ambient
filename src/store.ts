@@ -689,8 +689,8 @@ export class AmbientStore {
   }
 
   facts(phone: PhoneNumber): string[] {
-    const rows = this.db.prepare("SELECT fact FROM facts WHERE business_phone = ? ORDER BY id").all(phone) as Row[];
-    return rows.map(row => text(row.fact));
+    const rows = this.db.prepare("SELECT fact FROM facts WHERE business_phone = ? ORDER BY id DESC LIMIT 10").all(phone) as Row[];
+    return rows.map(row => text(row.fact)).reverse();
   }
 
   placedCalls(): PlacedCall[] {

@@ -61,11 +61,11 @@ const TOOLS: BetaTool[] = [
   }
 ];
 
-const AskOwner = z.object({ question: z.string().min(1), amount_usd: z.number().positive().optional(), when: z.string().min(1).optional() });
+const AskOwner = z.object({ question: z.string().min(1), amount_usd: z.number().nonnegative().optional(), when: z.string().min(1).optional() });
 const EndCall = z.object({
   outcome: z.enum(["confirmed", "declined", "no_deal"]),
   summary: z.string().min(1),
-  amount_usd: z.number().positive().optional(),
+  amount_usd: z.number().nonnegative().optional(),
   when: z.string().min(1).optional()
 });
 const Remember = z.object({ fact: z.string().min(1) });

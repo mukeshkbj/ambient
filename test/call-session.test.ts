@@ -342,8 +342,48 @@ describe("round 3 review findings", () => {
   });
 
   it("does not let the brain report a lower price than the business's latest quote", () => {
-    const { state } = play([answered, heard("Yes, 400, see you Tuesday."), confirm(140)]);
+    const { state } = play([answered, heard("Yes, it's 400, see you Tuesday."), confirm(140)]);
     expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 400 });
+  });
+});
+
+describe("round 4 review findings", () => {
+  it("records a price negotiated down from the business's first quote", () => {
+    const { state } = play([answered, heard("That's $180 for Tuesday at three."), say("Could you do one hundred forty dollars?"), heard("Sure, that works."), confirm(140)]);
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 140 } });
+  });
+
+  it.each([
+    ["It's one hundred twenty dollars. We're at 4500 Main Street, so yes, see you Tuesday."],
+    ["Sure, the fee is $120. Call 555-1212 if you need us."],
+    ["Yes, it's $120, unit 300 is fine, zip 90210."]
+  ])("does not read a street, phone, unit, or zip number as the price: %s", line => {
+    const { state } = play([answered, heard(line), confirm(120)]);
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 120 } });
+  });
+
+  it.each(["Yes, no problem.", "Yep, sorry, that's right.", "Sure, not a problem."])("takes a plain yes with a polite word as agreement: %s", reply => {
+    const asked = play([answered, heard("It'll be 120."), confirm(120)]);
+    const { state } = play([heard(reply), confirm(120)], asked.state);
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 120 } });
+  });
+
+  it.each(["Sorry, we're booked Tuesday.", "Yes, but we can't do Tuesday.", "Yeah, no, we don't do that."])("still treats a refusal as a refusal: %s", reply => {
+    const asked = play([answered, heard("It'll be 120."), confirm(120)]);
+    const { state } = play([heard(reply), confirm(120)], asked.state);
+    expect(state.phase).not.toMatchObject({ outcome: { kind: "confirmed" } });
+  });
+
+  it("does not take an hourly rate as the total", () => {
+    const { state, effects } = play([answered, heard("Sure, it's $90 an hour, two hour minimum."), confirm(90)]);
+    expect(state.phase.kind).toBe("talking");
+    expect(spoken(effects).at(-1)).toBe("Just to confirm, that's ninety dollars?");
+  });
+
+  it("ends without a deal after the owner declines a deal with no price", () => {
+    const asked = play([answered, heard("Sure, Friday works."), confirm(undefined, "Booked Friday")]);
+    const { state } = play([{ kind: "owner_decided", requestId: requestOf(asked.state), decision: "deny" }, confirm(undefined, "Booked Friday")], asked.state);
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "no_deal" } });
   });
 
   it("settles on the business's latest quote after a counter-offer", () => {

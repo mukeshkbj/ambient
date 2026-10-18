@@ -163,7 +163,7 @@ describe("CallerClient discovery and memory", () => {
     await until(engine, first.id, item => item.status === "completed");
     const second = await engine.ask("Call Joe's Plumbing and book a visit", undefined, true);
     await until(engine, second.id, item => item.status === "completed");
-    expect(seen.flat().some(fact => fact.includes("quoted") && fact.includes("one hundred eighty"))).toBe(true);
+    expect(seen.flat().some(fact => fact.startsWith("Noted on an earlier call:") && fact.includes("quoted") && fact.includes("one hundred eighty"))).toBe(true);
     client.close();
     engine.close();
     memory.close();

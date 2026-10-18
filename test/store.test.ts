@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it } from "vitest";
+import { parsePhoneNumber } from "../src/calls/types.js";
 import { AmbientStore } from "../src/store.js";
 
 let store: AmbientStore | undefined;
@@ -81,6 +82,13 @@ describe("AmbientStore", () => {
       answer: "At 7pm",
       updatedAt: "2026-09-06T10:02:00.000Z"
     })).toMatchObject({ status: "completed", answer: "At 7pm" });
+  });
+
+  it("hands back only the ten newest remembered facts for a business", () => {
+    store = new AmbientStore();
+    const phone = parsePhoneNumber("4155550134");
+    for (let index = 1; index <= 12; index += 1) store.addFact(phone, `fact ${index}`);
+    expect(store.facts(phone)).toEqual(Array.from({ length: 10 }, (_, index) => `fact ${index + 3}`));
   });
 
   it("keeps one selected conversation and does not select an unmarked history row", () => {

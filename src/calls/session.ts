@@ -1,5 +1,5 @@
 import { dollarsInWords } from "../words.js";
-import { affirms, amountsIn, chargedIn, disclosure, HOLD_LINE_MS, holdTrailingDigits, offerIn, OWNER_PATIENCE_MS, redactDigits, refuses } from "./rules.js";
+import { affirms, amountsIn, chargedIn, disclosure, HOLD_LINE_MS, holdTrailingDigits, offerIn, OWNER_PATIENCE_MS, pricesIn, ratesIn, redactDigits, refuses } from "./rules.js";
 import type { BrainStep, CallBrief, CallEffect, CallInput, CallOutcome, CallPhase, CallTurn, Speaker } from "./types.js";
 
 export type CallState = {
@@ -14,6 +14,7 @@ export type CallState = {
   disclosed: boolean;
   askedToConfirm: boolean;
   approvedUnpriced: boolean;
+  deniedUnpriced: boolean;
   draft: string;
   held: string;
 };
@@ -37,6 +38,7 @@ export function startCall(brief: CallBrief, callId: string): Transition {
       disclosed: false,
       askedToConfirm: false,
       approvedUnpriced: false,
+      deniedUnpriced: false,
       draft: "",
       held: ""
     },
@@ -109,7 +111,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       const note = `${brief.ownerName} ${approved ? "approved" : "declined"}: ${phase.question}`;
       const amount = phase.amountUsd;
       const ledger = amount === undefined
-        ? (approved && phase.unpriced ? { approvedUnpriced: true } : {})
+        ? (phase.unpriced ? (approved ? { approvedUnpriced: true } : { deniedUnpriced: true }) : {})
         : approved ? { approvedUsd: [...state.approvedUsd, amount] } : { deniedUsd: [...state.deniedUsd, amount] };
       return think({ ...ownerNote(state, note, now, ledger), phase: { kind: "talking" } });
     }
@@ -149,10 +151,14 @@ function brainStep(state: CallState, brain: BrainStep, now: string): Transition 
 function confirm(state: CallState, outcome: Extract<CallOutcome, { kind: "confirmed" }>, now: string): Transition {
   const { brief } = state;
   const owner = brief.ownerName;
-  const quote = state.turns.findLast(turn => turn.speaker === "business" && amountsIn(turn.text).length > 0);
-  const charges = [...(outcome.amountUsd !== undefined ? [outcome.amountUsd] : []), ...chargedIn(outcome.summary), ...(quote ? amountsIn(quote.text) : [])]
-    .filter(amount => Number.isFinite(amount) && amount > 0);
-  const charge = charges.length > 0 ? Math.max(...charges) : undefined;
+  const line = state.turns.filter(turn => turn.speaker !== "owner");
+  const pricedAt = line.findLastIndex(turn => pricesIn(turn.text).length > 0);
+  const onLine = pricedAt >= 0 ? pricesIn(line[pricedAt]!.text) : [];
+  const saidSince = line.slice(pricedAt + 1).flatMap(turn => amountsIn(turn.text));
+  const claimed = [...(outcome.amountUsd !== undefined ? [outcome.amountUsd] : []), ...chargedIn(outcome.summary)].filter(amount => Number.isFinite(amount) && amount > 0);
+  const charge = onLine.length > 0
+    ? claimed.find(amount => onLine.includes(amount) || saidSince.includes(amount)) ?? Math.max(...onLine)
+    : claimed.length > 0 ? Math.max(...claimed) : undefined;
   const limit = brief.maxUsd ?? 0;
   if (charge !== undefined && state.deniedUsd.includes(charge)) {
     return close(state, { kind: "no_deal", reason: `${owner} declined ${dollarsInWords(charge)}` }, now,
@@ -173,6 +179,10 @@ function confirm(state: CallState, outcome: Extract<CallOutcome, { kind: "confir
     const line = charge !== undefined ? `Just to confirm, that's ${price}${when}?` : `Just to confirm, are we all set${when}?`;
     return { state: { ...withTurn(flushed, "agent", line, now), askedToConfirm: true }, effects: [say(line)] };
   }
+  if (charge === undefined && state.deniedUnpriced) {
+    return close(state, { kind: "no_deal", reason: `${owner} declined a deal with no price` }, now,
+      `Okay. ${owner} won't book it without a price, so we'll leave it there. Thanks for your time, goodbye.`);
+  }
   if (charge === undefined && !state.approvedUnpriced) {
     const when = outcome.when ? ` for ${outcome.when}` : "";
     return askOwner(state, `${brief.business.name} confirmed${when} but gave no price. Should I agree without a price?`, undefined, now, true);
@@ -186,7 +196,7 @@ function evidenced(state: CallState, charge: number | undefined): boolean {
   const lastBusiness = line.findLast(turn => turn.speaker === "business");
   if (!lastBusiness || refuses(lastBusiness.text)) return false;
   if (charge === undefined) return affirms(lastBusiness.text);
-  const named = line.findLastIndex(turn => amountsIn(turn.text).includes(charge));
+  const named = line.findLastIndex(turn => amountsIn(turn.text).includes(charge) && !ratesIn(turn.text).includes(charge));
   if (named < 0) return false;
   const answer = line[named]?.speaker === "business" ? line[named] : line.slice(named + 1).find(turn => turn.speaker === "business");
   return answer !== undefined && affirms(answer.text);
@@ -232,7 +242,7 @@ function think(state: CallState): Transition {
   return { state: { ...state, turn, draft: "", held: "" }, effects: [{ kind: "think", turn }] };
 }
 
-function ownerNote(state: CallState, note: string, now: string, ledger: Partial<Pick<CallState, "approvedUsd" | "deniedUsd" | "approvedUnpriced">>): CallState {
+function ownerNote(state: CallState, note: string, now: string, ledger: Partial<Pick<CallState, "approvedUsd" | "deniedUsd" | "approvedUnpriced" | "deniedUnpriced">>): CallState {
   return { ...withTurn(state, "owner", note, now), ...ledger };
 }
 

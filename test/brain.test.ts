@@ -99,6 +99,14 @@ describe("claudeBrain", () => {
     expect(await collect(brain.respond(state, new AbortController().signal))).toEqual([]);
   });
 
+  it("keeps an end_call for a free job instead of dropping it", async () => {
+    const events = [...tool(0, "end_call", { outcome: "confirmed", summary: "Free estimate Tuesday", amount_usd: 0 }), stop("tool_use")];
+    const brain = claudeBrain({ stream: fakeStream(events), model: "claude-opus-5-5", log: () => {} });
+    expect(await collect(brain.respond(state, new AbortController().signal))).toEqual([
+      { kind: "end_call", outcome: { kind: "confirmed", summary: "Free estimate Tuesday", amountUsd: 0 } }
+    ]);
+  });
+
   it("drops tool calls from a turn cut off by max_tokens", async () => {
     const events = [...tool(0, "end_call", { outcome: "confirmed", summary: "Tuesday" }), stop("max_tokens")];
     const brain = claudeBrain({ stream: fakeStream(events), model: "claude-opus-5-5", log: () => {} });

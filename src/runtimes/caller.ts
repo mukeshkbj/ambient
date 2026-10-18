@@ -313,6 +313,9 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
   private pastCalls(phone: PhoneNumber): string[] {
     const memory = this.options.memory;
     if (!memory) return [];
-    return memory.history(phone).slice(0, 3).map(call => `Last call on ${dayLabel(call.at)}: ${describeOutcome(call.outcome)}.`);
+    return memory.history(phone).slice(0, 3).flatMap(call => {
+      const note = noteFromCall(`${dayLabel(call.at)}, ${describeOutcome(call.outcome)}.`);
+      return note ? [`${EARLIER_CALL} ${note}`] : [];
+    });
   }
 }

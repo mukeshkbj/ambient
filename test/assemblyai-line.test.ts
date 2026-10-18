@@ -119,6 +119,24 @@ describe("CallRooms line", () => {
     expect(inputs.flatMap(input => (input.kind === "heard" ? [input.text] : []))).toEqual(["Hello?", "Who is this?", "Tuesday works.", "Yes."]);
   });
 
+  it("hears a repeated answer when the window slides over it", async () => {
+    const { rooms, line, inputs } = setup();
+    await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
+    const room = rooms.room("call-1")!;
+    room.chat({ messages: [user("Hello"), user("Okay")] }, `Bearer ${room.secret}`, writer().sink);
+    room.chat({ messages: [user("Okay"), user("Okay")] }, `Bearer ${room.secret}`, writer().sink);
+    expect(inputs.flatMap(input => (input.kind === "heard" ? [input.text] : []))).toEqual(["Hello", "Okay", "Okay"]);
+  });
+
+  it("passes on only the newest turn when the history no longer lines up", async () => {
+    const { rooms, line, inputs } = setup();
+    await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
+    const room = rooms.room("call-1")!;
+    room.chat({ messages: [user("Hello"), user("We can do Tuesday")] }, `Bearer ${room.secret}`, writer().sink);
+    room.chat({ messages: [user("Hello"), user("We can do Tuesday at ten"), user("Does that work?")] }, `Bearer ${room.secret}`, writer().sink);
+    expect(inputs.flatMap(input => (input.kind === "heard" ? [input.text] : []))).toEqual(["Hello", "We can do Tuesday", "Does that work?"]);
+  });
+
   it("hears a repeated short answer as a new turn while the history is intact", async () => {
     const { rooms, line, inputs } = setup();
     await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
