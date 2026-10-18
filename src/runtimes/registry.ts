@@ -5,9 +5,10 @@ import type { Approval, RunView, RuntimeState } from "../types.js";
 import Anthropic from "@anthropic-ai/sdk";
 import { claudeBrain, scriptedBrain } from "../calls/brain.js";
 import { DEMO_SCRIPT, JOES_PLUMBING, JOES_PLUMBING_HANGS_UP } from "../calls/demo.js";
+import { discoverBusiness } from "../calls/discover.js";
 import { simulatedLine } from "../calls/line.js";
 import { parsePhoneNumber } from "../calls/types.js";
-import { readHousehold } from "../household.js";
+import { readHousehold, type Household } from "../household.js";
 import { CallerClient } from "./caller.js";
 import type { AssistantClient, RuntimeDescriptor } from "./types.js";
 
@@ -301,21 +302,21 @@ function callerRuntime(item: RuntimeConfigEntry, env: Record<string, string | un
   const speedMs = numberOption(item, "speedMs");
   const brainKind = option("brain") ?? "scripted";
   if (brainKind !== "scripted" && brainKind !== "claude") throw new Error(`Runtime "${item.id}" brain "${brainKind}" is not available; supported: scripted, claude`);
-  const brain = brainKind === "claude"
-    ? (() => {
-        const client = new Anthropic();
-        return claudeBrain({
-          stream: (request, options) => client.beta.messages.stream(request, options),
-          model: option("model") ?? env.CALLER_MODEL ?? "claude-opus-5-5",
-          fallbacks: true
-        });
-      })()
+  const anthropic = brainKind === "claude" ? new Anthropic() : undefined;
+  const brain = anthropic
+    ? claudeBrain({
+        stream: (request, options) => anthropic.beta.messages.stream(request, options),
+        model: option("model") ?? env.CALLER_MODEL ?? "claude-opus-5-5",
+        fallbacks: true
+      })
     : scriptedBrain(DEMO_SCRIPT);
   const client = new CallerClient({
     household: readHousehold(env.AMBIENT_HOUSEHOLD_FILE ?? "household.example.json"),
     business: { name: option("business") ?? persona.name, phone: parsePhoneNumber(option("phone") ?? "+14155550134") },
     line: () => simulatedLine(persona, speedMs !== undefined ? { speedMs } : {}),
-    brain
+    brain,
+    memory: store,
+    ...(anthropic ? { discover: (goal: string, household: Household) => discoverBusiness(params => anthropic.messages.create(params), goal, household) } : {})
   });
   return polledRuntime(item, env, store, client);
 }

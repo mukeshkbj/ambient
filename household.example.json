@@ -1,6 +1,9 @@
 {
   "ownerName": "Maya",
   "address": "12 Elm Street",
+  "city": "San Francisco",
+  "region": "California",
+  "country": "US",
   "maxUsdDefault": 150,
   "facts": ["Maya is home after 9am on weekdays"]
 }

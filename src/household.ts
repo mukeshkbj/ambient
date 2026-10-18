@@ -4,6 +4,9 @@ import { z } from "zod";
 const HouseholdSchema = z.object({
   ownerName: z.string().min(1),
   address: z.string().min(1).optional(),
+  city: z.string().min(1).optional(),
+  region: z.string().min(1).optional(),
+  country: z.string().min(1).optional(),
   maxUsdDefault: z.number().positive().optional(),
   facts: z.array(z.string().min(1)).default([])
 });

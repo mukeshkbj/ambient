@@ -1,10 +1,12 @@
 import { randomUUID } from "node:crypto";
 import type { Brain } from "../calls/brain.js";
 import { runCall, type CallHandle } from "../calls/call.js";
+import type { Candidate } from "../calls/discover.js";
 import type { Line } from "../calls/line.js";
-import { amountsIn } from "../calls/rules.js";
-import type { CallBrief, PhoneNumber } from "../calls/types.js";
+import { amountsIn, checkDialLimits, type PlacedCall } from "../calls/rules.js";
+import { parsePhoneNumber, type CallBrief, type CallOutcome, type CallRecord, type PhoneNumber } from "../calls/types.js";
 import { householdFacts, type Household } from "../household.js";
+import { dollarsInWords } from "../words.js";
 import {
   AssistantEvented,
   type ApprovalPayload,
@@ -17,11 +19,21 @@ import {
   type SubmitResult
 } from "./types.js";
 
+type CallerMemory = {
+  history(phone: PhoneNumber): CallRecord[];
+  recordCall(call: CallRecord): void;
+  facts(phone: PhoneNumber): string[];
+  addFact(phone: PhoneNumber, fact: string): void;
+  placedCalls(): PlacedCall[];
+};
+
 export type CallerOptions = {
   household: Household;
   business: { name: string; phone: PhoneNumber };
   line: () => Line;
   brain: Brain;
+  discover?: (goal: string, household: Household) => Promise<Candidate[]>;
+  memory?: CallerMemory;
   tickMs?: number;
 };
 
@@ -29,6 +41,46 @@ export function spendingLimit(instruction: string): number | undefined {
   const match = /\b(?:under|below|less than|no more than|not more than|at most|up to|max(?:imum)?(?: of)?)\s+\$?([^.,;]+)/i.exec(instruction);
   return match ? amountsIn(match[1]!)[0] : undefined;
 }
+
+function dialedNumber(raw: string): PhoneNumber | undefined {
+  try {
+    return parsePhoneNumber(raw);
+  } catch {
+    return undefined;
+  }
+}
+
+function phoneIn(text: string): PhoneNumber | undefined {
+  for (const match of text.matchAll(/[+\d][+\d\s().-]*/g)) {
+    if (match[0].replace(/\D/g, "").length < 10) continue;
+    const phone = dialedNumber(match[0]);
+    if (phone) return phone;
+  }
+  return undefined;
+}
+
+function mentions(text: string, name: string): boolean {
+  return text.toLowerCase().includes(name.toLowerCase());
+}
+
+function dayLabel(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function describeOutcome(outcome: CallOutcome): string {
+  if (outcome.kind !== "confirmed") return `${outcome.kind}, ${outcome.reason}`;
+  const quoted = outcome.amountUsd !== undefined ? `, quoted ${dollarsInWords(outcome.amountUsd)}` : "";
+  const when = outcome.when ? `, ${outcome.when}` : "";
+  return `confirmed${quoted}${when}`;
+}
+
+type DialChoice = "once" | "deny" | "cancel";
+
+type PendingDial = {
+  requestId: string;
+  question: string;
+  decide(choice: DialChoice): void;
+};
 
 export class CallerClient extends AssistantEvented implements AssistantClient {
   readonly capabilities: RuntimeCapabilities = {
@@ -44,6 +96,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
   readonly ephemeralSessions = true;
 
   private readonly calls = new Map<string, CallHandle>();
+  private readonly pendingDials = new Map<string, PendingDial>();
 
   constructor(private readonly options: CallerOptions) {
     super();
@@ -60,27 +113,14 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
   }
 
   submitPrompt(sessionId: string, text: string): Promise<SubmitResult> {
-    const { household, business } = this.options;
-    const maxUsd = spendingLimit(text) ?? household.maxUsdDefault;
-    const brief: CallBrief = {
-      goal: text,
-      business,
-      ownerName: household.ownerName,
-      ...(maxUsd !== undefined ? { maxUsd } : {}),
-      facts: householdFacts(household)
-    };
     this.emit({ type: "message.start", sessionId, payload: { kind: "call" } });
-    this.emit({ type: "status.update", sessionId, payload: { text: `Calling ${business.name}` } });
-    const call = runCall({
-      brief,
-      callId: sessionId,
-      line: this.options.line(),
-      brain: this.options.brain,
-      emit: event => this.emit({ ...event, sessionId }),
-      ...(this.options.tickMs !== undefined ? { tickMs: this.options.tickMs } : {})
+    void this.begin(sessionId, text).catch((error: unknown) => {
+      this.emit({
+        type: "message.complete",
+        sessionId,
+        payload: { status: "error", error: error instanceof Error ? error.message : String(error) }
+      });
     });
-    this.calls.set(sessionId, call);
-    void call.done.then(() => this.calls.delete(sessionId));
     return Promise.resolve({ state: "streaming" });
   }
 
@@ -91,11 +131,27 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
   }
 
   respondToApproval(sessionId: string, requestId: string, choice: string): Promise<ApprovalResponse> {
+    const pending = this.pendingDials.get(sessionId);
+    if (pending?.requestId === requestId) {
+      this.pendingDials.delete(sessionId);
+      pending.decide(choice === "deny" ? "deny" : "once");
+      return Promise.resolve({ resolved: 1 });
+    }
     const resolved = this.calls.get(sessionId)?.ownerDecided(requestId, choice === "deny" ? "deny" : "once") ?? false;
     return Promise.resolve({ resolved: resolved ? 1 : 0 });
   }
 
   listPendingApprovals(sessionId: string): Promise<ApprovalPayload[]> {
+    const pending = this.pendingDials.get(sessionId);
+    if (pending) {
+      return Promise.resolve([{
+        requestId: pending.requestId,
+        command: pending.question,
+        description: pending.question,
+        choices: ["once", "deny"],
+        kind: "dial"
+      }]);
+    }
     const phase = this.calls.get(sessionId)?.state().phase;
     if (phase?.kind !== "waiting_for_owner") return Promise.resolve([]);
     const { requestId, question, amountUsd } = phase;
@@ -110,11 +166,131 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
   }
 
   interrupt(sessionId: string): Promise<InterruptResult> {
+    const pending = this.pendingDials.get(sessionId);
+    if (pending) {
+      this.pendingDials.delete(sessionId);
+      pending.decide("cancel");
+    }
     this.calls.get(sessionId)?.hangUp();
     return Promise.resolve({ state: "interrupted" });
   }
 
   close(): void {
+    for (const pending of this.pendingDials.values()) pending.decide("cancel");
+    this.pendingDials.clear();
     for (const call of this.calls.values()) call.hangUp();
+  }
+
+  private async begin(sessionId: string, instruction: string): Promise<void> {
+    const { household, business } = this.options;
+    const maxUsd = spendingLimit(instruction) ?? household.maxUsdDefault;
+    const given = phoneIn(instruction);
+    if (given) {
+      const name = mentions(instruction, business.name) ? business.name : given;
+      this.dial(sessionId, { name, phone: given }, instruction, maxUsd);
+      return;
+    }
+    if (mentions(instruction, business.name) || !this.options.discover) {
+      this.dial(sessionId, business, instruction, maxUsd);
+      return;
+    }
+    this.emit({ type: "status.update", sessionId, payload: { text: "Looking for a business near you." } });
+    const candidates = this.ranked(await this.options.discover(instruction, household));
+    for (const [index, candidate] of candidates.entries()) {
+      const decision = await this.askToDial(sessionId, `${sessionId}:dial-${index}`, this.dialQuestion(candidate));
+      if (decision === "cancel") return;
+      if (decision === "once") {
+        this.dial(sessionId, { name: candidate.name, phone: candidate.phone }, instruction, maxUsd);
+        return;
+      }
+    }
+    this.emit({
+      type: "message.complete",
+      sessionId,
+      payload: {
+        text: "I couldn't find a business you're happy to call.",
+        status: "completed",
+        outcome: { kind: "no_deal", reason: "no suitable business" }
+      }
+    });
+  }
+
+  private ranked(candidates: Candidate[]): Candidate[] {
+    const memory = this.options.memory;
+    if (!memory) return candidates;
+    const used = new Set(
+      candidates
+        .filter(candidate => memory.history(candidate.phone).some(call => call.outcome.kind === "confirmed"))
+        .map(candidate => candidate.phone)
+    );
+    return [...candidates].sort((a, b) => Number(used.has(b.phone)) - Number(used.has(a.phone)));
+  }
+
+  private dialQuestion(candidate: Candidate): string {
+    const used = this.options.memory?.history(candidate.phone).find(call => call.outcome.kind === "confirmed");
+    if (!used || used.outcome.kind !== "confirmed") return `I found ${candidate.name}. ${candidate.why} Call them?`;
+    const amount = used.outcome.amountUsd !== undefined ? ` for ${dollarsInWords(used.outcome.amountUsd)}` : "";
+    return `You used ${candidate.name} on ${dayLabel(used.at)}${amount}. Call them again?`;
+  }
+
+  private askToDial(sessionId: string, requestId: string, question: string): Promise<DialChoice> {
+    return new Promise(resolve => {
+      this.pendingDials.set(sessionId, { requestId, question, decide: resolve });
+      this.emit({
+        type: "approval.request",
+        sessionId,
+        payload: { requestId, command: question, description: question, choices: ["once", "deny"], kind: "dial" }
+      });
+    });
+  }
+
+  private dial(sessionId: string, business: { name: string; phone: PhoneNumber }, instruction: string, maxUsd: number | undefined): void {
+    const { household, memory } = this.options;
+    const limit = checkDialLimits(memory?.placedCalls() ?? [], business.phone, new Date().toISOString());
+    if (!limit.ok) {
+      this.emit({
+        type: "message.complete",
+        sessionId,
+        payload: { text: limit.reason, status: "completed", outcome: { kind: "no_deal", reason: "call limit reached" } }
+      });
+      return;
+    }
+    const brief: CallBrief = {
+      goal: instruction,
+      business,
+      ownerName: household.ownerName,
+      ...(maxUsd !== undefined ? { maxUsd } : {}),
+      facts: [...householdFacts(household), ...(memory?.facts(business.phone) ?? []), ...this.pastCalls(business.phone)]
+    };
+    this.emit({ type: "status.update", sessionId, payload: { text: `Calling ${business.name}` } });
+    const call = runCall({
+      brief,
+      callId: sessionId,
+      line: this.options.line(),
+      brain: this.options.brain,
+      emit: event => this.emit({ ...event, sessionId }),
+      ...(memory ? { remember: fact => memory.addFact(business.phone, fact) } : {}),
+      ...(this.options.tickMs !== undefined ? { tickMs: this.options.tickMs } : {})
+    });
+    this.calls.set(sessionId, call);
+    void call.done.then(state => {
+      this.calls.delete(sessionId);
+      if (memory && state.phase.kind === "ended") {
+        memory.recordCall({
+          runId: sessionId,
+          businessName: business.name,
+          phone: business.phone,
+          goal: instruction,
+          outcome: state.phase.outcome,
+          at: new Date().toISOString()
+        });
+      }
+    });
+  }
+
+  private pastCalls(phone: PhoneNumber): string[] {
+    const memory = this.options.memory;
+    if (!memory) return [];
+    return memory.history(phone).slice(0, 3).map(call => `Last call on ${dayLabel(call.at)}: ${describeOutcome(call.outcome)}.`);
   }
 }

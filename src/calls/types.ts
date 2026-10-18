@@ -51,6 +51,15 @@ export type CallEffect =
   | { kind: "hang_up" }
   | { kind: "emit"; event: AssistantEvent };
 
+export type CallRecord = {
+  runId: string;
+  businessName: string;
+  phone: PhoneNumber;
+  goal: string;
+  outcome: CallOutcome;
+  at: string;
+};
+
 export function parsePhoneNumber(raw: string): PhoneNumber {
   const trimmed = raw.trim();
   const digits = trimmed.replace(/\D/g, "");

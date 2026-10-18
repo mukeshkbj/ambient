@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { scriptedBrain } from "../src/calls/brain.js";
+import { scriptedBrain, type Brain } from "../src/calls/brain.js";
+import type { Candidate } from "../src/calls/discover.js";
 import { DEMO_SCRIPT, JOES_PLUMBING, JOES_PLUMBING_HANGS_UP } from "../src/calls/demo.js";
 import { simulatedLine, type BusinessPersona } from "../src/calls/line.js";
 import { parsePhoneNumber } from "../src/calls/types.js";
@@ -9,15 +10,17 @@ import { AmbientStore } from "../src/store.js";
 import type { RunView } from "../src/types.js";
 import { speak } from "../src/voice.js";
 
-function setup(persona: BusinessPersona = JOES_PLUMBING) {
+function setup(persona: BusinessPersona = JOES_PLUMBING, options: { discover?: () => Promise<Candidate[]>; memory?: boolean; brain?: Brain } = {}) {
+  const store = new AmbientStore();
   const client = new CallerClient({
     household: { ownerName: "Maya", address: "12 Elm Street", maxUsdDefault: 200, facts: [] },
     business: { name: "Joe's Plumbing", phone: parsePhoneNumber("4155550134") },
     line: () => simulatedLine(persona, { speedMs: 1 }),
-    brain: scriptedBrain(DEMO_SCRIPT),
-    tickMs: 5
+    brain: options.brain ?? scriptedBrain(DEMO_SCRIPT),
+    tickMs: 5,
+    ...(options.discover ? { discover: options.discover } : {}),
+    ...(options.memory ? { memory: store } : {})
   });
-  const store = new AmbientStore();
   const engine = new ConversationEngine(client, store, {
     runtime: { id: "caller", label: "Ambient", kind: "cloud", state: "unknown", updatedAt: new Date().toISOString() }
   });
@@ -91,6 +94,81 @@ describe("CallerClient through the engine", () => {
     const run = await engine.ask("Call Joe's Plumbing and book a visit", undefined, true);
     const view = await until(engine, run.id, item => item.status === "completed" || item.status === "waiting_approval");
     expect(view).toMatchObject({ status: "completed", outcome: { kind: "confirmed", amountUsd: 180 } });
+    close();
+  });
+});
+
+describe("CallerClient discovery and memory", () => {
+  it("asks to dial the first candidate and moves to the next on deny", async () => {
+    const { engine, close } = setup(JOES_PLUMBING, {
+      discover: async () => [
+        { name: "Pete's Pipes", phone: parsePhoneNumber("4155550199"), why: "Rated for same-week visits" },
+        { name: "Roto Ruth", phone: parsePhoneNumber("4155550177"), why: "Open weekends" }
+      ]
+    });
+    const run = await engine.ask("find a plumber for tomorrow", undefined, true);
+    const first = await until(engine, run.id, item => item.status === "waiting_approval");
+    expect(first.approval).toMatchObject({ kind: "dial" });
+    expect(first.approval?.command).toContain("Pete's Pipes");
+    await engine.respondToApproval(first.approval!.id, "deny");
+    const second = await until(engine, run.id, item => item.approval?.command.includes("Roto Ruth") === true);
+    expect(second.approval).toMatchObject({ kind: "dial" });
+    close();
+  });
+
+  it("dials a number given in the instruction with no dial approval", async () => {
+    const { client, engine, close } = setup(JOES_PLUMBING, { discover: async () => [] });
+    const dialRequests: string[] = [];
+    client.onEvent(event => {
+      if (event.type === "approval.request" && event.payload.kind === "dial") dialRequests.push(event.payload.requestId);
+    });
+    const run = await engine.ask("call 415 555 0100 and book a visit", undefined, true);
+    const view = await until(engine, run.id, item => item.status === "completed");
+    expect(view.outcome).toMatchObject({ kind: "confirmed" });
+    expect(dialRequests).toEqual([]);
+    close();
+  });
+
+  it("includes the last outcome in the next brief for the same number", async () => {
+    const seen: string[][] = [];
+    const memory = new AmbientStore();
+    const client = new CallerClient({
+      household: { ownerName: "Maya", address: "12 Elm Street", maxUsdDefault: 200, facts: [] },
+      business: { name: "Joe's Plumbing", phone: parsePhoneNumber("4155550134") },
+      line: () => simulatedLine(JOES_PLUMBING, { speedMs: 1 }),
+      brain: {
+        respond: (state, signal) => {
+          seen.push(state.brief.facts);
+          return scriptedBrain(DEMO_SCRIPT).respond(state, signal);
+        }
+      },
+      memory,
+      tickMs: 5
+    });
+    const engine = new ConversationEngine(client, memory, {
+      runtime: { id: "caller", label: "Ambient", kind: "cloud", state: "unknown", updatedAt: new Date().toISOString() }
+    });
+    const first = await engine.ask("Call Joe's Plumbing and book a visit", undefined, true);
+    await until(engine, first.id, item => item.status === "completed");
+    const second = await engine.ask("Call Joe's Plumbing and book a visit", undefined, true);
+    await until(engine, second.id, item => item.status === "completed");
+    expect(seen.flat().some(fact => fact.includes("quoted") && fact.includes("one hundred eighty"))).toBe(true);
+    client.close();
+    engine.close();
+    memory.close();
+  });
+
+  it("ends no_deal at the per-number daily limit without dialing", async () => {
+    const { engine, store, close } = setup(JOES_PLUMBING, { memory: true });
+    for (let index = 0; index < 3; index++) {
+      const run = await engine.ask("Call Joe's Plumbing and book a visit", undefined, true);
+      await until(engine, run.id, item => item.status === "completed");
+    }
+    const run = await engine.ask("Call Joe's Plumbing and book a visit", undefined, true);
+    const view = await until(engine, run.id, item => item.status === "completed");
+    expect(view.outcome).toMatchObject({ kind: "no_deal", reason: "call limit reached" });
+    expect(view.steps.some(line => line.includes("Connected to"))).toBe(false);
+    expect(store.history(parsePhoneNumber("4155550134"))).toHaveLength(3);
     close();
   });
 });

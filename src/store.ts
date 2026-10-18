@@ -1,7 +1,8 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import type { CallOutcome } from "./calls/types.js";
+import type { PlacedCall } from "./calls/rules.js";
+import type { CallOutcome, CallRecord, PhoneNumber } from "./calls/types.js";
 import type { ApprovalKind } from "./runtimes/types.js";
 import type { Approval, Conversation, Run, RunStatus, Runtime, RuntimeId, RuntimeState, RunView } from "./types.js";
 
@@ -51,6 +52,17 @@ function outcomeValue(value: unknown): CallOutcome | undefined {
   } catch {
     return undefined;
   }
+}
+
+function callRecord(row: Row): CallRecord {
+  return {
+    runId: text(row.run_id),
+    businessName: text(row.business_name),
+    phone: text(row.phone) as PhoneNumber,
+    goal: text(row.goal),
+    outcome: outcomeValue(row.outcome_json) ?? { kind: "unconfirmed", reason: "outcome could not be read" },
+    at: text(row.created_at)
+  };
 }
 
 function run(row: Row): Run {
@@ -183,6 +195,22 @@ export class AmbientStore {
       CREATE TABLE IF NOT EXISTS meta (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS call_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        run_id TEXT NOT NULL,
+        business_name TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        goal TEXT NOT NULL,
+        outcome_json TEXT NOT NULL,
+        amount_usd REAL,
+        created_at TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS facts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        business_phone TEXT NOT NULL,
+        fact TEXT NOT NULL,
+        created_at TEXT NOT NULL
       );
     `);
     this.migrate();
@@ -623,5 +651,35 @@ export class AmbientStore {
       WHERE runtime_id = ? GROUP BY durable_session_id ORDER BY last DESC
     `).all(runtimeId) as Row[];
     return rows.map(row => text(row.durable_session_id));
+  }
+
+  recordCall(call: CallRecord): void {
+    const amount = call.outcome.kind === "confirmed" ? call.outcome.amountUsd ?? null : null;
+    this.db.prepare(`
+      INSERT INTO call_history (run_id, business_name, phone, goal, outcome_json, amount_usd, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(call.runId, call.businessName, call.phone, call.goal, JSON.stringify(call.outcome), amount, call.at);
+  }
+
+  history(phone: PhoneNumber): CallRecord[] {
+    const rows = this.db.prepare(
+      "SELECT * FROM call_history WHERE phone = ? ORDER BY created_at DESC, id DESC"
+    ).all(phone) as Row[];
+    return rows.map(callRecord);
+  }
+
+  addFact(phone: PhoneNumber, fact: string): void {
+    this.db.prepare("INSERT INTO facts (business_phone, fact, created_at) VALUES (?, ?, ?)")
+      .run(phone, fact, new Date().toISOString());
+  }
+
+  facts(phone: PhoneNumber): string[] {
+    const rows = this.db.prepare("SELECT fact FROM facts WHERE business_phone = ? ORDER BY id").all(phone) as Row[];
+    return rows.map(row => text(row.fact));
+  }
+
+  placedCalls(): PlacedCall[] {
+    const rows = this.db.prepare("SELECT phone, created_at FROM call_history").all() as Row[];
+    return rows.map(row => ({ to: text(row.phone) as PhoneNumber, startedAt: text(row.created_at) }));
   }
 }
