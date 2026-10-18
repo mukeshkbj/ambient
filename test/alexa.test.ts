@@ -65,7 +65,7 @@ describe("Alexa call intents", () => {
     await startCall(deps);
     const result = await handleAlexaRequest(request("SteerCallIntent", { message: "tell him one sixty" }), deps);
     expect(fake.client.steer).toHaveBeenCalledWith("runtime-1", "tell him one sixty");
-    expect(speechOf(result)).toContain("Told them.");
+    expect(speechOf(result)).toContain("Okay, I&apos;ll tell them.");
     close();
   });
 
@@ -74,7 +74,7 @@ describe("Alexa call intents", () => {
     await startCall(deps);
     const result = await handleAlexaRequest(request("OfferAmountIntent", { amount: "160" }), deps);
     expect(fake.client.steer).toHaveBeenCalledWith("runtime-1", "offer 160 dollars");
-    expect(speechOf(result)).toContain("Told them.");
+    expect(speechOf(result)).toContain("Okay, I&apos;ll tell them.");
     close();
   });
 
@@ -88,7 +88,7 @@ describe("Alexa call intents", () => {
     });
     const result = await handleAlexaRequest(request("AMAZON.YesIntent"), deps);
     expect(fake.client.respondToApproval).toHaveBeenCalledWith("runtime-1", "req-1", "once");
-    expect(speechOf(result)).toContain("Approved");
+    expect(speechOf(result)).toContain("tell them yes");
     close();
   });
 
@@ -102,7 +102,7 @@ describe("Alexa call intents", () => {
     });
     const result = await handleAlexaRequest(request("AMAZON.NoIntent"), deps);
     expect(fake.client.respondToApproval).toHaveBeenCalledWith("runtime-1", "req-1", "deny");
-    expect(speechOf(result)).toContain("Denied");
+    expect(speechOf(result)).toContain("say no");
     close();
   });
 

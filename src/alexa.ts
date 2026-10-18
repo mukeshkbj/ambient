@@ -194,7 +194,7 @@ function activeCall(registry: RuntimeRegistry, attributes: Record<string, unknow
 
 function startedCall(entry: RuntimeEntry, run: RunView): string {
   if (ACTIVE_STATUSES.has(run.status) && run.status !== "waiting_approval") {
-    const business = /^calling\s+(.+?)\.?$/i.exec(run.progress ?? "")?.[1];
+    const business = run.subject ?? /^calling\s+(.+?)\.?$/i.exec(run.progress ?? "")?.[1];
     return business
       ? `Calling ${business} now. I'll tell you if they need you.`
       : "Calling now. I'll tell you if they need you.";
@@ -204,9 +204,7 @@ function startedCall(entry: RuntimeEntry, run: RunView): string {
 
 function callStatus(target: ActiveCall): string {
   const ctx = { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state };
-  if (target.run.approval || !ACTIVE_STATUSES.has(target.run.status)) return speak(target.run, ctx);
-  const line = target.run.progress ?? target.run.steps.at(-1);
-  return line ?? `${ctx.label} is still on the call.`;
+  return speak(target.run, ctx);
 }
 
 async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, unknown>, dependencies: AlexaSkillDependencies): Promise<AlexaSkillResponse> {
@@ -244,7 +242,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     if (!target) return response("There's no call in progress.", attributes);
     try {
       const run = await target.entry.engine.steer(target.run.id, message);
-      return response("Told them.", runAttributes(attributes, run));
+      return response(run.subject ? `Okay, I'll tell ${run.subject}.` : "Okay, I'll tell them.", runAttributes(attributes, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
@@ -260,7 +258,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     try {
       let run = await target.entry.engine.respondToApproval(approval.id, choice);
       if (dependencies.askWaitMs) run = await target.entry.engine.waitForRun(run.id, dependencies.askWaitMs);
-      const prefix = choice === "once" ? "Approved once. " : "Denied. ";
+      const prefix = choice === "once" ? "Okay, I'll tell them yes. " : "Okay, I'll say no. ";
       const ctx = { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state };
       return response(prefix + speak(run, ctx), runAttributes(attributes, run));
     } catch (error) {
@@ -277,7 +275,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     if (!target) return response("There's no call in progress.", attributes);
     try {
       const run = await target.entry.engine.cancel(target.run.id);
-      return response("I ended the call.", runAttributes(attributes, run));
+      return response(speak(run, { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state }), runAttributes(attributes, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
@@ -291,7 +289,7 @@ export async function handleAlexaRequest(input: unknown, dependencies: AlexaSkil
   await authorize(envelope, dependencies);
   const attributes = sessionAttributes(envelope);
   const type = requestType(envelope);
-  if (type === "LaunchRequest") return response("What would you like your assistants to do?", attributes);
+  if (type === "LaunchRequest") return response("Who should I call? You can say: call Joe's Plumbing to fix the kitchen sink.", attributes);
   if (type === "SessionEndedRequest") return response("Goodbye.", attributes, true);
   if (type !== "IntentRequest") throw new AlexaRequestError(400, "Unsupported Alexa request type");
   const intent = object(requestObject(envelope).intent);

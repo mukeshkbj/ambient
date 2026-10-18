@@ -122,7 +122,7 @@ describe("Ambient HTTP bridge", () => {
     });
     expect(response.status).toBe(200);
     const payload = await response.json() as { response?: { outputSpeech?: { ssml?: string } } };
-    expect(payload.response?.outputSpeech?.ssml).toContain("What would you like your assistants to do?");
+    expect(payload.response?.outputSpeech?.ssml).toContain("Who should I call?");
   });
 
   it("rejects an MCP request without the configured local token", async () => {
