@@ -2,6 +2,8 @@
 
 [Back to overview](overview.md)
 
+> **Superseded 2026-10-18.** The user has no Twilio budget and picked AssemblyAI. AssemblyAI cannot dial out, so the business answers on a web link instead of a phone: `src/calls/rooms.ts` (one stored AssemblyAI agent per call, greeting = the disclosure, LLM = our `/call/<id>/v1/chat/completions`), `src/call-routes.ts`, and `web/call/index.html`. Facts in [reference-assemblyai.md](reference-assemblyai.md). The plan below is kept for a later Twilio Media Streams bridge.
+
 ## Goal
 
 A second `Line` adapter that places a real call through Twilio ConversationRelay. Read [reference-twilio.md](reference-twilio.md) first; it holds every message shape used below.

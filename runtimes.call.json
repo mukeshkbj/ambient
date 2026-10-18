@@ -1,0 +1,10 @@
+[
+  {
+    "id": "caller",
+    "label": "Ambient",
+    "kind": "cloud",
+    "adapter": "caller",
+    "default": true,
+    "options": { "line": "assemblyai", "brain": "claude", "business": "Joe's Plumbing", "phone": "+14155550134" }
+  }
+]

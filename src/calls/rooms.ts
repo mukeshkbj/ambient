@@ -1,0 +1,195 @@
+import { randomUUID } from "node:crypto";
+import { chatChunk, CHAT_DONE, type AssemblyAi } from "./assemblyai.js";
+import type { Line } from "./line.js";
+import { disclosure } from "./rules.js";
+import type { LineInput, PhoneNumber } from "./types.js";
+
+export type PageEvent = { type: "speak" } | { type: "hangup" };
+export type PageReport = { type: "ready" } | { type: "interrupted"; spokenSoFar: string } | { type: "ended" };
+export type ChatWriter = { write(chunk: string): void; end(): void };
+
+type RoomsOptions = {
+  ai: AssemblyAi;
+  publicBaseUrl: string;
+  voice?: string;
+  joinTimeoutMs?: number;
+  chatTimeoutMs?: number;
+};
+
+const AGENT_PROMPT = "You relay a phone call. Reply with exactly the text you are given.";
+
+function contentText(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content.map(part => (part && typeof part === "object" && "text" in part && typeof part.text === "string" ? part.text : "")).join("");
+}
+
+export class CallRoom implements Line {
+  readonly secret = randomUUID();
+  joinUrl: string | undefined;
+  private callId = "";
+  private ownerName = "";
+  private agentId: string | undefined;
+  private readonly listeners = new Set<(input: LineInput) => void>();
+  private readonly pages = new Set<(event: PageEvent) => void>();
+  private pending: { writer: ChatWriter; timer: NodeJS.Timeout } | undefined;
+  private queued = "";
+  private draft = "";
+  private seenUserTurns = 0;
+  private answered = false;
+  private ended = false;
+  private joinTimer: NodeJS.Timeout | undefined;
+
+  constructor(private readonly rooms: CallRooms, private readonly options: RoomsOptions) {}
+
+  async dial(_to: PhoneNumber, callId: string, ownerName: string): Promise<void> {
+    this.callId = callId;
+    this.ownerName = ownerName;
+    this.joinUrl = `${this.options.publicBaseUrl}/call/${callId}`;
+    this.agentId = await this.options.ai.createAgent({
+      name: `ambient-${callId}`,
+      greeting: disclosure(ownerName),
+      systemPrompt: AGENT_PROMPT,
+      voice: this.options.voice ?? "jane",
+      baseUrl: `${this.options.publicBaseUrl}/call/${callId}/v1`,
+      secret: this.secret
+    });
+    this.rooms.register(callId, this);
+    this.joinTimer = setTimeout(() => {
+      if (!this.answered) this.finish("no_answer");
+    }, this.options.joinTimeoutMs ?? 120_000);
+    this.joinTimer.unref();
+  }
+
+  async session(): Promise<{ token: string; agentId: string; ownerName: string }> {
+    if (!this.agentId) throw new Error("This call is not ready yet");
+    return { token: await this.options.ai.mintToken(), agentId: this.agentId, ownerName: this.ownerName };
+  }
+
+  attach(listener: (event: PageEvent) => void): () => void {
+    this.pages.add(listener);
+    return () => this.pages.delete(listener);
+  }
+
+  pageEvent(report: PageReport): void {
+    if (this.ended) return;
+    switch (report.type) {
+      case "ready":
+        if (this.answered) return;
+        this.answered = true;
+        clearTimeout(this.joinTimer);
+        this.send({ kind: "answered" });
+        return;
+      case "interrupted":
+        this.send({ kind: "interrupted", spokenSoFar: report.spokenSoFar });
+        return;
+      case "ended":
+        this.finish("hangup");
+    }
+  }
+
+  accepts(authorization: string | undefined): boolean {
+    return authorization === `Bearer ${this.secret}`;
+  }
+
+  chat(body: unknown, authorization: string | undefined, writer: ChatWriter): boolean {
+    if (!this.accepts(authorization)) return false;
+    const messages = body && typeof body === "object" && "messages" in body && Array.isArray(body.messages) ? body.messages as { role?: unknown; content?: unknown }[] : [];
+    const users = messages.filter(message => message.role === "user").map(message => contentText(message.content).trim());
+    const fresh = users.slice(this.seenUserTurns).filter(Boolean);
+    this.seenUserTurns = users.length;
+    this.closePending();
+    if (this.queued) {
+      const text = this.queued;
+      this.queued = "";
+      writer.write(chatChunk(text));
+      this.endWriter(writer);
+      return true;
+    }
+    const timer = setTimeout(() => this.closePending(), this.options.chatTimeoutMs ?? 8_000);
+    timer.unref();
+    this.pending = { writer, timer };
+    for (const text of fresh) this.send({ kind: "heard", text });
+    return true;
+  }
+
+  say(text: string, last: boolean): void {
+    if (this.ended) return;
+    if (this.pending) {
+      if (text) this.pending.writer.write(chatChunk(text));
+      if (last) this.closePending();
+      return;
+    }
+    this.draft += text;
+    if (!last) return;
+    this.queued += this.draft;
+    this.draft = "";
+    this.notify({ type: "speak" });
+  }
+
+  hangUp(): void {
+    if (this.ended) return;
+    if (!this.answered || this.pages.size === 0) {
+      this.finish("hangup");
+      return;
+    }
+    this.notify({ type: "hangup" });
+  }
+
+  onInput(listener: (input: LineInput) => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private closePending(): void {
+    if (!this.pending) return;
+    clearTimeout(this.pending.timer);
+    this.endWriter(this.pending.writer);
+    this.pending = undefined;
+  }
+
+  private endWriter(writer: ChatWriter): void {
+    writer.write(chatChunk("", true));
+    writer.write(CHAT_DONE);
+    writer.end();
+  }
+
+  private finish(reason: "hangup" | "no_answer"): void {
+    if (this.ended) return;
+    this.closePending();
+    this.ended = true;
+    clearTimeout(this.joinTimer);
+    this.rooms.unregister(this.callId);
+    this.send({ kind: "line_ended", reason });
+  }
+
+  private notify(event: PageEvent): void {
+    for (const page of this.pages) page(event);
+  }
+
+  private send(input: LineInput): void {
+    for (const listener of this.listeners) listener(input);
+  }
+}
+
+export class CallRooms {
+  private readonly rooms = new Map<string, CallRoom>();
+
+  constructor(private readonly options: RoomsOptions) {}
+
+  line(): CallRoom {
+    return new CallRoom(this, this.options);
+  }
+
+  room(callId: string): CallRoom | undefined {
+    return this.rooms.get(callId);
+  }
+
+  register(callId: string, room: CallRoom): void {
+    this.rooms.set(callId, room);
+  }
+
+  unregister(callId: string): void {
+    this.rooms.delete(callId);
+  }
+}

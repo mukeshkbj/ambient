@@ -318,6 +318,10 @@ function renderTranscript(steps, biz) {
       if (/^Calling /.test(line)) nodes.push(`<div class="sys">Dialing ${esc(line.slice(8))}…</div>`);
       else if (/^Connected to /.test(line)) nodes.push(`<div class="sys">Connected</div>`);
       else if (/^Remembered from /.test(line)) nodes.push(`<div class="memory">${esc(line)}</div>`);
+      else if (/^Waiting for .+ to answer at https:\/\//.test(line)) {
+        const url = line.slice(line.lastIndexOf(" at ") + 4);
+        nodes.push(`<div class="memory">Answer as the business: open <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a> on a phone.</div>`);
+      }
       continue;
     }
     const [, who, text] = m;

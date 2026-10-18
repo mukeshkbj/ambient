@@ -8,6 +8,9 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { readConfig, type AppConfig } from "./config.js";
 import { OAuthError, OAuthProvider, type Principal } from "./auth.js";
 import { AlexaRequestError, handleAlexaRequest } from "./alexa.js";
+import { assemblyAi } from "./calls/assemblyai.js";
+import { CallRooms } from "./calls/rooms.js";
+import { handleCallRoute } from "./call-routes.js";
 import { verifyAlexaRequest, type AlexaVerifyOptions } from "./alexa-verify.js";
 import { combinedCue, proactiveEventsCue, voiceMonkeyCue, type Cue } from "./cue.js";
 import { createMcpServer } from "./mcp.js";
@@ -60,6 +63,7 @@ export type AmbientHttpDependencies = {
   sessionTtlMs?: number;
   sweepIntervalMs?: number;
   sim?: SimHost;
+  calls?: { rooms: CallRooms; assetsDir: string };
   alexa?: {
     applicationId?: string;
     auth?: OAuthProvider;
@@ -302,6 +306,7 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
       }
       return;
     }
+    if (dependencies.calls && url.pathname.startsWith("/call/") && await handleCallRoute(dependencies.calls.rooms, dependencies.calls.assetsDir, request, response, url.pathname)) return;
     if (dependencies.sim && (url.pathname === "/sim" || url.pathname.startsWith("/sim/"))) {
       const sim = dependencies.sim;
       if (url.pathname.startsWith("/sim/api/") && !(await authorize(dependencies, request, undefined))) {
@@ -478,10 +483,22 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
   };
 }
 
+function assetDir(name: string): string {
+  return [new URL(`../web/${name}/`, import.meta.url), new URL(`../../web/${name}/`, import.meta.url)]
+    .map(candidate => fileURLToPath(candidate))
+    .find(dir => existsSync(dir)) ?? join(process.cwd(), "web", name);
+}
+
 export async function startFromEnvironment(env: Record<string, string | undefined> = process.env): Promise<() => Promise<void>> {
   const config: AppConfig = readConfig(env);
   const store = new AmbientStore(join(config.dataDir, "ambient.sqlite"), config.retentionDays);
-  const registry = buildRuntimeRegistry(config, env, store);
+  if (config.assemblyAi && !config.publicBaseUrl.startsWith("https://")) {
+    throw new Error("ASSEMBLYAI_API_KEY is set, so PUBLIC_BASE_URL must be a public https URL that AssemblyAI can reach");
+  }
+  const rooms = config.assemblyAi
+    ? new CallRooms({ ai: assemblyAi({ apiKey: config.assemblyAi.apiKey }), publicBaseUrl: config.publicBaseUrl, ...(config.assemblyAi.voice ? { voice: config.assemblyAi.voice } : {}) })
+    : undefined;
+  const registry = buildRuntimeRegistry(config, env, store, rooms ? { rooms } : {});
   const auth = config.oauth ? new OAuthProvider(config.oauth) : undefined;
   const alexa = config.alexaSkillId ? {
     applicationId: config.alexaSkillId,
@@ -492,9 +509,7 @@ export async function startFromEnvironment(env: Record<string, string | undefine
   } : undefined;
   // The simulator is a real MCP client on the loopback /mcp endpoint — it goes
   // through the same auth surface, so hand it the local token when one is set.
-  const simAssets = [new URL("../web/sim/", import.meta.url), new URL("../../web/sim/", import.meta.url)]
-    .map(candidate => fileURLToPath(candidate))
-    .find(dir => existsSync(dir)) ?? join(process.cwd(), "web/sim");
+  const simAssets = assetDir("sim");
   const sim = new SimHost({
     registry,
     mcpUrl: `http://127.0.0.1:${config.port}/mcp`,
@@ -513,6 +528,7 @@ export async function startFromEnvironment(env: Record<string, string | undefine
     ...(alexa ? { alexa } : {}),
     askWaitMs: config.askWaitMs,
     sim,
+    ...(rooms ? { calls: { rooms, assetsDir: assetDir("call") } } : {}),
     allowedOrigins: config.allowedOrigins,
     allowedHosts: config.allowedHosts,
     allowUnauthenticated: !auth && !config.accessToken && config.allowUnauthenticated

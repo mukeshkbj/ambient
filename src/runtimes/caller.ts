@@ -268,16 +268,18 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
     this.emit({ type: "status.update", sessionId, payload: { text: `Calling ${business.name}` } });
     const last = memory?.history(business.phone)[0];
     if (last) this.emit({ type: "status.update", sessionId, payload: { text: `Remembered from ${dayLabel(last.at)} — ${describeOutcome(last.outcome)}` } });
+    const line = this.options.line();
     const call = runCall({
       brief,
       callId: sessionId,
-      line: this.options.line(),
+      line,
       brain: this.options.brain,
       emit: event => this.emit({ ...event, sessionId }),
       ...(memory ? { remember: fact => memory.addFact(business.phone, fact) } : {}),
       ...(this.options.tickMs !== undefined ? { tickMs: this.options.tickMs } : {})
     });
     this.calls.set(sessionId, call);
+    if (line.joinUrl) this.emit({ type: "status.update", sessionId, payload: { text: `Waiting for ${business.name} to answer at ${line.joinUrl}` } });
     void call.done.then(state => {
       this.calls.delete(sessionId);
       if (memory && !this.closed && state.phase.kind === "ended") {

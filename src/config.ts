@@ -35,6 +35,8 @@ const EnvSchema = z.object({
   ALEXA_CLIENT_SECRET: z.string().min(16).optional(),
   ALEXA_REDIRECT_URIS: z.string().optional(),
   DEMO_LINK_CODE: z.string().min(8).optional(),
+  ASSEMBLYAI_API_KEY: z.string().min(1).optional(),
+  CALL_VOICE: z.string().min(1).optional(),
   VOICEMONKEY_TOKEN: z.string().min(1).optional(),
   VOICEMONKEY_DEVICE: z.string().min(1).optional(),
   ALEXA_CLIENT_ID_EVENTS: z.string().min(1).optional(),
@@ -66,6 +68,7 @@ export type AppConfig = {
     demoLinkCode?: string;
   };
   voiceMonkey?: { token: string; device: string };
+  assemblyAi?: { apiKey: string; voice?: string };
   proactiveEvents?: { clientId: string; clientSecret: string };
 };
 
@@ -145,6 +148,9 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     ...(parsed.ALEXA_SKILL_ID ? { alexaSkillId: parsed.ALEXA_SKILL_ID } : {}),
     alexaVerifySignature: parsed.ALEXA_VERIFY_SIGNATURE,
     ...(oauth ? { oauth } : {}),
+    ...(parsed.ASSEMBLYAI_API_KEY
+      ? { assemblyAi: { apiKey: parsed.ASSEMBLYAI_API_KEY, ...(parsed.CALL_VOICE ? { voice: parsed.CALL_VOICE } : {}) } }
+      : {}),
     ...(parsed.VOICEMONKEY_TOKEN && parsed.VOICEMONKEY_DEVICE
       ? { voiceMonkey: { token: parsed.VOICEMONKEY_TOKEN, device: parsed.VOICEMONKEY_DEVICE } }
       : {}),

@@ -10,6 +10,7 @@ import { simulatedLine } from "../calls/line.js";
 import { parsePhoneNumber } from "../calls/types.js";
 import { readHousehold, type Household } from "../household.js";
 import { CallerClient } from "./caller.js";
+import type { CallRooms } from "../calls/rooms.js";
 import type { AssistantClient, RuntimeDescriptor } from "./types.js";
 
 export type RuntimeEntry = {
@@ -294,10 +295,14 @@ function polledRuntime(item: RuntimeConfigEntry, env: Record<string, string | un
     });
 }
 
-function callerRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore): RuntimeEntry {
+export type RuntimeServices = { rooms?: CallRooms };
+
+function callerRuntime(item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore, services: RuntimeServices): RuntimeEntry {
   const option = (name: string) => item.options?.[name];
   const lineKind = option("line") ?? "simulated";
-  if (lineKind !== "simulated") throw new Error(`Runtime "${item.id}" line "${lineKind}" is not available; supported: simulated`);
+  if (lineKind !== "simulated" && lineKind !== "assemblyai") throw new Error(`Runtime "${item.id}" line "${lineKind}" is not available; supported: simulated, assemblyai`);
+  const rooms = services.rooms;
+  if (lineKind === "assemblyai" && !rooms) throw new Error(`Runtime "${item.id}" line "assemblyai" needs ASSEMBLYAI_API_KEY and an https PUBLIC_BASE_URL`);
   const persona = option("persona") === "hangs-up" ? JOES_PLUMBING_HANGS_UP : JOES_PLUMBING;
   const speedMs = numberOption(item, "speedMs");
   const brainKind = option("brain") ?? "scripted";
@@ -313,7 +318,7 @@ function callerRuntime(item: RuntimeConfigEntry, env: Record<string, string | un
   const client = new CallerClient({
     household: readHousehold(env.AMBIENT_HOUSEHOLD_FILE ?? "household.example.json"),
     business: { name: option("business") ?? persona.name, phone: parsePhoneNumber(option("phone") ?? "+14155550134") },
-    line: () => simulatedLine(persona, speedMs !== undefined ? { speedMs } : {}),
+    line: () => (rooms && lineKind === "assemblyai" ? rooms.line() : simulatedLine(persona, speedMs !== undefined ? { speedMs } : {})),
     brain,
     memory: store,
     limitDials: lineKind !== "simulated",
@@ -322,21 +327,22 @@ function callerRuntime(item: RuntimeConfigEntry, env: Record<string, string | un
   return polledRuntime(item, env, store, client);
 }
 
-const ADAPTERS: Record<string, (item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore, dataDir?: string) => RuntimeEntry> = {
+const ADAPTERS: Record<string, (item: RuntimeConfigEntry, env: Record<string, string | undefined>, store: AmbientStore, services: RuntimeServices) => RuntimeEntry> = {
   caller: callerRuntime
 };
 
 export function buildRuntimeRegistry(
   config: Pick<AppConfig, "runtimes" | "defaultRuntimeId"> & { dataDir?: string },
   env: Record<string, string | undefined>,
-  store: AmbientStore
+  store: AmbientStore,
+  services: RuntimeServices = {}
 ): RuntimeRegistry {
   const entries = config.runtimes.map(item => {
     const factory = ADAPTERS[item.adapter];
     if (!factory) {
       throw new Error(`Assistant adapter "${item.adapter}" is not available; supported: ${Object.keys(ADAPTERS).join(", ")}`);
     }
-    return factory(item, env, store, config.dataDir);
+    return factory(item, env, store, services);
   });
   return new RuntimeRegistry(store, entries, config.defaultRuntimeId);
 }

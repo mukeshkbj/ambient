@@ -64,6 +64,11 @@ describe("buildRuntimeRegistry adapter dispatch", () => {
     expect(registry.entry("caller")!.client.capabilities).toMatchObject({ approvals: true, steer: true, cancel: true });
     await registry.close();
 
+    expect(() => buildRuntimeRegistry({
+      defaultRuntimeId: "x",
+      runtimes: [{ id: "x", label: "X", kind: "local", adapter: "caller", options: { line: "assemblyai" } }]
+    }, {}, store)).toThrow("needs ASSEMBLYAI_API_KEY");
+
     for (const options of [{ line: "carrier-pigeon" }, { brain: "ouija" }]) {
       expect(() => buildRuntimeRegistry({
         defaultRuntimeId: "x",
