@@ -11,11 +11,11 @@ Judge personas scored v1 10.5 / 12 / 13 of 20. Confirmed defects: `/sim` mounted
 
 | Lane | Scope | Status |
 |---|---|---|
-| L0 | P0 fixes and honest docs | todo |
-| L1 | `src/attention.ts` pure core + `policies` table | todo |
+| L0 | P0 fixes and honest docs | running (lane/L0-p0) |
+| L1 | `src/attention.ts` pure core + `policies` table | running (lane/L1-attention) |
 | L2 | `src/desk.ts` shell, presence seam (sim panel + Ring webhook), recoverable `unknown` | blocked on L1 |
-| L3 | Household agent: demo scripts + Bedrock household tools + approval-invariant eval harness | todo |
-| L4 | Sim redesign: household floor plan, per-room devices, Fire TV glance, Echo Show card | todo |
+| L3 | Household agent: demo scripts + Bedrock household tools + approval-invariant eval harness | running (lane/L3-household-agent) |
+| L4 | Sim redesign: household floor plan, per-room devices, Fire TV glance, Echo Show card | running (lane/L4-sim-design) |
 | L5 | Proof: real Echo, `cdk deploy`, live Bedrock, OSS PR to alexa-skill-mcp-bridge | needs user |
 | L6 | Submission: video re-cut, friction log, product feedback, README, Devpost | after L2–L4 |
 
@@ -28,3 +28,4 @@ Judge personas scored v1 10.5 / 12 / 13 of 20. Confirmed defects: `/sim` mounted
 ## Log
 
 - 2026-10-18: review done, design written, lanes defined.
+- 2026-10-18: launched L0, L1, L3, L4 as worktree subagents (claude-sonnet-5-5).
