@@ -81,7 +81,8 @@ const clock=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)
 const DEMO="Call Joe's Plumbing and book a visit tomorrow to fix the kitchen sink, keep it under 150";
 const HOW=["Ambient phones the business and says it is an AI, first thing.","Over your limit? It puts them on hold and asks you, right here.","You hear only what the business actually confirmed."];
 function business(steps){for(const s of steps){const m=/^(?:Calling|Connected to) (.+)$/.exec(s);if(m)return m[1];}return "";}
-function speakers(steps){return steps.map(s=>/^([^:]{1,40}): (.+)$/.exec(s)).filter(Boolean).map(m=>({who:m[1],text:m[2]}));}
+function speaker(s,biz){const who=["Ambient",biz].find(n=>n&&s.startsWith(n+": "));if(who)return{who,text:s.slice(who.length+2)};const m=/^([^:]{1,40}): (.+)$/.exec(s);return m?{who:m[1],text:m[2]}:null;}
+function speakers(steps,biz){return steps.map(s=>speaker(s,biz)).filter(Boolean);}
 function act(name,args){return rpc("tools/call",{name,arguments:args}).catch(()=>undefined);}
 function offers(ap){const limit=ap.limitUsd,amount=ap.amountUsd;if(limit===undefined||amount===undefined)return [];
  const out=[];for(let v=limit+10;v<amount&&out.length<2;v+=10)out.push(v);return out;}
@@ -97,7 +98,7 @@ function render(d){
  const live=t.status&&!["completed","failed","cancelled","unknown"].includes(t.status);
  const connected=steps.some(s=>s.startsWith("Connected to"));
  const chip=$("chip"),stake=$("stake"),sub=$("sub"),hint=$("hint"),tv=$("tvline");
- const said=speakers(steps),owner=said.filter(l=>l.who!=="Ambient"&&l.who!==biz).at(-1);
+ const said=speakers(steps,biz),owner=said.filter(l=>l.who!=="Ambient"&&l.who!==biz).at(-1);
  document.body.classList.remove("booked");hint.textContent="";tv.textContent="";buttons([]);foot([]);
  if(ap){chip.className="chip needs";
   chip.textContent=ap.amountUsd!==undefined&&ap.limitUsd!==undefined?"Needs you \\u00b7 "+usd(ap.amountUsd-ap.limitUsd)+" over your "+usd(ap.limitUsd)+" limit":"Needs you";

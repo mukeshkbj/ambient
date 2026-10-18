@@ -119,7 +119,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
 
   submitPrompt(sessionId: string, text: string): Promise<SubmitResult> {
     this.emit({ type: "message.start", sessionId, payload: { kind: "call" } });
-    void this.begin(sessionId, text).catch((error: unknown) => {
+    void this.begin(sessionId, text).finally(() => this.cancelled.delete(sessionId)).catch((error: unknown) => {
       this.emit({
         type: "message.complete",
         sessionId,
@@ -171,13 +171,14 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
   }
 
   interrupt(sessionId: string): Promise<InterruptResult> {
-    this.cancelled.add(sessionId);
+    const call = this.calls.get(sessionId);
+    if (call) call.hangUp();
+    else this.cancelled.add(sessionId);
     const pending = this.pendingDials.get(sessionId);
     if (pending) {
       this.pendingDials.delete(sessionId);
       pending.decide("cancel");
     }
-    this.calls.get(sessionId)?.hangUp();
     return Promise.resolve({ state: "interrupted" });
   }
 

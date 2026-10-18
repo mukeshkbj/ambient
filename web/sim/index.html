@@ -295,7 +295,8 @@ function renderTranscript(steps, biz) {
   const nodes = [];
   let lastWho = "";
   for (const line of steps) {
-    const m = /^([^:]{1,40}): (.+)$/.exec(line);
+    const known = ["Ambient", biz].find(name => name && line.startsWith(`${name}: `));
+    const m = known ? [line, known, line.slice(known.length + 2)] : /^([^:]{1,40}): (.+)$/.exec(line);
     if (!m) {
       if (/^Calling /.test(line)) nodes.push(`<div class="sys">Dialing ${esc(line.slice(8))}…</div>`);
       else if (/^Connected to /.test(line)) nodes.push(`<div class="sys">Connected</div>`);
