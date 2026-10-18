@@ -187,6 +187,7 @@ export class CallRoom implements Line {
     this.ended = true;
     clearTimeout(this.joinTimer);
     this.rooms.unregister(this.callId);
+    if (this.agentId) void this.options.ai.retireAgent(this.agentId).catch(() => {});
     this.send({ kind: "line_ended", reason });
   }
 

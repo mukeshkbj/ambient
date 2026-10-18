@@ -154,6 +154,16 @@ describe("CallRooms line", () => {
     expect(reply.text()).toBe("Go on.");
   });
 
+  it("removes our endpoint and secret from the stored agent when the line ends", async () => {
+    const { sent, rooms, line } = setup();
+    await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
+    rooms.room("call-1")!.pageEvent({ type: "ended" });
+    await flush();
+    const retire = sent.find(item => item.method === "PUT");
+    expect(retire).toMatchObject({ url: "https://agents.assemblyai.com/v1/agents/agent-1", headers: { authorization: "aai-key" } });
+    expect(JSON.parse(retire?.body ?? "{}")).toEqual({ llm: [] });
+  });
+
   it("rejects chat calls without the call's secret", async () => {
     const { rooms, line } = setup();
     await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");

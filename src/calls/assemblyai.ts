@@ -10,6 +10,7 @@ type AgentSpec = { name: string; greeting: string; systemPrompt: string; voice: 
 export type AssemblyAi = {
   mintToken(): Promise<string>;
   createAgent(spec: AgentSpec): Promise<string>;
+  retireAgent(id: string): Promise<void>;
 };
 
 async function failed(response: { status: number; text(): Promise<string> }, what: string): Promise<Error> {
@@ -46,6 +47,14 @@ export function assemblyAi(options: { apiKey: string; fetch?: AiFetch }): Assemb
       const id = body.agent_id ?? body.id;
       if (typeof id !== "string") throw new Error("AssemblyAI agent response had no id");
       return id;
+    },
+    async retireAgent(id) {
+      const response = await send(`${API}/agents/${encodeURIComponent(id)}`, {
+        method: "PUT",
+        headers: { authorization: options.apiKey, "content-type": "application/json" },
+        body: JSON.stringify({ llm: [] })
+      });
+      if (!response.ok) throw await failed(response, "agent retire");
     }
   };
 }
