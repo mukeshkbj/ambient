@@ -1,6 +1,7 @@
 import type { PhoneNumber } from "./types.js";
 
 export const HOLD_LINE_MS = 15_000;
+export const OWNER_PATIENCE_MS = 90_000;
 const MAX_DIGIT_RUN = 11;
 const MAX_CALLS_PER_NUMBER_PER_DAY = 3;
 const MAX_CALLS_PER_DAY = 20;
@@ -11,18 +12,18 @@ export function disclosure(ownerName: string): string {
 }
 
 const DIGIT = "(?:\\d|\\b(?:zero|oh|one|two|three|four|five|six|seven|eight|nine)\\b)";
-const SEPARATOR = "[\\s,.-]*";
+const SEPARATOR = "[\\s,.\\-\\u2010-\\u2015/_:()]*";
 const LONG_RUN = new RegExp(`${DIGIT}(?:${SEPARATOR}${DIGIT}){${MAX_DIGIT_RUN},}`, "gi");
 const TRAILING_RUN = new RegExp(`${DIGIT}(?:${SEPARATOR}${DIGIT})*${SEPARATOR}$`, "i");
 
 export function redactDigits(text: string): string {
-  return text.replace(LONG_RUN, "that number");
+  return text.normalize("NFKC").replace(LONG_RUN, "that number");
 }
 
 export function holdTrailingDigits(text: string): { ready: string; held: string } {
-  const match = TRAILING_RUN.exec(text);
-  if (!match) return { ready: text, held: "" };
-  return { ready: text.slice(0, match.index), held: text.slice(match.index) };
+  const word = /\S+$/.exec(text)?.index ?? text.length;
+  const cut = TRAILING_RUN.exec(text.slice(0, word))?.index ?? word;
+  return { ready: text.slice(0, cut), held: text.slice(cut) };
 }
 
 const ONES: Record<string, number> = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 };
@@ -75,6 +76,23 @@ export function amountsIn(text: string): number[] {
   });
   flush();
   return found;
+}
+
+const NEGATION = /\b(not|never|no|don'?t|won'?t|over|above|more|less|max(imum)?|limit|too|without|instead|last time|paid)\b|n't\b/i;
+const OFFER_CUE = /\b(offer|counter|tell (him|her|them)|say|make it|how about|go (up )?to|try|accept|agree to)\b/i;
+const AMOUNT_ONLY = /^(?:[\s$.,!?-]|\d|\b(?:a|and|dollars|bucks|hundred|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)\b)+$/i;
+
+export function offerIn(text: string): number | undefined {
+  const amounts = amountsIn(text);
+  if (amounts.length !== 1 || NEGATION.test(text)) return undefined;
+  return OFFER_CUE.test(text) || AMOUNT_ONLY.test(text) ? amounts[0] : undefined;
+}
+
+export function chargedIn(text: string): number[] {
+  const symbols = [...text.matchAll(/\$\s?(\d[\d,]*(?:\.\d+)?)/g)].map(match => Number(match[1]!.replace(/,/g, "")));
+  const digits = [...text.matchAll(/\b(\d[\d,]*(?:\.\d+)?)\s*(?:dollars|bucks)\b/gi)].map(match => Number(match[1]!.replace(/,/g, "")));
+  const spoken = [...text.matchAll(/((?:\b[a-z]+[\s-]+){1,6})(?:dollars|bucks)\b/gi)].flatMap(match => amountsIn(match[1]!).slice(-1));
+  return [...symbols, ...digits, ...spoken];
 }
 
 export type PlacedCall = { to: PhoneNumber; startedAt: string };

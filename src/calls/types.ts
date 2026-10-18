@@ -22,10 +22,10 @@ export type CallOutcome =
 export type CallPhase =
   | { kind: "dialing" }
   | { kind: "talking" }
-  | { kind: "waiting_for_owner"; requestId: string; question: string; amountUsd?: number }
+  | { kind: "waiting_for_owner"; requestId: string; question: string; amountUsd?: number; since: string; lastHoldLine: string }
   | { kind: "ended"; outcome: CallOutcome };
 
-type LineInput =
+export type LineInput =
   | { kind: "answered" }
   | { kind: "heard"; text: string }
   | { kind: "interrupted"; spokenSoFar: string }
@@ -33,7 +33,7 @@ type LineInput =
 
 export type CallInput =
   | LineInput
-  | { kind: "brain"; step: BrainStep }
+  | { kind: "brain"; turn: number; step: BrainStep }
   | { kind: "owner_said"; text: string }
   | { kind: "owner_decided"; requestId: string; decision: "once" | "deny" }
   | { kind: "hold_tick" };
@@ -46,7 +46,8 @@ export type BrainStep =
 
 export type CallEffect =
   | { kind: "say"; text: string; last: boolean }
-  | { kind: "think" }
+  | { kind: "think"; turn: number }
+  | { kind: "remember"; fact: string }
   | { kind: "hang_up" }
   | { kind: "emit"; event: AssistantEvent };
 
