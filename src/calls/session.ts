@@ -1,7 +1,6 @@
 import { dollarsInWords } from "../words.js";
-import { amountsIn, chargedIn, disclosure, HOLD_LINE_MS, holdTrailingDigits, offerIn, OWNER_PATIENCE_MS, redactDigits } from "./rules.js";
-import type { BrainStep, CallBrief, CallEffect, CallInput, CallOutcome, CallTurn, Speaker } from "./types.js";
-import type { CallPhase } from "./types.js";
+import { affirms, amountsIn, chargedIn, disclosure, HOLD_LINE_MS, holdTrailingDigits, offerIn, OWNER_PATIENCE_MS, redactDigits, refuses } from "./rules.js";
+import type { BrainStep, CallBrief, CallEffect, CallInput, CallOutcome, CallPhase, CallTurn, Speaker } from "./types.js";
 
 export type CallState = {
   callId: string;
@@ -13,6 +12,7 @@ export type CallState = {
   approvedUsd: number[];
   deniedUsd: number[];
   disclosed: boolean;
+  askedToConfirm: boolean;
   draft: string;
   held: string;
 };
@@ -34,6 +34,7 @@ export function startCall(brief: CallBrief, callId: string): Transition {
       approvedUsd: [],
       deniedUsd: [],
       disclosed: false,
+      askedToConfirm: false,
       draft: "",
       held: ""
     },
@@ -66,6 +67,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       }
       const heard = withTurn(flushDraft(state, now), "business", input.text, now);
       if (phase.kind === "waiting_for_owner") {
+        if (phase.lastHoldLine !== phase.since && !(Date.parse(now) - Date.parse(phase.lastHoldLine) >= HOLD_LINE_MS)) return { state: heard, effects: [] };
         const line = `Still checking with ${brief.ownerName}, one moment.`;
         return { state: { ...withTurn(heard, "agent", line, now), phase: { ...phase, lastHoldLine: now } }, effects: [say(line)] };
       }
@@ -79,8 +81,8 @@ function transition(state: CallState, input: CallInput, now: string): Transition
     }
     case "interrupted": {
       if (phase.kind === "dialing") return unchanged(state);
-      const last = state.turns.at(-1);
-      const cutDisclosure = !state.draft && last?.speaker === "agent" && last.text === disclosure(brief.ownerName) && input.spokenSoFar.trim() !== last.text;
+      const last = state.turns.findLast(turn => turn.speaker === "agent");
+      const cutDisclosure = !state.draft && last?.text === disclosure(brief.ownerName) && input.spokenSoFar.trim() !== last.text;
       return { state: { ...truncateAgent(state, input.spokenSoFar, now), turn: state.turn + 1, ...(cutDisclosure ? { disclosed: false } : {}) }, effects: [] };
     }
     case "line_ended": {
@@ -92,7 +94,8 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       return brainStep(state, input.step, now);
     case "owner_said": {
       const offer = offerIn(input.text);
-      const noted = ownerNote(flushDraft(state, now), input.text, now, offer !== undefined ? { approvedUsd: [...state.approvedUsd, offer] } : {});
+      const ledger = offer !== undefined ? { approvedUsd: [...state.approvedUsd, offer], deniedUsd: state.deniedUsd.filter(amount => amount !== offer) } : {};
+      const noted = ownerNote(flushDraft(state, now), input.text, now, ledger);
       if (phase.kind === "dialing") return { state: noted, effects: [] };
       return think({ ...noted, phase: { kind: "talking" } });
     }
@@ -122,8 +125,8 @@ function transition(state: CallState, input: CallInput, now: string): Transition
 function brainStep(state: CallState, brain: BrainStep, now: string): Transition {
   switch (brain.kind) {
     case "say": {
-      const redacted = redactDigits(state.held + brain.text);
-      const { ready, held } = brain.last ? { ready: redacted, held: "" } : holdTrailingDigits(redacted);
+      const { ready: raw, held } = brain.last ? { ready: state.held + brain.text, held: "" } : holdTrailingDigits(state.held + brain.text);
+      const ready = redactDigits(raw);
       const drafted = { ...state, draft: state.draft + ready, held };
       const effects: CallEffect[] = ready || brain.last ? [say(ready, brain.last)] : [];
       return { state: brain.last ? flushDraft(drafted, now) : drafted, effects };
@@ -140,10 +143,9 @@ function brainStep(state: CallState, brain: BrainStep, now: string): Transition 
 function confirm(state: CallState, outcome: Extract<CallOutcome, { kind: "confirmed" }>, now: string): Transition {
   const { brief } = state;
   const owner = brief.ownerName;
-  const charges = [...(outcome.amountUsd !== undefined ? [outcome.amountUsd] : []), ...chargedIn(outcome.summary)];
+  const charges = [...(outcome.amountUsd !== undefined ? [outcome.amountUsd] : []), ...chargedIn(outcome.summary)].filter(amount => Number.isFinite(amount) && amount > 0);
   const charge = charges.length > 0 ? Math.max(...charges) : undefined;
   const limit = brief.maxUsd ?? 0;
-  if (charge !== undefined && !Number.isFinite(charge)) return unchanged(state);
   if (charge !== undefined && state.deniedUsd.includes(charge)) {
     return close(state, { kind: "no_deal", reason: `${owner} declined ${dollarsInWords(charge)}` }, now,
       `Okay. ${owner} won't go ahead at that price, so we'll leave it there. Thanks for your time, goodbye.`);
@@ -154,9 +156,14 @@ function confirm(state: CallState, outcome: Extract<CallOutcome, { kind: "confir
   }
   const flushed = flushDraft(state, now);
   if (!evidenced(flushed, charge)) {
+    if (state.askedToConfirm) {
+      const line = `I'll have ${owner} follow up to confirm. Thanks for your time, goodbye.`;
+      return end(withTurn(flushed, "agent", line, now), { kind: "unconfirmed", reason: "they never clearly confirmed it" }, [say(line), { kind: "hang_up" }]);
+    }
     const when = outcome.when ? `, ${outcome.when}` : "";
-    const line = charge !== undefined ? `Just to confirm, that's ${dollarsInWords(charge)}${when}?` : `Just to confirm, are we all set${when}?`;
-    return { state: withTurn(flushed, "agent", line, now), effects: [say(line)] };
+    const price = charge === undefined ? "" : Number.isInteger(charge) ? dollarsInWords(charge) : `$${charge.toFixed(2)}`;
+    const line = charge !== undefined ? `Just to confirm, that's ${price}${when}?` : `Just to confirm, are we all set${when}?`;
+    return { state: { ...withTurn(flushed, "agent", line, now), askedToConfirm: true }, effects: [say(line)] };
   }
   const settled = { ...outcome, ...(charge !== undefined ? { amountUsd: charge } : {}) };
   return close(state, settled, now);
@@ -164,8 +171,16 @@ function confirm(state: CallState, outcome: Extract<CallOutcome, { kind: "confir
 
 function evidenced(state: CallState, charge: number | undefined): boolean {
   const line = state.turns.filter(turn => turn.speaker !== "owner");
-  const first = charge === undefined ? line.findIndex(turn => turn.speaker === "business") : line.findIndex(turn => amountsIn(turn.text).includes(charge));
-  return first >= 0 && line.slice(first).some(turn => turn.speaker === "business");
+  const lastBusiness = line.findLast(turn => turn.speaker === "business");
+  if (!lastBusiness || refuses(lastBusiness.text)) return false;
+  if (charge === undefined) return affirms(lastBusiness.text);
+  const mentions = (turn: CallTurn) => amountsIn(turn.text).includes(charge);
+  if (line.some(turn => turn.speaker === "business" && mentions(turn) && !refuses(turn.text))) return true;
+  return line.some((turn, index) => {
+    if (turn.speaker !== "agent" || !mentions(turn)) return false;
+    const reply = line.slice(index + 1).find(next => next.speaker === "business");
+    return reply !== undefined && affirms(reply.text);
+  });
 }
 
 function close(state: CallState, outcome: Exclude<CallOutcome, { kind: "unconfirmed" }>, now: string, line?: string): Transition {
@@ -223,10 +238,10 @@ function truncateAgent(state: CallState, spokenSoFar: string, now: string): Call
     const reset = { ...state, draft: "", held: "" };
     return heard ? withTurn(reset, "agent", heard, now) : reset;
   }
-  const last = state.turns.at(-1);
-  if (last?.speaker !== "agent") return state;
-  const earlier = state.turns.slice(0, -1);
-  return { ...state, turns: heard ? [...earlier, { ...last, text: heard }] : earlier };
+  const index = state.turns.findLastIndex(turn => turn.speaker === "agent");
+  if (index < 0) return state;
+  const turns = state.turns.filter((_, at) => at !== index || heard);
+  return { ...state, turns: heard ? turns.map((turn, at) => (at === index ? { ...turn, text: heard } : turn)) : turns };
 }
 
 function transcriptLine(brief: CallBrief, turn: CallTurn): string {

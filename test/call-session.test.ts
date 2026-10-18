@@ -219,6 +219,88 @@ describe("rule 3: a price above the limit needs the owner", () => {
   });
 });
 
+describe("round 2 review findings", () => {
+  it("reads thousands, so a thousand-dollar charge cannot pass as one dollar", () => {
+    expect(amountsIn("one thousand dollars")).toEqual([1000]);
+    expect(amountsIn("one thousand two hundred dollars")).toEqual([1200]);
+    expect(amountsIn("two thousand and fifty")).toEqual([2050]);
+    const { state } = play([answered, heard("That will be one thousand dollars."), confirm(undefined, "Booked for one thousand dollars")]);
+    expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 1000 });
+  });
+
+  it("does not take the agent's own offer as confirmed when the business rejected it", () => {
+    const { state } = play([answered, heard("When?"), say("Could you do one hundred dollars?"), heard("No, it's three hundred, take it or leave it."), confirm(100)]);
+    expect(state.phase.kind).not.toBe("ended");
+  });
+
+  it("does not take a non-answer to its confirm question as confirmation", () => {
+    const asked = play([answered, heard("Hi"), confirm(90)]);
+    const { state } = play([heard("Sorry, what?"), confirm(90)], asked.state);
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "unconfirmed" } });
+  });
+
+  it("accepts a yes to its confirm question", () => {
+    const asked = play([answered, heard("Hi"), confirm(90)]);
+    expect(play([heard("Yes, that's right."), confirm(90)], asked.state).state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 90 } });
+  });
+
+  it("needs an affirmative business line to confirm a deal with no price", () => {
+    const { state, effects } = play([answered, heard("Hello, Joe's Plumbing."), confirm(undefined, "Booked Friday 7pm", "Friday 7pm")]);
+    expect(state.phase.kind).toBe("talking");
+    expect(spoken(effects)).toEqual(["Just to confirm, are we all set, Friday 7pm?"]);
+  });
+
+  it("stops asking after one unanswered confirm question and ends unconfirmed", () => {
+    const first = play([answered, heard("Hmm"), confirm(120)]);
+    const { state, effects } = play([heard("Hmm"), confirm(120)], first.state);
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "unconfirmed", reason: "they never clearly confirmed it" } });
+    expect(kinds(effects)).toContain("hang_up");
+  });
+
+  it.each(["total 200", "200 USD", "USD 200", "200$", "a 200 dollar fee", "a two hundred dollar callout fee"])("counts %s against the limit", summary => {
+    const { state } = play([answered, heard("It's 200, sure"), confirm(undefined, summary)]);
+    expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 200 });
+  });
+
+  it.each([
+    "I cannot go to 180", "tell them 180 is a ripoff", "tell them 180 is ridiculous", "say 180 is insane", "nope, tell them 180 is out",
+    "tell them nah to 180", "I would accept 180 only if it includes tax", "tell them under 180", "maybe try 180"
+  ])("does not treat \"%s\" as authorization", text => {
+    expect(offerIn(text)).toBeUndefined();
+  });
+
+  it.each([["okay 160", 160], ["sure, 160", 160], ["yes 160 is fine", 160], ["160 works", 160], ["go with 160", 160], ["approve 160", 160], ["okay, one hundred and sixty", 160]] as const)(
+    "treats \"%s\" as authorizing %i",
+    (text, amount) => {
+      expect(offerIn(text)).toBe(amount);
+    }
+  );
+
+  it("lets the owner reverse an earlier decline", () => {
+    const asked = play([answered, heard("It's 200"), confirm(200)]);
+    const denied = play([{ kind: "owner_decided", requestId: requestOf(asked.state), decision: "deny" }], asked.state);
+    const { state } = play([owner("actually okay, go to 200"), heard("Great, 200 works"), confirm(200)], denied.state);
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 200 } });
+  });
+
+  it("repeats a disclosure cut off after the business already spoke", () => {
+    const { state, effects } = play([answered, heard("Hello?"), { kind: "interrupted", spokenSoFar: "Hi, this is an" }, heard("Who's this?")]);
+    expect(spoken(effects)).toContain(disclosure("Maya"));
+    expect(state.turns[0]?.text).toBe("Hi, this is an");
+  });
+
+  it("does not repeat the still-checking line for every business sentence", () => {
+    const { effects } = play([heard("Hello?"), heard("Still there?")], quoted().state);
+    expect(spoken(effects)).toEqual(["Still checking with Maya, one moment."]);
+  });
+
+  it("keeps redacting digits that keep streaming after a card number", () => {
+    const deltas = "4111111111111111".split("").map((digit, index, all) => say(digit, index === all.length - 1));
+    const { effects } = play([answered, heard("Card?"), ...deltas]);
+    expect(spoken(effects).join("").replace(/\D/g, "")).toBe("");
+  });
+});
+
 describe("rule 4: no long digit runs", () => {
   it("never speaks a card number, even split across stream deltas", () => {
     const whole = play([answered, heard("Card?"), say("My card is 4111111111111111")]);
@@ -365,6 +447,9 @@ describe("redactDigits", () => {
     ["4111/1111/1111/1111", "that number"],
     ["4111–1111–1111–1111", "that number"],
     ["(4111)(1111)(1111)(1111)", "(that number)"],
+    ["4111 and 1111 and 1111 and 1111", "that number"],
+    ["4111+1111*1111#1111", "that number"],
+    ["٤١١١١١١١١١١١", "that number"],
     ["４１１１１１１１１１１１", "that number"],
     ["four one one one four one one one four one one one", "that number"],
     ["call 415 555 0134 back", "call 415 555 0134 back"],

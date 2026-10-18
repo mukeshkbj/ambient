@@ -171,7 +171,7 @@ function chunks(text: string): string[] {
 export function scriptedBrain(script: ScriptedTurn[]): Brain {
   return {
     async *respond(state, signal) {
-      const latest = [...state.turns].reverse().find(turn => turn.speaker !== "agent");
+      const latest = state.turns.findLast(turn => turn.speaker !== "agent");
       if (!latest) return;
       for (const rule of script) {
         const match = latest.text.match(rule.when);
