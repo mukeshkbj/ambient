@@ -48,9 +48,9 @@ Known voice defects to fix in the voice-UX pass: the approval repeats the amount
 | Piece | Critic | State |
 |---|---|---|
 | Call reducer honesty | 3 Sonnet 5.5 adversarial reviews | 19 holes found and closed, all regression tests |
-| Simulator UI | Blind critic vs Apple iOS 26 call screens | Round 3 pending; won trust in rounds 1-2, lost craft/comprehension/delight |
+| Simulator UI | Blind critic vs Apple iOS 26 call screens | Rounds 1-3: Apple 3-1 (we win trust; delight tied in round 3). Round 4 running after the needs-you card became one complete decision (limit, offers, decline consequence) |
 | Voice copy | Smoke transcript | Approval asks once with "?", steer says "Okay, I'll tell Joe's Plumbing.", status names the business |
-| Repo as an AI reviewer reads it | Self-review | README, CONTRIBUTING, privacy, deployment rewritten; v1 docs and media removed |
+| Repo as an AI reviewer reads it | Structural review (Sonnet 5.5) | Round 1 scored Technical Implementation 3/5: voice-line message loss, "confirmed" holes, stringly-typed business name, in-flight dial limits. All fixed with tests (`ee6ec6d`); round 2 running. README, CONTRIBUTING, privacy, deployment rewritten; architecture figure added |
 | Friction log | Self-review | 15 entries, all reproduced; 6 back-dated entries corrected to their commit date |
 
 ## Needs the user
@@ -66,6 +66,7 @@ Known voice defects to fix in the voice-UX pass: the approval repeats the amount
 
 - 2026-10-18: plan written; L0 fixes merged (`8143d5e`).
 - 2026-10-18: implementation started. Phases 3, 4, 1 landed; Windows demo path fixed.
+- 2026-10-18: UI rounds 3-4, structural review fixes (`ee6ec6d`), architecture figure; 289 tests, smoke ok.
 - 2026-10-18: phase 6 (AssemblyAI line) landed; UI critic rounds 1-2; docs rewrite (`baf3487`).
 - 2026-10-18: reducer round-2 review fixes (`fab717c`); phase 9 sim rebuilt (`2126fbc`); phase 8 landed.
 - 2026-10-18: phase 7 landed — call intents replace the v1 model (both locales), `src/cue.ts` (Voice Monkey announce + Proactive Events MessageAlert behind `combinedCue`), `watchApprovals` in server.ts cues once per new approval id. Needs the Echo Dot run.
