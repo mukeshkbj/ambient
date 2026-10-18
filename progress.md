@@ -23,10 +23,10 @@ Branch: `hackathon/household-consent`. Nothing is pushed.
 | 3 | Call session reducer | Landed `1c14609`; revised `3ab7db3` and `fab717c` after three Sonnet 5.5 reviews | 125 tests. Round 1 (two reviewers) reproduced 11 honesty holes; round 2 found 8 more (thousands parsed as 1, the agent's own offer counted as the business's confirmation, negations missing from offer parsing, digit leaks while streaming). Every one is a regression test now |
 | 4 | Brain | Landed `99379e2` | 20 tests with a stubbed stream. `pnpm brain:latency` not run: it spends API money |
 | 5 | Caller runtime + simulated line | Landed | 6 engine tests + 8 shell tests. `pnpm demo` + `pnpm smoke:mcp` runs a full simulated call through /mcp (transcript below) |
-| 6 | AssemblyAI line | After 9 | |
+| 6 | AssemblyAI line | Landed `41fb071` (not yet run against the live API) | 15 tests: per-call stored agent (greeting = disclosure, LLM = our endpoint), token minting, chat-completions shim streams exactly what the reducer says, queued speech via `reply.create`, interruption, hang-up, no-answer timeout, a whole scripted call through the room, and HTTP routes with the per-call secret. Business answer page `web/call/index.html` (screenshot `docs/media/call-business-ringing.png`) |
 | 7 | Alexa intents and cue | Landed (Devin draft, reviewed, cherry-picked) | 10 tests (7 alexa + 3 cue). `pnpm scan` and `pnpm build` green. Echo Dot run pending: needs Voice Monkey token and the phase-0 invocation check. Fixed a pre-existing eslint failure in `scripts/smoke-mcp.ts` (`no-base-to-string` on `unknown`) so scan could run green. |
 | 8 | Discovery and memory | Landed (Devin draft, reviewed, cherry-picked) | 7 tests: discovery via web search + a strict `report_candidates` tool (not `output_config.format`, which conflicts with web-search citations), dial approval per candidate, user-given number skips the dial approval, memory feeds the next brief, the fourth call to a number in a day is refused. Real discovery needs `ANTHROPIC_API_KEY` |
-| 9 | Sim around a live call | Landed `2126fbc` | 9 screenshots in `docs/media/sim-*.png` (light, dark, mobile), inspected by eye; a blind critic round against Apple/Google call screening is running |
+| 9 | Sim around a live call | Landed `2126fbc`, redesigned `3d4b576` and `1b5096f` | 11 screenshots in `docs/media/sim-*.png` (light, dark, mobile), each inspected by eye. Critic rounds vs Apple iOS 26 Call Screening / Hold Assist: round 1 and 2 Apple 3-1 (we win trust). Round 3 running after putting the decision on the device card (MCP App `tools/call`) |
 | 10 | AWS | Needs AWS spend approval | |
 
 ## Evidence: zero-key call through /mcp (2026-10-18)
@@ -43,8 +43,19 @@ smoke: ok
 
 Known voice defects to fix in the voice-UX pass: the approval repeats the amount and loses its question mark; the steer reply quotes a truncated title.
 
+## Gauntlet pieces (bar: Google Duplex, past Alexa winners, Apple quality)
+
+| Piece | Critic | State |
+|---|---|---|
+| Call reducer honesty | 3 Sonnet 5.5 adversarial reviews | 19 holes found and closed, all regression tests |
+| Simulator UI | Blind critic vs Apple iOS 26 call screens | Round 3 pending; won trust in rounds 1-2, lost craft/comprehension/delight |
+| Voice copy | Smoke transcript | Approval asks once with "?", steer says "Okay, I'll tell Joe's Plumbing.", status names the business |
+| Repo as an AI reviewer reads it | Self-review | README, CONTRIBUTING, privacy, deployment rewritten; v1 docs and media removed |
+| Friction log | Self-review | 15 entries, all reproduced; 6 back-dated entries corrected to their commit date |
+
 ## Needs the user
 
+- Twilio would restore the "a real phone rings" moment; without it the business answers on a web link.
 - Keys, tested at the end: `ANTHROPIC_API_KEY` (brain, latency receipt), `ASSEMBLYAI_API_KEY` (phase 6), Voice Monkey token (phase 7 cue).
 - Approval to spend: `pnpm brain:latency` (about 10 short Claude calls), AssemblyAI minutes for a real call test, AWS deploy (phase 10).
 - Phase 0: whether the custom skill invokes on your Echo Dot under Alexa+.
@@ -55,5 +66,6 @@ Known voice defects to fix in the voice-UX pass: the approval repeats the amount
 
 - 2026-10-18: plan written; L0 fixes merged (`8143d5e`).
 - 2026-10-18: implementation started. Phases 3, 4, 1 landed; Windows demo path fixed.
+- 2026-10-18: phase 6 (AssemblyAI line) landed; UI critic rounds 1-2; docs rewrite (`baf3487`).
 - 2026-10-18: reducer round-2 review fixes (`fab717c`); phase 9 sim rebuilt (`2126fbc`); phase 8 landed.
 - 2026-10-18: phase 7 landed — call intents replace the v1 model (both locales), `src/cue.ts` (Voice Monkey announce + Proactive Events MessageAlert behind `combinedCue`), `watchApprovals` in server.ts cues once per new approval id. Needs the Echo Dot run.
