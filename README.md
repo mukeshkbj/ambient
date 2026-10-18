@@ -39,6 +39,8 @@ smoke: ok, the simulated call ended confirmed at the steered price
 
 ## How a call works
 
+![How Ambient handles a call: Alexa and MCP tools feed a run engine, a pure call reducer decides every word on the voice line, and the engine cues the house when the call needs the owner](docs/media/architecture.png)
+
 One pure function owns the call: `step(state, input, now)` in [`src/calls/session.ts`](src/calls/session.ts). It takes the current state and one input (the business spoke, the brain produced words, the owner decided, the line dropped) and returns the next state and a list of effects (say these words, think, hang up, tell the engine). It has no clock, no network, and no model inside it. Every honesty rule below is a table test against it.
 
 A thin shell, [`src/calls/call.ts`](src/calls/call.ts), runs the effects. Two seams plug into it:
