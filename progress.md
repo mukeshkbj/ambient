@@ -64,6 +64,7 @@ Known voice defects to fix in the voice-UX pass: the approval repeats the amount
 
 ## Log
 
+- 2026-10-18: structural round 4 (2.5/5: agent address line became the price) fixed fail-closed in `8eba7a5`; seeded property test over 3000 generated calls (`63eef21`) catches the old trust-the-model rule on seed 2. UI round 6 fixes in `b153137`. 343 tests, smoke ok. Structural round 5 and UI round 7 running.
 - 2026-10-18: structural rounds 2-3 and UI round 5 fixed (`b00f750` through `81577c2`); 326 tests, scan and build green, smoke ok, both demo paths confirm in the screenshot run.
 - 2026-10-18: plan written; L0 fixes merged (`8143d5e`).
 - 2026-10-18: implementation started. Phases 3, 4, 1 landed; Windows demo path fixed.
