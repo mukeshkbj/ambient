@@ -97,6 +97,10 @@ body[data-device="tv"] .tvline{display:block}
  body:not([data-device="tv"]) .foot{grid-template-columns:1fr;font-size:14px;gap:2px}
  body[data-state="needs"]:not([data-device="tv"]) .actions{grid-auto-flow:row}
 }
+@media (max-width:340px){
+ body:not([data-device="tv"]) .stake.long{font-size:1.2em}
+ body:not([data-device="tv"]) .actions button small{display:none}
+}
 body.arrive{animation:arrive 240ms cubic-bezier(0.2,0,0,1) both}
 @keyframes arrive{0%{transform:scale(.98);opacity:.4}100%{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){*{animation:none !important}}
@@ -121,6 +125,7 @@ ${HOST_BOOT}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const nb=s=>s.replace(/(\\d) (am|pm)\\b/gi,"$1\\u00a0$2");
 const usd=n=>"$"+Number(n).toLocaleString("en-US",{maximumFractionDigits:2});
 const clock=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");};
 const DEMO="Call Joe's Plumbing and book a visit tomorrow to fix the kitchen sink, keep it under 150";
@@ -200,7 +205,8 @@ function render(d){
   sub.textContent="Ambient makes it for you. It says it is an AI, and it asks you before it spends over your limit.";
   $("what").textContent="Fix the kitchen sink \\u00b7 limit $150";
   buttons([{label:"Call Joe's Plumbing",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);
-  hint.textContent="Or say \\u201cAlexa, tell Ambient to call Joe's Plumbing.\\u201d";}}
+  hint.textContent="Or say \\u201cAlexa, tell Ambient to call Joe's Plumbing.\\u201d";}
+ sub.textContent=nb(sub.textContent);}
 render({});
 boot();
 </script></body></html>`;

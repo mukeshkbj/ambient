@@ -145,7 +145,7 @@ body[data-phase="needs"] .show8{box-shadow:0 0 0 3px var(--needs),var(--lift)}
 .speaker[data-ring="needs"] .pool{background:oklch(0.78 0.17 62 / .55)}
 .speaker[data-ring="done"] .pool{background:oklch(0.66 0.15 152 / .35)}
 @keyframes breathe{50%{opacity:.55}}
-.said{font-size:16px;font-weight:550;line-height:1.35;text-wrap:pretty}
+.said{font-size:16px;font-weight:550;line-height:1.35;text-wrap:pretty;min-height:3.6em}
 .tv{display:flex;flex-direction:column;gap:8px}
 .screen{position:relative;aspect-ratio:16/9;border:6px solid var(--device);border-radius:12px;overflow:hidden;
   background:linear-gradient(170deg,oklch(0.42 0.05 230) 0%,oklch(0.30 0.06 260) 45%,oklch(0.22 0.04 290) 100%)}
@@ -176,7 +176,8 @@ body[data-phase="needs"] .tv .devlabel{visibility:hidden}
 
 @media (max-width:1180px){
   main{grid-template-columns:minmax(0,1fr) 280px}
-  .kitchen{grid-column:1 / -1;order:3}
+  .kitchen{grid-column:1 / -1;order:3;min-height:auto}
+  body[data-phase="needs"] .kitchen,body[data-phase="ended"] .kitchen{order:-1}
 }
 @media (max-width:760px){
   header{flex-wrap:wrap}
@@ -184,7 +185,7 @@ body[data-phase="needs"] .tv .devlabel{visibility:hidden}
   main{grid-template-columns:1fr;padding:4px 16px 16px}
   .call{min-height:72vh}
   .room{grid-template-columns:1fr}
-  .show8{aspect-ratio:2/3}
+  .show8{min-height:560px;aspect-ratio:auto}
   .kitchen{min-height:auto}
   body[data-phase="needs"] .kitchen,body[data-phase="ended"] .kitchen{order:-1}
   body[data-phase="needs"] .dot{display:none}
@@ -269,7 +270,7 @@ async function tool(name, args = {}) {
 
 function speak(text) {
   if (!text) return;
-  $("caption").textContent = text;
+  $("caption").textContent = nb(text);
   if (!state.sound || !window.speechSynthesis) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
@@ -291,6 +292,7 @@ const live = () => { const t = task(); return !!t && !TERMINAL.has(t.status); };
 const usd = n => "$" + Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 });
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const sentence = s => s.charAt(0).toUpperCase() + s.slice(1);
+const nb = s => String(s).replace(/(\d) (am|pm)\b/gi, "$1 $2");
 function businessOf(steps) {
   for (const s of steps) { const m = /^(?:Calling|Connected to) (.+)$/.exec(s); if (m) return m[1]; }
   return "the business";
@@ -325,7 +327,7 @@ function renderTranscript(steps, biz) {
       continue;
     }
     if (who !== lastWho) nodes.push(`<div class="who ${role}">${role === "agent" ? "Ambient · AI" : esc(who)}</div>`);
-    nodes.push(`<div class="bubble ${role}">${esc(text)}</div>`);
+    nodes.push(`<div class="bubble ${role}">${esc(nb(text))}</div>`);
     lastWho = who;
   }
   const html = nodes.join("") || `<div class="empty"><strong>The call shows here, word for word.</strong><span>You see what Ambient says and what Joe's Plumbing says back, as it happens.</span><div class="try"><b>You can say, during the call</b><span>“Alexa, offer one forty”</span><span>“Alexa, tell Ambient approve”</span><span>“Alexa, hang up”</span></div></div>`;
@@ -376,7 +378,7 @@ function render() {
     const cue = `${biz} wants ${ap.amountUsd !== undefined ? usd(ap.amountUsd) : "your OK"}. Say approve, or ${canOffer ? "offer a price" : "decline"}.`;
     if (cue !== state.lastCue) { state.lastCue = cue; speak(cue); }
   } else if (state.lastCue) {
-    if ($("caption").textContent === state.lastCue) $("caption").textContent = live() ? `Ambient is back on the phone with ${biz}.` : "";
+    if ($("caption").textContent === nb(state.lastCue)) $("caption").textContent = live() ? `Ambient is back on the phone with ${biz}.` : "";
     state.lastCue = null;
   }
   if (!ap && live() && /^Ambient: .*(?:dollars|total)/.test(steps.at(-1) ?? "") && $("caption").textContent === `Ambient is back on the phone with ${biz}.`) $("caption").textContent = `Ambient is asking ${biz} for one total price.`;
@@ -429,7 +431,7 @@ async function steer(text) { speak((await tool("delegate", { task: text })).spee
 
 async function heard(text) {
   const t = text.toLowerCase().trim();
-  $("caption").textContent = `You: “${text}”`;
+  $("caption").textContent = nb(`You: “${text}”`);
   if (/^(yes|approve|ok|okay|book it|go ahead)\b/.test(t) && approval()) return decide("once");
   if (/^(no|deny|decline|don't)\b/.test(t) && approval()) return decide("deny");
   if (/hang up|end the call|stop/.test(t)) return speak((await tool("stop")).speech);
