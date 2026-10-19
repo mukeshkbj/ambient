@@ -49,7 +49,7 @@ pnpm demo
 > delegate {"task":"offer 150"}
   Alexa: Okay, offering one hundred fifty dollars. Say status to hear their answer.
 > status
-  Alexa: Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up.
+  Alexa: Joe's Plumbing turned down your offer and is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up.
 > approve {"decision":"once"}
   Alexa: Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.
 > status

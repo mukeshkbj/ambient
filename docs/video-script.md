@@ -74,7 +74,7 @@ Beats 3 and 7 have the least slack. If a take runs long, cut the next line in th
 - Ambient, to Joe: "Thanks for waiting. Could you do one fifty?"
 - Joe: "One fifty is too low for me. I could do one sixty."
 - Echo Show: the card asks again, "Book $160 · Tells them yes" (`docs/media/sim-countered.png`). Hold it for about 3 s.
-- Alexa: "Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up." **CUT** (the card carries it)
+- Alexa: "Joe's Plumbing turned down your offer and is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up." **CUT** (the card carries it)
 - Owner: "Alexa, tell Ambient approve." Or tap "Book $160". The owner approves a price over the limit on purpose; nothing above the limit books without this step.
 - Ambient, to Joe: "Thanks for waiting. Maya says one sixty is fine. Please go ahead and book Tuesday at ten." **CUT**
 - Joe: "Hmm, one sixty. Alright, that works. I'll put you down for Tuesday the 20th at 10 am."

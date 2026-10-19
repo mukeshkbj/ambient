@@ -148,9 +148,9 @@ describe("rule 2: confirmed only through the brain, on the line's evidence", () 
   });
 
   it.each([
-    ["no_answer", "no answer"],
-    ["busy", "busy"],
-    ["failed", "failed"],
+    ["no_answer", "nobody picked up"],
+    ["busy", "the line was busy"],
+    ["failed", "the call didn't connect"],
     ["hangup", "the line ended before they answered"]
   ] as const)("ends unconfirmed when the dial fails (%s)", (reason, text) => {
     expect(play([{ kind: "line_ended", reason }]).state.phase).toEqual({ kind: "ended", outcome: { kind: "unconfirmed", reason: text } });
@@ -290,7 +290,7 @@ describe("round 2 review findings", () => {
   it("stops after three unanswered read-backs and ends unconfirmed", () => {
     const first = play([answered, heard("Hmm"), confirm(120), playedBack, heard("Hmm"), confirm(120), playedBack, heard("Hmm"), confirm(120), playedBack]);
     const { state, effects } = play([heard("Hmm"), confirm(120)], first.state);
-    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "unconfirmed", reason: "they never clearly confirmed it" } });
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "unconfirmed", reason: "Joe's Plumbing never clearly confirmed it" } });
     expect(kinds(effects)).toContain("hang_up");
   });
 
@@ -541,7 +541,7 @@ describe("holding", () => {
   it("gives up honestly when the owner does not answer in time", () => {
     const asked = play([answered, [heard("It'll be 180"), 1000], [confirm(180), 2000]]);
     const { state, effects } = play([[{ kind: "hold_tick" }, 2000 + OWNER_PATIENCE_MS]], asked.state);
-    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "unconfirmed", reason: "Maya didn't answer in time, so nothing was agreed" } });
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "unconfirmed", reason: "you didn't answer in time" } });
     expect(kinds(effects)).toContain("hang_up");
     expect(spoken(effects).at(-1)).not.toMatch(/call you back/);
   });
@@ -806,7 +806,7 @@ describe("round 14 review findings", () => {
     const { state, effects } = play([answered, heard("It's 80, plus a deposit"), confirm(80, "ok", "Friday at 3, plus a $400 deposit")], undefined, { ...brief, maxUsd: 100 });
     expect(state.readBack).toBeUndefined();
     expect(state.phase).toMatchObject({ kind: "talking" });
-    expect(spoken(effects).at(-1)).toBe("Sorry, what day and time was that, on its own?");
+    expect(spoken(effects).at(-1)).toBe("Sorry, could you give me just the day and time?");
   });
 
   it.each(["Yes, ten.", "Yes, 10.", "Yes, thirty.", "Yes, 30.", "Yes, ten o'clock."])("does not book part of the read-back time: %s", reply => {
@@ -832,7 +832,7 @@ describe("round 14 review findings", () => {
 });
 
 describe("round 15 review findings", () => {
-  const ASK_TOTAL = /^Sorry, what day and time was that, on its own\?$/;
+  const ASK_TOTAL = /^Sorry, could you give me just the day and time\?$/;
   it.each([
     "Friday at 3, plus a 400 deposit", "Friday at three, deposit of four hundred", "Friday at 3, 400 down", "Friday at 3, plus a 4k deposit",
     "Friday at 3, plus a €400 deposit", "Friday at 3, plus a ＄400 deposit", "Friday at 3, plus ４００ dollars", "Friday at 3, ask for Sam"

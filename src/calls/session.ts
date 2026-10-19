@@ -30,7 +30,7 @@ const talkedOver = (terms: string) => `Sorry, I talked over you. Was that a yes 
 
 export type Transition = { state: CallState; effects: CallEffect[] };
 
-const DIAL_FAILURES = { no_answer: "no answer", busy: "busy", failed: "failed", hangup: "the line ended before they answered" } as const;
+const DIAL_FAILURES = { no_answer: "nobody picked up", busy: "the line was busy", failed: "the call didn't connect", hangup: "the line ended before they answered" } as const;
 const DROPPED = "the line ended before they confirmed";
 
 export function startCall(brief: CallBrief, callId: string): Transition {
@@ -154,7 +154,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       if (elapsed(phase.since) >= OWNER_PATIENCE_MS) {
         const line = `${state.disclosed ? "" : `${disclosure(brief.ownerName)} `}I'm sorry, I can't reach ${brief.ownerName} right now. I'll tell ${brief.ownerName} you were holding. Thank you, goodbye.`;
         const closed = withTurn(state, "agent", line, now);
-        return end(closed, { kind: "unconfirmed", reason: `${brief.ownerName} didn't answer in time, so nothing was agreed` }, [say(line), { kind: "hang_up" }]);
+        return end(closed, { kind: "unconfirmed", reason: "you didn't answer in time" }, [say(line), { kind: "hang_up" }]);
       }
       if (!(elapsed(phase.lastHoldLine) >= HOLD_LINE_MS)) return unchanged(state);
       const line = holdLine(state);
@@ -186,7 +186,7 @@ function confirm(state: CallState, proposed: Confirmed, now: string): Transition
   const { brief } = state;
   const owner = brief.ownerName;
   if (outcome.when !== undefined && !plainTime(outcome.when)) {
-    const line = "Sorry, what day and time was that, on its own?";
+    const line = "Sorry, could you give me just the day and time?";
     return { state: { ...withTurn(flushDraft(state, now), "agent", line, now), readBack: undefined }, effects: [say(line)] };
   }
   const claimed = [...(outcome.amountUsd !== undefined ? [outcome.amountUsd] : []), ...chargedIn(outcome.summary)].filter(amount => Number.isFinite(amount) && amount > 0);
@@ -211,7 +211,7 @@ function confirm(state: CallState, proposed: Confirmed, now: string): Transition
   const flushed = flushDraft(state, now);
   if (state.readBacks >= 3 || state.readBacksSpoken >= 5) {
     const line = `I'll have ${owner} follow up to confirm. Thanks for your time, goodbye.`;
-    return end(withTurn(flushed, "agent", line, now), { kind: "unconfirmed", reason: "they never clearly confirmed it" }, [say(line), { kind: "hang_up" }]);
+    return end(withTurn(flushed, "agent", line, now), { kind: "unconfirmed", reason: `${brief.business.name} never clearly confirmed it` }, [say(line), { kind: "hang_up" }]);
   }
   const when = outcome.when ? `, ${outcome.when}` : "";
   const terms = charge !== undefined ? `${price(charge)} total${when}` : `no price is set${when}`;

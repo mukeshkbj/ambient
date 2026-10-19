@@ -88,13 +88,13 @@ export function speak(view: RunView, ctx: SpeakContext): string {
     if (view.status === "waiting_approval") {
       const ask = approvalAsk(view, ctx);
       if (ask.endsWith(", or hang up.")) return ask;
-      const choices = view.approval?.kind === "dial" ? "Say yes to place the call, or no." : view.approval?.amountUsd === undefined ? "Say approve or deny." : "Say approve, deny, or offer a different amount.";
+      const choices = view.approval?.kind === "dial" ? "Say yes to place the call, or no." : view.approval?.amountUsd === undefined ? "Say approve or deny." : "Say approve, offer followed by a price, or hang up.";
       return `${ask} ${choices}`;
     }
     if (view.status === "cancelled") return `You ended the call before ${business} confirmed. Nothing was booked.`;
     if (view.status === "running" || view.status === "accepted" || view.status === "queued") {
       const heard = lastLineFrom(view, business);
-      if (heard) return `${label} is on the phone with ${business}. They just said: ${clampSentences(heard)}`;
+      if (heard) return `${label} is on the phone with ${business}. They just said: ${clampSentences(heard, 1)} Say status again, or hang up.`;
       return view.steps.some(step => step.startsWith("Connected to")) ? `${label} is on the phone with ${business}.` : `${label} is calling ${business} now.`;
     }
   }
@@ -114,7 +114,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
     case "failed": {
       const reason = stripEnd(clampSentences(view.failure ?? view.answer ?? "It hit an error.", 1));
       const business = callee(view);
-      return business ? `The call to ${business} failed: ${reason}. Say call, followed by who to call, to try again.` : `${label} couldn't finish ${title}: ${reason}.`;
+      return business ? `The call to ${business} didn't go through, and nothing was booked. Say call, followed by who to call, to try again.` : `${label} couldn't finish ${title}: ${reason}.`;
     }
     case "cancelled":
       return `${label} stopped ${title}.`;
@@ -124,7 +124,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
       return `${approvalAsk(view, ctx)} Say approve to allow it once, or deny.`;
     }
     case "unknown":
-      return `${label} lost the connection during ${title}, so the outcome is unknown. It won't retry by itself — ask again when it's back.`;
+      return `${label} lost the connection during ${title}, so the outcome is unknown. It won't retry by itself. Say call, followed by who to call, once it's back.`;
     default: {
       if (ctx.state === "offline") {
         return `${label} is offline; ${title} is marked ${view.status} until it reconnects.`;
@@ -132,7 +132,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
       const working = view.progress
         ? `${label} is working on ${title} — ${stripEnd(clampSentences(view.progress, 1))}.`
         : `${label} is working on ${title}.`;
-      return `${working} Say "what's the status" any time.`;
+      return `${working} Say status any time.`;
     }
   }
 }
@@ -142,8 +142,10 @@ export function heldStatus(view: RunView): string | undefined {
   const amount = view.approval?.amountUsd;
   const limit = view.approval?.limitUsd;
   if (!business || view.status !== "waiting_approval" || view.approval?.kind !== "spend" || amount === undefined) return undefined;
-  if (limit === undefined) return `${business} is holding at ${dollarsInWords(amount)}. Say approve or hang up.`;
-  return `${business} is holding at ${dollarsInWords(amount)}, over your limit of ${dollarsInWords(limit)}. ${ownerChoices(limit)}`;
+  const offered = view.steps.map(step => offerIn(step.slice(step.indexOf(": ") + 2))).findLast(offer => offer !== undefined);
+  const countered = offered !== undefined && offered < amount ? `${business} turned down your offer and` : business;
+  if (limit === undefined) return `${countered} is holding at ${dollarsInWords(amount)}. Say approve or hang up.`;
+  return `${countered} is holding at ${dollarsInWords(amount)}, over your limit of ${dollarsInWords(limit)}. ${ownerChoices(limit)}`;
 }
 
 export function steerReply(view: RunView, ctx: SpeakContext, said?: string): string {

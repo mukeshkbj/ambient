@@ -71,7 +71,7 @@ describe("speak", () => {
 
   it("tells the user what to say next while work is running", () => {
     const text = speak(view({ status: "running", progress: "Comparing three laptops" }), ctx);
-    expect(text).toBe('My Agent is working on "Book a table for four" — Comparing three laptops. Say "what\'s the status" any time.');
+    expect(text).toBe('My Agent is working on "Book a table for four" — Comparing three laptops. Say status any time.');
   });
 
   it("is honest about unknown outcomes", () => {
@@ -114,7 +114,7 @@ describe("speak", () => {
 
     it("asks the call's question as written, without repeating the amount", () => {
       expect(approvalAsk(call({ status: "waiting_approval", approval }), { label: "Ambient" })).toBe(question);
-      expect(speak(call({ status: "waiting_approval", approval }), { label: "Ambient" })).toBe(`${question} Say approve, deny, or offer a different amount.`);
+      expect(speak(call({ status: "waiting_approval", approval }), { label: "Ambient" })).toBe(`${question} Say approve, offer followed by a price, or hang up.`);
     });
 
     it("asks one short question when the price is over the limit", () => {
@@ -132,6 +132,13 @@ describe("speak", () => {
       expect(heldStatus(call({ status: "running" }))).toBeUndefined();
     });
 
+    it("says the business turned down the owner's offer when it counters", () => {
+      const counter = { ...approval, amountUsd: 160, limitUsd: 150, when: "Tuesday at ten" };
+      expect(heldStatus(call({ status: "waiting_approval", approval: counter, steps: ["Calling Joe's Plumbing", "Maya: offer 150"] }))).toBe(
+        "Joe's Plumbing turned down your offer and is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up."
+      );
+    });
+
     it("echoes the amount when the owner offers one", () => {
       expect(steerReply(call({ status: "running" }), { label: "Ambient" }, "offer 160")).toBe("Okay, offering one hundred sixty dollars. Say status to hear their answer.");
     });
@@ -143,7 +150,7 @@ describe("speak", () => {
 
     it("names the business from the run's subject even after early steps scroll away", () => {
       const view0 = view({ title: "Find a plumber", subject: "Pete's Pipes", status: "running", steps: ["Pete's Pipes: Hello?"] });
-      expect(speak(view0, { label: "Ambient" })).toBe("Ambient is on the phone with Pete's Pipes. They just said: Hello?");
+      expect(speak(view0, { label: "Ambient" })).toBe("Ambient is on the phone with Pete's Pipes. They just said: Hello? Say status again, or hang up.");
     });
 
     it("says who it is calling before they answer", () => {
@@ -152,7 +159,7 @@ describe("speak", () => {
 
     it("says what the business last said once connected", () => {
       const steps = ["Calling Joe's Plumbing", "Connected to Joe's Plumbing", "Ambient: Hi, this is an AI assistant calling for Maya.", "Joe's Plumbing: We can come Tuesday at ten."];
-      expect(speak(call({ status: "running", steps }), { label: "Ambient" })).toBe("Ambient is on the phone with Joe's Plumbing. They just said: We can come Tuesday at ten.");
+      expect(speak(call({ status: "running", steps }), { label: "Ambient" })).toBe("Ambient is on the phone with Joe's Plumbing. They just said: We can come Tuesday at ten. Say status again, or hang up.");
     });
 
     it("says the owner ended the call and nothing was booked", () => {
