@@ -21,10 +21,13 @@ function card() {
   const document = { body: element(), getElementById: (id: string) => elements.get(id) ?? elements.set(id, element()).get(id)!, createElement: element };
   const script = /<script>([\s\S]*)<\/script>/.exec(TASK_HTML)![1]!;
   const posted: unknown[] = [];
-  const context = vm.createContext({ document, parent: { postMessage(message: unknown) { posted.push(message); } }, addEventListener() {}, setTimeout() {}, setInterval() { return 0; }, clearInterval() {}, Date, Number, String, Math, Map, Intl });
+  const spoken: { text: string; lang?: string }[] = [];
+  const speechSynthesis = { cancel() {}, speak(utterance: { text: string; lang?: string }) { spoken.push(utterance); } };
+  class SpeechSynthesisUtterance { lang?: string; constructor(readonly text: string) {} }
+  const context = vm.createContext({ document, parent: { postMessage(message: unknown) { posted.push(message); } }, speechSynthesis, SpeechSynthesisUtterance, addEventListener() {}, setTimeout() {}, setInterval() { return 0; }, clearInterval() {}, Date, Number, String, Math, Map, Intl });
   vm.runInContext(script, context);
   const render = (data: unknown) => (context as unknown as { render(data: unknown): void }).render(data);
-  return { render, text: (id: string) => document.getElementById(id).textContent, html: (id: string) => document.getElementById(id).innerHTML, buttons: () => document.getElementById("actions").children.map(child => child.textContent), click: (label: string) => document.getElementById("actions").children.find(child => child.textContent === label)!.onclick!(), posted };
+  return { render, text: (id: string) => document.getElementById(id).textContent, html: (id: string) => document.getElementById(id).innerHTML, buttons: () => document.getElementById("actions").children.map(child => child.textContent), click: (label: string) => document.getElementById("actions").children.find(child => child.textContent === label)!.onclick!(), posted, spoken };
 }
 
 const board = (states: Array<[string, string, number?, string?]>) => states.map(([business, state, amountUsd, when]) => ({ business, state, ...(amountUsd !== undefined ? { amountUsd } : {}), ...(when ? { when } : {}) }));
@@ -80,6 +83,22 @@ describe("the Echo Show card", () => {
     expect(view.html("foot")).toContain("“Yes, that's right. See you then.”");
     expect(view.html("foot")).toMatch(/Joe&#39;s Plumbing · \d{1,2}:04:14 [AP]M|Joe's Plumbing · \d{1,2}:04:14 [AP]M/);
     expect(view.buttons()).toEqual(["Hear them say yes"]);
+  });
+
+  it("speaks a Spanish proof with a Spanish voice when there is no recording", () => {
+    const view = card();
+    view.render({
+      task: {
+        id: "run-8", status: "completed", instruction: "Get quotes from plumbers", subject: "Plomería Ruiz", steps: [],
+        outcome: {
+          kind: "confirmed", summary: "Plomería Ruiz confirmed it.", amountUsd: 120, when: "Tuesday the 20th at 9 am",
+          proof: { readBack: "Muy bien, para confirmar, ciento veinte dólares en total. ¿Es correcto?", readBackAt: "2026-10-19T17:04:12.000Z", yes: "Sí, correcto.", yesAt: "2026-10-19T17:04:14.000Z", language: "es", inEnglish: "One hundred twenty dollars total. Is that right?" }
+        }
+      }
+    });
+    view.click("Hear them say yes");
+    expect(view.spoken.map(utterance => [utterance.text, utterance.lang])).toEqual([["Muy bien, para confirmar, ciento veinte dólares en total. ¿Es correcto?", "es-ES"], ["Sí, correcto.", "es-ES"]]);
+    expect(view.posted).not.toContainEqual(expect.objectContaining({ method: "tools/call" }));
   });
 
   it("asks the server for the call recording when the proof has one", () => {

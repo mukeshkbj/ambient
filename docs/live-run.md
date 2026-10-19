@@ -38,13 +38,14 @@ Do these steps in this order.
 
 1. Start the tunnel: `cloudflared tunnel --url http://127.0.0.1:3000`. Copy its `https` URL into `PUBLIC_BASE_URL` in `.env`.
 2. Run `pnpm call`.
-3. Open `http://127.0.0.1:3000/sim` and press "Call Joe's Plumbing". Open the "Answer as the business" link on a phone.
-4. Start a screen recording with a visible clock. Listen for the greeting.
-5. Say these three lines as the business, one at a time. Wait for Ambient to finish each reply.
+3. In a third terminal, run `pnpm call:preflight`. It costs nothing: it retrieves the Claude model, lists AssemblyAI voice agents, and fetches `/healthz` through the tunnel. Each check prints PASS or FAIL with the reason. Start the call only when all four checks pass.
+4. Open `http://127.0.0.1:3000/sim` and press "Call Joe's Plumbing". Open the "Answer as the business" link on a phone.
+5. Start a screen recording with a visible clock. Listen for the greeting.
+6. Say these three lines as the business, one at a time. Wait for Ambient to finish each reply.
    1. "Joe's Plumbing, this is Joe. How can I help?"
    2. "We can come Tuesday the twentieth at ten, for one hundred fifty."
    3. "Yes, that's right."
-6. Stop the server and the tunnel. Fill in the results table below.
+7. Stop the server and the tunnel. Fill in the results table below.
 
 The first line starts the clock for the time to first word. The third line answers the read-back. A live call may word its replies differently from the demo. If Ambient asks the owner a question, answer it on `/sim`.
 
@@ -58,6 +59,7 @@ Fill in each cell after the call. Every cell is empty until then.
 | The captured request file (`.ambient-live/captures/llm-request-<call id>.json` exists: yes or no) | _not run_ |
 | The agent id field (`agent_id` or `id`) | _not run_ |
 | The per-call greeting played word for word (yes or no) | _not run_ |
+| On the booked card, "Hear them say yes" played the business's own voice from the recording (yes or no) | _not run_ |
 
 Notes that cost time otherwise:
 

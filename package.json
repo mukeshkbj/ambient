@@ -29,7 +29,8 @@
     "brain:latency": "tsx scripts/brain-latency.ts",
     "call:dry": "tsx scripts/call-dry.ts",
     "scenarios": "tsx scripts/scenarios.ts",
-    "call": "tsx --env-file=.env src/server.ts"
+    "call": "tsx --env-file=.env src/server.ts",
+    "call:preflight": "tsx --env-file=.env scripts/preflight.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

@@ -188,7 +188,7 @@ function replay(p,id){if(!p.recording)return speakProof(p);
   const a=new Audio(c.url),end=c.toMs/1000;a.addEventListener("loadedmetadata",()=>{a.currentTime=c.fromMs/1000;a.play().catch(()=>speakProof(p));},{once:true});
   a.addEventListener("timeupdate",()=>{if(a.currentTime>=end)a.pause();});a.addEventListener("error",()=>speakProof(p),{once:true});});}
 function speakProof(p){const voice=globalThis.speechSynthesis;if(!voice||typeof SpeechSynthesisUtterance!=="function")return;voice.cancel();
- const them=new SpeechSynthesisUtterance(p.yes);them.pitch=.75;them.rate=1.05;voice.speak(new SpeechSynthesisUtterance(p.readBack));voice.speak(them);}
+ const lang=p.language==="es"?"es-ES":"en-US",us=new SpeechSynthesisUtterance(p.readBack),them=new SpeechSynthesisUtterance(p.yes);us.lang=lang;them.lang=lang;them.pitch=.75;them.rate=1.05;voice.speak(us);voice.speak(them);}
 function foot(lines){const box=$("foot");
  box.innerHTML=lines.map(l=>'<div class="line"><b>'+esc(l.who)+'</b><span>'+l.text+'</span></div>').join("");}
 function ownerSaid(line,biz){if(!line)return "";const decided=/^(Approved|Declined): /.exec(line.text);if(decided)return "You "+decided[1].toLowerCase()+" it.";
