@@ -42,6 +42,7 @@ Each entry lists: the task attempted, tool and version, date, severity, steps to
 - **Task attempted:** Ask the owner a question in the middle of a tool call, with MCP elicitation.
 - **Tool and version:** `@modelcontextprotocol/sdk` 1.30.0 (`node_modules/@modelcontextprotocol/sdk/package.json`), `StreamableHTTPServerTransport`.
 - **Date:** 2026-10-18, fix `fd17fa9`.
+- **Re-checked:** Re-ran `elicit.mts` against SDK 1.30.0 on 2026-10-19 in all four modes. Same result: only `sse-related` delivers the `elicitation/create` frame.
 - **Severity:** High. The call hangs with no error, so the fault is invisible until you read the SDK source.
 - **Steps:** Run the script in "Reproduction scripts" below, once per mode: `node --import tsx elicit.mts json`, `sse`, `sse-related`, `json-related`. The script registers one tool. The tool calls `server.server.elicitInput(...)`. A raw `fetch` client declares `capabilities.elicitation` and calls the tool.
 - **Expected:** The client receives an `elicitation/create` request on the response to its `tools/call`. In all four modes.
@@ -78,6 +79,7 @@ Each entry lists: the task attempted, tool and version, date, severity, steps to
 - **Task attempted:** Start the demo server on Windows with environment variables set in a `package.json` script.
 - **Tool and version:** pnpm 10.33.0 (the repo's `packageManager`), Node v24.21.0, Windows 11 Home 10.0.26300.
 - **Date:** 2026-10-18, fix `1ffda6a`.
+- **Re-checked:** Re-ran on 2026-10-19 with pnpm 10.33.0. Same failure: `'AMBIENT_HOST' is not recognized as an internal or external command`.
 - **Severity:** Medium. The documented script syntax fails on Windows, and the error names the variable, not the cause.
 - **Steps:** In an empty directory, create this `package.json`, then run `pnpm demo`:
 
@@ -112,6 +114,7 @@ Access date for every quote below: 2026-10-18.
 - **Task attempted:** Choose the MCP protocol version our server should offer to Alexa+.
 - **Tool and version:** Alexa+ MCP toolkit documentation, no version published. Pages accessed 2026-10-18.
 - **Date:** 2026-10-18, when we re-read and quoted the three pages for this log. We first noted the conflict on 2026-10-12 (`9fc671a`).
+- **Re-checked:** Re-read the three pages on 2026-10-19. They still show `2025-03-26`, `2025-11-25` and `2025-06-18`.
 - **Severity:** Medium. A client and server can negotiate a version the platform does not support.
 - **Steps:** Open these three pages and search for the protocol version:
   1. https://developer.amazon.com/docs/alexaplus/add-ons/mcp-toolkit-client-lifecycle.html, section "MCP initialize request payload". The sample request contains `"protocolVersion": "2025-03-26",`.
@@ -134,6 +137,7 @@ Access date for every quote below: 2026-10-18.
 - **Task attempted:** Implement OAuth discovery so Alexa+ can link an account to our MCP server.
 - **Tool and version:** Alexa+ MCP toolkit documentation (no version published) and MCP specification 2025-11-25. Accessed 2026-10-18.
 - **Date:** 2026-10-18, when we re-read and quoted both pages for this log. We first noted the conflict on 2026-10-12 (`9fc671a`).
+- **Re-checked:** Re-read the Alexa page on 2026-10-19. "WWW-Authenticate headers in 401 responses" is still listed as not supported.
 - **Severity:** Medium. A spec-compliant server may send a header the platform says it ignores, so auth discovery can fail.
 - **Steps:** Read both pages:
   1. https://developer.amazon.com/docs/alexaplus/add-ons/mcp-toolkit-authentication.html, section "What isn't supported", list item: "`WWW-Authenticate` headers in 401 responses".
@@ -149,6 +153,7 @@ Access date for every quote below: 2026-10-18.
 - **Task attempted:** Show a UI card for a tool result on an Alexa+ device with MCP Apps.
 - **Tool and version:** Alexa+ MCP toolkit documentation (no version published) and MCP Apps specification `2026-01-26`. Accessed 2026-10-18.
 - **Date:** 2026-10-18, when we re-read and quoted both documents for this log. The workaround dates from `5087aad` (2026-10-11).
+- **Re-checked:** Re-read the Alexa page on 2026-10-19. It still says `resourceUri` belongs in the tool response.
 - **Severity:** Medium. One of the two placements fails silently on one host.
 - **Steps:** Read both pages:
   1. https://developer.amazon.com/docs/alexaplus/add-ons/mcp-toolkit-client-lifecycle.html, section "Resource handling and elicitation": "Alexa+ renders your custom visuals for your MCP App UI as long as you have `resourceUri` defined in the tool response."
@@ -164,6 +169,7 @@ Access date for every quote below: 2026-10-18.
 - **Task attempted:** Connect our own LLM endpoint to the AssemblyAI Voice Agent API.
 - **Tool and version:** AssemblyAI Voice Agent API, no version published. Page https://www.assemblyai.com/docs/voice-agents/voice-agent-api/connect-your-own-llm.md, fetched with `curl` on 2026-10-18.
 - **Date:** 2026-10-18, workaround in `41fb071`.
+- **Re-checked:** Re-fetched on 2026-10-19. The page still describes the call only as `POST {base_url}/chat/completions` in the OpenAI schema.
 - **Severity:** High. The integration cannot be written from the docs alone; we had to infer the request shape.
 - **Steps:** Fetch the page. Search it for the request body, headers, timeouts and tool handling of the call to your endpoint:
 
@@ -183,6 +189,7 @@ Access date for every quote below: 2026-10-18.
 - **Task attempted:** Read the business's and the agent's transcript events on the browser answer page.
 - **Tool and version:** AssemblyAI Voice Agent API, no version published. Pages `events-reference.md` and `message-sequence.md` under https://www.assemblyai.com/docs/voice-agents/voice-agent-api/, fetched with `curl` on 2026-10-18. Example repository https://github.com/AssemblyAI/voice-agent-api-twilio-example, last pushed 2026-10-14T17:42:51Z.
 - **Date:** 2026-10-18, workaround in `41fb071`.
+- **Re-checked:** Re-ran the commands on 2026-10-19. Same output: `delta` in one page, `reply_id` and `item_id` in one page and none in the other, and the example still uses `/v1/realtime`.
 - **Severity:** Medium. Code written from one page fails against the other.
 - **Steps:**
 
@@ -221,6 +228,7 @@ Access date for every quote below: 2026-10-18.
 - **Task attempted:** Make the agent's first words a per-call AI disclosure that names the owner.
 - **Tool and version:** AssemblyAI Voice Agent API, no version published. Pages `greeting.md`, `connect-your-own-llm.md` and `events-reference.md`, fetched with `curl` on 2026-10-18.
 - **Date:** 2026-10-18, workaround in `41fb071`.
+- **Re-checked:** Re-read on 2026-10-19. `session.agent_id` is still "mutually exclusive with the inline fields", and `agent_id_not_first` is unchanged.
 - **Severity:** Low. It is a design limit with a workaround, at the cost of one API call per phone call.
 - **Steps:** Read these three statements:
   1. `greeting.md`: the greeting "lives on the agent ... or inline over the WebSocket via [`session.update`]". It also says: "Whatever string you put here is exactly what the user hears, word for word."
@@ -257,6 +265,7 @@ These bugs were in our code. We list them so judges can see the whole path. We d
 - **Task attempted:** Start the server from its ESM entry point on Windows.
 - **Version:** Node v24.21.0, Windows 11.
 - **Date:** 2026-10-18, fix `1ffda6a`.
+- **Re-checked:** Re-ran on 2026-10-19 with Node v24.21.0. Same output: `guard: no match`.
 - **Steps:** Save this as `main.mjs` and run `node main.mjs`:
 
   ```js
@@ -280,6 +289,7 @@ These bugs were in our code. We list them so judges can see the whole path. We d
 - **Task attempted:** Use `Array.prototype.findLast` with the repository's TypeScript library setting.
 - **Version:** TypeScript 5.9.3 (`pnpm exec tsc -v`), Node v24.21.0.
 - **Date:** 2026-10-18, fix `fab717c`.
+- **Re-checked:** Re-ran on 2026-10-19. Same error, `TS2550`.
 - **Steps:** Save `const turns: number[] = [1, 2, 3]; export const last = turns.findLast(n => n > 1);` as `fl.ts`, then run `pnpm exec tsc --noEmit --target ES2022 --lib ES2022 fl.ts`.
 - **Result:** `fl.ts(2,27): error TS2550: Property 'findLast' does not exist on type 'number[]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2023' or later.`
 - **Cause:** `findLast` is in `lib.es2023.array`. Our `lib` did not include it. TypeScript behaves as designed.
