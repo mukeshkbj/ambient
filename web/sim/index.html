@@ -373,7 +373,7 @@ function render() {
   if (connected && phase === "live" && !state.pickedUp) { state.pickedUp = true; speak(`${biz} picked up. I'm on the call.`); }
   if (ap) {
     const canOffer = ap.limitUsd !== undefined && ap.amountUsd > ap.limitUsd && !steps.some(s => !s.startsWith("Ambient: ") && s.trim().toLowerCase().endsWith(": offer " + ap.limitUsd));
-    const cue = `${biz} wants ${ap.amountUsd !== undefined ? usd(ap.amountUsd) : "your OK"}. Say approve, or ${canOffer ? "offer an amount" : "decline"}.`;
+    const cue = `${biz} wants ${ap.amountUsd !== undefined ? usd(ap.amountUsd) : "your OK"}. Say approve, or ${canOffer ? "offer a price" : "decline"}.`;
     if (cue !== state.lastCue) { state.lastCue = cue; speak(cue); }
   } else if (state.lastCue) {
     if ($("caption").textContent === state.lastCue) $("caption").textContent = live() ? `Ambient is back on the phone with ${biz}.` : "";
