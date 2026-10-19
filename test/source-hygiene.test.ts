@@ -11,8 +11,8 @@ function files(dir: string): string[] {
 
 describe("source files", () => {
   it("contain no control characters, which an escaped backslash turns into", () => {
-    const control = /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/;
-    const bad = ["src", "test", "scripts", "web", "alexa"].flatMap(files).filter(path => control.test(readFileSync(path, "utf8")));
+    const control = (text: string) => [...text].some(char => char.charCodeAt(0) < 32 && !["\t", "\n", "\r"].includes(char));
+    const bad = ["src", "test", "scripts", "web", "alexa"].flatMap(files).filter(path => control(readFileSync(path, "utf8")));
     expect(bad).toEqual([]);
   });
 });
