@@ -32,7 +32,7 @@ Twilio decision. We chose Twilio ConversationRelay first (`docs/plans/2026-10-18
 
 ## Entry format
 
-Each entry lists: tool and version, date, severity, steps to reproduce, expected result, actual result, time lost (estimate), workaround with commit, and the fix we ask for. Severity uses three levels. High: it blocks the work or fails with no error. Medium: it costs time and has a workaround. Low: a design limit we can live with. "Date" is the date of the commit that fixed or worked around the problem.
+Each entry lists: tool and version, date, severity, steps to reproduce, expected result, actual result, time lost ("not measured" unless git gives a span), workaround with commit, and the fix we ask for. Severity uses three levels. High: it blocks the work or fails with no error. Medium: it costs time and has a workaround. Low: a design limit we can live with. "Date" is the date we hit the problem, or for documentation entries the date we re-read and quoted the pages.
 
 ## Software entries
 
