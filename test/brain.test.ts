@@ -93,6 +93,16 @@ describe("claudeBrain", () => {
     ]);
   });
 
+  it("keeps the time in the business's language for a call that is not in English", async () => {
+    const events = [...tool(0, "end_call", { outcome: "confirmed", summary: "Tuesday at nine for $120", amount_usd: 120, when: "Tuesday the 20th at 9 am", spoken_when: "el martes 20 a las 9 de la mañana" }), stop("tool_use")];
+    const brain = claudeBrain({ stream: fakeStream(events), model: "claude-opus-5-5" });
+    expect(await collect(brain.respond(state, new AbortController().signal))).toEqual([
+      { kind: "end_call", outcome: { kind: "confirmed", summary: "Tuesday at nine for $120", amountUsd: 120, when: "Tuesday the 20th at 9 am", spokenWhen: "el martes 20 a las 9 de la mañana" } }
+    ]);
+    expect(systemPrompt({ ...brief, language: "es" })).toContain("Speak only Spanish on the call.");
+    expect(systemPrompt(brief)).not.toContain("Spanish");
+  });
+
   it("drops a tool call with an invalid outcome instead of crashing", async () => {
     const events = [...tool(0, "end_call", { outcome: "unconfirmed", summary: "maybe" }), stop("tool_use")];
     const brain = claudeBrain({ stream: fakeStream(events), model: "claude-opus-5-5", log: () => {} });

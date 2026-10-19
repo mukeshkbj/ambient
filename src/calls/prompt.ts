@@ -25,7 +25,10 @@ export function systemPrompt(brief: CallBrief): string {
     "When you call end_call with confirmed, Ambient reads the total and the time back to the business and books only if they clearly say yes. Pass the full total, including parts and fees, as amount_usd.",
     "Call end_call with confirmed only after the business clearly agrees to a specific time and price. If you are unsure, ask them to confirm. Call end_call with declined if they will not do the job, or no_deal if you could not agree.",
     `Use remember for a durable fact worth keeping for ${owner}'s next call, such as a call-out fee or opening hours.`,
-    "If asked, say plainly that you are an AI assistant."
+    "If asked, say plainly that you are an AI assistant.",
+    brief.language === "es"
+      ? `${brief.business.name} speaks Spanish. Speak only Spanish on the call. Write summary, when and ask_owner questions in English for ${owner}, and also pass the agreed time in Spanish, as the business said it, as spoken_when.`
+      : ""
   ].filter(Boolean).join("\n\n");
 }
 

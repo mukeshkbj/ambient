@@ -39,7 +39,8 @@ const TOOLS: BetaTool[] = [
         outcome: { type: "string", enum: ["confirmed", "declined", "no_deal"] },
         summary: { type: "string", description: "One sentence for the owner: what was agreed, or why not." },
         amount_usd: { type: "number", description: "The agreed price in dollars." },
-        when: { type: "string", description: "The agreed time, as the business said it." }
+        when: { type: "string", description: "The agreed time, in English for the owner." },
+        spoken_when: { type: "string", description: "The agreed time in the business's language, as they said it. Needed when the call is not in English." }
       },
       required: ["outcome", "summary"],
       additionalProperties: false
@@ -66,7 +67,8 @@ const EndCall = z.object({
   outcome: z.enum(["confirmed", "declined", "no_deal"]),
   summary: z.string().min(1),
   amount_usd: z.number().nonnegative().optional(),
-  when: z.string().min(1).optional()
+  when: z.string().min(1).optional(),
+  spoken_when: z.string().min(1).optional()
 });
 const Remember = z.object({ fact: z.string().min(1) });
 
@@ -81,10 +83,10 @@ function toStep(name: string, input: unknown): BrainStep | undefined {
     case "end_call": {
       const parsed = EndCall.safeParse(input);
       if (!parsed.success) return undefined;
-      const { outcome, summary, amount_usd, when } = parsed.data;
+      const { outcome, summary, amount_usd, when, spoken_when } = parsed.data;
       if (outcome !== "confirmed") return { kind: "end_call", outcome: { kind: outcome, reason: summary } };
       const amount = amount_usd !== undefined ? { amountUsd: amount_usd } : {};
-      return { kind: "end_call", outcome: { kind: "confirmed", summary, ...amount, ...(when !== undefined ? { when } : {}) } };
+      return { kind: "end_call", outcome: { kind: "confirmed", summary, ...amount, ...(when !== undefined ? { when } : {}), ...(spoken_when !== undefined ? { spokenWhen: spoken_when } : {}) } };
     }
     case "remember": {
       const parsed = Remember.safeParse(input);
