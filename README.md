@@ -2,9 +2,11 @@
 
 **Alexa, handle the call.**
 
-Ambient negotiates under your limit, asks you again when the business counters, and refuses an unclear yes. You ask Alexa to call the plumber, and an AI agent makes the call and says first that it is an AI. The agent books only after a clear yes to a read-back of the exact price and time, and Alexa reports only what the business confirmed.
+![The simulated call, 21 seconds: Ambient discloses it is an AI, the owner offers $150, Joe counters at $160, the owner approves, Joe answers the read-back with "Yes, plus parts.", Ambient asks for one total, and the call books](docs/media/demo.gif)
 
 **Status today.** No live call has happened. The demo runs this whole flow against a simulated business and a simulated Alexa+ host. The voice line, the Claude brain, and the Alexa skill are built but have not run live. See [What is real and what is simulated](#what-is-real-and-what-is-simulated) and [Limits](#limits-stated-plainly).
+
+Ambient negotiates under your limit, asks you again when the business counters, and refuses an unclear yes. You ask Alexa to call the plumber, and an AI agent makes the call and says first that it is an AI. The agent books only after a clear yes to a read-back of the exact price and time, and Alexa reports only what the business confirmed.
 
 | | Google Duplex | Pixel Hold for Me | Ambient |
 |---|---|---|---|
@@ -13,8 +15,6 @@ Ambient negotiates under your limit, asks you again when the business counters, 
 | What it does that Ambient does not | Works over a real phone network | Waits in hold queues | Not applicable |
 
 The cells come from the pages fetched on 2026-10-18. The [reference bar](docs/plans/2026-10-18-handle-the-call/reference-bar.md#5-full-comparison-table) holds the sources and the full table, which adds Pixel Call Screen and Apple's Call Screening and Hold Assist.
-
-![The simulated call, 21 seconds: Ambient discloses it is an AI, the owner offers $150, Joe counters at $160, the owner approves, Joe answers the read-back with "Yes, plus parts.", Ambient asks for one total, and the call books](docs/media/demo.gif)
 
 ![The Echo Show card: Joe's Plumbing quotes $180 for Tuesday the 20th at 10 am, $30 over the $150 limit, with the buttons Book $180, Offer $150, and Decline](docs/media/sim-card-hero.png)
 
@@ -27,6 +27,8 @@ The cells come from the pages fetched on 2026-10-18. The [reference bar](docs/pl
 | **Entry point** | `src/server.ts` |
 
 ## Run it
+
+**Five-minute judge path:** run `pnpm demo`, open `/sim`, tap "Call Joe's Plumbing", and watch Ambient refuse "Yes, plus parts."; then run `pnpm smoke:mcp`, `pnpm call:dry` and `pnpm scenarios`.
 
 The demo needs no keys and no accounts. The business is simulated. Every action is a real MCP tool call. Measured on 2026-10-19 (Windows 11, warm pnpm store): `pnpm install` took 20 seconds from a fresh clone, and `pnpm demo` served `/sim` 2.5 seconds after it started. The first install on a cold store took 122 seconds.
 

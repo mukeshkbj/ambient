@@ -88,7 +88,7 @@ Each entry lists: the task attempted, tool and version, date, severity, steps to
 
   Two conditions are both required: `enableJsonResponse: false` and `{ relatedRequestId: extra.requestId }` passed to `elicitInput`. Without the second, the SDK sends the request on a standalone GET stream. Our client never opened one, so the request has no route.
 - **Time lost:** Not measured. The hang was in the code from `5087aad` (2026-10-11 23:13) until `fd17fa9` (2026-10-18 18:54), seven days, because nothing failed loudly.
-- **Workaround:** `enableJsonResponse: false` (`src/server.ts:442`, from `5087aad`) and `{ relatedRequestId: requestId }` in `src/mcp.ts` (`fd17fa9`).
+- **Workaround:** `enableJsonResponse: false` (in the `StreamableHTTPServerTransport` options in `src/server.ts`, from `5087aad`) and `{ relatedRequestId: requestId }` in `src/mcp.ts` (`fd17fa9`).
 - **Fix we ask for:** Make `elicitInput` throw, or reject its promise, when it has no stream to write to: a JSON-response transport, or no `relatedRequestId` and no standalone GET stream. Better: default `relatedRequestId` from the active request handler, so a call made inside a tool handler uses the tool call's stream.
 
 ### 2. pnpm 10.33.0 on Windows: `VAR=value command` in a `package.json` script fails
@@ -162,7 +162,7 @@ Access date for every quote below: 2026-10-18.
 - **Expected:** An Alexa+ client that follows the MCP specification, or a page that says which discovery method it uses.
 - **Actual:** The Alexa page says the header is unsupported. The specification says clients must parse it. The Alexa page does not say whether Alexa+ reads the well-known URI instead. It also says the client uses a service-level token for `initialize` and `tools/list`. No error text exists, because the problem is in the docs.
 - **Time lost:** Not measured.
-- **Workaround:** The server serves both well-known documents, `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server` (`src/server.ts:254` and `:258`, from `bbe260a`). `grep -rin www-authenticate src` finds nothing, so the server does not send the header. An earlier version of this log said it did. That was wrong. We have not tested either path against a live Alexa+ client.
+- **Workaround:** The server serves both well-known documents, `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server` (the two `/.well-known/` route checks in `src/server.ts`, from `bbe260a`). `grep -rin www-authenticate src` finds nothing, so the server does not send the header. An earlier version of this log said it did. That was wrong. We have not tested either path against a live Alexa+ client.
 - **Fix we ask for:** State which discovery method Alexa+ uses for a self-hosted MCP server. Add one sentence to the "What isn't supported" list: what to implement in place of the header.
 
 ### 5. Alexa+ MCP Apps: `resourceUri` belongs in the tool response (Alexa) or the tool definition (MCP Apps specification)

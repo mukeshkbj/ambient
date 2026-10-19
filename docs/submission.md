@@ -36,6 +36,27 @@ No pilot has run, so we have no results. The numbers below are targets. We chose
 - The share of calls where the owner was asked. Target: at most 50%. A higher share would mean the owner's limits sit below what local businesses quote.
 - The share of read-backs the reducer refused. Target: 100% of the read-backs whose reply carries a qualifier, a new number, or a question, checked by reading every pilot transcript.
 
+**Pilot protocol (a plan, not a result).** The owner recruits 5 households. Each household places 3 real calls, each to a different kind of business line, for example a plumber, a vet, and a repair shop. That gives 15 calls. The owner reads every transcript and the final Alexa report for each call. Any one of these counts as a failure:
+
+- A booking the owner did not approve.
+- A call where the AI disclosure was not the first thing the business heard.
+- A "confirmed" report that the business did not confirm in the transcript.
+
+One failure of any kind means the pilot did not pass. The team fixes the cause and adds a regression test before the next call. This protocol needs the live voice line, which has not run yet.
+
+## Calls Ambient will not make
+
+This table lists only what the code enforces today.
+
+| Call | What the code does | Where |
+|---|---|---|
+| An emergency or crisis short code such as 911, 988, 112 or 999 | `parsePhoneNumber` rejects it as "Not a phone number". It accepts only 10 digits, 11 digits that start with 1, or a `+` number of 8 to 15 digits. | `src/calls/types.ts` |
+| A premium-rate number, 1-900 or 1-976 | `blockedNumber` refuses it, and the caller checks it before dialing. The call ends with no deal. The check covers `+1` numbers only. | `src/calls/rules.ts`, `src/runtimes/caller.ts` |
+| More than 3 calls to one number, or more than 20 calls in total, in 24 hours | `checkDialLimits` refuses the call. It applies on real lines and counts calls still in progress. | `src/calls/rules.ts`, `src/runtimes/caller.ts` |
+| An unknown business found by search, without the owner's approval | The caller asks "Call them?" and dials only after the owner answers once. A number the owner gives is dialed directly. | `src/runtimes/caller.ts` |
+
+Phone trees and businesses that have opted out of calls are not handled yet.
+
 ## What it does not do
 
 - It does not navigate phone trees.
@@ -93,9 +114,9 @@ A gated toolkit. The Alexa+ MCP toolkit and simulator were gated as of 2026-10-1
 
 ## Accomplishments
 
-The honesty rules live in a pure reducer, not in a prompt. Five test files enforce them: `test/call-session.test.ts`, `test/call-honesty.test.ts`, `test/read-back-replies.test.ts`, `test/call.test.ts`, and `test/caller.test.ts`. On 2026-10-19, those files listed 578 tests. They include the 4,000-call property test and the 192-reply corpus. The whole suite listed 756 tests. The other 178 cover the rest, including voice, Alexa, and security.
+The honesty rules live in a pure reducer, not in a prompt. Five test files enforce them: `test/call-session.test.ts`, `test/call-honesty.test.ts`, `test/read-back-replies.test.ts`, `test/call.test.ts`, and `test/caller.test.ts`. They include the 4,000-call property test and the 192-reply corpus. The rest of the suite covers voice, Alexa, and security.
 
-How to verify: run `pnpm exec vitest list test/call-session.test.ts test/call-honesty.test.ts test/read-back-replies.test.ts test/call.test.ts test/caller.test.ts | grep -c "test/"` for the first count, and `pnpm exec vitest list | grep -c "test/"` for the second.
+To count the tests, run `pnpm exec vitest list test/call-session.test.ts test/call-honesty.test.ts test/read-back-replies.test.ts test/call.test.ts test/caller.test.ts | grep -c "test/"` for the five files, and `pnpm exec vitest list | grep -c "test/"` for the whole suite.
 
 Three adversarial reviews of the reducer and repeated structural review rounds, all by AI reviewers, tried to break the rules and the voice line. Each round is logged in the [progress log](../progress.md). Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
 

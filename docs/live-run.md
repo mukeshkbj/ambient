@@ -89,6 +89,7 @@ Fill in the result column. Each row names where the result goes.
 | 5 | Does a per-call greeting work? Does the first thing the business hears equal `Hi, this is an AI assistant calling for <owner>. This call is transcribed.` word for word? | Listen on the phone; compare with the first `Ambient:` line in the transcript on `/sim` | _not run_ | Friction log entry 8, and the README status row for the AssemblyAI voice line |
 | 6 | Event field names the page actually receives: `transcript.user` with `text` or `delta`? `reply.started` with or without ids? | Browser devtools console on the answer page, or the Network tab's WebSocket frames | _not run_ | Friction log entry 7 |
 | 7 | Did the agent stop being bound to our endpoint after the call? | Server log shows no "retire" error; the call is over | _not run_ | Friction log entry 8 (cleanup, `de30e8d`) |
+| 8 | If the first call fails | If the capture file shows a 401 from `/call/<id>/v1/chat/completions`, the first fix is in `src/call-routes.ts` (the bearer check on the `Authorization` header) and `src/calls/rooms.ts` (the key handed to AssemblyAI) | _not run_ | Friction log entry 6 |
 
 ## After the run
 
