@@ -2,7 +2,7 @@
 
 **Alexa, handle the call.**
 
-Alexa+ can book anything that has an API. Ambient calls everything that does not. You ask Alexa to call the plumber. An AI agent makes the call, says first that it is an AI, and talks to the business. If the price goes over your limit, Alexa asks you in the kitchen. You say "offer one sixty". The agent says it on the call. At the end, Alexa reports only what the business confirmed.
+Assistants can act through services that have an API. Ambient handles the ones that only answer a phone. You ask Alexa to call the plumber. An AI agent makes the call, says first that it is an AI, and talks to the business. If the price goes over your limit, Alexa asks you in the kitchen. You say "offer one sixty". The agent says it on the call. At the end, Alexa reports only what the business confirmed.
 
 ![The call needs you: the Echo Show asks to approve $180 while the business is on hold](docs/media/sim-needs-you.png)
 

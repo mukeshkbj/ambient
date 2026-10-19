@@ -5,19 +5,35 @@ Track: Alexa+
 Demo video: [VIDEO URL]
 Public repo: [PUBLIC REPO URL]
 
+**What you can run today, and what is not live yet.** The whole call runs end to end with zero keys: `pnpm demo` in a browser, and `pnpm smoke:mcp` through the MCP server. In that demo the business is simulated, and so is the Alexa+ host, because the Alexa+ MCP toolkit was gated for entrants. The voice line, the Claude brain, the Alexa skill, the spoken cue, and the AWS stack are built and tested against recorded traffic, but none has run live yet. No real phone call has been placed. The [README table](../README.md#what-is-real-and-what-is-simulated) lists each piece with its evidence.
+
 ## Inspiration
 
-Every household has calls nobody wants to make. The plumber. The dentist. The insurance company. Alexa+ can book anything that has an API. Most small businesses still answer a phone, not an API. We wanted Alexa to make that call, and to report honestly what happened on it.
+Every household has calls nobody wants to make. The plumber. The dentist. The insurance company. Assistants can act through services that have an API, but most small businesses still answer a phone. We wanted Alexa to make that call, and to report honestly what happened on it.
 
 ## What it does
 
+This section describes the design. The demo runs all of it against a simulated business.
+
 You ask Alexa to call a business for the household. An AI agent makes the call. Its first words are an AI disclosure: "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else.
 
-The agent negotiates within a spending limit you set. When the business quotes over the limit, the agent puts the call on hold and asks you. The question reaches Echo devices as a spoken announcement and a notification. It also reaches the Echo Show as an MCP App card with "Approve $180" and "Decline" buttons. You can steer the call by voice at any point: "Alexa, tell Ambient offer one sixty."
+The agent negotiates within a spending limit you set. When the business quotes over the limit, the agent puts the call on hold and asks you. The question reaches Echo devices as a spoken announcement and a notification. It also reaches the Echo Show as an MCP App card with "Approve $180", "Offer $160 instead", and "Decline". You can steer the call by voice at any point: "Alexa, tell Ambient offer one sixty."
 
 Before the agent books, it reads the total and the time back to the business word for word. The read-back counts only after it has fully played. The agent books only if the reply is made entirely of agreement words and the exact terms it read back. A qualifier such as "plus parts", any other number or day, or any question sends the call back to negotiation. A dropped line is always unconfirmed.
 
 After the call, Alexa reports only what the business confirmed. Each call is stored in SQLite. The next call to the same business starts with what the last one learned.
+
+## Who this is for
+
+People who put off calls. In a 2023 US survey for weBoost, 47% of Gen Z said they feel anxious when they see someone is calling them ([report, PDF](https://assets.wilsonelectronics.com/m/3788b144e055bd3f/original/weBoost-Good-Call-Survey-Full-Report-Presentation.pdf)). The errand still has to happen: a plumber, a vet, a repair shop. Ambient is also for anyone who cannot easily make a call: a parent holding a baby, a person with a speech or hearing difficulty, an older adult who finds phone menus hard. The household keeps the decision. Ambient never agrees to more than the owner allowed without asking first.
+
+The same reducer works for any business that answers a phone. A real launch would start with one category, home repair, where a call usually ends in a time and a price.
+
+## Consent and the law
+
+Ambient is designed to be the honest kind of AI call. Its first sentence says it is an AI assistant calling for a named person, and that the call is transcribed. It repeats this if the business cuts it off. It places one call per request from the owner, with limits of three calls per number and twenty calls per day. It never gives card or account numbers.
+
+The US FCC ruled on 8 February 2024 that the TCPA's rules for "artificial or prerecorded voice" calls cover AI-generated voices ([HWG summary](https://hwglaw.com/2024/02/08/fcc-issues-declaratory-ruling-prohibiting-the-use-of-ai-generated-voice-in-robocalls/)). We have not had a legal review. A public launch needs one, covering the TCPA, state call-recording consent laws, and AI-disclosure laws.
 
 ## How we built it
 
@@ -49,7 +65,7 @@ A gated toolkit. The Alexa+ MCP toolkit and simulator were gated during the buil
 
 The honesty rules live in a pure reducer, not in a prompt. 532 tests enforce them, including the 4,000-call property test and the 158-reply corpus.
 
-Two reducer reviews and six structural review rounds tried to break the rules and the voice line. Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
+Two reducer reviews and seven structural review rounds tried to break the rules and the voice line ([progress log](../progress.md)). Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
 
 The demo needs no keys and no accounts. `pnpm install && pnpm demo` runs a full call in the browser, and `pnpm smoke:mcp` drives the same call through `/mcp`.
 
@@ -70,6 +86,10 @@ Deploy the custom skill to a public HTTPS host and run it on a real Echo Dot and
 Deploy the prepared CDK stack (EC2, Secrets Manager, Elastic IP, auto-TLS) once AWS spend is approved.
 
 A funded Twilio account would restore the moment when a real phone rings.
+
+## Feedback for the tool makers
+
+Product feedback for each tool is in [`docs/product-feedback.md`](product-feedback.md). Reproducible friction entries, each with a severity, are in [`docs/friction-log.md`](friction-log.md).
 
 ## Built with
 
