@@ -26,7 +26,7 @@ const QUOTES = [
 const CLEAN_YES = ["Yes, that's right.", "Yep, sorry, that's right.", "Yes, no problem.", "That'll work.", "Of course.", "Mm-hmm."] as const;
 const NOT_YES = [
   "No, it's more than that.", "Yeah, no, that's too low.", "Absolutely not.", "Okay, let me check with my manager.", "Are you sure?", "Yes, plus parts.",
-  "Yes, that's per hour.", "Sure, unless it's a bigger leak.", "Okay, 150.", "Yes. We're at 4500 Main Street.", "Sorry, we're booked.", "Hmm.", "Yes, ten.", "Yes, thirty.", "Yes, five.", "Yes, 400."
+  "Yes, that's per hour.", "Sure, unless it's a bigger leak.", "Okay, 150.", "Yes. We're at 4500 Main Street.", "Sorry, we're booked.", "Hmm.", "Yes, ten forty.", "Yes, thirty.", "Yes, five.", "Yes, 400.", "Yes, twenty."
 ] as const;
 const OWNER: ReadonlyArray<(n: number) => [string, number | undefined]> = [
   n => [`offer $${n}`, n], n => [`tell them ${n} works`, n], n => [`go to ${n} dollars`, n], n => [`${n}`, undefined],
@@ -111,7 +111,7 @@ function playCall(seed: number) {
     if (next() < 0.4) run({ kind: "brain", turn: 0, step: { kind: "say", text: pick(AGENT), last: true } });
     if (next() < 0.4) run({ kind: "heard", text: pick(NOT_YES) });
     const claim = pick([undefined, quoted, Math.max(1, quoted - 60), 12, quoted + 40]);
-    const when = pick([undefined, "Tuesday at ten thirty", "Tuesday at ten forty-five", "Wednesday at six", "Wednesday at six, plus a $400 deposit", "Tuesday at ten thirty, card 4111 1111 1111 1111", "Friday at 3, plus a 400 deposit", "Friday at three, deposit of four hundred", "Friday at 3, plus ４００ dollars", "June 5th at 3"]);
+    const when = pick([undefined, "Tuesday at ten thirty", "Tuesday at ten forty-five", "Wednesday at six", "Wednesday at six, plus a $400 deposit", "Tuesday at ten thirty, card 4111 1111 1111 1111", "Friday at 3, plus a 400 deposit", "Friday at three, deposit of four hundred", "Friday at 3, plus ４００ dollars", "June 5th at 3", "June 5 at 3", "Tuesday, October 20 at 10 AM", "Tuesday at 3 pm, 50"]);
     run({ kind: "brain", turn: 0, step: { kind: "end_call", outcome: { kind: "confirmed", summary: pick(SUMMARIES), ...(claim !== undefined ? { amountUsd: claim } : {}), ...(when ? { when } : {}) } } });
   }
   return { state, limit, replies, approved, undisclosed };

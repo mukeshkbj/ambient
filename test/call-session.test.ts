@@ -859,3 +859,26 @@ describe("round 15 review findings", () => {
     expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 100 } });
   });
 });
+
+describe("round 16 review findings", () => {
+  it.each([["Yes, twenty.", "Tuesday, October 20 at 10 AM"], ["Yes, five.", "October 5 at 3 PM"], ["Yes, five.", "June 5 at 3"], ["Yes, 20.", "Oct 20 at 10:30 am"]] as const)(
+    "does not book a cardinal date number heard alone: %s for %s",
+    (reply, when) => {
+      expect(agreesTo(reply, `one hundred fifty dollars total, ${when}`, 150, when)).toBe(false);
+    }
+  );
+
+  it.each([["Yes, 10 AM.", "Tuesday, October 20 at 10 AM"], ["Yes, three.", "June 5 at 3"]] as const)("still books the clock part of a dated time: %s for %s", (reply, when) => {
+    expect(agreesTo(reply, `one hundred fifty dollars total, ${when}`, 150, when)).toBe(true);
+  });
+
+  it.each(["Tuesday at 3 pm, 50", "Friday at 3, 40"])("does not read back a stray number after the clock: %s", when => {
+    const { state } = play([answered, heard("It's 90"), confirm(90, "ok", when)], undefined, { ...brief, maxUsd: 300 });
+    expect(state.readBack).toBeUndefined();
+  });
+
+  it.each(["9–11 AM on Tuesday", "Wed 3-4pm", "a quarter past nine on Friday", "Tuesday, October 20, 2026 at 10:30 a.m.", "between 9 and 11 on Tuesday"])("reads back a plain time: %s", when => {
+    const { state } = play([answered, heard("It's 90"), confirm(90, "ok", when)], undefined, { ...brief, maxUsd: 300 });
+    expect(state.readBack).toBeDefined();
+  });
+});

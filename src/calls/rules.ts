@@ -104,25 +104,32 @@ export function offerIn(text: string): number | undefined {
   return marked && amounts.length === 1 && amounts[0]! > 0 ? amounts[0] : undefined;
 }
 
+const MONTHS = new Set("january february march april may june july august september october november december jan feb mar apr jun jul aug sep sept oct nov dec".split(" "));
+const WEEKDAYS = new Set("monday tuesday wednesday thursday friday saturday sunday mon tue tues wed thu thur thurs fri sat sun".split(" "));
+const BEFORE_NUMBER = new Set([...MONTHS, ...WEEKDAYS, ..."the at between and to from by around about until after before on through".split(" ")]);
 const TIME_WORDS = new Set([
-  ..."monday tuesday wednesday thursday friday saturday sunday mon tue tues wed thu thur thurs fri sat sun".split(" "),
-  ..."january february march april may june july august september october november december jan feb mar apr jun jul aug sep sept oct nov dec".split(" "),
+  ...MONTHS, ...WEEKDAYS,
   ..."first second third fourth fifth sixth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth twentieth thirtieth".split(" "),
   ...Object.keys(ONES), ...Object.keys(TEENS), "twenty", "thirty", "forty", "fifty", "oh",
-  ..."at on the of in from to between and around about by after before until o'clock quarter half past am pm noon midnight morning afternoon evening night tonight today tomorrow next this week weekend early late".split(" ")
+  ..."a at on the of in from to between and around about by after before until through o'clock quarter half past am pm noon midnight morning afternoon evening night tonight today tomorrow next this week weekend early late".split(" ")
 ]);
-const TIME_NUMBER = /^(?:\d{1,2}(?:st|nd|rd|th)?|\d{1,2}:\d{2}|\d{1,2}(?::\d{2})?(?:am|pm)|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|20\d{2})$/;
+const TIME_NUMBER = /^(?:\d{1,2}(?:st|nd|rd|th)|\d{1,2}:\d{2}|\d{1,2}(?::\d{2})?(?:am|pm)|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|20\d{2})$/;
 
 export function plainTime(when: string): boolean {
-  const tokens = when.normalize("NFKC").toLowerCase().replace(/\b([ap])\.m\b\.?/g, "$1m").split(/[\s,;-]+/).map(token => token.replace(/\.$/, "")).filter(Boolean);
-  return tokens.length > 0 && tokens.every(token => TIME_WORDS.has(token) || TIME_NUMBER.test(token));
+  const tokens = when.normalize("NFKC").toLowerCase().replace(/\b([ap])\.m\b\.?/g, "$1m").replace(/(\d)\s*[-–—]\s*(\d)/g, "$1 to $2").split(/[\s,;\-–—]+/).map(token => token.replace(/\.$/, "")).filter(Boolean);
+  return tokens.length > 0 && tokens.every((token, at) => {
+    const previous = tokens[at - 1];
+    return TIME_WORDS.has(token) || TIME_NUMBER.test(token) || (/^\d{1,2}$/.test(token) && (previous === undefined || BEFORE_NUMBER.has(previous)));
+  });
 }
 
 function clockGroups(when: string): string[] {
   const groups: string[][] = [[]];
+  let previous = "";
   for (const token of timeKey(when).split(" ")) {
-    if (/^\d+$/.test(token)) groups.at(-1)!.push(token);
+    if (/^\d+$/.test(token) && !MONTHS.has(previous)) groups.at(-1)!.push(token);
     else groups.push([]);
+    previous = token;
   }
   return groups.filter(group => group.length > 0).map(group => group.join(" "));
 }
