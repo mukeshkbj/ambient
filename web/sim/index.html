@@ -178,20 +178,20 @@ body[data-phase="needs"] .tv .devlabel{visibility:hidden}
   main{grid-template-columns:minmax(0,1fr) 280px}
   .kitchen{grid-column:1 / -1;order:3;min-height:auto}
   body[data-phase="needs"] .kitchen,body[data-phase="ended"] .kitchen{order:-1}
+  .call{min-height:560px}
 }
 @media (max-width:760px){
   header{flex-wrap:wrap}
   .tagline{display:none}
-  main{grid-template-columns:1fr;padding:4px 16px 16px}
-  .call{min-height:72vh}
+  main{grid-template-columns:1fr;padding:4px 16px 16px;flex:none}
+  .call{min-height:0}
+  .transcript{max-height:320px}
   .room{grid-template-columns:1fr}
   .show8{min-height:560px;aspect-ratio:auto}
-  body[data-phase="ended"] .show8{min-height:0;height:336px}
-  body[data-phase="ended"] .call{min-height:0}
+  body[data-phase="ended"] .show8{min-height:460px}
   .kitchen{min-height:auto}
   body[data-phase="needs"] .kitchen,body[data-phase="ended"] .kitchen{order:-1}
   body[data-phase="needs"] .dot{display:none}
-  body[data-phase="needs"] .call{min-height:0}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none !important;transition:none !important;scroll-behavior:auto !important}
@@ -364,7 +364,7 @@ function render() {
     const caveat = `${/\b(?:mon|tues|wednes|thurs|fri|satur|sun)day\b/i.test(o.when ?? "") ? "Only the weekday was given" : "No date was given"} · ask ${biz} for the date`;
     out.classList.toggle("caveat", undated || !ok);
     out.classList.toggle("open", undated);
-    $("outcomeLabel").textContent = ok ? (undated ? "Booked · date still open" : `Confirmed by ${biz}`) : t.status === "cancelled" ? "Not booked" : o.kind === "unconfirmed" ? "Not booked" : o.kind === "declined" ? "They declined" : "No deal";
+    $("outcomeLabel").textContent = ok ? (undated ? "Booked · date still open" : `Confirmed by ${biz}`) : "Not booked";
     $("outcomeText").textContent = undated ? caveat : ok ? o.summary :t.status === "cancelled" ? `You ended the call before ${biz} confirmed.` : `${sentence(o.reason).replace(/\.+$/, "")}.`;
     const line = ok ? `Booked. ${sentence(o.when ?? "")}${o.amountUsd !== undefined ? `, ${usd(o.amountUsd)}` : ""}.${undated ? " The date is still open." : ""}` : "Nothing was booked.";
     if (line !== state.lastOutcome) { state.lastOutcome = line; if (ok) chime(); speak(line); }

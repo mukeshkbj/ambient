@@ -96,6 +96,7 @@ body[data-device="tv"] .tvline{display:block}
  body:not([data-device="tv"]) .hint{font-size:13px}
  body:not([data-device="tv"]) .foot{grid-template-columns:1fr;font-size:14px;gap:2px}
  body[data-state="needs"]:not([data-device="tv"]) .actions{grid-auto-flow:row}
+ body[data-state="done"]:not([data-device="tv"]){justify-content:flex-start}
 }
 @media (max-width:340px){
  body:not([data-device="tv"]) .stake.long{font-size:1.2em}
@@ -170,7 +171,7 @@ function render(d){
   if(offered){flag.className="flag dim";flag.textContent="You already offered "+usd(ap.limitUsd);}
   const asked=Date.parse(ap.createdAt||"");
   sub.textContent=ap.kind==="dial"?"Place this call?":offered?"":biz+" is on the line, waiting for you.";
-  const hold=()=>{$("clock").textContent=Number.isFinite(asked)?"Waiting "+clock(Date.now()-asked):"";};
+  const hold=()=>{const ms=Date.now()-asked;$("clock").textContent=Number.isFinite(asked)&&ms>=1000?"Waiting "+clock(ms):"";};
   if(ap.kind!=="dial"){hold();tick=setInterval(hold,1000);}
   if(theirs)foot([{who:biz+" said",text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
   const spend=ap.kind!=="dial";
@@ -181,7 +182,7 @@ function render(d){
  else if(o){const ok=o.kind==="confirmed";chip.className="chip "+(ok?(dated(o.when)?"done":"needs"):"warn");
   if(ok)document.body.classList.add("booked");
   if(ok&&!dated(o.when))document.body.classList.add("open");
-  chip.textContent=ok?(dated(o.when)?"Booked \\u00b7 confirmed by "+biz:"Booked \\u00b7 date still open"):o.kind==="unconfirmed"?"Not booked":o.kind==="declined"?"Declined":"No deal";
+  chip.textContent=ok?(dated(o.when)?"Booked \\u00b7 confirmed by "+biz:"Booked \\u00b7 date still open"):"Not booked";
   if(ok){$("what").textContent=what?biz+" \\u00b7 "+what:biz;setStake(o.amountUsd,cap(o.when||biz));
    if(!dated(o.when)){flag.className="flag date";flag.textContent=(/\\b(?:mon|tues|wednes|thurs|fri|satur|sun)day\\b/i.test(o.when||"")?"Only the weekday was given":"No date was given")+" \\u00b7 ask "+biz+" for the date";}}
   else{stake.textContent="Nothing was booked.";$("what").textContent=[biz,what,limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");}
@@ -193,7 +194,7 @@ function render(d){
    buttons([{label:"Call "+biz+" again",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);}}
  else if(live){chip.className="chip";
   const offered=owner?/^offer\\s+\\$?(\\d+)/i.exec(owner.text):null;
-  $("what").textContent=[what,offered?limitOf(t.instruction)+" \\u00b7 you offered "+usd(offered[1]):limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");
+  $("what").textContent=[what,offered&&limitOf(t.instruction)!=="limit "+usd(offered[1])?limitOf(t.instruction)+" \\u00b7 you offered "+usd(offered[1]):limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");
   stake.textContent=biz;
   const ai=said.findLastIndex(l=>l.who==="Ambient"&&/dollars|total/.test(l.text)),asked=said[ai],bi=said.findLastIndex(l=>l.who===biz);
   const again=asked&&bi>=0&&ai>bi&&ai>said.findLastIndex(l=>l.who!=="Ambient"&&l.who!==biz);
