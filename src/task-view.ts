@@ -57,6 +57,29 @@ body.booked .check path{animation:draw 600ms 180ms cubic-bezier(0.2,0,0,1) both}
 .flag.date{font-size:.8em}
 .flag.dim{color:var(--dim);font-weight:500}
 .sub{font-size:.95em;color:var(--dim);text-wrap:pretty;max-width:34em;font-variant-numeric:tabular-nums}
+.board{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:.55em;margin-top:.2em}
+.board:empty{display:none}
+.tile{border-radius:.6em;background:oklch(0.21 0.01 255);padding:.65em .8em .7em;display:grid;gap:.2em;align-content:start;box-shadow:inset 0 0 0 1px oklch(1 0 0 / .06);transition:opacity 300ms cubic-bezier(0.2,0,0,1),box-shadow 300ms cubic-bezier(0.2,0,0,1)}
+.tile b{font-size:.78em;font-weight:620;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .price{font-size:1.5em;font-weight:680;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.tile .price:empty::before{content:"\\2014";color:var(--faint)}
+.tile .slot{font-size:.62em;color:var(--dim);min-height:1.35em}
+.tile .state{display:inline-flex;align-items:center;gap:.4em;font-size:max(12px,.55em);font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--call)}
+.tile .state::before{content:"";width:.6em;height:.6em;border-radius:50%;background:currentColor}
+.tile[data-state="calling"] .state::before,.tile[data-state="talking"] .state::before{animation:breathe 1.6s ease-in-out infinite}
+.tile[data-state="quoted"] .state{color:var(--fg)}
+.tile.best{box-shadow:inset 0 0 0 1.5px var(--done)}
+.tile.best .state{color:var(--done)}
+.tile[data-state="booking"],.tile[data-state="booked"]{box-shadow:inset 0 0 0 1.5px var(--done);background:oklch(0.26 0.05 155)}
+.tile[data-state="booking"] .state,.tile[data-state="booked"] .state{color:var(--done)}
+.tile[data-state="released"],.tile[data-state="ended"]{opacity:.5}
+body.multi[data-state="done"]:not([data-device="tv"]){justify-content:flex-start;gap:1.4vw}
+body.multi[data-state="done"] .stake{font-size:1.55em}
+body.multi[data-state="done"] .check{width:1.6em;height:1.6em}
+body.multi[data-state="done"] .tile{padding:.5em .7em .55em}
+body.multi[data-state="done"] .tile .price{font-size:1.2em}
+.tile[data-state="released"] .price{text-decoration:line-through;text-decoration-thickness:2px}
+.tile[data-state="released"] .state,.tile[data-state="ended"] .state{color:var(--dim)}
 .actions{display:flex;gap:.5em;flex-wrap:wrap;align-items:center;margin-top:.3em}
 .actions:empty{display:none}
 .actions button{min-height:2.5em;padding:0 1em;border-radius:.55em;background:var(--btn);font-weight:600;font-size:.95em}
@@ -80,7 +103,7 @@ body[data-state="needs"] .actions button{padding-inline:.6em;min-height:max(56px
 .line b{font-weight:600;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .line span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 body[data-device="tv"]{font-size:clamp(12px,6vw,40px);padding:0 7vw;gap:0;justify-content:center}
-body[data-device="tv"] .top,body[data-device="tv"] .what,body[data-device="tv"] .over,body[data-device="tv"] .flag,body[data-device="tv"] .foot,body[data-device="tv"] .sub,body[data-device="tv"] .hint,body[data-device="tv"] .actions{display:none}
+body[data-device="tv"] .board,body[data-device="tv"] .top,body[data-device="tv"] .what,body[data-device="tv"] .over,body[data-device="tv"] .flag,body[data-device="tv"] .foot,body[data-device="tv"] .sub,body[data-device="tv"] .hint,body[data-device="tv"] .actions{display:none}
 body[data-device="tv"] .stake{font-size:1.15em;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 body[data-device="tv"] .when,body[data-device="tv"] .sep{display:none}
 body[data-device="tv"] .tvline{display:block}
@@ -99,6 +122,13 @@ body[data-device="tv"] .tvline{display:block}
  body:not([data-device="tv"]) .actions button{min-height:48px;font-size:16px}
  body:not([data-device="tv"]) .hint{font-size:13px}
  body:not([data-device="tv"]) .foot{grid-template-columns:1fr;font-size:14px;gap:2px}
+ body:not([data-device="tv"]) .board{grid-template-columns:1fr;gap:6px}
+ body.multi[data-state="done"]:not([data-device="tv"]) .board{display:none}
+ body:not([data-device="tv"]) .tile{grid-template-columns:1fr auto;grid-template-areas:"name price" "state slot";align-items:baseline;padding:10px 12px}
+ body:not([data-device="tv"]) .tile b{grid-area:name;font-size:15px}
+ body:not([data-device="tv"]) .tile .price{grid-area:price;font-size:20px}
+ body:not([data-device="tv"]) .tile .state{grid-area:state}
+ body:not([data-device="tv"]) .tile .slot{grid-area:slot;font-size:12px;min-height:0;text-align:right}
  body[data-state="needs"]:not([data-device="tv"]) .actions{grid-auto-flow:row}
  body[data-state="done"]:not([data-device="tv"]){justify-content:safe center}
 }
@@ -116,6 +146,7 @@ body.arrive{animation:arrive 240ms cubic-bezier(0.2,0,0,1) both}
 <div class="stake" id="stake"></div>
 <p class="over" id="over"></p>
 <p class="flag" id="flag"></p>
+<div class="board" id="board"></div>
 <p class="sub" id="sub"></p>
 <div class="actions" id="actions"></div>
 <p class="hint" id="hint"></p>
@@ -134,10 +165,16 @@ const nb=s=>s.replace(/(\\d) (am|pm)\\b/gi,"$1\\u00a0$2");
 const usd=n=>"$"+Number(n).toLocaleString("en-US",{maximumFractionDigits:2});
 const clock=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");};
 const DEMO="Call Joe's Plumbing and book a visit tomorrow to fix the kitchen sink, keep it under 150";
+const AROUND="Get quotes from plumbers to fix the kitchen sink, under 150";
+const STATE={calling:"Ringing",talking:"On the phone",quoted:"Quoted",booking:"Booking",booked:"Booked",released:"Passed",ended:"No quote"};
+function board(list){const box=$("board");if(!list||list.length<2){box.innerHTML="";return;}
+ const open=list.filter(b=>b.state==="quoted"&&b.amountUsd!==undefined),low=open.length?Math.min(...open.map(b=>b.amountUsd)):undefined;
+ box.style.setProperty("--n",list.length);
+ box.innerHTML=list.map(b=>'<div class="tile'+(b.state==="quoted"&&b.amountUsd===low&&open.length>1?" best":"")+'" data-state="'+esc(b.state)+'"><b>'+esc(b.business)+'</b><span class="price">'+(b.amountUsd!==undefined?esc(usd(b.amountUsd)):"")+'</span><span class="slot">'+esc(nb(b.when?cap(b.when):""))+'</span><span class="state">'+esc(STATE[b.state]||b.state)+'</span></div>').join("");}
 function errand(title){const m=/\\bto ([a-z][^,.]{2,48})/i.exec(title||"");return m?cap(m[1].trim()):"";}
 function limitOf(text){const m=/\\b(?:under|below|up to|no more than|max(?:imum)?)\\s+\\$?(\\d[\\d,]*)/i.exec(text||"");return m?"limit $"+m[1]:"";}
 function business(steps){for(const s of steps){const m=/^(?:Calling|Connected to) (.+)$/.exec(s);if(m)return m[1];}return "";}
-function speaker(s,biz){const who=["Ambient",biz].find(n=>n&&s.startsWith(n+": "));if(who)return{who,text:s.slice(who.length+2)};const m=/^([^:]{1,40}): (.+)$/.exec(s);return m?{who:m[1],text:m[2]}:null;}
+function speaker(s,biz){const who=["Ambient",biz].find(n=>n&&s.startsWith(n+": "));if(who)return{who,text:s.slice(who.length+2)};const m=/^([^:]{1,40}): (.+)$/.exec(s);if(!m)return null;const to=/^Ambient to (.+)$/.exec(m[1]);return to?{who:"Ambient",to:to[1],text:m[2]}:{who:m[1],text:m[2]};}
 function speakers(steps,biz){return steps.map(s=>speaker(s,biz)).filter(Boolean);}
 function act(name,args){return rpc("tools/call",{name,arguments:args}).catch(()=>undefined);}
 function offers(ap,said){const limit=ap.limitUsd,amount=ap.amountUsd;if(limit===undefined||amount===undefined||amount<=limit)return [];
@@ -155,17 +192,24 @@ const plain=s=>{$("stake").textContent=s;$("stake").classList.toggle("long",s.le
 let shown="";
 function render(d){
  clearInterval(tick);
- const t=d.task||{},steps=t.steps||[],ap=(d.approvals||[])[0],o=t.outcome,biz=t.subject||business(steps)||"the business";
+ const t=d.task||{},steps=t.steps||[],ap=(d.approvals||[])[0],o=t.outcome,list=t.board&&t.board.length>1?t.board:null;
+ const names=list?list.map(b=>b.business):[],pick=list&&(list.find(b=>b.state==="booked"||b.state==="booking")||(ap&&list.find(b=>b.state==="quoted"&&b.amountUsd===ap.amountUsd)));
+ const biz=(pick&&pick.business)||t.subject||(list?"":business(steps))||"the business";
  const live=t.status&&!["completed","failed","cancelled","unknown"].includes(t.status);
  const connected=steps.some(s=>s.startsWith("Connected to"));
  const chip=$("chip"),stake=$("stake"),over=$("over"),flag=$("flag"),sub=$("sub"),hint=$("hint"),tv=$("tvline");
- const said=speakers(steps,biz),owner=said.filter(l=>l.who!=="Ambient"&&l.who!==biz).at(-1),what=errand(t.instruction);
+ const said=speakers(steps,biz),owner=said.filter(l=>l.who!=="Ambient"&&l.who!==biz&&!names.includes(l.who)).at(-1),what=errand(t.instruction);
  const theirs=said.filter(l=>l.who===biz).at(-1);
  const kind=ap?"needs":o?"done":live?"live":"idle";
- document.body.classList.remove("booked","open","arrive");
+ document.body.classList.remove("booked","open","arrive");document.body.classList.toggle("multi",!!list);
  if(kind==="needs"&&shown!=="needs"){void document.body.offsetWidth;document.body.classList.add("arrive");}
  shown=kind;document.body.dataset.state=kind;
- over.textContent="";flag.textContent="";flag.className="flag";hint.textContent="";tv.textContent="";$("what").textContent="";$("clock").textContent="";buttons([]);foot([]);
+ over.textContent="";flag.textContent="";flag.className="flag";hint.textContent="";tv.textContent="";$("what").textContent="";$("clock").textContent="";buttons([]);foot([]);board(list);
+ if(ap&&ap.kind==="dial"&&/^I found .+\\. Call (?:all|both)/.test(ap.command||"")){chip.className="chip needs";chip.textContent="Needs you";
+  const found=/^I found (.+?)\\. Call/.exec(ap.command)[1],count=/Call (all \\w+|both)/.exec(ap.command)[1];
+  $("what").textContent=what;plain("Call "+count+" at once?");sub.textContent="Ambient found "+found+". It will say it is an AI to each, get a price, and book the cheapest under your limit.";
+  buttons([{label:"Call "+count,kind:"primary",run:()=>act("approve",{decision:"once"})},{label:"Not now",kind:"quiet",run:()=>act("approve",{decision:"deny"})}]);
+  sub.textContent=nb(sub.textContent);return;}
  if(ap){chip.className="chip needs";chip.textContent="Needs you";
   tv.textContent="Over your limit";
   $("what").textContent=what;
@@ -193,9 +237,15 @@ function render(d){
   const readBack=said.some(l=>l.who==="Ambient"&&/\\bIs that right\\?$/.test(l.text));
   sub.textContent=ok?(theirs?(readBack?"Ambient read back the total and the time. "+biz+" said \\u201c"+theirs.text+"\\u201d":"In their words: \\u201c"+theirs.text+"\\u201d"):"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed.":cap(o.reason).replace(/\\.+$/,"")+".";
   const mine=said.filter(l=>l.who!=="Ambient"&&l.who!==biz);
-  if(ok)hint.textContent=mine.some(l=>/^Approved: /.test(l.text))?"You approved this price from home.":mine.some(l=>/^offer\\b/i.test(l.text))?"You offered this price from home.":limitOf(t.instruction)?"Within your "+limitOf(t.instruction).slice(6)+" limit.":"";
+  if(ok)hint.textContent=mine.some(l=>/^Approved: /.test(l.text))?"You approved this price from home.":mine.some(l=>/^offer\\b/i.test(l.text))?"You offered this price from home.":list?"Cheapest of "+list.filter(b=>b.amountUsd!==undefined).length+" quotes"+(limitOf(t.instruction)?", within your "+limitOf(t.instruction).slice(6)+" limit.":"."):limitOf(t.instruction)?"Within your "+limitOf(t.instruction).slice(6)+" limit.":"";
   if(!ok){if(theirs)foot([{who:"Last from "+biz,text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
    buttons([{label:"Call "+biz+" again",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);}}
+ else if(live&&list){chip.className="chip";const quoted=list.filter(b=>b.amountUsd!==undefined).length;
+  chip.textContent=list.some(b=>b.state==="booking")?"Booking the best quote":"Calling "+list.length+" at once";
+  $("what").textContent=[what,limitOf(t.instruction)].filter(Boolean).join(" \u00b7 ");
+  plain(quoted<list.length?"Getting quotes":"Comparing quotes");
+  sub.textContent=quoted?quoted+" of "+list.length+" quoted. Ambient books the cheapest under your limit and releases the rest.":"Ambient says it is an AI to each business first.";
+  const began=Date.parse(t.createdAt||"");const tickCall=()=>{$("clock").textContent=Number.isFinite(began)?clock(Date.now()-began):"";};tickCall();tick=setInterval(tickCall,1000);}
  else if(live){chip.className="chip";
   const offered=owner?/^offer\\s+\\$?(\\d+)/i.exec(owner.text):null;
   $("what").textContent=[what,offered&&limitOf(t.instruction)!=="limit "+usd(offered[1])?limitOf(t.instruction)+" \\u00b7 you offered "+usd(offered[1]):limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");
@@ -210,7 +260,7 @@ function render(d){
  else{chip.className="chip idle";chip.textContent="Ready";plain("Nobody wants to make this call.");
   sub.textContent="Ambient makes it for you. It says it is an AI, and it asks you before it spends over your limit.";
   $("what").textContent="Fix the kitchen sink \\u00b7 limit $150";
-  buttons([{label:"Call Joe's Plumbing",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);
+  buttons([{label:"Call Joe's Plumbing",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})},{label:"Get 3 quotes at once",kind:"offer",run:()=>act("delegate",{task:AROUND,newConversation:true})}]);
   hint.textContent="Or say \\u201cAlexa, tell Ambient to call Joe's Plumbing.\\u201d";}
  sub.textContent=nb(sub.textContent);}
 render({});

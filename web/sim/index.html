@@ -310,7 +310,7 @@ function businessOf(steps) {
 const initials = name => name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("");
 const clock = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
 
-function renderTranscript(steps, biz) {
+function renderTranscript(steps, biz, names = []) {
   const box = $("transcript");
   const nodes = [];
   let lastWho = "";
@@ -328,7 +328,8 @@ function renderTranscript(steps, biz) {
       continue;
     }
     const [, who, text] = m;
-    const role = who === "Ambient" ? "agent" : who === biz ? "business" : "owner";
+    const to = /^Ambient to (.+)$/.exec(who)?.[1];
+    const role = who === "Ambient" || to ? "agent" : who === biz || names.includes(who) ? "business" : "owner";
     if (role === "owner") {
       const decided = /^(Approved|Declined): /.exec(text);
       const offer = /^offer\s+\$?(\d+)/i.exec(text);
@@ -336,7 +337,7 @@ function renderTranscript(steps, biz) {
       lastWho = "";
       continue;
     }
-    if (who !== lastWho) nodes.push(`<div class="who ${role}">${role === "agent" ? "Ambient · AI" : esc(who)}</div>`);
+    if (who !== lastWho) nodes.push(`<div class="who ${role}">${role === "agent" ? `Ambient · AI${to ? ` → ${esc(to)}` : ""}` : esc(who)}</div>`);
     nodes.push(`<div class="bubble ${role}">${esc(nb(text))}</div>`);
     lastWho = who;
   }
@@ -353,17 +354,23 @@ function renderTranscript(steps, biz) {
 addEventListener("resize", () => { const box = $("transcript"); box.scrollTop = box.scrollHeight; });
 
 function render() {
-  const t = task(), ap = approval(), steps = t?.steps ?? [], biz = t ? t.subject ?? businessOf(steps) : "Joe's Plumbing", o = t?.outcome;
+  const t = task(), ap = approval(), steps = t?.steps ?? [], o = t?.outcome;
+  const board = t?.board?.length > 1 ? t.board : null, names = board ? board.map(b => b.business) : [];
+  const pick = board && (board.find(b => b.state === "booked" || b.state === "booking") ?? (ap && board.find(b => b.state === "quoted" && b.amountUsd === ap.amountUsd)));
+  const found = ap?.kind === "dial" ? /^I found (.+?)\. Call (?:all|both)/.exec(ap.command ?? "")?.[1]?.split(/, | and /) : null;
+  const crowd = board?.length ?? found?.length;
+  const biz = pick ? pick.business : crowd ? `${crowd} plumbers` : t ? t.subject ?? businessOf(steps) : "Joe's Plumbing";
   const connected = steps.some(s => s.startsWith("Connected to"));
   const phase = !t ? "idle" : ap ? "needs" : TERMINAL.has(t.status) ? "ended" : "live";
   document.body.dataset.phase = phase;
   document.body.dataset.connected = String(connected);
   document.body.dataset.ending = o?.kind === "confirmed" ? "booked" : o || t?.status === "cancelled" ? "not" : "";
   $("biz").textContent = biz;
-  $("avatar").textContent = initials(biz);
-  $("callstate").innerHTML = !t ? "Not called yet" : phase === "needs" ? "<b>On hold for Maya</b>" : phase === "ended" ? (t.status === "cancelled" ? "You ended the call" : "Call ended") : connected ? "On the phone" : "Ringing…";
-  $("proof").classList.toggle("show", steps.some(s => s.startsWith("Ambient: Hi, this is an AI assistant")));
-  renderTranscript(steps, biz);
+  $("avatar").textContent = crowd && !pick ? String(crowd) : initials(biz);
+  const quoted = board ? board.filter(b => b.amountUsd !== undefined).length : 0;
+  $("callstate").innerHTML = board && phase === "live" ? `${quoted} of ${board.length} quoted` : found ? "Found nearby · not called yet" : !t ? "Not called yet" : phase === "needs" ? "<b>On hold for Maya</b>" : phase === "ended" ? (t.status === "cancelled" ? "You ended the call" : "Call ended") : connected ? "On the phone" : "Ringing…";
+  $("proof").classList.toggle("show", steps.some(s => /^Ambient(?: to [^:]+)?: Hi, this is an AI assistant/.test(s)));
+  renderTranscript(steps, biz, names);
 
   const out = $("outcome");
   if (o || t?.status === "cancelled") {
@@ -383,10 +390,10 @@ function render() {
   $("speaker").dataset.ring = ring;
   $("ringstate").textContent = { idle: out.classList.contains("show") ? "call ended" : "idle", working: connected ? "Ambient is on the phone" : "Ambient is calling", needs: "the call needs you", done: "booked" }[ring];
 
-  if (connected && phase === "live" && !state.pickedUp) { state.pickedUp = true; speak(`${biz} picked up. I'm on the call.`); }
+  if (connected && phase === "live" && !state.pickedUp) { state.pickedUp = true; speak(board ? `I'm on the phone with ${names.join(", ")}.` : `${biz} picked up. I'm on the call.`); }
   if (ap) {
     const canOffer = ap.limitUsd !== undefined && ap.amountUsd > ap.limitUsd && !steps.some(s => !s.startsWith("Ambient: ") && s.trim().toLowerCase().endsWith(": offer " + ap.limitUsd));
-    const cue = `${biz} wants ${ap.amountUsd !== undefined ? usd(ap.amountUsd) : "your OK"}. Say yes, ${canOffer ? "offer a price, " : ""}or no.`;
+    const cue = ap.kind === "dial" ? `${ap.command} Say yes or no.` : `${biz} wants ${ap.amountUsd !== undefined ? usd(ap.amountUsd) : "your OK"}. Say yes, ${canOffer ? "offer a price, " : ""}or no.`;
     if (cue !== state.lastCue) { state.lastCue = cue; speak(cue); }
   } else if (state.lastCue) {
     if ($("caption").textContent === nb(state.lastCue)) $("caption").textContent = live() ? `Ambient is back on the phone with ${biz}.` : "";
