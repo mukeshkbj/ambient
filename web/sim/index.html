@@ -186,6 +186,8 @@ body[data-phase="needs"] .tv .devlabel{visibility:hidden}
   .call{min-height:72vh}
   .room{grid-template-columns:1fr}
   .show8{min-height:560px;aspect-ratio:auto}
+  body[data-phase="ended"] .show8{min-height:0;height:336px}
+  body[data-phase="ended"] .call{min-height:0}
   .kitchen{min-height:auto}
   body[data-phase="needs"] .kitchen,body[data-phase="ended"] .kitchen{order:-1}
   body[data-phase="needs"] .dot{display:none}
@@ -363,7 +365,7 @@ function render() {
     out.classList.toggle("caveat", undated || !ok);
     out.classList.toggle("open", undated);
     $("outcomeLabel").textContent = ok ? (undated ? "Booked · date still open" : `Confirmed by ${biz}`) : t.status === "cancelled" ? "Not booked" : o.kind === "unconfirmed" ? "Not booked" : o.kind === "declined" ? "They declined" : "No deal";
-    $("outcomeText").textContent = undated ? caveat : ok ? o.summary :t.status === "cancelled" ? `You ended the call before ${biz} confirmed.` : `${sentence(o.reason)}.`;
+    $("outcomeText").textContent = undated ? caveat : ok ? o.summary :t.status === "cancelled" ? `You ended the call before ${biz} confirmed.` : `${sentence(o.reason).replace(/\.+$/, "")}.`;
     const line = ok ? `Booked. ${sentence(o.when ?? "")}${o.amountUsd !== undefined ? `, ${usd(o.amountUsd)}` : ""}.${undated ? " The date is still open." : ""}` : "Nothing was booked.";
     if (line !== state.lastOutcome) { state.lastOutcome = line; if (ok) chime(); speak(line); }
   } else out.className = "outcome";
@@ -400,7 +402,8 @@ async function decide(decision) {
     const answered = await fetch("/sim/api/elicit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, decision: decision === "deny" ? "deny" : "approve_once" }) });
     if (answered.ok) { speak(decision === "deny" ? "Okay, I'll tell them no." : "Okay, I'll book it."); return; }
   }
-  speak((await tool("approve", { decision })).speech);
+  const r = await tool("approve", { decision });
+  if (!state.lastOutcome) speak(r.speech);
 }
 $("statusBtn").onclick = async () => speak((await tool("status")).speech);
 $("again").onclick = () => startCall(DEMO_TASK);
@@ -478,7 +481,7 @@ addEventListener("message", async e => {
     if (name === "approve" && state.elicitId) { await decide(args.decision === "deny" ? "deny" : "once"); reply({ content: [] }); return; }
     if (name === "delegate" && args.newConversation) { startCall(args.task); reply({ content: [] }); return; }
     const r = await tool(name, args);
-    if (r.speech) speak(r.speech);
+    if (r.speech && !state.lastOutcome) speak(r.speech);
     reply({ content: [{ type: "text", text: r.speech ?? "" }], structuredContent: r.structuredContent ?? {}, isError: r.isError === true });
     return;
   }

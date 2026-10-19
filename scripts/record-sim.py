@@ -66,7 +66,7 @@ async def record(video_dir):
 
 def convert(video, gif):
     gif.parent.mkdir(parents=True, exist_ok=True)
-    filters = f"fps={FPS},scale={WIDTH}:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle"
+    filters = f"fps={FPS},scale={WIDTH}:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=192:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle"
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(video), "-vf", filters, "-loop", "0", str(gif)], check=True)
 
 
