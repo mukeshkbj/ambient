@@ -4,21 +4,39 @@
 
 ![The simulated call, 21 seconds: Ambient discloses it is an AI, the owner offers $150, Joe counters at $160, the owner approves, Joe answers the read-back with "Yes, plus parts.", Ambient asks for one total, and the call books](docs/media/demo.gif)
 
-Ambient negotiates under your limit, asks you again when the business counters, and refuses an unclear yes. You ask Alexa to call the plumber, and an AI agent makes the call and says first that it is an AI. The agent books only after a clear yes to a read-back of the exact price and time, and Alexa reports only what the business confirmed.
+Ambient is an AI caller for the household that cannot lie for you and cannot be lied to. You ask Alexa to call the plumber. Ambient says first that it is an AI. It spends only what you allow. It books only when the business says a clean yes to the exact price and time, and it keeps that yes as proof.
 
-**Call around.** Say "Get quotes from plumbers to fix the kitchen sink, under 150." Ambient asks once, calls three businesses at the same time, and puts each quote on the Echo Show as it arrives. The cheapest plumber answers in Spanish, so Ambient discloses, reads back and books in Spanish while the owner reads English on the Show. It books the cheapest quote under your limit through that call's read-back, thanks the other two, and keeps the read-back and the business's yes as proof.
+Three moments from the demo:
+
+1. **It refuses a false yes.** At the read-back, the plumber says "Yes, plus parts." Ambient does not book. It asks for one total price, reads the terms back again, and books on "Yes, that's right."
+2. **It asks you before it spends more.** The plumber quotes $180 against your $150 limit. The call holds, and the Echo Show asks: "Book $180", "Offer $150" or "Decline". The plumber counters at $160, so the Show asks you again.
+3. **It calls three plumbers at once, in two languages.** It books the cheapest quote under your limit and thanks the other two businesses. The cheapest plumber speaks Spanish, so Ambient books in Spanish while you read English on the Show.
 
 ![Call around, simulated: three plumbers ring at once and quote $140, $125 and $120; Ambient books the $120 quote, which a Spanish-speaking plumber gave, in Spanish, and releases the other two](docs/media/around.gif)
 
-**Status today.** No live call has happened. The demo runs this whole flow against a simulated business and a simulated Alexa+ host. The voice line, the Claude brain, and the Alexa skill are built but have not run live. See [What is real and what is simulated](#what-is-real-and-what-is-simulated) and [Limits](#limits-stated-plainly).
+**Try it in one minute, with no keys:** run `pnpm install` and `pnpm demo`, then open http://127.0.0.1:3000/sim.
+
+**Status.** No live call has happened yet. The demo runs against a simulated business and a simulated Alexa+ host. The voice line, the Claude brain and the Alexa skill are built and tested against local fakes, but none has run live. See [What is real and what is simulated](#what-is-real-and-what-is-simulated).
+
+## Who it is for
+
+- **People who find a phone call hard.** For a deaf or hard-of-hearing owner, or an owner with a speech disability, the business is never on the owner's line. The owner reads each question on the Echo Show and answers with a tap. Ambient makes the call.
+- **People who are busy when businesses are open.** The call holds only for the decisions that need the owner. One tap or one sentence answers it, and Ambient does the rest of the call.
+- **Households and businesses that do not share a language.** The owner reads English on the Show while Ambient speaks Spanish to the business.
+- **The business on the other end.** It hears that the caller is an AI before anything else. It gets a written receipt of what it agreed. "Take us off your list" stops every later call from Ambient.
+
+## How it compares
+
+"Not described" means that the pages we fetched on 2026-10-18 do not say. The [reference bar](docs/plans/2026-10-18-handle-the-call/reference-bar.md#5-full-comparison-table) holds the sources, and adds Pixel Call Screen and Apple's Call Screening and Hold Assist.
 
 | | Google Duplex | Pixel Hold for Me | Ambient |
 |---|---|---|---|
 | Who places the call | The Assistant, for a client | The user | An AI agent, on the owner's request |
-| What the business hears about the caller | Names Google and the recording. An "I am an AI" line is unverified | "Hold for Me will inform them you're returning". The spoken words are unverified | "Hi, this is an AI assistant calling for Maya. This call is transcribed." as the first words, in the demo. The live line has not run |
-| What it does that Ambient does not | Works over a real phone network | Waits in hold queues | Not applicable |
-
-The cells come from the pages fetched on 2026-10-18. The [reference bar](docs/plans/2026-10-18-handle-the-call/reference-bar.md#5-full-comparison-table) holds the sources and the full table, which adds Pixel Call Screen and Apple's Call Screening and Hold Assist.
+| Says it is an AI | No fetched source shows an "I am an AI" line | Not described | Yes, as the first words of the call |
+| Asks the owner again when the business counters | Not described | Not described | Yes |
+| Refuses an unclear yes such as "Yes, plus parts" | Not described | Not described | Yes |
+| Keeps proof of the yes | Not described | Not described | Yes: the read-back, the reply and their times, and the recording on a live call |
+| Works over a real phone network | Yes | Yes | No. The business answers on a web link |
 
 ![The Echo Show card: Joe's Plumbing quotes $180 for Tuesday the 20th at 10 am, $30 over the $150 limit, with the buttons Book $180, Offer $150, and Decline](docs/media/sim-card-hero.png)
 

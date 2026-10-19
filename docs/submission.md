@@ -5,7 +5,7 @@ Track: Alexa+
 Demo video: [VIDEO URL]
 Public repo: [PUBLIC REPO URL]
 
-Ambient lets Alexa phone a business for the household, discloses that it is an AI, and books only on a clear yes to the exact price and time.
+Ambient is an AI caller for the household that cannot lie for you and cannot be lied to. Alexa asks it to phone a business. It says first that it is an AI, spends only what the owner allows, books only on a clean yes to the exact price and time, and keeps that yes as proof.
 
 **What you can run today, and what is not live yet.** The whole call runs end to end with zero keys: `pnpm demo` in a browser, and `pnpm smoke:mcp` through the MCP server. In that demo the business is simulated, and so is the Alexa+ host, because the Alexa+ MCP toolkit was gated for entrants as of 2026-10-18. The voice line, the Claude brain, the Alexa skill, the spoken cue, and the AWS stack are built and tested against fixtures written from the docs, but none has run live yet. No real phone call has been placed. The [README table](../README.md#what-is-real-and-what-is-simulated) lists each piece with its evidence.
 
@@ -15,29 +15,25 @@ Every household has calls nobody wants to make. The plumber. The dentist. The in
 
 ## What it does
 
-This section describes the design. The demo runs all of it against a simulated business.
+You say "Alexa, ask Ambient to call Joe's Plumbing and book a visit to fix the kitchen sink, under 150." An AI agent makes the call. Its first words are "Hi, this is an AI assistant calling for Maya. This call is transcribed."
 
-Start with a call that does not book. At the read-back, the plumber answers "Yes, plus parts." Ambient does not treat that as a yes. It says "Sorry, I need one total price. What is the total with parts?" In another demo call, a dental office answers every read-back with "Probably, let me check with my manager." After three read-backs the call ends, and the outcome reads "unconfirmed. Bright Smile Dental never clearly confirmed it". Nothing is booked in either case.
+Three moments show the idea.
 
-The plumber call then succeeds. After the plumber answers "Yes, that's right. See you then." to a second read-back, Alexa reports "Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars."
+**It refuses a false yes.** Before it books, the agent reads the total and the time back to the business. At the read-back, the plumber says "Yes, plus parts." Ambient does not treat that as a yes. It says "Sorry, I need one total price. What is the total with parts?" It reads the terms back again and books only on "Yes, that's right. See you then." The reply books only if it holds agreement words and the exact terms that were read back. A qualifier, any other number or day, or a question sends the call back to the conversation. A dropped line is always unconfirmed.
 
-Ambient can also call around. "Get quotes from plumbers to fix the kitchen sink, under 150" asks once, then calls three businesses at the same time. Each quote appears on the Echo Show as it arrives. In the demo the cheapest plumber speaks Spanish. Ambient discloses that it is an AI in Spanish, reads the price and time back in Spanish, and books on "Sí, correcto." The owner reads the English on the Show. Ambient books the cheapest quote under the limit through that call's read-back and thanks the other two businesses. A pick within the limit is never recorded as the owner's approval.
+**It asks you before it spends more.** The plumber quotes $180 against a $150 limit. The call holds, with a short hold line to the business every 15 seconds. The question reaches the Echo Dot as a spoken announcement, and the Echo Show as a card with "Book $180", "Offer $150" and "Decline". The plumber counters at $160, so the card asks again before anything is booked. On a Fire TV, the film pauses until the owner answers.
 
-Every booking keeps its proof: the full read-back the business heard and the reply that booked it, each with its time. The booked card quotes both lines. On a live call, "Hear them say yes" plays that moment from the call recording. AssemblyAI records each voice session, and Ambient finds the read-back in the session timeline. It plays a recording only from the agent that made this call. The simulator has no recording, so there the card speaks both lines. `pnpm call:dry` checks the recording path against a local fake. No real recording has played yet.
+**It calls three plumbers at once, in two languages.** "Get quotes from plumbers to fix the kitchen sink, under 150" asks once, then calls three businesses at the same time. Each quote appears on the Echo Show as it arrives. In the demo the cheapest plumber speaks Spanish. Ambient discloses, reads back and books in Spanish, while the owner reads English on the Show. It thanks the other two businesses. A pick within the limit is never recorded as the owner's approval.
 
-The business gets a receipt too. When a call books, the business's call page shows "Booked for Maya: $160 total, Tuesday the 20th at 10 am.", in the business's language. A business that says "take us off your list" is never called again.
+Everything else it does:
 
-To move a booking, the owner says "Alexa, move the plumber to Thursday." Ambient calls the business it last booked, asks to move the visit, and books the new time through the same read-back. The price the owner approved carries over; a higher price goes back to the owner.
-
-If a call ends without a booking, the owner says "call them again". Ambient redials the same business with the original job, and never redials a call that booked or one that is still going.
-
-You ask Alexa to call a business for the household. An AI agent makes the call. Its first words are an AI disclosure: "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else.
-
-The agent negotiates within a spending limit you set. When the business quotes over the limit, the agent puts the call on hold and asks you. The question reaches Echo devices as a spoken announcement and a notification. It also reaches the Echo Show as an MCP App card with "Book $180", "Offer $150" (your limit), and "Decline". If the business counters, the card asks you again before anything is booked. You can steer the call by voice at any point: "Alexa, tell Ambient offer one sixty."
-
-Before the agent books, it reads the total and the time back to the business word for word. The read-back counts only after it has fully played. The agent books only if the reply is made entirely of agreement words and the exact terms it read back. A qualifier such as "plus parts", any other number or day, or any question sends the call back to negotiation. A dropped line is always unconfirmed.
-
-After the call, Alexa reports only what the business confirmed. If the business agreed a day but gave no calendar date, the card says so. Each call is stored in SQLite. The next call to the same business starts with what the last one learned.
+- **Proof of yes.** Every booking keeps the full read-back the business heard and the reply that booked it, each with its time. On a live call, "Hear them say yes" plays that moment from the call recording. In the simulator, which has no recording, the card speaks both lines.
+- **A receipt for the business.** When a call books, the business's call page shows "Booked for Maya: $160 total, Tuesday the 20th at 10 am.", in the business's language.
+- **"Don't call us" is final.** A business that says "take us off your list" is never called again.
+- **Moving a booking.** "Alexa, move the plumber to Thursday" calls the business that Ambient last booked. The approved price carries over, and the new time books through the same read-back.
+- **Calling again.** "Call them again" redials a call that ended without a booking. Ambient never redials a call that booked or one that is still going.
+- **Honest reports.** Alexa reports only what the business confirmed. If the business agreed a day but gave no calendar date, the card says so.
+- **Memory.** Each call is stored in SQLite. The next call to the same business starts with what the last one learned.
 
 ## What a pilot measures
 
