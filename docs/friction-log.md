@@ -8,7 +8,7 @@ We did not run a timer. Where git shows when a problem started and when it was f
 
 | Stage | Status | Detail |
 |---|---|---|
-| Onboarding and SDK install | Hit | Entry 2. `pnpm install` of `@modelcontextprotocol/sdk` 1.30.0 worked. The first server run on Windows failed. |
+| Onboarding and SDK install | Hit | `pnpm install` of `@modelcontextprotocol/sdk` 1.30.0 worked with no friction; no entry. The first server run on Windows failed (entry 2). |
 | MCP SDK at runtime | Hit | Entry 1. Elicitation inside a tool call hung with no error. |
 | Docs | Hit | Entries 3 to 8. Six documentation problems: pages that disagree with each other or leave a field unstated. |
 | Alexa developer console and skill registration | Not reached | The owner's developer account step has not run. `alexa/interaction-model.en-US.json`, `alexa/interaction-model.en-GB.json` and `alexa/skill.json` exist but were never imported. `progress.md` phase 7: "Echo Dot run pending". |
@@ -156,7 +156,7 @@ Access date for every quote below: 2026-10-18.
 - **Expected:** One location that both documents name.
 - **Actual:** Alexa documents the tool result. The MCP Apps specification documents the tool definition. We cannot tell which reader Alexa+ uses, and no client was available to test. No error text exists, because the problem is in the docs.
 - **Time lost:** Not measured.
-- **Workaround:** We emit `_meta.ui.resourceUri` on the tool result (`runResult` in `src/voice.ts`, first in `5087aad`) and register the `ui://ambient/task` resource. Our `/sim` host reads that field. It is our own host, so it does not prove what Alexa+ does.
+- **Workaround:** We emit `_meta.ui.resourceUri` on the tool result (`runResult` in `src/voice.ts`, from `5087aad`; an earlier tool result emitted it from `35ed748`) and register the `ui://ambient/task` resource. Our `/sim` host reads that field. It is our own host, so it does not prove what Alexa+ does.
 - **Fix we ask for:** Publish a complete tools/list entry and tools/call result for one MCP App tool, and say which of them Alexa+ reads.
 
 ### 6. AssemblyAI Voice Agent API: the request sent to a bring-your-own LLM endpoint is not documented

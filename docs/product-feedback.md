@@ -21,7 +21,7 @@ One section per tool we used to build Ambient. Each section follows the hackatho
 ## ASK Proactive Events and Voice Monkey (the "needs you" cue)
 
 - **Used it for:** `src/cue.ts`. When a call needs the owner, Ambient sends a Voice Monkey announcement (spoken on the Echo Dot) and a Proactive Events notification (the yellow ring), at most once per approval.
-- **What worked:** both APIs are small. Each one is a single authenticated POST, and both are unit tested with recorded responses (`test/cue.test.ts`).
+- **What worked:** both APIs are small. Voice Monkey takes one POST; Proactive Events takes a Login with Amazon token POST and then an event POST (`src/cue.ts`). Both are unit tested with recorded responses (`test/cue.test.ts`).
 - **What needs work:** We did not find a first-party API that lets a skill speak to the household unprompted. Proactive Events shows a notification from a fixed schema, so the spoken cue depends on Voice Monkey, a third-party service. We could not confirm from the docs whether the console accepts an HTTPS `events.endpoint` for a non-Lambda skill; `reference-alexa.md` marks it UNVERIFIED. Neither API has run live, because both need the owner's tokens and an Echo device.
 - **Onboarding:** not measured. Live setup has not run.
 - **Would we build with it again?** Yes. The notification fits the moment; we would replace Voice Monkey with a first-party "announce to this household" API if Amazon offered one.
@@ -29,10 +29,10 @@ One section per tool we used to build Ambient. Each section follows the hackatho
 ## MCP TypeScript SDK (`@modelcontextprotocol/sdk` 1.30.0)
 
 - **Used it for:** the whole server and client: `McpServer`, `registerTool`, `registerResource`, `StreamableHTTPServerTransport`, `server.server.elicitInput`, and the `Client` with `StreamableHTTPClientTransport` that the `/sim` host and `scripts/smoke-mcp.ts` use over loopback.
-- **What worked:** the SDK tracks the 2025-11-25 specification closely. Elicitation with form schemas, capability negotiation, `ui://` resources, and `Mcp-Session-Id` sessions all worked as specified. In-memory transports made elicitation round trips testable without a network.
+- **What worked:** the SDK tracks the 2025-11-25 specification closely. Capability negotiation, `ui://` resources, and `Mcp-Session-Id` sessions worked as specified. Elicitation with form schemas worked once we used an SSE response tied to the request (friction entry 1). In-memory transports made elicitation round trips testable without a network.
 - **What needs work:** `elicitInput` inside a tool call reaches the client only on an SSE response tied to that request. In the other modes the call hangs with no error and no log (friction entry 1, severity High). Because nothing failed loudly, the hang stayed in our code for seven days, from `5087aad` to `fd17fa9`.
 - **Onboarding:** not measured.
-- **Would we build with it again?** Yes. It is the practical way to ship a standards MCP server in TypeScript.
+- **Would we build with it again?** Yes. It is the official TypeScript SDK, and it tracked the specification version we targeted.
 
 ## MCP Apps (`ui://` task card)
 
@@ -72,4 +72,4 @@ One section per tool we used to build Ambient. Each section follows the hackatho
 - **What worked:** the docs describe a clean text-in, text-out bridge to an LLM, which fits our reducer.
 - **What needs work:** a trial account cannot run `<ConversationRelay>`, and the account also needs an AI features addendum. Real outbound calls therefore need a paid account from day one. We had no budget for it.
 - **Onboarding:** not started.
-- **Would we build with it again?** Yes. It is the shortest path to a real phone ringing, which our demo lacks. It needs a paid account.
+- **Would we build with it again?** No, not as things stand. We did not use it, because a trial account cannot run `<ConversationRelay>` and we had no budget. We would evaluate it again with a paid account, because our demo lacks a real phone ringing.

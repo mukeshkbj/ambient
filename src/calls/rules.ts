@@ -85,7 +85,7 @@ export function amountsIn(text: string): number[] {
   return found;
 }
 
-const NEGATION = /\b(not|never|no|nope|nah|don'?t|won'?t|can'?t|cannot|refuse|over|above|under|more|less|max(imum)?|at most|limit|too|without|instead|last time|paid|only if|unless|if|maybe|ridiculous|rip-?off|insane|crazy|outrageous|out)\b|n't\b/i;
+const NEGATION = /\b(not|never|no|nope|nah|don'?t|won'?t|can'?t|cannot|refuse|over|above|under|more|less|max(imum)?|at most|limit|too|without|instead|last time|paid|only if|unless|if|maybe|ridiculous|rip-?off|insane|crazy|outrageous|out|reject|decline|deny|pass|forget|drop|skip|cancel|steep|expensive|no way)\b|n't\b/i;
 const OFFER_CUE = /\b(offer|counter|tell (him|her|them)|say|make it|how about|go (up )?to|go with|try|accept|agree( to)?|approve|pay|okay|ok|sure|yes|yeah|fine|works|deal)\b/i;
 const AMOUNT_ONLY = /^(?:[\s$.,!?-]|\d|\b(?:a|and|dollars|bucks|hundred|thousand|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)\b)+$/i;
 
@@ -104,7 +104,7 @@ const CONFIRMATION = phrases([
 ]);
 const COURTESY = phrases(["thank you", "see you then", "see you", "thanks", "great", "good"]);
 const NEGATIVE_WORDS = new Set(["no", "not", "never", "nope", "nah"]);
-const FILLER = new Set(["and", "then", "so", "oh", "um", "uh", "sorry", "sir", "ma'am", "we'll", "the", "that's", "that", "it's", "it", "is", "o'clock", "am", "pm"]);
+const FILLER = new Set(["and", "then", "so", "oh", "um", "uh", "sorry", "sir", "ma'am", "we'll", "the", "that's", "that", "it's", "it", "is", "o'clock"]);
 const isNumber = (token: string) => /^\$?\d+(\.\d+)?$/.test(token) || NUMBER_WORDS.has(token);
 
 function plainWords(text: string): string {
@@ -135,14 +135,16 @@ function numberRuns(tokens: string[]): string[][] {
   return runs;
 }
 
-export function agreesTo(reply: string, terms: string, amountUsd: number | undefined): boolean {
+export function agreesTo(reply: string, terms: string, amountUsd: number | undefined, when?: string, line?: string): boolean {
   if (reply.includes("?")) return false;
+  const echoed = plainWords(reply).replaceAll("|", " ").replace(/\s+/g, " ").trim();
+  if (line && echoed.includes(" ") && plainWords(line).replaceAll("|", " ").replace(/\s+/g, " ").includes(echoed)) return false;
   const words = plainWords(reply);
   const tokens = words.split(" ").filter(token => token && token !== "|").flatMap(token => token.split("-").filter(Boolean));
   if (tokens.length > 14) return false;
   if (!CONFIRMATION.test(words)) return false;
   CONFIRMATION.lastIndex = 0;
-  const numbers = [...amountsIn(terms), ...(amountUsd !== undefined ? [amountUsd] : [])];
+  const numbers = [...amountsIn(when ?? ""), ...(amountUsd !== undefined ? [amountUsd] : [])];
   if (!chargedIn(words.replaceAll("|", " ")).every(charge => charge === amountUsd)) return false;
   const runs = numberRuns(words.split(" ").flatMap(token => token.split("-").filter(Boolean)));
   if (!runs.every(run => {

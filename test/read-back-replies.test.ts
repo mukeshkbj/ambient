@@ -201,3 +201,29 @@ describe("owner offers", () => {
     expect(offerIn("offer 300")).toBe(300);
   });
 });
+
+describe("round 9 review findings", () => {
+  it.each(["Okay, reject 250", "ok decline 250", "yes pass on 250", "sure, forget 250", "okay, drop it, 250 is steep"])("does not read a refusal as an offer: %s", text => {
+    expect(offerIn(text)).toBeUndefined();
+  });
+
+  it("does not book a reply that changes am to pm", () => {
+    expect(agreesTo("Yes, 3 am.", "two hundred dollars total, Tuesday at 3 pm", 200, "Tuesday at 3 pm")).toBe(false);
+    expect(agreesTo("Yes, 3 pm.", "two hundred dollars total, Tuesday at 3 pm", 200, "Tuesday at 3 pm")).toBe(true);
+  });
+
+  it("does not book an echo of the agent's own question", () => {
+    const line = "Just to confirm: two hundred dollars total, Tuesday at 3. Is that right?";
+    expect(agreesTo("Is that right", "two hundred dollars total, Tuesday at 3", 200, "Tuesday at 3", line)).toBe(false);
+    expect(agreesTo("that right", "two hundred dollars total, Tuesday at 3", 200, "Tuesday at 3", line)).toBe(false);
+    expect(agreesTo("That's right.", "two hundred dollars total, Tuesday at 3", 200, "Tuesday at 3", line)).toBe(true);
+    expect(agreesTo("Right.", "two hundred dollars total, Tuesday at 3", 200, "Tuesday at 3", line)).toBe(true);
+  });
+
+  it("does not book a part of the price", () => {
+    const terms = "one hundred forty-nine dollars and fifty cents total, Tuesday at ten";
+    expect(agreesTo("Yes, 149.", terms, 149.5, "Tuesday at ten")).toBe(false);
+    expect(agreesTo("Yes, fifty.", terms, 149.5, "Tuesday at ten")).toBe(false);
+    expect(agreesTo("Yes, 149.50.", terms, 149.5, "Tuesday at ten")).toBe(true);
+  });
+});

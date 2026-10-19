@@ -92,7 +92,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
         return { state: thought.state, effects: [say(line), ...thought.effects] };
       }
       if (state.readBack && !state.readBack.armed) {
-        if (agreesTo(input.text, state.readBack.terms, state.readBack.outcome.amountUsd)) return { state: { ...heard, readBack: { ...state.readBack, earlyYes: true } }, effects: [] };
+        if (agreesTo(input.text, state.readBack.terms, state.readBack.outcome.amountUsd, state.readBack.outcome.when, state.readBack.line)) return { state: { ...heard, readBack: { ...state.readBack, earlyYes: true } }, effects: [] };
         return think({ ...heard, readBack: undefined, readBacks: state.readBacks - 1 });
       }
       if (state.readBack) {
@@ -213,7 +213,7 @@ function confirm(state: CallState, outcome: Confirmed, now: string): Transition 
 function answerReadBack(state: CallState, readBack: ReadBack, reply: string, now: string): Transition | undefined {
   const lastAgent = state.turns.findLast(turn => turn.speaker === "agent");
   if (lastAgent?.text !== readBack.line) return undefined;
-  return agreesTo(reply, readBack.terms, readBack.outcome.amountUsd) ? close({ ...state, readBack: undefined }, readBack.outcome, now) : undefined;
+  return agreesTo(reply, readBack.terms, readBack.outcome.amountUsd, readBack.outcome.when, readBack.line) ? close({ ...state, readBack: undefined }, readBack.outcome, now) : undefined;
 }
 
 function price(amount: number): string {
