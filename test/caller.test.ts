@@ -127,6 +127,15 @@ describe("CallerClient discovery and memory", () => {
     close();
   });
 
+  it("never dials a premium-rate number, even with dial limits off", async () => {
+    const { engine, close } = setup(JOES_PLUMBING, { discover: async () => [], limitDials: false });
+    const run = await engine.ask("call 1-900-555-0100 and book a visit", undefined, true);
+    const view = await until(engine, run.id, item => item.status === "completed");
+    expect(view.outcome).toMatchObject({ kind: "no_deal", reason: "premium-rate number" });
+    expect(view.steps.some(line => line.includes("Connected to"))).toBe(false);
+    close();
+  });
+
   it("dials a number given in the instruction with no dial approval", async () => {
     const { client, engine, close } = setup(JOES_PLUMBING, { discover: async () => [] });
     const dialRequests: string[] = [];

@@ -4,7 +4,7 @@ import { runCall, type CallHandle } from "../calls/call.js";
 import type { Candidate } from "../calls/discover.js";
 import type { Line } from "../calls/line.js";
 import { EARLIER_CALL } from "../calls/prompt.js";
-import { amountsIn, checkDialLimits, noteFromCall, type PlacedCall } from "../calls/rules.js";
+import { amountsIn, blockedNumber, checkDialLimits, noteFromCall, type PlacedCall } from "../calls/rules.js";
 import { parsePhoneNumber, type CallBrief, type CallOutcome, type CallRecord, type PhoneNumber } from "../calls/types.js";
 import { householdFacts, type Household } from "../household.js";
 import { dollarsInWords } from "../words.js";
@@ -259,12 +259,13 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
     if (this.cancelled.has(sessionId)) return;
     const now = new Date().toISOString();
     const placed = [...(memory?.placedCalls() ?? []), ...this.inFlight.values()];
-    const limit = this.options.limitDials === false ? { ok: true as const } : checkDialLimits(placed, business.phone, now);
+    const blocked = blockedNumber(business.phone);
+    const limit = blocked ?? (this.options.limitDials === false ? { ok: true as const } : checkDialLimits(placed, business.phone, now));
     if (!limit.ok) {
       this.emit({
         type: "message.complete",
         sessionId,
-        payload: { text: limit.reason, status: "completed", outcome: { kind: "no_deal", reason: "call limit reached" } }
+        payload: { text: limit.reason, status: "completed", outcome: { kind: "no_deal", reason: blocked ? "premium-rate number" : "call limit reached" } }
       });
       return;
     }

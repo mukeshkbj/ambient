@@ -4,6 +4,7 @@ import {
   agreesTo,
   amountsIn,
   chargedIn,
+  blockedNumber,
   checkDialLimits,
   disclosure,
   HOLD_LINE_MS,
@@ -962,5 +963,19 @@ describe("time re-ask cap", () => {
     const { state, effects } = play([answered, heard("It's 100"), vague, heard("Friday at 3, ask for Sam"), vague, heard("Like I said, ask for Sam"), vague], undefined, { ...brief, maxUsd: 300 });
     expect(spoken(effects).filter(line => line.startsWith("Sorry, ") && /day and time/.test(line))).toEqual(["Sorry, could you give me just the day and time?", "Sorry, I missed that. What day and time?"]);
     expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "unconfirmed" } });
+  });
+});
+
+describe("numbers Ambient never dials", () => {
+  it.each(["911", "988", "112", "999", "+1 911"])("refuses the emergency or crisis short code %s as a phone number", raw => {
+    expect(() => parsePhoneNumber(raw)).toThrow(/Not a phone number/);
+  });
+
+  it.each(["1-900-555-0134", "(976) 555-0134", "+1 900 555 0134"])("refuses the premium-rate number %s", raw => {
+    expect(blockedNumber(parsePhoneNumber(raw))).toMatchObject({ ok: false });
+  });
+
+  it("dials an ordinary business number", () => {
+    expect(blockedNumber(parsePhoneNumber("(415) 555-0134"))).toBeUndefined();
   });
 });

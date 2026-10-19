@@ -247,6 +247,12 @@ export function chargedIn(text: string): number[] {
 export type PlacedCall = { to: PhoneNumber; startedAt: string };
 export type DialCheck = { ok: true } | { ok: false; reason: string };
 
+const PREMIUM_RATE = /^\+1(?:900|976)/;
+
+export function blockedNumber(to: PhoneNumber): DialCheck | undefined {
+  return PREMIUM_RATE.test(to) ? { ok: false, reason: "Ambient does not dial premium-rate numbers." } : undefined;
+}
+
 export function checkDialLimits(history: PlacedCall[], to: PhoneNumber, now: string): DialCheck {
   const since = Date.parse(now) - DAY_MS;
   const recent = history.filter(call => Date.parse(call.startedAt) > since);
