@@ -77,7 +77,7 @@ body.multi[data-state="done"] .board{display:none}
 body.proof:not([data-device="tv"]){justify-content:flex-start}
 body.proof .foot{margin-top:.4em;margin-bottom:0}
 body.proof .line span{-webkit-line-clamp:5}
-@media (min-width:481px){body.proof:not([data-device="tv"]){gap:1.4vw;padding-top:5vw}body.proof .stake{font-size:2em}body.proof .check{width:1.7em;height:1.7em}}
+@media (min-width:481px){body.proof:not([data-device="tv"]){gap:1.4vw;padding-top:5vw}body.proof .stake{font-size:2em}body.proof.multi .stake{font-size:1.7em}body.proof .check{width:1.7em;height:1.7em}}
 .gloss{display:block;font-size:.88em;color:oklch(0.66 0.01 255);margin-top:.2em}
 .tile[data-state="released"] .price{text-decoration:line-through;text-decoration-thickness:2px}
 .tile[data-state="released"] .state,.tile[data-state="ended"] .state{color:var(--dim)}
