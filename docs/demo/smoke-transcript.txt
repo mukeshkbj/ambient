@@ -1,6 +1,6 @@
 tools: delegate, delegate_task, status, approve, stop, agents, briefing
 > delegate {"task":"Call Joe's Plumbing and book a visit to fix the kitchen sink, keep it under 150","newConversation":true}
-  Alexa: Joe's Plumbing wants one hundred eighty dollars for Tuesday the twentieth at 10 am. Your limit is one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up.
+  Alexa: Joe's Plumbing wants one hundred eighty dollars for Tuesday the 20th at 10 am. Your limit is one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up.
 > status
   Alexa: Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up.
 > delegate {"task":"offer 150"}
@@ -8,9 +8,9 @@ tools: delegate, delegate_task, status, approve, stop, agents, briefing
 > status
   Alexa: Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up.
 > approve {"decision":"once"}
-  Alexa: Joe's Plumbing confirmed Tuesday the twentieth at 10 am for one hundred sixty dollars.
+  Alexa: Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.
 > status
-  Alexa: Joe's Plumbing confirmed Tuesday the twentieth at 10 am for one hundred sixty dollars.
+  Alexa: Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.
 
 The call itself (Ambient and the simulated business, with the owner's notes):
   Ambient: Hi, this is an AI assistant calling for Maya. This call is transcribed.
@@ -26,14 +26,14 @@ The call itself (Ambient and the simulated business, with the owner's notes):
   Ambient: Thanks for waiting. Could you do one fifty?
   Joe's Plumbing: One fifty is too low for me. I could do one sixty.
   Ambient: One moment, let me check with Maya.
-  Maya: Approved: Joe's Plumbing came down to one hundred sixty dollars for Tuesday the twentieth at 10 am, still over your limit of one hundred fifty dollars. Should I book it?
+  Maya: Approved: Joe's Plumbing came down to one hundred sixty dollars for Tuesday the 20th at 10 am, still over your limit of one hundred fifty dollars. Should I book it?
   Ambient: Thanks for waiting. Maya says one sixty is fine. Please go ahead and book Tuesday at ten.
-  Joe's Plumbing: Hmm, one sixty. Alright, that works. I'll put you down for Tuesday the twentieth at 10 am.
-  Ambient: Just to confirm: one hundred sixty dollars total, Tuesday the twentieth at 10 am. Is that right?
+  Joe's Plumbing: Hmm, one sixty. Alright, that works. I'll put you down for Tuesday the 20th at 10 am.
+  Ambient: Just to confirm: one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?
   Joe's Plumbing: Yes, plus parts.
   Ambient: Sorry, I need one total price. What is the total with parts?
   Joe's Plumbing: Fair enough. A sink like that needs no parts, so that's all in.
-  Ambient: Let me check once more: one hundred sixty dollars total, Tuesday the twentieth at 10 am. Is that right?
+  Ambient: Let me check once more: one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?
   Joe's Plumbing: Yes, that's right. See you then.
-  Ambient: Great, Maya will expect you Tuesday the twentieth at 10 am. Thanks, goodbye.
+  Ambient: Great, Maya will expect you Tuesday the 20th at 10 am. Thanks, goodbye.
 smoke: ok, the business countered, "yes, plus parts" did not book, and the call booked at the approved counter
