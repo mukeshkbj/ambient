@@ -8,8 +8,9 @@ We did not run a timer. Where git shows when a problem started and when it was f
 
 | Stage | Status | Detail |
 |---|---|---|
-| Onboarding and SDK install | Hit | Entries 1 and 2. `pnpm install` of `@modelcontextprotocol/sdk` 1.30.0 worked. The first server run on Windows failed (entry 2). |
-| Docs | Hit | Entries 3 to 8. Five docs disagree with each other or leave a field unstated. |
+| Onboarding and SDK install | Hit | Entry 2. `pnpm install` of `@modelcontextprotocol/sdk` 1.30.0 worked. The first server run on Windows failed. |
+| MCP SDK at runtime | Hit | Entry 1. Elicitation inside a tool call hung with no error. |
+| Docs | Hit | Entries 3 to 8. Six documentation problems: pages that disagree with each other or leave a field unstated. |
 | Alexa developer console and skill registration | Not reached | The owner's developer account step has not run. `alexa/interaction-model.en-US.json`, `alexa/interaction-model.en-GB.json` and `alexa/skill.json` exist but were never imported. `progress.md` phase 7: "Echo Dot run pending". |
 | ASK CLI | Not reached | `progress.md` records no `ask` or `alexa-ai` command run. `docs/product-feedback.md` says the Alexa+ MCP toolkit, CLI and web simulator were gated for hackathon entrants during the build. |
 | Account linking and OAuth | Not reached live | The OAuth metadata routes and the request verification (`src/alexa-verify.ts`) are written and unit tested. No live Alexa service call exercised them. Entry 4 covers the docs gap. |
@@ -32,12 +33,13 @@ Twilio decision. We chose Twilio ConversationRelay first (`docs/plans/2026-10-18
 
 ## Entry format
 
-Each entry lists: tool and version, date, severity, steps to reproduce, expected result, actual result, time lost ("not measured" unless git gives a span), workaround with commit, and the fix we ask for. Severity uses three levels. High: it blocks the work or fails with no error. Medium: it costs time and has a workaround. Low: a design limit we can live with. "Date" is the date we hit the problem, or for documentation entries the date we re-read and quoted the pages.
+Each entry lists: the task attempted, tool and version, date, severity, steps to reproduce, expected result, actual result, time lost ("not measured" unless git gives a span), workaround with commit, and the fix we ask for. Severity uses three levels. High: it blocks the work or fails with no error. Medium: it costs time and has a workaround. Low: a design limit we can live with. "Date" is the date we hit the problem, or for documentation entries the date we re-read and quoted the pages.
 
 ## Software entries
 
 ### 1. MCP TypeScript SDK 1.30.0: `elicitInput` inside a tool call never reaches the client and never errors
 
+- **Task attempted:** Ask the owner a question in the middle of a tool call, with MCP elicitation.
 - **Tool and version:** `@modelcontextprotocol/sdk` 1.30.0 (`node_modules/@modelcontextprotocol/sdk/package.json`), `StreamableHTTPServerTransport`.
 - **Date:** 2026-10-18, fix `fd17fa9`.
 - **Severity:** High. The call hangs with no error, so the fault is invisible until you read the SDK source.
@@ -67,12 +69,13 @@ Each entry lists: tool and version, date, severity, steps to reproduce, expected
   ```
 
   Two conditions are both required: `enableJsonResponse: false` and `{ relatedRequestId: extra.requestId }` passed to `elicitInput`. Without the second, the SDK sends the request on a standalone GET stream. Our client never opened one, so the request has no route.
-- **Time lost:** Not measured. Span from git: elicitation first landed in `5087aad` (2026-10-11 23:13), and the simulator that exposed the hang landed in `c11f9b0` (2026-10-12 04:21), about 5 hours later. Both fixes need SSE responses.
-- **Workaround:** `enableJsonResponse: false` (`src/server.ts:442`) and `{ relatedRequestId: requestId }` in `src/mcp.ts` (`fd17fa9`).
+- **Time lost:** Not measured. The hang was in the code from `5087aad` (2026-10-11 23:13) until `fd17fa9` (2026-10-18 18:54), seven days, because nothing failed loudly.
+- **Workaround:** `enableJsonResponse: false` (`src/server.ts:442`, from `5087aad`) and `{ relatedRequestId: requestId }` in `src/mcp.ts` (`fd17fa9`).
 - **Fix we ask for:** Make `elicitInput` throw, or reject its promise, when it has no stream to write to: a JSON-response transport, or no `relatedRequestId` and no standalone GET stream. Better: default `relatedRequestId` from the active request handler, so a call made inside a tool handler uses the tool call's stream.
 
 ### 2. pnpm 10.33.0 on Windows: `VAR=value command` in a `package.json` script fails
 
+- **Task attempted:** Start the demo server on Windows with environment variables set in a `package.json` script.
 - **Tool and version:** pnpm 10.33.0 (the repo's `packageManager`), Node v24.21.0, Windows 11 Home 10.0.26300.
 - **Date:** 2026-10-18, fix `1ffda6a`.
 - **Severity:** Medium. The documented script syntax fails on Windows, and the error names the variable, not the cause.
@@ -96,7 +99,7 @@ Each entry lists: tool and version, date, severity, steps to reproduce, expected
   ```
 
   pnpm runs scripts through `cmd.exe` on Windows. The judge path, `pnpm demo`, failed on its first command.
-- **Time lost:** Not measured. Span from git: `1ffda6a` (21:04) fixed this and the entry-point bug in "Our own bugs" 5 minutes after `38aa26d` (20:59).
+- **Time lost:** Not measured.
 - **Workaround:** Move the variables to the committed file `demo.env` and run `tsx --env-file=demo.env src/server.ts` (`1ffda6a`). Node's `--env-file` works the same on every OS and adds no dependency.
 - **Fix we ask for:** When a script starts with a POSIX `VAR=value` assignment and the shell is `cmd.exe`, print one warning that names the problem and links to `script-shell`. Today the error names `AMBIENT_HOST` as a missing program.
 
@@ -106,6 +109,7 @@ Access date for every quote below: 2026-10-18.
 
 ### 3. Alexa+ MCP docs: three pages show three MCP protocol versions
 
+- **Task attempted:** Choose the MCP protocol version our server should offer to Alexa+.
 - **Tool and version:** Alexa+ MCP toolkit documentation, no version published. Pages accessed 2026-10-18.
 - **Date:** 2026-10-18, when we re-read and quoted the three pages for this log. We first noted the conflict on 2026-10-12 (`9fc671a`).
 - **Severity:** Medium. A client and server can negotiate a version the platform does not support.
@@ -127,6 +131,7 @@ Access date for every quote below: 2026-10-18.
 
 ### 4. Alexa+ authentication page lists `WWW-Authenticate` as unsupported; the MCP specification requires clients to parse it
 
+- **Task attempted:** Implement OAuth discovery so Alexa+ can link an account to our MCP server.
 - **Tool and version:** Alexa+ MCP toolkit documentation (no version published) and MCP specification 2025-11-25. Accessed 2026-10-18.
 - **Date:** 2026-10-18, when we re-read and quoted both pages for this log. We first noted the conflict on 2026-10-12 (`9fc671a`).
 - **Severity:** Medium. A spec-compliant server may send a header the platform says it ignores, so auth discovery can fail.
@@ -141,6 +146,7 @@ Access date for every quote below: 2026-10-18.
 
 ### 5. Alexa+ MCP Apps: `resourceUri` belongs in the tool response (Alexa) or the tool definition (MCP Apps specification)
 
+- **Task attempted:** Show a UI card for a tool result on an Alexa+ device with MCP Apps.
 - **Tool and version:** Alexa+ MCP toolkit documentation (no version published) and MCP Apps specification `2026-01-26`. Accessed 2026-10-18.
 - **Date:** 2026-10-18, when we re-read and quoted both documents for this log. The workaround dates from `5087aad` (2026-10-11).
 - **Severity:** Medium. One of the two placements fails silently on one host.
@@ -155,6 +161,7 @@ Access date for every quote below: 2026-10-18.
 
 ### 6. AssemblyAI Voice Agent API: the request sent to a bring-your-own LLM endpoint is not documented
 
+- **Task attempted:** Connect our own LLM endpoint to the AssemblyAI Voice Agent API.
 - **Tool and version:** AssemblyAI Voice Agent API, no version published. Page https://www.assemblyai.com/docs/voice-agents/voice-agent-api/connect-your-own-llm.md, fetched with `curl` on 2026-10-18.
 - **Date:** 2026-10-18, workaround in `41fb071`.
 - **Severity:** High. The integration cannot be written from the docs alone; we had to infer the request shape.
@@ -173,6 +180,7 @@ Access date for every quote below: 2026-10-18.
 
 ### 7. AssemblyAI Voice Agent API: two docs pages disagree on event fields, and the example repository points at a second endpoint
 
+- **Task attempted:** Read the business's and the agent's transcript events on the browser answer page.
 - **Tool and version:** AssemblyAI Voice Agent API, no version published. Pages `events-reference.md` and `message-sequence.md` under https://www.assemblyai.com/docs/voice-agents/voice-agent-api/, fetched with `curl` on 2026-10-18. Example repository https://github.com/AssemblyAI/voice-agent-api-twilio-example, last pushed 2026-10-14T17:42:51Z.
 - **Date:** 2026-10-18, workaround in `41fb071`.
 - **Severity:** Medium. Code written from one page fails against the other.
@@ -210,6 +218,7 @@ Access date for every quote below: 2026-10-18.
 
 ### 8. AssemblyAI Voice Agent API: a per-call greeting needs a new stored agent per call
 
+- **Task attempted:** Make the agent's first words a per-call AI disclosure that names the owner.
 - **Tool and version:** AssemblyAI Voice Agent API, no version published. Pages `greeting.md`, `connect-your-own-llm.md` and `events-reference.md`, fetched with `curl` on 2026-10-18.
 - **Date:** 2026-10-18, workaround in `41fb071`.
 - **Severity:** Low. It is a design limit with a workaround, at the cost of one API call per phone call.
@@ -229,7 +238,8 @@ These bugs were in our code. We list them so judges can see the whole path. We d
 
 ### A. A `PORT` override without `PUBLIC_BASE_URL` returns `forbidden_origin`
 
-- **Version:** Ambient at `1bb0ca3`, Node v24.21.0.
+- **Task attempted:** Run the demo server on a non-default port.
+- **Version:** Ambient at `8330e91` (2026-10-12), when we noted it, and reproduced again at `1bb0ca3`. Node v24.21.0.
 - **Date:** 2026-10-12, note added in `8330e91`.
 - **Steps:** `PORT=3102 pnpm demo`, then request `/sim/api/state` with the browser's origin:
 
@@ -244,6 +254,7 @@ These bugs were in our code. We list them so judges can see the whole path. We d
 
 ### B. The `import.meta.url === \`file://${process.argv[1]}\`` entry guard never matches on Windows
 
+- **Task attempted:** Start the server from its ESM entry point on Windows.
 - **Version:** Node v24.21.0, Windows 11.
 - **Date:** 2026-10-18, fix `1ffda6a`.
 - **Steps:** Save this as `main.mjs` and run `node main.mjs`:
@@ -266,6 +277,7 @@ These bugs were in our code. We list them so judges can see the whole path. We d
 
 ### C. `findLast` does not type-check with `lib: ES2022`
 
+- **Task attempted:** Use `Array.prototype.findLast` with the repository's TypeScript library setting.
 - **Version:** TypeScript 5.9.3 (`pnpm exec tsc -v`), Node v24.21.0.
 - **Date:** 2026-10-18, fix `fab717c`.
 - **Steps:** Save `const turns: number[] = [1, 2, 3]; export const last = turns.findLast(n => n > 1);` as `fl.ts`, then run `pnpm exec tsc --noEmit --target ES2022 --lib ES2022 fl.ts`.
