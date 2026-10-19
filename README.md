@@ -6,15 +6,13 @@ Ambient negotiates under your limit, asks you again when the business counters, 
 
 **Status today.** No live call has happened. The demo runs this whole flow against a simulated business and a simulated Alexa+ host. The voice line, the Claude brain, and the Alexa skill are built but have not run live. See [What is real and what is simulated](#what-is-real-and-what-is-simulated) and [Limits](#limits-stated-plainly).
 
-| | Who places the call | Says it is an AI | Negotiates under the owner's limit | Asks the owner again on a counter | Refuses an unclear yes |
-|---|---|---|---|---|---|
-| Google Duplex | The Assistant, for a client | No fetched source shows an "I am an AI" line. Later calls name Google and the recording | Not described | Not described | Not described |
-| Pixel Hold for Me | The user | Not described | Not described | Not described | Not described |
-| Pixel Call Screen | A caller, to the user | Not described | Not described | Not described | Not described |
-| Apple Call Screening and Hold Assist | The user (Hold Assist) or a caller (Call Screening) | Not described | Not described | Not described | Not described |
-| Ambient | An AI agent, on the owner's request | Yes, the first words of the call | Yes in the demo, through the scripted brain and the call reducer. The Claude brain has not run live | Yes in the demo | Yes, in the call reducer |
+| | Google Duplex | Pixel Hold for Me | Ambient |
+|---|---|---|---|
+| Who places the call | The Assistant, for a client | The user | An AI agent, on the owner's request |
+| What the business hears about the caller | Tested wording names Google and the recording. No fetched source shows an "I am an AI" line | "Hold for Me will inform them you're returning and notify you that they're ready." The spoken string is unverified | "Hi, this is an AI assistant calling for Maya. This call is transcribed." as the first words, in the demo. The live line has not run |
+| What it does that Ambient does not | Works over a real phone network | Waits in hold queues | Not applicable |
 
-The cells come from the pages fetched on 2026-10-18 and recorded in the [reference bar](docs/plans/2026-10-18-handle-the-call/reference-bar.md). "Not described" means those pages do not say.
+The cells come from the pages fetched on 2026-10-18. The [reference bar](docs/plans/2026-10-18-handle-the-call/reference-bar.md#5-full-comparison-table) holds the sources and the full table, which adds Pixel Call Screen and Apple's Call Screening and Hold Assist.
 
 ![The simulated call, 21 seconds: Ambient discloses it is an AI, the owner offers $150, Joe counters at $160, the owner approves, Joe answers the read-back with "Yes, plus parts.", Ambient asks for one total, and the call books](docs/media/demo.gif)
 
@@ -59,6 +57,9 @@ pnpm demo
 The end of the same run, from the call transcript:
 
 ```text
+  Maya: Approved: one hundred sixty dollars for Tuesday the 20th at 10 am
+  Ambient: Thanks for waiting. Maya says one sixty is fine. Please go ahead and book Tuesday at ten.
+  Joe's Plumbing: Hmm, one sixty. Alright, that works. I'll put you down for Tuesday the 20th at 10 am.
   Ambient: Just to confirm: one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?
   Joe's Plumbing: Yes, plus parts.
   Ambient: Sorry, I need one total price. What is the total with parts?

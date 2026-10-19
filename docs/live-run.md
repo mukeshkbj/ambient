@@ -32,6 +32,33 @@ Then:
 3. Open `http://127.0.0.1:3000/sim`, press "Call Joe's Plumbing", and open the "Answer as the business" link on a phone. Speak as the business.
 4. When the call ends, stop the server and the tunnel.
 
+## Owner script for the first live call
+
+Do these steps in this order.
+
+1. Start the tunnel: `cloudflared tunnel --url http://127.0.0.1:3000`. Copy its `https` URL into `PUBLIC_BASE_URL` in `.env`.
+2. Run `pnpm call`.
+3. Open `http://127.0.0.1:3000/sim` and press "Call Joe's Plumbing". Open the "Answer as the business" link on a phone.
+4. Start a screen recording with a visible clock. Listen for the greeting.
+5. Say these three lines as the business, one at a time. Wait for Ambient to finish each reply.
+   1. "Joe's Plumbing, this is Joe. How can I help?"
+   2. "We can come Tuesday the twentieth at ten, for one hundred fifty."
+   3. "Yes, that's right."
+6. Stop the server and the tunnel. Fill in the results table below.
+
+The first line starts the clock for the time to first word. The third line answers the read-back. A live call may word its replies differently from the demo. If Ambient asks the owner a question, answer it on `/sim`.
+
+## Results table
+
+Fill in each cell after the call. Every cell is empty until then.
+
+| What to record | Result |
+|---|---|
+| Time to first word (seconds from the end of line 1 to the start of Ambient's reply audio) | _not run_ |
+| The captured request file (`.ambient-live/captures/llm-request-<call id>.json` exists: yes or no) | _not run_ |
+| The agent id field (`agent_id` or `id`) | _not run_ |
+| The per-call greeting played word for word (yes or no) | _not run_ |
+
 Notes that cost time otherwise:
 
 - `cp .env.example .env` also works: empty lines count as unset, and a test (`test/config.test.ts`) starts the config from the shipped example.

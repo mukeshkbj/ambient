@@ -226,6 +226,25 @@ Pattern: a real-user story, a plain stack list, an honest "Challenges" line, and
 
 ---
 
+## 5. Full comparison table
+
+The README shows Google Duplex and Pixel Hold for Me only. This is the full table. "Not described" means the pages fetched on 2026-10-18 do not say. Ambient cells describe the demo, not a live call.
+
+| | Who places the call | Says it is an AI | Negotiates under the owner's limit | Asks the owner again on a counter | Refuses an unclear yes |
+|---|---|---|---|---|---|
+| Google Duplex | The Assistant, for a client | No fetched source shows an "I am an AI" line. Later calls name Google and the recording | Not described | Not described | Not described |
+| Pixel Hold for Me | The user | Not described | Not described | Not described | Not described |
+| Pixel Call Screen | A caller, to the user | Not described | Not described | Not described | Not described |
+| Apple Call Screening and Hold Assist | The user (Hold Assist) or a caller (Call Screening) | Not described | Not described | Not described | Not described |
+| Ambient | An AI agent, on the owner's request | Yes, the first words of the call | Yes in the demo, through the scripted brain and the call reducer. The Claude brain has not run live | Yes in the demo | Yes, in the call reducer |
+
+What each product does that Ambient does not, from the sources above:
+
+- Duplex works over a real phone network. The Cafe Prague call was a real restaurant reservation [D5]. Ambient has no phone dial-out.
+- Hold for Me waits in hold queues for the user [G1]. Ambient does not wait in a hold queue.
+
+---
+
 ## Facts I could not verify
 
 1. Verbatim I/O restaurant call.

@@ -22,7 +22,7 @@ The read time is an estimate: 3 spoken words per second, plus 0.3 seconds betwee
 |---|---|---|---|---|
 | 1. The pain | 0:00 to 0:05 | 5 | 11 | 4.0 s |
 | 2. The ask | 0:05 to 0:13 | 8 | 16 | 5.6 s |
-| 3. The call and the haggle | 0:13 to 0:37 | 24 | 65 of 99 | 23.5 s |
+| 3. The call and the haggle | 0:13 to 0:37 | 24 | 56 of 99 | 20.2 s |
 | 4. Over the limit | 0:37 to 0:55 | 18 | 44 | 15.3 s |
 | 5. The owner counters | 0:55 to 1:20 | 25 | 59 of 101 | 21.5 s, plus a 3 s card hold |
 | 6. The read-back and a refusal | 1:20 to 1:36 | 16 | 32 | 11.6 s, plus the uncut hold on the refusal |
@@ -31,7 +31,7 @@ The read time is an estimate: 3 spoken words per second, plus 0.3 seconds betwee
 | 9. How it works | 2:04 to 2:14 | 10 | 22 | 7.3 s |
 | 10. End card | 2:14 to 2:21 | 7 | 0 | 0 |
 
-Beats 3 and 7 have the least slack. If a take runs long, cut the next line in this order: beat 3, Joe's "Sure, we can come" line; beat 7, Joe's "Fair enough" line.
+Beat 3 now has about 3.8 s of slack, because Joe's "Sure, we can come" line is cut by default. Beat 7 has the least slack. If a take runs long, cut Joe's "Fair enough" line in beat 7. If a take has room, restore Joe's "Sure, we can come" line in beat 3, which adds about 3.3 s and returns the estimate to 23.5 s.
 
 ## Beats
 
@@ -53,7 +53,7 @@ Beats 3 and 7 have the least slack. If a take runs long, cut the next line in th
 - Ambient: "Hi, this is an AI assistant calling for Maya. This call is transcribed." Keep it audible.
 - Joe: "Oh, okay. Joe's Plumbing, this is Joe. How can I help?"
 - Ambient: "Hi Joe. I'd like to book a visit to fix a leaking kitchen sink. The address is 12 Elm Street. When could you come?" **CUT** (24 words, about 8 s)
-- Joe: "Sure, we can come Tuesday the twentieth at ten."
+- Joe: "Sure, we can come Tuesday the twentieth at ten." **CUT** by default; optional. The day and time are stated in beat 4.
 - Ambient: "Tuesday the twentieth at ten works. What would it cost?" **CUT**
 - Joe: "It'll be one eighty for the call-out and the repair."
 - Ambient: "Hmm, okay. Is there any room on the price?"
@@ -76,6 +76,7 @@ Beats 3 and 7 have the least slack. If a take runs long, cut the next line in th
 - Echo Show: the card asks again, "Book $160 · Tells them yes" (`docs/media/sim-countered.png`). Hold it for about 3 s.
 - Alexa: "Joe's Plumbing turned down your offer and is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up." **CUT** (the card carries it)
 - Owner: "Alexa, tell Ambient approve." Or tap "Book $160". The owner approves a price over the limit on purpose; nothing above the limit books without this step.
+- Screen: the transcript shows the owner's note "Maya: Approved: one hundred sixty dollars for Tuesday the 20th at 10 am". It is not spoken.
 - Ambient, to Joe: "Thanks for waiting. Maya says one sixty is fine. Please go ahead and book Tuesday at ten." **CUT**
 - Joe: "Hmm, one sixty. Alright, that works. I'll put you down for Tuesday the 20th at 10 am."
 - Needs: HW for voice. None for the card taps.

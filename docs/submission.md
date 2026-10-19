@@ -15,6 +15,10 @@ Every household has calls nobody wants to make. The plumber. The dentist. The in
 
 This section describes the design. The demo runs all of it against a simulated business.
 
+Start with a call that does not book. At the read-back, the plumber answers "Yes, plus parts." Ambient does not treat that as a yes. It says "Sorry, I need one total price. What is the total with parts?" In another demo call, a dental office answers every read-back with "Probably, let me check with my manager." After three read-backs the call ends, and the outcome reads "unconfirmed. Bright Smile Dental never clearly confirmed it". Nothing is booked in either case.
+
+The plumber call then succeeds. After the plumber answers "Yes, that's right. See you then." to a second read-back, Alexa reports "Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars."
+
 You ask Alexa to call a business for the household. An AI agent makes the call. Its first words are an AI disclosure: "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else.
 
 The agent negotiates within a spending limit you set. When the business quotes over the limit, the agent puts the call on hold and asks you. The question reaches Echo devices as a spoken announcement and a notification. It also reaches the Echo Show as an MCP App card with "Book $180", "Offer $150" (your limit), and "Decline". If the business counters, the card asks you again before anything is booked. You can steer the call by voice at any point: "Alexa, tell Ambient offer one sixty."
@@ -89,7 +93,9 @@ A gated toolkit. The Alexa+ MCP toolkit and simulator were gated as of 2026-10-1
 
 ## Accomplishments
 
-The honesty rules live in a pure reducer, not in a prompt. Five test files enforce them: `test/call-session.test.ts`, `test/call-honesty.test.ts`, `test/read-back-replies.test.ts`, `test/call.test.ts`, and `test/caller.test.ts`. On 2026-10-19, `pnpm exec vitest list` on those files listed 550 tests. They include the 4,000-call property test and the 192-reply corpus. The whole suite listed 718 tests. The other 168 cover the rest, including voice, Alexa, and security. Run `pnpm exec vitest list` for the current count.
+The honesty rules live in a pure reducer, not in a prompt. Five test files enforce them: `test/call-session.test.ts`, `test/call-honesty.test.ts`, `test/read-back-replies.test.ts`, `test/call.test.ts`, and `test/caller.test.ts`. On 2026-10-19, those files listed 578 tests. They include the 4,000-call property test and the 192-reply corpus. The whole suite listed 756 tests. The other 178 cover the rest, including voice, Alexa, and security.
+
+How to verify: run `pnpm exec vitest list test/call-session.test.ts test/call-honesty.test.ts test/read-back-replies.test.ts test/call.test.ts test/caller.test.ts | grep -c "test/"` for the first count, and `pnpm exec vitest list | grep -c "test/"` for the second.
 
 Three adversarial reviews of the reducer and repeated structural review rounds, all by AI reviewers, tried to break the rules and the voice line. Each round is logged in the [progress log](../progress.md). Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
 
