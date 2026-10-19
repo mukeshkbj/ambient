@@ -141,6 +141,7 @@ pnpm call
 pnpm scan    # typecheck, eslint, knip, and the full test suite
 pnpm build
 pnpm smoke:mcp            # a full simulated call through /mcp
+pnpm call:dry             # the same call over the AssemblyAI voice-line code, against a local fake of AssemblyAI (no keys)
 python scripts/shots-sim.py   # every call state, light and dark, into docs/media/ (start pnpm demo with AMBIENT_DATA_DIR set to an empty directory first)
 pnpm brain:latency        # time to first word on Claude (needs ANTHROPIC_API_KEY)
 ```
@@ -162,7 +163,7 @@ pnpm brain:latency        # time to first word on Claude (needs ANTHROPIC_API_KE
 | Call reducer honesty rules (`src/calls/session.ts`) | Real | Table tests (`test/call-session.test.ts`), a 192-reply corpus (`test/read-back-replies.test.ts`), and a seeded property test over 4,000 generated calls (`test/call-honesty.test.ts`) |
 | Scripted brain and the demo business | Simulated | `simulatedLine` plays Joe's Plumbing in `pnpm demo`; every action is a real MCP tool call |
 | Claude brain (`claudeBrain` in `src/calls/brain.ts`) | Built but not yet run live | Tests against a stubbed stream (`test/brain.test.ts`); `pnpm brain:latency` has not run |
-| AssemblyAI voice line and chat-completions shim (`src/calls/rooms.ts`) | Built but not yet run live | `test/assemblyai-line.test.ts` and `test/call-routes.test.ts`; no live API call yet ([friction log](docs/friction-log.md)) |
+| AssemblyAI voice line and chat-completions shim (`src/calls/rooms.ts`) | Built but not yet run live | `pnpm call:dry` runs a full call over real sockets against a local fake of AssemblyAI (`scripts/fake-assemblyai.ts`), using the request shape we assume from the docs; `test/assemblyai-line.test.ts` and `test/call-routes.test.ts`; no live API call yet ([friction log](docs/friction-log.md)) |
 | Business answer page (`web/call`) | Built but not yet run live | Rendered screenshot `docs/media/call-business-ringing.png` |
 | Alexa custom skill on `/alexa` | Built but not yet run live | `test/alexa.test.ts`; needs a public HTTPS deploy and an Echo Dot |
 | Spoken cue and notification (`src/cue.ts`) | Built but not yet run live | `test/cue.test.ts`; needs a Voice Monkey token and Echo hardware |
