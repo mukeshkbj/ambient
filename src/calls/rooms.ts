@@ -69,12 +69,12 @@ export class CallRoom implements Line {
     return { ownerName: this.ownerName, ...(this.about ? { about: this.about } : {}) };
   }
 
-  async session(): Promise<{ token: string; agentId: string; ownerName: string; pageKey: string }> {
+  async session(): Promise<{ token: string; agentId: string; ownerName: string; pageKey: string; wsUrl: string }> {
     if (!this.agentId) throw new Error("This call is not ready yet");
     if (this.pageKeys.size >= 3) throw new Error("This call was already answered");
     const pageKey = randomUUID();
     this.pageKeys.add(pageKey);
-    return { token: await this.options.ai.mintToken(), agentId: this.agentId, ownerName: this.ownerName, pageKey };
+    return { token: await this.options.ai.mintToken(), agentId: this.agentId, ownerName: this.ownerName, pageKey, wsUrl: this.options.ai.wsUrl };
   }
 
   acceptsPage(key: string | undefined): boolean {

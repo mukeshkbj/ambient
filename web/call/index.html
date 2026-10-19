@@ -188,7 +188,7 @@ $("answer").onclick = async () => {
     const session = await post("/session").then(r => { if (!r.ok) throw new Error("This call is no longer available."); return r.json(); });
     call.pageKey = session.pageKey;
     $("why").textContent = `Calling for ${session.ownerName}. This call is transcribed.`;
-    const url = new URL("wss://agents.assemblyai.com/v1/ws");
+    const url = new URL(session.wsUrl);
     url.searchParams.set("token", session.token);
     const ws = new WebSocket(url);
     call.ws = ws;

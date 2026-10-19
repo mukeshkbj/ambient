@@ -496,7 +496,7 @@ export async function startFromEnvironment(env: Record<string, string | undefine
     throw new Error("ASSEMBLYAI_API_KEY is set, so PUBLIC_BASE_URL must be a public https URL that AssemblyAI can reach");
   }
   const rooms = config.assemblyAi
-    ? new CallRooms({ ai: assemblyAi({ apiKey: config.assemblyAi.apiKey }), publicBaseUrl: config.publicBaseUrl, ...(config.assemblyAi.voice ? { voice: config.assemblyAi.voice } : {}) })
+    ? new CallRooms({ ai: assemblyAi({ apiKey: config.assemblyAi.apiKey, ...(config.assemblyAi.apiBase ? { apiBase: config.assemblyAi.apiBase } : {}) }), publicBaseUrl: config.publicBaseUrl, ...(config.assemblyAi.voice ? { voice: config.assemblyAi.voice } : {}) })
     : undefined;
   const registry = buildRuntimeRegistry(config, env, store, rooms ? { rooms } : {});
   const auth = config.oauth ? new OAuthProvider(config.oauth) : undefined;

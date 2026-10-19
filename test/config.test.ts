@@ -30,6 +30,13 @@ describe("readConfig", () => {
     });
   });
 
+  it("reads an optional AssemblyAI API base next to the key", () => {
+    const runtimes = runtimesFile([planner]);
+    expect(readConfig({ AMBIENT_RUNTIMES_FILE: runtimes, ASSEMBLYAI_API_KEY: "k" }).assemblyAi).toEqual({ apiKey: "k" });
+    expect(readConfig({ AMBIENT_RUNTIMES_FILE: runtimes, ASSEMBLYAI_API_KEY: "k", ASSEMBLYAI_API_BASE: "http://127.0.0.1:4000/v1/" }).assemblyAi)
+      .toEqual({ apiKey: "k", apiBase: "http://127.0.0.1:4000/v1" });
+  });
+
   it("requires at least one runtime", () => {
     expect(() => readConfig({ AMBIENT_RUNTIMES_FILE: "/nonexistent/runtimes.json" })).toThrow("At least one runtime");
   });

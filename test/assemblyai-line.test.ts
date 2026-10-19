@@ -49,6 +49,19 @@ describe("assemblyAi", () => {
     expect(sent[0]).toMatchObject({ method: "GET", headers: { authorization: "Bearer aai-key" } });
     expect(sent[0]?.url).toMatch(/^https:\/\/agents\.assemblyai\.com\/v1\/token\?expires_in_seconds=60&max_session_duration_seconds=1800$/);
   });
+
+  it("sends every request to the configured base and names the matching websocket", async () => {
+    const sent: Sent[] = [];
+    const ai = assemblyAi({ apiKey: "aai-key", apiBase: "http://127.0.0.1:9/v1", fetch: fakeFetch(sent) });
+    await ai.mintToken();
+    await ai.retireAgent("agent-1");
+    expect(sent.map(item => item.url)).toEqual([
+      "http://127.0.0.1:9/v1/token?expires_in_seconds=60&max_session_duration_seconds=1800",
+      "http://127.0.0.1:9/v1/agents/agent-1"
+    ]);
+    expect(ai.wsUrl).toBe("ws://127.0.0.1:9/v1/ws");
+    expect(assemblyAi({ apiKey: "k" }).wsUrl).toBe("wss://agents.assemblyai.com/v1/ws");
+  });
 });
 
 describe("CallRooms line", () => {
@@ -75,7 +88,7 @@ describe("CallRooms line", () => {
     const { rooms, line, inputs } = setup();
     await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
     const room = rooms.room("call-1")!;
-    expect(await room.session()).toMatchObject({ token: "tok-1", agentId: "agent-1", ownerName: "Maya" });
+    expect(await room.session()).toMatchObject({ token: "tok-1", agentId: "agent-1", ownerName: "Maya", wsUrl: "wss://agents.assemblyai.com/v1/ws" });
     room.pageEvent({ type: "ready" });
     expect(inputs).toEqual([{ kind: "answered" }]);
   });

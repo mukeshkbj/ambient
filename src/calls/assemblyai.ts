@@ -1,4 +1,4 @@
-const API = "https://agents.assemblyai.com/v1";
+const DEFAULT_API = "https://agents.assemblyai.com/v1";
 
 export type AiFetch = (
   url: string,
@@ -8,6 +8,7 @@ export type AiFetch = (
 type AgentSpec = { name: string; greeting: string; systemPrompt: string; voice: string; baseUrl: string; secret: string };
 
 export type AssemblyAi = {
+  readonly wsUrl: string;
   mintToken(): Promise<string>;
   createAgent(spec: AgentSpec): Promise<string>;
   retireAgent(id: string): Promise<void>;
@@ -17,9 +18,11 @@ async function failed(response: { status: number; text(): Promise<string> }, wha
   return new Error(`AssemblyAI ${what} failed (${response.status}): ${(await response.text()).slice(0, 200)}`);
 }
 
-export function assemblyAi(options: { apiKey: string; fetch?: AiFetch }): AssemblyAi {
+export function assemblyAi(options: { apiKey: string; apiBase?: string; fetch?: AiFetch }): AssemblyAi {
   const send = options.fetch ?? fetch;
+  const API = options.apiBase ?? DEFAULT_API;
   return {
+    wsUrl: `${API.replace(/^http/, "ws")}/ws`,
     async mintToken() {
       const response = await send(`${API}/token?expires_in_seconds=60&max_session_duration_seconds=1800`, {
         method: "GET",

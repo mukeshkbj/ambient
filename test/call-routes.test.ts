@@ -53,7 +53,7 @@ describe("call routes", () => {
   it("hands the page a session and accepts events only with that session's key", async () => {
     const { base, inputs } = await start();
     const session = await (await fetch(`${base}/session`, { method: "POST" })).json() as { pageKey: string };
-    expect(session).toEqual({ token: "tok", agentId: "agent-9", ownerName: "Maya", pageKey: expect.stringMatching(/^[0-9a-f-]{36}$/) });
+    expect(session).toEqual({ token: "tok", agentId: "agent-9", ownerName: "Maya", pageKey: expect.stringMatching(/^[0-9a-f-]{36}$/), wsUrl: "wss://agents.assemblyai.com/v1/ws" });
     const event = (body: string, key = session.pageKey) => fetch(`${base}/event`, { method: "POST", headers: { "x-page-key": key }, body });
     expect((await event(JSON.stringify({ type: "ended" }), "wrong")).status).toBe(403);
     expect((await fetch(`${base}/event`, { method: "POST", body: JSON.stringify({ type: "ended" }) })).status).toBe(403);
