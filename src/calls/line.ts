@@ -5,6 +5,7 @@ export type Line = {
   dial(to: PhoneNumber, callId: string, ownerName: string, about?: string): Promise<void>;
   say(text: string, last: boolean): void;
   hangUp(): void;
+  receipt?(text: string): void;
   onInput(listener: (input: LineInput) => void): () => void;
 };
 

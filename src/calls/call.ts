@@ -1,5 +1,6 @@
 import type { AssistantEvent } from "../runtimes/types.js";
 import type { Brain } from "./brain.js";
+import { lines } from "./language.js";
 import type { Line } from "./line.js";
 import { startCall, step, type CallState } from "./session.js";
 import type { CallBrief, CallEffect, CallInput } from "./types.js";
@@ -101,6 +102,11 @@ export function runCall(options: RunCallOptions): CallHandle {
       draining = false;
     }
     if (state.phase.kind === "ended") {
+      const outcome = state.phase.outcome;
+      if (outcome.kind === "confirmed") {
+        const { brief } = options;
+        options.line.receipt?.(lines(brief.language).receipt(brief.ownerName, outcome.amountUsd, brief.language === "es" ? outcome.spokenWhen : outcome.when));
+      }
       clearInterval(tick);
       thinking?.abort();
       unsubscribe();

@@ -17,7 +17,10 @@ export type Lines = {
   checking(owner: string, again: boolean): string;
   holding(owner: string): string[];
   unreachable(owner: string, disclosed: boolean): string;
+  receipt(owner: string, amountUsd: number | undefined, when: string | undefined): string;
 };
+
+const usd = (amount: number) => `$${Number.isInteger(amount) ? amount : amount.toFixed(2)}`;
 
 const ENGLISH: Lines = {
   disclosure: owner => `Hi, this is an AI assistant calling for ${owner}. This call is transcribed.`,
@@ -35,7 +38,8 @@ const ENGLISH: Lines = {
   noDeal: "Okay, no worries. Thanks for your time, bye.",
   checking: (owner, again) => again ? `Sorry, one more moment, let me check with ${owner}.` : `One moment, let me check with ${owner}.`,
   holding: owner => [`Still checking with ${owner}, thanks for holding.`, `Still here. ${owner} hasn't answered yet.`, `Sorry, one more moment with ${owner}.`],
-  unreachable: (owner, disclosed) => `${disclosed ? "" : `${ENGLISH.disclosure(owner)} `}I'm sorry, I can't reach ${owner} right now. I'll tell ${owner} you were holding. Thank you, goodbye.`
+  unreachable: (owner, disclosed) => `${disclosed ? "" : `${ENGLISH.disclosure(owner)} `}I'm sorry, I can't reach ${owner} right now. I'll tell ${owner} you were holding. Thank you, goodbye.`,
+  receipt: (owner, amount, when) => `Booked for ${owner}: ${[amount !== undefined ? `${usd(amount)} total` : "no price set", when].filter(Boolean).join(", ")}.`
 };
 
 const SPANISH: Lines = {
@@ -54,7 +58,8 @@ const SPANISH: Lines = {
   noDeal: "Muy bien, gracias por su tiempo. Adiós.",
   checking: (owner, again) => again ? `Perdón, un momento más, lo consulto con ${owner}.` : `Un momento, lo consulto con ${owner}.`,
   holding: owner => [`Sigo consultando con ${owner}, gracias por esperar.`, `Sigo aquí. ${owner} todavía no responde.`, `Perdón, un momento más con ${owner}.`],
-  unreachable: (owner, disclosed) => `${disclosed ? "" : `${SPANISH.disclosure(owner)} `}Lo siento, no puedo comunicarme con ${owner} ahora. Le diré a ${owner} que usted esperó. Gracias, adiós.`
+  unreachable: (owner, disclosed) => `${disclosed ? "" : `${SPANISH.disclosure(owner)} `}Lo siento, no puedo comunicarme con ${owner} ahora. Le diré a ${owner} que usted esperó. Gracias, adiós.`,
+  receipt: (owner, amount, when) => `Reservado para ${owner}: ${[amount !== undefined ? `${usd(amount)} en total` : "sin precio fijo", when].filter(Boolean).join(", ")}.`
 };
 
 export function lines(language: Language | undefined): Lines {

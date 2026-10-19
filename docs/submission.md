@@ -25,6 +25,8 @@ Ambient can also call around. "Get quotes from plumbers to fix the kitchen sink,
 
 Every booking keeps its proof: the full read-back the business heard and the reply that booked it, each with its time. The booked card quotes both lines. In the simulator, "Hear them say yes" replays them. A live call does not record audio yet.
 
+The business gets a receipt too. When a call books, the business's call page shows "Booked for Maya: $160 total, Tuesday the 20th at 10 am.", in the business's language. A business that says "take us off your list" is never called again.
+
 If a call ends without a booking, the owner says "call them again". Ambient redials the same business with the original job, and never redials a call that booked or one that is still going.
 
 You ask Alexa to call a business for the household. An AI agent makes the call. Its first words are an AI disclosure: "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else.

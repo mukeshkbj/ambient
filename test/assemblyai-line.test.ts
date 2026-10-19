@@ -293,6 +293,15 @@ describe("CallRooms line", () => {
     expect(rooms.room("call-1")).toBeUndefined();
   });
 
+  it("passes the booking receipt to the business's page", async () => {
+    const { rooms, line } = setup();
+    await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
+    const page: PageEvent[] = [];
+    rooms.room("call-1")!.attach(event => page.push(event));
+    line.receipt?.("Booked for Maya: $160 total, Tuesday the 20th at 10 am.");
+    expect(page).toContainEqual({ type: "receipt", text: "Booked for Maya: $160 total, Tuesday the 20th at 10 am." });
+  });
+
   it("ends with no answer when nobody opens the link in time", async () => {
     const sent: Sent[] = [];
     const rooms = new CallRooms({ ai: assemblyAi({ apiKey: "k", fetch: fakeFetch(sent) }), publicBaseUrl: "https://a.example.com", joinTimeoutMs: 20 });

@@ -23,8 +23,10 @@ function start(persona: BusinessPersona = JOES_PLUMBING, brain: Brain = scripted
     spoken.push(text);
     say(text, last);
   };
+  const receipts: string[] = [];
+  line.receipt = text => receipts.push(text);
   const call = runCall({ brief, callId: "call-1", line, brain, emit: event => events.push(event), tickMs: 5, log: () => {} });
-  return { call, events, spoken };
+  return { call, events, spoken, receipts };
 }
 
 async function until(call: CallHandle, phase: string): Promise<void> {
@@ -87,6 +89,19 @@ describe("runCall with the simulated line", () => {
     expect(texts[plus + 1]).toBe("agent: Sorry, I need one total price. What is the total with parts?");
     expect(texts.slice(plus).some(text => text.startsWith("agent: Let me say it back, one hundred eighty dollars total"))).toBe(true);
     expect(final.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 180 } });
+  });
+
+  it("leaves the business a receipt of what it confirmed, and none when nothing was booked", async () => {
+    const booked = start();
+    await until(booked.call, "waiting_for_owner");
+    booked.call.ownerDecided(String(approvalRequest(booked.events)?.payload.requestId), "once");
+    await booked.call.done;
+    expect(booked.receipts).toEqual(["Booked for Maya: $180 total, Tuesday the 20th at 10 am."]);
+    const declined = start();
+    await until(declined.call, "waiting_for_owner");
+    declined.call.ownerDecided(String(approvalRequest(declined.events)?.payload.requestId), "deny");
+    await declined.call.done;
+    expect(declined.receipts).toEqual([]);
   });
 
   it("ends without a deal when the owner declines", async () => {

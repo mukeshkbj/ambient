@@ -4,7 +4,7 @@ import type { Line } from "./line.js";
 import { disclosure } from "./rules.js";
 import type { LineInput, PhoneNumber } from "./types.js";
 
-export type PageEvent = { type: "speak" } | { type: "hangup" };
+export type PageEvent = { type: "speak" } | { type: "hangup" } | { type: "receipt"; text: string };
 export type PageReport = { type: "ready" } | { type: "interrupted"; spokenSoFar: string } | { type: "played"; text: string } | { type: "ended" };
 export type ChatWriter = { write(chunk: string): void; end(): void };
 
@@ -158,6 +158,10 @@ export class CallRoom implements Line {
     }
     this.notify({ type: "hangup" });
     setTimeout(() => this.finish("hangup"), this.options.hangUpTimeoutMs ?? 20_000).unref();
+  }
+
+  receipt(text: string): void {
+    this.notify({ type: "receipt", text });
   }
 
   onInput(listener: (input: LineInput) => void): () => void {
