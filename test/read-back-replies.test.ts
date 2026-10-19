@@ -260,3 +260,13 @@ describe("round 11 review findings", () => {
     expect(agreesTo(text, "two hundred dollars total, Friday at 7", 200, "Friday at 7")).toBe(false);
   });
 });
+
+describe("round 21 review recommendations", () => {
+  it.each(["Yes, ٢٢.", "Yes, २२", "Yes, 二十二", "Yes, que sí"])("does not book a reply with digits or letters outside plain English: %s", reply => {
+    expect(agreesTo(reply, "one hundred dollars total, Tuesday the 20th at 10 am", 100, "Tuesday the 20th at 10 am")).toBe(false);
+  });
+
+  it.each(["Yes, 10 a.m.", "Yes, 10am.", "Yes, 10:00 a.m.", "Yes, ten A.M."])("books a speech-to-text spelling of am: %s", reply => {
+    expect(agreesTo(reply, "one hundred dollars total, Tuesday at 10 am", 100, "Tuesday at 10 am")).toBe(true);
+  });
+});

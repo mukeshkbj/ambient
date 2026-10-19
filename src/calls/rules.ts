@@ -178,6 +178,8 @@ function plainWords(text: string): string {
     .normalize("NFKC")
     .replace(/[’‘]/g, "'")
     .toLowerCase()
+    .replace(/\b([ap])\.m\b\.?/g, "$1m")
+    .replace(/(\d)(am|pm)\b/g, "$1 $2")
     .replace(/(\d),(?=\d{3}\b)/g, "$1")
     .replace(/(\d+):00\b/g, "$1")
     .replace(/[,;!]/g, " | ")
@@ -203,6 +205,7 @@ function numberRuns(tokens: string[]): string[][] {
 
 export function agreesTo(reply: string, terms: string, amountUsd: number | undefined, when?: string, line?: string): boolean {
   if (reply.includes("?")) return false;
+  if (/[^\p{ASCII}]/u.test(reply.normalize("NFKC").replace(/[’‘“”…–—]/g, ""))) return false;
   const echoed = plainWords(reply).replaceAll("|", " ").replace(/\s+/g, " ").trim();
   if (line && echoed.includes(" ") && plainWords(line).replaceAll("|", " ").replace(/\s+/g, " ").includes(echoed)) return false;
   const words = plainWords(reply);
