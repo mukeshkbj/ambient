@@ -156,6 +156,10 @@ export async function runCallDry(options: { log?: (line: string) => void } = {})
     const clip = (await client.callTool({ name: "hear_proof", arguments: { taskId } }) as { structuredContent?: { url?: string; fromMs?: number; toMs?: number } }).structuredContent;
     check(clip?.url?.endsWith("/audio.ogg") && clip.fromMs !== undefined && clip.toMs !== undefined && clip.fromMs > 0 && clip.toMs > clip.fromMs, `hear_proof did not return a clip of the recording: ${JSON.stringify(clip)}`);
     log(transcript.join("\n"));
+    const turns = [...fake.firstWordMs].sort((a, b) => a - b);
+    const at = (share: number) => turns[Math.min(turns.length - 1, Math.ceil(share * turns.length) - 1)]!.toFixed(0);
+    check(turns.length > 0, "no turn reached the chat endpoint");
+    log(`call:dry: our endpoint's time to the first word, over ${turns.length} turns with the scripted brain and no network: p50 ${at(0.5)} ms, p95 ${at(0.95)} ms, max ${at(1)} ms. A live call adds Claude's time to the first token and AssemblyAI's speech time on top.`);
     log(`call:dry: ok, the disclosure came first, the owner was asked at one hundred eighty dollars, "Yes, plus parts." was refused, the call confirmed at one hundred eighty dollars, and hear_proof found the read-back and the yes in the recording`);
     return { transcript, summary, requestShape: REQUEST_SHAPE };
   } finally {

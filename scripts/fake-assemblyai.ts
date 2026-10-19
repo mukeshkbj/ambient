@@ -15,6 +15,7 @@ type Recorded = { agentId: string; startedAt: number; turns: { agent_text: strin
 export type FakeAssemblyAi = {
   apiBase: string;
   transcript: string[];
+  firstWordMs: number[];
   agents: Map<string, Agent>;
   close(): Promise<void>;
 };
@@ -45,8 +46,9 @@ export async function sseData(response: Response, onData: (data: string) => void
   }
 }
 
-async function completion(agent: Agent, history: Session["history"]): Promise<string> {
+async function completion(agent: Agent, history: Session["history"], firstWordMs: number[]): Promise<string> {
   const llm = agent.llm[0]!;
+  const asked = performance.now();
   const response = await fetch(`${llm.base_url}/chat/completions`, {
     method: "POST",
     headers: { authorization: `Bearer ${llm.api_key}`, "content-type": "application/json" },
@@ -56,7 +58,9 @@ async function completion(agent: Agent, history: Session["history"]): Promise<st
   let text = "";
   await sseData(response, data => {
     if (data === "[DONE]") return;
-    text += (JSON.parse(data) as { choices: { delta: { content?: string } }[] }).choices[0]?.delta.content ?? "";
+    const words = (JSON.parse(data) as { choices: { delta: { content?: string } }[] }).choices[0]?.delta.content ?? "";
+    if (words && !text) firstWordMs.push(performance.now() - asked);
+    text += words;
   });
   return text;
 }
@@ -66,6 +70,7 @@ export async function startFakeAssemblyAi(options: { apiKey: string; persona: Bu
   const recorded = new Map<string, Recorded>();
   const tokens = new Set<string>();
   const transcript: string[] = [];
+  const firstWordMs: number[] = [];
   const sockets = new Set<WebSocket>();
   const pauseMs = options.pauseMs ?? 40;
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -151,7 +156,7 @@ export async function startFakeAssemblyAi(options: { apiKey: string; persona: Bu
     };
     const agentReplies = async () => {
       const current = session!;
-      const text = await completion(current.agent, current.history);
+      const text = await completion(current.agent, current.history, firstWordMs);
       if (!text) return;
       current.history.push({ role: "assistant", content: text });
       speak(text);
@@ -188,6 +193,7 @@ export async function startFakeAssemblyAi(options: { apiKey: string; persona: Bu
   return {
     apiBase: `http://127.0.0.1:${(http.address() as AddressInfo).port}/v1`,
     transcript,
+    firstWordMs,
     agents,
     close: async () => {
       for (const ws of sockets) ws.terminate();
