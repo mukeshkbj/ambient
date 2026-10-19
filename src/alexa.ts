@@ -202,6 +202,8 @@ function activeCall(registry: RuntimeRegistry, attributes: Record<string, unknow
   return run ? { entry, run } : undefined;
 }
 
+const RECENT_CALL_MS = 60 * 60 * 1000;
+
 function lastCall(registry: RuntimeRegistry, attributes: Record<string, unknown>): ActiveCall | undefined {
   const entry = defaultEntry(registry);
   const run = entry && (hintedRun(entry, attributes) ?? entry.engine.listRuns(1)[0]);
@@ -320,6 +322,9 @@ export async function handleAlexaRequest(input: unknown, dependencies: AlexaSkil
   if (type === "LaunchRequest") {
     const live = activeCall(dependencies.registry, attributes);
     if (live) return response(callStatus(live), runAttributes(attributes, live.run), false, true);
+    const last = lastCall(dependencies.registry, attributes);
+    const recent = last && Date.now() - Date.parse(last.run.updatedAt) < RECENT_CALL_MS && (last.run.status === "failed" || last.run.outcome !== undefined);
+    if (last && recent) return response(callStatus(last), runAttributes(attributes, last.run));
     return response("Who should I call? You can say: call Joe's Plumbing to fix the kitchen sink.", attributes);
   }
   if (type === "SessionEndedRequest") return response("Goodbye.", attributes, true);

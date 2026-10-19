@@ -187,11 +187,13 @@ function confirm(state: CallState, proposed: Confirmed, now: string): Transition
   const { brief } = state;
   const owner = brief.ownerName;
   if (outcome.when !== undefined && !plainTime(outcome.when)) {
-    const ask = "Sorry, could you give me just the day and time?";
+    const asks = ["Sorry, could you give me just the day and time?", "Sorry, I missed that. What day and time?"];
     const flushed = flushDraft(state, now);
-    if (flushed.turns.filter(turn => turn.speaker === "agent" && turn.text === ask).length >= 2) {
+    const asked = flushed.turns.filter(turn => turn.speaker === "agent" && asks.includes(turn.text)).length;
+    const ask = asks[Math.min(asked, asks.length - 1)]!;
+    if (asked >= 2) {
       const line = `I'll have ${brief.ownerName} follow up to confirm. Thanks for your time, goodbye.`;
-      return end(withTurn(flushed, "agent", line, now), { kind: "unconfirmed", reason: `${brief.business.name} never gave a clear day and time` }, [say(line), { kind: "hang_up" }]);
+      return end(withTurn(flushed, "agent", line, now), { kind: "unconfirmed", reason: "they never gave a clear day and time" }, [say(line), { kind: "hang_up" }]);
     }
     return { state: { ...withTurn(flushed, "agent", ask, now), readBack: undefined }, effects: [say(ask)] };
   }
@@ -217,7 +219,7 @@ function confirm(state: CallState, proposed: Confirmed, now: string): Transition
   const flushed = flushDraft(state, now);
   if (state.readBacks >= 3 || state.readBacksSpoken >= 5) {
     const line = `I'll have ${owner} follow up to confirm. Thanks for your time, goodbye.`;
-    return end(withTurn(flushed, "agent", line, now), { kind: "unconfirmed", reason: `${brief.business.name} never clearly confirmed it` }, [say(line), { kind: "hang_up" }]);
+    return end(withTurn(flushed, "agent", line, now), { kind: "unconfirmed", reason: "they never clearly confirmed it" }, [say(line), { kind: "hang_up" }]);
   }
   const when = outcome.when ? `, ${outcome.when}` : "";
   const terms = charge !== undefined ? `${price(charge)} total${when}` : `no price is set${when}`;

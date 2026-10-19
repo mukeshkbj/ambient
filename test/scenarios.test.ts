@@ -16,7 +16,7 @@ describe("scenarios through the real reducer", () => {
 
   it("ends unconfirmed after three hedged read-backs and never books", async () => {
     const { outcome, transcript } = await runScenario(named(/hedg/i));
-    expect(outcome).toEqual({ kind: "unconfirmed", reason: "Bright Smile Dental never clearly confirmed it" });
+    expect(outcome).toEqual({ kind: "unconfirmed", reason: "they never clearly confirmed it" });
     expect(transcript.filter(line => line.startsWith("Ambient: ") && /^Ambient: (Just to confirm|Let me check once more|Once more):/.test(line))).toHaveLength(3);
   });
 

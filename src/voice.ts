@@ -24,6 +24,8 @@ export function titleFor(instruction: string): string {
   return title || "new task";
 }
 
+const UNREACHED = new Set(["nobody picked up", "the line was busy", "the call didn't connect", "the line ended before they answered"]);
+
 const CALENDAR_DATE = /\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|\d{1,2}\/\d{1,2}|\bthe (?:\d{1,2}(?:st|nd|rd|th)|(?:twenty|thirty)?-? ?(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth)|tenth|eleventh|twelfth|thirteenth|fourteenth|fifteenth|sixteenth|seventeenth|eighteenth|nineteenth|twentieth|thirtieth)\b/i;
 
 function clampSentences(value: string, max = 2): string {
@@ -105,7 +107,15 @@ export function speak(view: RunView, ctx: SpeakContext): string {
         const undated = outcome.when && !CALENDAR_DATE.test(outcome.when) ? " They gave a day but no date, so check which one." : "";
         return `${clampSentences(outcome.summary, 1)}${undated}`;
       }
-      if (outcome?.kind === "unconfirmed") return `${callee(view) ?? "The call"} wasn't confirmed: ${stripEnd(outcome.reason)}. Nothing is booked. Say call, followed by who to call, to try again.`;
+      if (outcome?.kind === "unconfirmed") {
+        const business = callee(view);
+        const reason = stripEnd(outcome.reason);
+        const unreached = UNREACHED.has(reason);
+        const retry = `To try again, say, for example, call ${business ?? "Joe's Plumbing"}.`;
+        return unreached
+          ? `${business ?? "The business"} wasn't reached: ${reason}. Nothing is booked. ${retry}`
+          : `${business ?? "The business"} didn't confirm: ${reason}. I can't confirm a booking, so check with them before you call again.`;
+      }
       const declined = outcome && /^\S+ declined (.+)$/.exec(outcome.reason);
       if (declined) return `You said no to ${stripEnd(declined[1]!)}, so I ended the call. Nothing is booked.`;
       if (outcome) return clampSentences(`${stripEnd(outcome.reason)}.`);

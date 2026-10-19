@@ -290,7 +290,7 @@ describe("round 2 review findings", () => {
   it("stops after three unanswered read-backs and ends unconfirmed", () => {
     const first = play([answered, heard("Hmm"), confirm(120), playedBack, heard("Hmm"), confirm(120), playedBack, heard("Hmm"), confirm(120), playedBack]);
     const { state, effects } = play([heard("Hmm"), confirm(120)], first.state);
-    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "unconfirmed", reason: "Joe's Plumbing never clearly confirmed it" } });
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "unconfirmed", reason: "they never clearly confirmed it" } });
     expect(kinds(effects)).toContain("hang_up");
   });
 
@@ -960,7 +960,7 @@ describe("time re-ask cap", () => {
   it("ends unconfirmed after the business twice gives a time that is not plain", () => {
     const vague = confirm(100, "ok", "Friday at 3, ask for Sam");
     const { state, effects } = play([answered, heard("It's 100"), vague, heard("Friday at 3, ask for Sam"), vague, heard("Like I said, ask for Sam"), vague], undefined, { ...brief, maxUsd: 300 });
-    expect(spoken(effects).filter(line => line === "Sorry, could you give me just the day and time?")).toHaveLength(2);
+    expect(spoken(effects).filter(line => line.startsWith("Sorry, ") && /day and time/.test(line))).toEqual(["Sorry, could you give me just the day and time?", "Sorry, I missed that. What day and time?"]);
     expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "unconfirmed" } });
   });
 });

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 export type Cue = {
-  needsYou(question: string): Promise<void>;
+  needsYou(text: string, kind?: "ask" | "result"): Promise<void>;
 };
 
 export type CueFetch = (
@@ -18,14 +18,14 @@ const TOKEN_REFRESH_MARGIN_MS = 60 * 1000;
 export function voiceMonkeyCue(options: { token: string; device: string; fetch?: CueFetch }): Cue {
   const send = options.fetch ?? fetch;
   return {
-    async needsYou(question) {
+    async needsYou(question, kind = "ask") {
       const result = await send(VOICE_MONKEY_ANNOUNCE_URL, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           token: options.token,
           device: options.device,
-          speech: `${question.replace(/\s*Say [^.?!]*[.?!]$/, "")} To answer, say: Alexa, open Ambient.`
+          speech: `${question.replace(/\s*(?:Say|To try) [^.?!]*[.?!]$/, "")} ${kind === "result" ? "For details" : "To answer"}, say: Alexa, open Ambient.`
         })
       });
       if (!result.ok) throw new Error(`Voice Monkey announce failed (${result.status})`);
@@ -92,8 +92,8 @@ export function proactiveEventsCue(options: {
 
 export function combinedCue(cues: Cue[]): Cue {
   return {
-    async needsYou(question) {
-      const results = await Promise.allSettled(cues.map(cue => cue.needsYou(question)));
+    async needsYou(question, kind) {
+      const results = await Promise.allSettled(cues.map(cue => cue.needsYou(question, kind)));
       for (const result of results) {
         if (result.status === "rejected") {
           console.error(result.reason instanceof Error ? result.reason.message : String(result.reason));

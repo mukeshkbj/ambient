@@ -143,12 +143,12 @@ export function watchApprovals(registry: RuntimeRegistry, cue: Cue): () => void 
       } catch {
         return;
       }
-      const failedCall = view.subject !== undefined && (view.status === "failed" || (view.status === "completed" && view.outcome?.kind === "unconfirmed"));
-      const key = failedCall ? `ended:${view.id}` : view.status === "waiting_approval" ? view.approval?.id : undefined;
+      const endedCall = view.subject !== undefined && (view.status === "failed" || (view.status === "completed" && (view.outcome?.kind === "unconfirmed" || view.outcome?.kind === "confirmed")));
+      const key = endedCall ? `ended:${view.id}` : view.status === "waiting_approval" ? view.approval?.id : undefined;
       if (!key || announced.has(key)) return;
       announced.add(key);
       const ctx = { label: entry.descriptor.label, state: entry.engine.runtime().state };
-      void cue.needsYou(failedCall ? speak(view, ctx) : approvalAsk(view, ctx)).catch((error: unknown) => {
+      void cue.needsYou(endedCall ? speak(view, ctx) : approvalAsk(view, ctx), endedCall ? "result" : "ask").catch((error: unknown) => {
         console.error(error instanceof Error ? error.message : String(error));
       });
     });

@@ -78,7 +78,7 @@ describe("approval cue wiring", () => {
     });
     await flush();
     expect(needsYou).toHaveBeenCalledTimes(1);
-    expect(needsYou).toHaveBeenLastCalledWith(expect.stringContaining("one hundred eighty dollars"));
+    expect(needsYou).toHaveBeenLastCalledWith(expect.stringContaining("one hundred eighty dollars"), "ask");
     fake.emit({ type: "status.update", sessionId: "runtime-1", payload: { text: "still talking" } });
     await flush();
     expect(needsYou).toHaveBeenCalledTimes(1);
@@ -108,7 +108,13 @@ describe("approval cue wiring", () => {
     fake.emit({ type: "status.update", sessionId: "runtime-1", payload: { text: "late" } });
     await flush();
     expect(needsYou).toHaveBeenCalledTimes(1);
-    expect(needsYou).toHaveBeenLastCalledWith(expect.stringContaining("Joe's Plumbing wasn't confirmed: nobody picked up."));
+    expect(needsYou).toHaveBeenLastCalledWith(expect.stringContaining("Joe's Plumbing wasn't reached: nobody picked up. Nothing is booked."), "result");
+    await entry.engine.ask("call the plumber again");
+    fake.emit({ type: "status.update", sessionId: "runtime-1", payload: { text: "Calling Joe's Plumbing", subject: "Joe's Plumbing" } });
+    fake.emit({ type: "message.complete", sessionId: "runtime-1", payload: { text: "done", outcome: { kind: "confirmed", summary: "Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.", amountUsd: 160, when: "Tuesday the 20th at 10 am" } } });
+    await flush();
+    expect(needsYou).toHaveBeenCalledTimes(2);
+    expect(needsYou).toHaveBeenLastCalledWith("Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.", "result");
     unwatch();
     entry.engine.close();
     store.close();

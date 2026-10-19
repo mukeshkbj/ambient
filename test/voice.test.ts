@@ -98,7 +98,7 @@ describe("speak", () => {
 
   it("speaks an unconfirmed call outcome without assuming the booking", () => {
     const text = speak(view({ status: "completed", outcome: { kind: "unconfirmed", reason: "line ended" } }), ctx);
-    expect(text).toBe("The call wasn't confirmed: line ended. Nothing is booked. Say call, followed by who to call, to try again.");
+    expect(text).toBe("The business didn't confirm: line ended. I can't confirm a booking, so check with them before you call again.");
     expect(text).not.toMatch(ID_LIKE);
     expect(text).not.toMatch(/\b\d+\b/);
   });

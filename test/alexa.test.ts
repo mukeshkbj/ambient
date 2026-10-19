@@ -141,6 +141,17 @@ describe("Alexa call intents", () => {
     close();
   });
 
+  it("opens on the result of a call that just ended", async () => {
+    const { deps, fake, close } = setup();
+    await startCall(deps);
+    fake.emit({ type: "status.update", sessionId: "runtime-1", payload: { text: "Calling Joe's Plumbing", subject: "Joe's Plumbing" } });
+    fake.emit({ type: "message.complete", sessionId: "runtime-1", payload: { text: "done", outcome: { kind: "unconfirmed", reason: "nobody picked up" } } });
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const launched = await handleAlexaRequest({ ...request("unused"), request: { type: "LaunchRequest", requestId: "request-3" } }, deps);
+    expect(speechOf(launched)).toContain("Joe&apos;s Plumbing wasn&apos;t reached: nobody picked up.");
+    close();
+  });
+
   it("hears \"book it\" as approval", async () => {
     const { deps, fake, close } = setup();
     await startCall(deps);

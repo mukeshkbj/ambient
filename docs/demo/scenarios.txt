@@ -30,7 +30,7 @@ The business never says yes, so the call must end unconfirmed after the read-bac
   Ambient: I'll have Maya follow up to confirm. Thanks for your time, goodbye.
 
   Owner asked: never
-  Outcome: unconfirmed. Bright Smile Dental never clearly confirmed it
+  Outcome: unconfirmed. they never clearly confirmed it
 
 === Nobody picks up (no answer)
 The line rings out, so the call ends unconfirmed with the dial-failure reason.

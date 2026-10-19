@@ -76,7 +76,7 @@ describe("CallerClient through the engine", () => {
     const run = await engine.ask("Call Joe's Plumbing and book a visit under 150", undefined, true);
     const view = await until(engine, run.id, item => item.status === "completed");
     expect(view.outcome?.kind).toBe("unconfirmed");
-    expect(speak(view, { label: "Ambient", state: "online" })).toContain("Joe's Plumbing wasn't confirmed: the line ended before they confirmed. Nothing is booked. Say call, followed by who to call, to try again.");
+    expect(speak(view, { label: "Ambient", state: "online" })).toContain("Joe's Plumbing didn't confirm: the line ended before they confirmed. I can't confirm a booking, so check with them before you call again.");
     close();
   });
 
