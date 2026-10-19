@@ -921,3 +921,16 @@ describe("time display", () => {
     expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", when: "Tuesday at 10 am", summary: "Joe's Plumbing confirmed Tuesday at 10 am for one hundred dollars." } });
   });
 });
+
+describe("round 19 review findings", () => {
+  it.each([["Yes, 22.", "October 20 to 22 at 10 AM"], ["Yes, 21.", "October 20 and 21 at 10 AM"], ["Yes, 22.", "the 20th to 22 at 10 AM"], ["Yes, 21.", "20th and 21 at 10 AM"], ["Yes, 5.", "Oct 4 to 5 at 10"]] as const)(
+    "does not book the second date of a month-first range: %s for %s",
+    (reply, when) => {
+      expect(agreesTo(reply, `one hundred eighty dollars total, ${when}`, 180, when)).toBe(false);
+    }
+  );
+
+  it("books a whole echo of a time written with :00", () => {
+    expect(agreesTo("Yes, ten.", "one hundred eighty dollars total, Tuesday 10:00 AM", 180, "Tuesday 10:00 AM")).toBe(true);
+  });
+});

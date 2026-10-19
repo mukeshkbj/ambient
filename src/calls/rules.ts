@@ -128,19 +128,21 @@ const CLOCK_TAIL = new Set(["am", "pm"]);
 
 const DATE_JOIN = new Set(["and", "to", "through"]);
 
-function beforeMonth(tokens: string[], at: number): boolean {
-  let next = at + 1;
-  while (next < tokens.length && (/^\d+$/.test(tokens[next]!) || DATE_JOIN.has(tokens[next]!))) next += 1;
-  return MONTHS.has(tokens[next] ?? "");
+const isDateMark = (token: string) => MONTHS.has(token) || /^\d+(?:st|nd|rd|th)$/.test(token);
+
+function inDateRange(tokens: string[], at: number, step: 1 | -1): boolean {
+  let index = at + step;
+  while (index >= 0 && index < tokens.length && (/^\d+$/.test(tokens[index]!) || DATE_JOIN.has(tokens[index]!))) index += step;
+  return isDateMark(tokens[index] ?? "");
 }
 
 function clockGroups(when: string): string[] {
-  const tokens = timeKey(when.replace(/\b(\d{1,2}):(\d{2})\b/g, "at $1 $2")).split(" ");
+  const tokens = timeKey(when.replace(/:00\b/g, "").replace(/\b(\d{1,2}):(\d{2})\b/g, "at $1 $2")).split(" ");
   const groups: string[][] = [[]];
   tokens.forEach((token, at) => {
     const group = groups.at(-1)!;
     const marked = group.length > 0 || CLOCK_LEAD.has(tokens[at - 1] ?? "") || CLOCK_TAIL.has(tokens[at + 1] ?? "");
-    const clock = /^\d+$/.test(token) && marked && !MONTHS.has(tokens[at - 1] ?? "") && !beforeMonth(tokens, at);
+    const clock = /^\d+$/.test(token) && marked && !inDateRange(tokens, at, -1) && !inDateRange(tokens, at, 1);
     if (clock) group.push(token);
     else if (group.length > 0) groups.push([]);
   });
