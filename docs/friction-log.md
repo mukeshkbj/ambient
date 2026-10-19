@@ -1,6 +1,6 @@
 # Friction log
 
-This log lists the problems we hit while building Ambient for the Amazon Alexa "Build, Ship, Shape" hackathon. Every entry was reproduced or re-fetched on 2026-10-18 on one machine: Windows 11 Home 10.0.26300, Node v24.21.0. Each entry has a pasted capture or a verbatim quote with its URL. We deleted entries we could not reproduce.
+This log lists the problems we hit while building Ambient for the Amazon Alexa "Build, Ship, Shape" hackathon. Every entry was reproduced or re-fetched on 2026-10-18, and re-checked on 2026-10-19, on one machine: Windows 11 Home 10.0.26300, Node v24.21.0. Each entry has a pasted capture or a verbatim quote with its URL. We deleted entries we could not reproduce.
 
 We did not run a timer. Where git shows when a problem started and when it was fixed, the entry gives that span and says it is a span, not working time. Where git shows nothing, the entry says "not measured".
 
@@ -21,7 +21,7 @@ We did not run a timer. Where git shows when a problem started and when it was f
 | AWS: CDK | Hit, no friction | `pnpm infra:synth` exits 0 on 2026-10-18 with no AWS credentials. |
 | AWS: deploy | Blocked | `cdk deploy` costs money and waits for the owner's approval (`progress.md`, phase 10). |
 | Twilio | Dropped by decision | The owner has no Twilio budget (`progress.md`, "Decisions taken this session"). See the note below the table. No Twilio account step ran. |
-| AssemblyAI | Hit | Entries 6 to 8. The code is tested against recorded frames only. `progress.md`, phase 6: "not yet run against the live API". |
+| AssemblyAI | Hit | Entries 6 to 8. The code is tested against fixtures written from the docs. No frame was captured from the live API. `progress.md`, phase 6: "not yet run against the live API". |
 | Real-device testing | Not reached | Needs the skill registered, the Voice Monkey token and the Echo Dot run. |
 
 Twilio decision. We chose Twilio ConversationRelay first (`docs/plans/2026-10-18-handle-the-call/decisions.md`). We then dropped it for lack of budget. These facts from `docs/plans/2026-10-18-handle-the-call/reference-twilio.md` drove the decision:

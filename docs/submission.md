@@ -25,12 +25,12 @@ After the call, Alexa reports only what the business confirmed. If the business 
 
 ## What a pilot measures
 
-No pilot has run, so we have no results. A pilot would set targets for four measures:
+No pilot has run, so we have no results. The numbers below are targets. We chose them before any pilot, and we picked them to be conservative. A pilot would track four measures:
 
-- Calls placed per household per week.
-- The share of calls that end confirmed.
-- The share of calls where the owner was asked.
-- The share of read-backs the reducer refused.
+- Calls placed per household per week. Target: at least 1.
+- The share of calls that end confirmed. Target: at least 50%.
+- The share of calls where the owner was asked. Target: at most 50%. A higher share would mean the owner's limits sit below what local businesses quote.
+- The share of read-backs the reducer refused. Target: 100% of the read-backs whose reply carries a qualifier, a new number, or a question, checked by reading every pilot transcript.
 
 ## What it does not do
 
@@ -39,6 +39,7 @@ No pilot has run, so we have no results. A pilot would set targets for four meas
 - It handles one business per call.
 - It speaks English only.
 - It cannot use a live phone line without paid telephony.
+- Cost per call is not measured. The AssemblyAI pricing page, as recorded in `docs/plans/2026-10-18-handle-the-call/reference-assemblyai.md` on 2026-10-18, lists the Voice Agent API at $0.075 per minute, billed per second of connected time. Our own LLM cost is on top, and the repo records no price for it. The cost of one call depends on its length, the number of Claude turns, and the Claude token counts. None of these has been measured on a live call.
 
 ## Who this is for
 
@@ -70,7 +71,7 @@ The voice line is the AssemblyAI Voice Agent API. Its LLM is our own endpoint, `
 
 There is no phone dial-out in this version. AssemblyAI cannot dial out, and a paid Twilio account was not funded. The business answers on a web link that a phone browser opens like an incoming call.
 
-The repo started on 2026-09-16, inside the hackathon window. It began as an agent-supervision bridge for Alexa+. We kept its engine, MCP surface, and Alexa endpoint, and gave them the calling job.
+The first commit in the git history is dated 2026-09-16. The repo does not record the hackathon start date. The repo began as an agent-supervision bridge for Alexa+. We kept its engine, MCP surface, and Alexa endpoint, and gave them the calling job.
 
 What is real today: the full call runs end to end in the zero-key demo and through `/mcp` (`pnpm smoke:mcp`), with the business simulated. What is built but not yet run live: the AssemblyAI line, the Alexa skill, the spoken cue, and the CDK stack. No real phone call has been placed. No AWS deployment exists. Call latency is not measured. The skill has not run on an Echo Dot. The README carries the same list as a table.
 
@@ -88,7 +89,7 @@ A gated toolkit. The Alexa+ MCP toolkit and simulator were gated as of 2026-10-1
 
 ## Accomplishments
 
-The honesty rules live in a pure reducer, not in a prompt. 641 tests enforce them, including the 4,000-call property test and the 192-reply corpus.
+The honesty rules live in a pure reducer, not in a prompt. Five test files enforce them: `test/call-session.test.ts`, `test/call-honesty.test.ts`, `test/read-back-replies.test.ts`, `test/call.test.ts`, and `test/caller.test.ts`. `pnpm exec vitest list` shows 498 tests in those files on 2026-10-19. They include the 4,000-call property test and the 192-reply corpus. The whole suite lists 655 tests. The other 171 cover the rest, including voice, Alexa, and security.
 
 Three adversarial reviews of the reducer and twelve structural review rounds, all by AI reviewers, tried to break the rules and the voice line ([progress log](../progress.md)). Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
 

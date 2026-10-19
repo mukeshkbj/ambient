@@ -2,9 +2,11 @@
 
 **Alexa, handle the call.**
 
-Assistants can act through services that have an API. Ambient handles the ones that only answer a phone. You ask Alexa to call the plumber. An AI agent makes the call, says first that it is an AI, and talks to the business. If the price goes over your limit, Alexa asks you in the kitchen. You say "offer one fifty". The agent says it on the call, and if the business counters, Alexa asks you again. At the end, Alexa reports only what the business confirmed. If the business agreed a day but gave no calendar date, the card says so.
+Ambient is an agent that negotiates under your limit, asks you again when the business counters, and refuses an unclear yes. You ask Alexa to call the plumber. An AI agent makes the call and says first that it is an AI. If the price goes over your limit, Alexa asks you in the kitchen. You say "offer one fifty". The agent says it on the call, and if the business counters, Alexa asks you again. The agent books only after a clear yes to a read-back of the exact price and time. At the end, Alexa reports only what the business confirmed. If the business agreed a day but gave no calendar date, the card says so.
 
-The [reference bar](docs/plans/2026-10-18-handle-the-call/reference-bar.md) covers Google Duplex, Pixel Hold for Me and Call Screen, and Apple Call Screening and Hold Assist. Duplex books in closed domains. Hold for Me and Hold Assist tell you when a person returns to a held call. Call Screen and Call Screening answer calls made to you. The pages we fetched for that file on 2026-10-18 describe none of these products negotiating under the owner's limit or asking the owner again when the business counters. Ambient does.
+**Status today.** No live call has happened. The demo runs this whole flow against a simulated business and a simulated Alexa+ host. The voice line, the Claude brain, and the Alexa skill are built but have not run live. See [What is real and what is simulated](#what-is-real-and-what-is-simulated) and [Limits](#limits-stated-plainly).
+
+The [reference bar](docs/plans/2026-10-18-handle-the-call/reference-bar.md) covers Google Duplex, Pixel Hold for Me and Call Screen, and Apple Call Screening and Hold Assist. Duplex books in closed domains. Hold for Me and Hold Assist tell you when a person returns to a held call. Call Screen and Call Screening answer calls made to you. The pages we fetched for that file on 2026-10-18 describe none of these products negotiating under the owner's limit or asking the owner again when the business counters. In the demo, the scripted brain and the call reducer do both. The Claude brain has not run live.
 
 ![The Echo Show card: Joe's Plumbing quotes $180 for Tuesday at ten, $30 over the $150 limit, with the buttons Book $180, Offer $150, and Decline](docs/media/sim-card-hero.png)
 
@@ -128,7 +130,7 @@ pnpm call
 ## Verification
 
 ```sh
-pnpm scan    # typecheck, eslint, knip, and 641 tests
+pnpm scan    # typecheck, eslint, knip, and the full test suite
 pnpm build
 pnpm smoke:mcp            # a full simulated call through /mcp
 python scripts/shots-sim.py   # every call state, light and dark, into docs/media/ (start pnpm demo with AMBIENT_DATA_DIR set to an empty directory first)
