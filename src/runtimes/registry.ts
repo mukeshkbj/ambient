@@ -4,7 +4,7 @@ import type { AmbientStore } from "../store.js";
 import type { Approval, RunView, RuntimeState } from "../types.js";
 import Anthropic from "@anthropic-ai/sdk";
 import { claudeBrain, scriptedBrain } from "../calls/brain.js";
-import { DEMO_SCRIPT, JOES_PLUMBING, JOES_PLUMBING_HANGS_UP } from "../calls/demo.js";
+import { AROUND, DEMO_SCRIPT, JOES_PLUMBING, JOES_PLUMBING_HANGS_UP } from "../calls/demo.js";
 import { discoverBusiness } from "../calls/discover.js";
 import { simulatedLine } from "../calls/line.js";
 import { parsePhoneNumber } from "../calls/types.js";
@@ -318,11 +318,13 @@ function callerRuntime(item: RuntimeConfigEntry, env: Record<string, string | un
   const client = new CallerClient({
     household: readHousehold(env.AMBIENT_HOUSEHOLD_FILE ?? "household.example.json"),
     business: { name: option("business") ?? persona.name, phone: parsePhoneNumber(option("phone") ?? "+14155550134") },
-    line: () => (rooms && lineKind === "assemblyai" ? rooms.line() : simulatedLine(persona, speedMs !== undefined ? { speedMs } : {})),
+    line: business => (rooms && lineKind === "assemblyai" ? rooms.line() : simulatedLine(AROUND.find(item => item.persona.name === business.name)?.persona ?? persona, speedMs !== undefined ? { speedMs } : {})),
     brain,
     memory: store,
     limitDials: lineKind !== "simulated",
-    ...(anthropic ? { discover: (goal: string, household: Household) => discoverBusiness(params => anthropic.messages.create(params), goal, household) } : {})
+    ...(anthropic
+      ? { discover: (goal: string, household: Household) => discoverBusiness(params => anthropic.messages.create(params), goal, household) }
+      : lineKind === "simulated" ? { discover: () => Promise.resolve(AROUND.map(item => item.candidate)) } : {})
   });
   return polledRuntime(item, env, store, client);
 }

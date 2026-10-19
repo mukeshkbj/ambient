@@ -26,7 +26,7 @@ export type ErrandInput =
   | { kind: "deadline" };
 
 export type ErrandEffect =
-  | { kind: "approve"; callId: string; requestId: string }
+  | { kind: "approve"; callId: string; requestId: string; byOwner?: true }
   | { kind: "release"; callId: string; requestId: string }
   | { kind: "ask_owner"; callId: string; requestId: string; business: string; amountUsd?: number; when?: string }
   | { kind: "done"; booked?: string };
@@ -72,7 +72,7 @@ export function errandStep(state: ErrandState, input: ErrandInput, _now: string)
       if (input.decision === "once") {
         set(asking.callId, { status: "approved" });
         winner = asking.callId;
-        effects.push({ kind: "approve", callId: asking.callId, requestId: asking.quote.requestId });
+        effects.push({ kind: "approve", callId: asking.callId, requestId: asking.quote.requestId, byOwner: true });
       } else {
         release(asking);
       }

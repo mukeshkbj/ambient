@@ -1009,3 +1009,22 @@ describe("comparing quotes", () => {
     expect(approved.state.readBack?.terms).toBe("one hundred forty dollars total, Tuesday the 20th at 10 am");
   });
 });
+
+describe("chosen by the errand", () => {
+  const comparing: CallBrief = { ...brief, compare: true };
+  const held = () => play([answered, [heard("I can do it for 140"), 1000], [confirm(140, "Tuesday the 20th at 10 am", "Tuesday the 20th at 10 am"), 2000]], undefined, comparing);
+
+  it("grants the held quote without writing an owner note", () => {
+    const start = held();
+    const requestId = start.state.phase.kind === "waiting_for_owner" ? start.state.phase.requestId : "";
+    const { state } = play([[{ kind: "chosen", requestId }, 3000], [confirm(140, "Tuesday the 20th at 10 am", "Tuesday the 20th at 10 am"), 4000]], start.state, comparing);
+    expect(state.turns.some(turn => turn.speaker === "owner")).toBe(false);
+    expect(state.readBack?.terms).toBe("one hundred forty dollars total, Tuesday the 20th at 10 am");
+  });
+
+  it("never grants a quote over the limit", () => {
+    const start = play([answered, [heard("It's 190"), 1000], [confirm(190, "Tuesday the 20th at 10 am", "Tuesday the 20th at 10 am"), 2000]], undefined, comparing);
+    const requestId = start.state.phase.kind === "waiting_for_owner" ? start.state.phase.requestId : "";
+    expect(play([[{ kind: "chosen", requestId }, 3000]], start.state, comparing).effects).toEqual([]);
+  });
+});

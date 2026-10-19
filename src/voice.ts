@@ -213,6 +213,7 @@ export function taskCard(view: RunView, label: string): Record<string, unknown> 
       ...(view.failure ? { failure: view.failure } : {}),
       ...(view.outcome ? { outcome: view.outcome } : {}),
       ...(view.subject ? { subject: view.subject } : {}),
+      ...(view.board ? { board: view.board } : {}),
       createdAt: view.createdAt,
       updatedAt: view.updatedAt
     },

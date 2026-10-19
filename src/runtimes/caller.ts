@@ -371,7 +371,8 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
       case "approve":
         mark(index, { state: "booking" });
         publish(`Booking ${errand.board[index]!.business}`);
-        errand.calls.get(effect.callId)?.ownerDecided(effect.requestId, "once");
+        if (effect.byOwner) errand.calls.get(effect.callId)?.ownerDecided(effect.requestId, "once");
+        else errand.calls.get(effect.callId)?.choose(effect.requestId);
         return;
       case "release":
         mark(index, { state: "released" });

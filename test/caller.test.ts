@@ -275,6 +275,7 @@ describe("CallerClient calling around", () => {
       { business: "Rapid Rooter", state: "released", amountUsd: 160, when: "Wednesday the 21st at 8 am" }
     ]);
     expect(view.steps).toContain("Ambient to Pete's Pipes: Thanks so much for the quote. Maya is going with another option this time. Bye.");
+    expect(view.steps.some(step => step.startsWith("Maya: "))).toBe(false);
     expect(view.steps.some(step => /^Ambient to Drain Bros: .*one hundred twenty-five dollars total, Tuesday the 20th at 11 am\. Is that right\?$/.test(step))).toBe(true);
     close();
   });

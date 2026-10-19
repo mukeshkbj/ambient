@@ -149,6 +149,12 @@ function transition(state: CallState, input: CallInput, now: string): Transition
         : approved ? { approved: [...state.approved, grant] } : { deniedUsd: [...state.deniedUsd, amount] };
       return think({ ...ownerNote(state, note, now, ledger), phase: { kind: "talking" } }, now);
     }
+    case "chosen": {
+      if (phase.kind !== "waiting_for_owner" || phase.requestId !== input.requestId) return unchanged(state);
+      if (phase.amountUsd === undefined || phase.amountUsd > (brief.maxUsd ?? 0)) return unchanged(state);
+      const grant: Grant = { amountUsd: phase.amountUsd, ...(phase.when ? { when: phase.when } : {}) };
+      return think({ ...state, approved: [...state.approved, grant], phase: { kind: "talking" } }, now);
+    }
     case "released": {
       if (phase.kind !== "waiting_for_owner" || phase.requestId !== input.requestId) return unchanged(state);
       const line = `Thanks so much for the quote. ${brief.ownerName} is going with another option this time. Bye.`;

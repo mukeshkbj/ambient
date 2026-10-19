@@ -39,6 +39,7 @@ export type CallInput =
   | { kind: "owner_said"; text: string }
   | { kind: "owner_decided"; requestId: string; decision: "once" | "deny" }
   | { kind: "released"; requestId: string }
+  | { kind: "chosen"; requestId: string }
   | { kind: "hold_tick" };
 
 export type BrainStep =
