@@ -51,7 +51,7 @@ Known voice defects to fix in the voice-UX pass: the approval repeats the amount
 | Simulator UI | Blind critic vs Apple iOS 26 call screens | Rounds 1-5: Apple 3-1 (we win trust). Round 5 fixes landed in `bd5e1c8`; round 6 running |
 | Voice copy | Smoke transcript | Approval asks once with "?", steer says "Okay, I'll tell Joe's Plumbing.", status names the business |
 | Repo as an AI reviewer reads it | Structural review (Sonnet 5.5) | Round 1: 3/5, fixed in `ee6ec6d`. Round 2: 3.5/5, fixed in `b00f750`, `5d9c4a8`, `de30e8d` (page key, constant-time secret, 413, retire vendor agent). Round 3: 3.5/5 (my round-2 price fix broke negotiation), fixed in `81577c2`. Round 4 running |
-| Friction log | Self-review | 15 entries, all reproduced; 6 back-dated entries corrected to their commit date |
+| Friction log | Blind critic (Sonnet 5.5) | Round 1: "does not earn the bonus" (unverified entries, no time lost, missing stages). Rewritten: 8 vendor entries, each reproduced on 2026-10-18 with a capture or a fetched quote, with severity and time lost; 3 own bugs split out; journey coverage table. Round 2 pending |
 
 ## Needs the user
 

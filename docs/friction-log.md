@@ -1,169 +1,323 @@
 # Friction log
 
-Record an entry while a failure is reproducible. Do not invent entries for failures that have not occurred.
+This log lists the problems we hit while building Ambient for the Amazon Alexa "Build, Ship, Shape" hackathon. Every entry was reproduced or re-fetched on 2026-10-18 on one machine: Windows 11 Home 10.0.26300, Node v24.21.0. Each entry has a pasted capture or a verbatim quote with its URL. We deleted entries we could not reproduce.
 
-Dates are the day the entry was committed. On 2026-10-18 six entries dated 2026-10-16 and 2026-10-19 were corrected to 2026-10-12, the date of the commit that added them (`9fc671a`).
+Time lost figures are estimates. We did not run a timer. The basis for each one is stated in the entry.
 
-## Entry template
+## Journey coverage
 
-### YYYY-MM-DD HH:MM — tool or SDK
+| Stage | Status | Detail |
+|---|---|---|
+| Onboarding and SDK install | Hit | Entries 1 and 2. `pnpm install` of `@modelcontextprotocol/sdk` 1.30.0 worked. The first server run on Windows failed (entry 2). |
+| Docs | Hit | Entries 3 to 8. Five docs disagree with each other or leave a field unstated. |
+| Alexa developer console and skill registration | Not reached | The owner's developer account step has not run. `alexa/interaction-model.en-US.json`, `alexa/interaction-model.en-GB.json` and `alexa/skill.json` exist but were never imported. `progress.md` phase 7: "Echo Dot run pending". |
+| ASK CLI | Not reached | `progress.md` records no `ask` or `alexa-ai` command run. `docs/product-feedback.md` says the Alexa+ MCP toolkit, CLI and web simulator were gated for hackathon entrants during the build. |
+| Account linking and OAuth | Not reached live | The OAuth metadata routes and the request verification (`src/alexa-verify.ts`) are written and unit tested. No live Alexa service call exercised them. Entry 4 covers the docs gap. |
+| Alexa+ MCP testing | Blocked | The toolkit, CLI and web simulator are gated for hackathon entrants (`docs/product-feedback.md`). We built the `/sim` host as a stand-in. It is our own client, so it proves nothing about what Alexa+ renders. Entries 3 and 5 are the questions it could not answer. |
+| Proactive Events and Voice Monkey | Not reached | `src/cue.ts` is written. It needs a Voice Monkey token and an Echo Dot. `reference-alexa.md` marks two facts UNVERIFIED: whether the console accepts an HTTPS `events.endpoint`, and Voice Monkey latency. |
+| AWS: credentials | Not reached | `docs/product-feedback.md`: "this machine has no AWS credentials". `aws sts get-caller-identity` was not run. |
+| AWS: Bedrock model access | Not reached | Needs credentials. No access request was made. |
+| AWS: CDK | Hit, no friction | `pnpm infra:synth` exits 0 on 2026-10-18 with no AWS credentials. |
+| AWS: deploy | Blocked | `cdk deploy` costs money and waits for the owner's approval (`progress.md`, phase 10). |
+| Twilio | Dropped by decision | The owner has no Twilio budget (`progress.md`, "Decisions taken this session"). See the note below the table. No Twilio account step ran. |
+| AssemblyAI | Hit | Entries 6 to 8. The code is tested against recorded frames only. `progress.md`, phase 6: "not yet run against the live API". |
+| Real-device testing | Not reached | Needs the skill registered, the Voice Monkey token and the Echo Dot run. |
 
-- **Task:**
+Twilio decision. We chose Twilio ConversationRelay first (`docs/plans/2026-10-18-handle-the-call/decisions.md`). We then dropped it for lack of budget. These facts from `docs/plans/2026-10-18-handle-the-call/reference-twilio.md` drove the decision:
+
+- A trial account cannot run `<ConversationRelay>`. We fetched https://www.twilio.com/docs/usage/trials/try-out-voice on 2026-10-18. Its "Blocked verbs" table lists `<ConversationRelay>`, and the page says: "The \{verb} verb is not available on trial accounts."
+- The account also needs the Predictive and Generative AI/ML Features Addendum. We fetched https://www.twilio.com/docs/voice/conversationrelay/onboarding on 2026-10-18 and found the addendum requirement. The page does not mention error 64110, which the reference file lists. Treat 64110 as UNVERIFIED.
+- The reference file records the cost as $0.07 per minute for ConversationRelay plus about $0.014 per minute for US outbound voice. We did not re-verify these prices. The pages we fetched did not state them.
+- Replacement: the business answers on a web link through the AssemblyAI Voice Agent API. AssemblyAI cannot dial out, so the "a real phone rings" moment is not available. The `Line` seam keeps a Twilio bridge possible later.
+
+## Entry format
+
+Each entry lists: tool and version, date, severity, steps to reproduce, expected result, actual result, time lost (estimate), workaround with commit, and the fix we ask for. Severity uses three levels. High: it blocks the work or fails with no error. Medium: it costs time and has a workaround. Low: a design limit we can live with. "Date" is the date of the commit that fixed or worked around the problem.
+
+## Software entries
+
+### 1. MCP TypeScript SDK 1.30.0: `elicitInput` inside a tool call never reaches the client and never errors
+
+- **Tool and version:** `@modelcontextprotocol/sdk` 1.30.0 (`node_modules/@modelcontextprotocol/sdk/package.json`), `StreamableHTTPServerTransport`.
+- **Date:** 2026-10-18, fix `fd17fa9`.
+- **Severity:** High. The call hangs with no error, so the fault is invisible until you read the SDK source.
+- **Steps:** Run the script in "Reproduction scripts" below, once per mode: `node --import tsx elicit.mts json`, `sse`, `sse-related`, `json-related`. The script registers one tool. The tool calls `server.server.elicitInput(...)`. A raw `fetch` client declares `capabilities.elicitation` and calls the tool.
+- **Expected:** The client receives an `elicitation/create` request on the response to its `tools/call`. In all four modes.
+- **Actual:** The server logs `calling elicitInput` and then nothing. No exception, no log, no timeout. Only `sse-related` delivers the request. Capture:
+
+  ```
+  === json
+  client: tools/call, mode=json
+  server: calling elicitInput
+  client: no response headers after 3000 ms
+  === sse
+  client: tools/call, mode=sse
+  server: calling elicitInput
+  client: status 200 text/event-stream
+  client: first frame: <no frame after 3000 ms>
+  === sse-related
+  client: tools/call, mode=sse-related
+  server: calling elicitInput
+  client: status 200 text/event-stream
+  client: first frame: event: message\ndata: {"method":"elicitation/create","params":{"message":"ok?","requestedSchema":{"type":"object","properties":{"x":{"type":"string"}}},"mode":"form"},"jsonrpc":"2.0","id":0}\n\n
+  === json-related
+  client: tools/call, mode=json-related
+  server: calling elicitInput
+  client: no response headers after 3000 ms
+  ```
+
+  Two conditions are both required: `enableJsonResponse: false` and `{ relatedRequestId: extra.requestId }` passed to `elicitInput`. Without the second, the SDK sends the request on a standalone GET stream. Our client never opened one, so the request has no route.
+- **Time lost (estimate):** About 3 hours. Basis: elicitation first landed in `5087aad` (2026-10-11 23:13). The simulator that exposed the hang landed in `c11f9b0` (2026-10-12 04:21). Both fixes needed their own debugging pass, and `fd17fa9` added `test/elicit-http.test.ts` for the second one.
+- **Workaround:** `enableJsonResponse: false` (`src/server.ts:442`) and `{ relatedRequestId: requestId }` in `src/mcp.ts` (`fd17fa9`).
+- **Fix we ask for:** Make `elicitInput` throw, or reject its promise, when it has no stream to write to: a JSON-response transport, or no `relatedRequestId` and no standalone GET stream. Better: default `relatedRequestId` from the active request handler, so a call made inside a tool handler uses the tool call's stream.
+
+### 2. pnpm 10.33.0 and 12.14.0 on Windows: `VAR=value command` in a `package.json` script fails
+
+- **Tool and version:** pnpm 10.33.0 (the repo's `packageManager`) and pnpm 12.14.0 (the global install), Node v24.21.0, Windows 11 Home 10.0.26300.
+- **Date:** 2026-10-18, fix `1ffda6a`.
+- **Severity:** Medium. The documented script syntax fails on Windows, and the error names the variable, not the cause.
+- **Steps:** In an empty directory, create this `package.json`, then run `pnpm demo`:
+
+  ```json
+  { "name": "repro", "private": true, "packageManager": "pnpm@10.33.0",
+    "scripts": { "demo": "AMBIENT_HOST=127.0.0.1 node -e \"console.log(process.env.AMBIENT_HOST)\"" } }
+  ```
+
+- **Expected:** The script prints `127.0.0.1`, as it does on macOS and Linux.
+- **Actual:** Capture from pnpm 10.33.0 (pnpm 12.14.0 printed the same error):
+
+  ```
+  > repro@ demo C:\Users\mukes\AppData\Local\Temp\fr-pnpm-ps2
+  > AMBIENT_HOST=127.0.0.1 node -e "console.log(process.env.AMBIENT_HOST)"
+
+  'AMBIENT_HOST' is not recognized as an internal or external command,
+  operable program or batch file.
+   ELIFECYCLE  Command failed with exit code 1.
+  ```
+
+  pnpm runs scripts through `cmd.exe` on Windows. The judge path, `pnpm demo`, failed on its first command.
+- **Time lost (estimate):** About 10 minutes for this entry and the entry-point bug in "Our own bugs" together. Basis: `1ffda6a` (21:04) fixed both and followed `38aa26d` (20:59) by 5 minutes.
+- **Workaround:** Move the variables to the committed file `demo.env` and run `tsx --env-file=demo.env src/server.ts` (`1ffda6a`). Node's `--env-file` works the same on every OS and adds no dependency.
+- **Fix we ask for:** When a script starts with a POSIX `VAR=value` assignment and the shell is `cmd.exe`, print one warning that names the problem and links to `script-shell`. Today the error names `AMBIENT_HOST` as a missing program.
+
+## Documentation entries
+
+Access date for every quote below: 2026-10-18.
+
+### 3. Alexa+ MCP docs: three pages show three MCP protocol versions
+
+- **Tool and version:** Alexa+ MCP toolkit documentation, no version published. Pages accessed 2026-10-18.
+- **Date:** 2026-10-12, when we recorded the entry (`9fc671a`). No code change followed.
+- **Severity:** Medium. A client and server can negotiate a version the platform does not support.
+- **Steps:** Open these three pages and search for the protocol version:
+  1. https://developer.amazon.com/docs/alexaplus/add-ons/mcp-toolkit-client-lifecycle.html, section "MCP initialize request payload". The sample request contains `"protocolVersion": "2025-03-26",`.
+  2. https://developer.amazon.com/docs/alexaplus/add-ons/mcp-toolkit-overview.html says: "Alexa+ for Builders supports the 2025-11-25 version of the MCP specification."
+  3. https://developer.amazon.com/docs/alexaplus/add-ons/mcp-toolkit-local-inspector, "Step 2: Initialize the MCP session". The `curl` example sends `"protocolVersion":"2025-06-18"`.
+- **Expected:** One version, or a statement that Alexa+ accepts the version the server answers with.
+- **Actual:** Three versions on three pages. No page says which version the real Alexa+ client sends. No error text exists, because the problem is in the docs.
+- **Time lost (estimate):** About 20 minutes. Basis: none in git. We read the three pages once and recorded the decision.
+- **Workaround:** No code change. We confirmed that our server answers whatever the client asks for, from the SDK's supported list (`SUPPORTED_PROTOCOL_VERSIONS` in `node_modules/@modelcontextprotocol/sdk/dist/esm/types.js` holds `2025-11-25`, `2025-06-18`, `2025-03-26`, `2024-11-05`, `2024-10-07`). Capture from the script `negotiate.mts` (initialize against `McpServer` 1.30.0):
+
+  ```
+  client asks 2025-03-26 -> server answers 2025-03-26
+  client asks 2025-11-25 -> server answers 2025-11-25
+  ```
+
+- **Fix we ask for:** Use one version in all three pages, or add one sentence to the lifecycle page: "Alexa+ sends `protocolVersion` X and accepts the version your server returns."
+
+### 4. Alexa+ authentication page lists `WWW-Authenticate` as unsupported; the MCP specification requires clients to parse it
+
+- **Tool and version:** Alexa+ MCP toolkit documentation (no version published) and MCP specification 2025-11-25. Accessed 2026-10-18.
+- **Date:** 2026-09-16, when `bbe260a` added the OAuth metadata routes we rely on. We recorded the entry on 2026-10-12 (`9fc671a`).
+- **Severity:** Medium. A spec-compliant server may send a header the platform says it ignores, so auth discovery can fail.
+- **Steps:** Read both pages:
+  1. https://developer.amazon.com/docs/alexaplus/add-ons/mcp-toolkit-authentication.html, section "What isn't supported", list item: "`WWW-Authenticate` headers in 401 responses".
+  2. https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization, section "Protected Resource Metadata Discovery Requirements": "MCP servers **MUST** implement one of the following discovery mechanisms", then "WWW-Authenticate Header" or "Well-Known URI". The same section says: "MCP clients **MUST** be able to parse `WWW-Authenticate` headers and respond appropriately to `HTTP 401 Unauthorized` responses from the MCP server."
+- **Expected:** An Alexa+ client that follows the MCP specification, or a page that says which discovery method it uses.
+- **Actual:** The Alexa page says the header is unsupported. The specification says clients must parse it. The Alexa page does not say whether Alexa+ reads the well-known URI instead. It also says the client uses a service-level token for `initialize` and `tools/list`. No error text exists, because the problem is in the docs.
+- **Time lost (estimate):** About 30 minutes. Basis: none in git. We had to decide which discovery method to implement.
+- **Workaround:** The server serves both well-known documents, `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server` (`src/server.ts:254` and `:258`, from `bbe260a`). `grep -rin www-authenticate src` finds nothing, so the server does not send the header. An earlier version of this log said it did. That was wrong. We have not tested either path against a live Alexa+ client.
+- **Fix we ask for:** State which discovery method Alexa+ uses for a self-hosted MCP server. Add one sentence to the "What isn't supported" list: what to implement in place of the header.
+
+### 5. Alexa+ MCP Apps: `resourceUri` belongs in the tool response (Alexa) or the tool definition (MCP Apps specification)
+
+- **Tool and version:** Alexa+ MCP toolkit documentation (no version published) and MCP Apps specification `2026-01-26`. Accessed 2026-10-18.
+- **Date:** 2026-10-11, when `5087aad` first put `_meta.ui.resourceUri` on a tool result.
+- **Severity:** Medium. One of the two placements fails silently on one host.
+- **Steps:** Read both pages:
+  1. https://developer.amazon.com/docs/alexaplus/add-ons/mcp-toolkit-client-lifecycle.html, section "Resource handling and elicitation": "Alexa+ renders your custom visuals for your MCP App UI as long as you have `resourceUri` defined in the tool response."
+  2. https://github.com/modelcontextprotocol/ext-apps/blob/main/specification/2026-01-26/apps.mdx, section "Resource Discovery": "Tools are associated with UI resources through the `_meta.ui` field:", and under Behavior: "If `ui.resourceUri` is present and host supports MCP Apps, host renders tool results using the specified UI resource". The same section deprecates the flat key: "The flat `_meta["ui/resourceUri"]` format is deprecated."
+- **Expected:** One location that both documents name.
+- **Actual:** Alexa documents the tool result. The MCP Apps specification documents the tool definition. We cannot tell which reader Alexa+ uses, and no client was available to test. No error text exists, because the problem is in the docs.
+- **Time lost (estimate):** About 1 hour. Basis: `docs/product-feedback.md` records about 2 hours to a working MCP App including the host side. We attribute half of that to this question.
+- **Workaround:** We emit `_meta.ui.resourceUri` on the tool result (`src/voice.ts:184`, `5087aad`) and register the `ui://ambient/task` resource. Our `/sim` host reads that field. It is our own host, so it does not prove what Alexa+ does.
+- **Fix we ask for:** Publish a complete tools/list entry and tools/call result for one MCP App tool, and say which of them Alexa+ reads.
+
+### 6. AssemblyAI Voice Agent API: the request sent to a bring-your-own LLM endpoint is not documented
+
+- **Tool and version:** AssemblyAI Voice Agent API, no version published. Page https://www.assemblyai.com/docs/voice-agents/voice-agent-api/connect-your-own-llm.md, fetched with `curl` on 2026-10-18.
+- **Date:** 2026-10-18, workaround in `41fb071`.
+- **Severity:** High. The integration cannot be written from the docs alone; we had to infer the request shape.
+- **Steps:** Fetch the page. Search it for the request body, headers, timeouts and tool handling of the call to your endpoint:
+
+  ```
+  curl -sSL https://www.assemblyai.com/docs/voice-agents/voice-agent-api/connect-your-own-llm.md -o byo.md
+  grep -n -i "header\|timeout\|tools" byo.md
+  ```
+
+- **Expected:** The page describes the request AssemblyAI sends to our endpoint: whether the agent's system prompt is in `messages`, how history is shaped, the auth header, `stream` flags, timeouts, and whether `tools` are forwarded.
+- **Actual:** The page states only this about the call: "`base_url` | string | Yes | HTTPS base URL of the OpenAI-compatible endpoint. Must be `https` and a public host. The agent calls `POST {base_url}/chat/completions`." Its "Requirements & behavior" list adds: "The endpoint must accept `POST /chat/completions` in the OpenAI schema." and "Realtime voice needs token streaming, so the model must support streamed chat completions." Every `Authorization` header on the page belongs to a call to AssemblyAI. The page does not show the header AssemblyAI sends to us. The page also does not show the field that holds the new agent id in the create response.
+- **Time lost (estimate):** About 45 minutes. Basis: `reference-assemblyai.md` section 4 lists eight undocumented points. The defensive endpoint arrived in the same commit as the line (`41fb071`, 2026-10-18 21:55).
+- **Workaround:** The endpoint (`src/calls/assemblyai.ts`, `41fb071`) reads every `user` message, accepts string or part-array content, reads `agent_id` and then `id` from the create response, and streams OpenAI-shaped chunks. We have not logged a real request, because the line has not run against the live API.
+- **Fix we ask for:** Publish one recorded request and response for the bring-your-own LLM call, with headers and with `tools` present and absent.
+
+### 7. AssemblyAI Voice Agent API: two docs pages disagree on event fields, and the example repository points at a second endpoint
+
+- **Tool and version:** AssemblyAI Voice Agent API, no version published. Pages `events-reference.md` and `message-sequence.md` under https://www.assemblyai.com/docs/voice-agents/voice-agent-api/, fetched with `curl` on 2026-10-18. Example repository https://github.com/AssemblyAI/voice-agent-api-twilio-example, last pushed 2026-10-14T17:42:51Z.
+- **Date:** 2026-10-18, workaround in `41fb071`.
+- **Severity:** Medium. Code written from one page fails against the other.
 - **Steps:**
-- **Expected:**
-- **Actual:**
-- **Severity:** Critical | Important | Nice-to-have
-- **Workaround:**
-- **Suggestion:**
 
----
+  ```
+  B=https://www.assemblyai.com/docs/voice-agents/voice-agent-api
+  curl -sSL $B/events-reference.md -o ev.md; curl -sSL $B/message-sequence.md -o seq.md
+  sed -n 353,362p ev.md
+  grep -n -A3 '"type": "transcript.user.delta"' seq.md
+  grep -n -A4 '"type": "reply.started"' ev.md; grep -n '"type": "reply.started"' seq.md
+  curl -sSL https://raw.githubusercontent.com/AssemblyAI/voice-agent-api-twilio-example/main/src/index.ts | grep -n "v1/"
+  ```
 
-### 2026-10-12 — MCP TypeScript SDK (`@modelcontextprotocol/sdk` 1.30): `elicitInput` silently requires SSE responses
+- **Expected:** One field name per event, one endpoint.
+- **Actual:** `events-reference.md` shows:
 
-- **Task:** Send an approval elicitation to the client inside a `tools/call` (`server.server.elicitInput`) while the transport ran with `enableJsonResponse: true`.
-- **Steps:** Enable JSON responses; call the `delegate` tool with a client that advertises `capabilities.elicitation`; the server calls `elicitInput` mid-call.
-- **Expected:** The elicitation request reaches the client on the same HTTP response, like a normal result.
-- **Actual:** The tool call hangs — an in-call request cannot ride a single JSON body; it needs the POST's SSE stream. Nothing in the error surface says why; the client just never sees the request.
-- **Severity:** Important
-- **Workaround:** Run the transport with `enableJsonResponse: false`. Every response then arrives as SSE `data:` frames, which forced a rewrite of test and script response parsing.
-- **Suggestion:** `StreamableHTTPServerTransport` should throw when `elicitInput` (or any in-call server→client request) is attempted under `enableJsonResponse: true`, instead of queueing a request that can never be delivered.
+  ```
+  "type": "transcript.user.delta",
+  "item_id": "item_abc123",
+  "text": "What's the weather in"
+  ```
 
-### 2026-10-12 — MCP TypeScript SDK: only one in-call elicitation per outstanding request
+  `message-sequence.md` shows:
 
-- **Task:** A second eliciting tool call (`status`) issued while a `delegate` call's `elicitInput` was still open.
-- **Steps:** Browser approves the open elicitation via `sim/api/elicit` → POST returns 200; the original `tools/call` never resolves.
-- **Expected:** Each `elicitInput` is bound to its own call and resolves independently.
-- **Actual:** The newer elicitation consumed the answer path; the delegate call stayed open forever. Reproduced live in the `/sim` browser and again with raw curl against `/mcp`.
-- **Severity:** Critical
-- **Workaround:** Never issue a second eliciting request while one is outstanding — `/sim` now pushes task-view refreshes on SSE run events instead of calling `status` for refresh.
-- **Suggestion:** Document the constraint on `elicitInput`, or have the SDK multiplex concurrent in-call requests by id so callers don't have to serialize eliciting tools by hand.
+  ```
+  "type": "transcript.user.delta",
+  "delta": "hey there"
+  ```
 
-### 2026-10-12 — MCP TypeScript SDK 1.30: transport security options deprecated mid-build
+  `events-reference.md` shows `reply.started` with `reply_id` and `item_id`. `message-sequence.md` shows `{ "type": "reply.started" }` with no fields. The example repository's `src/index.ts` line 35 reads `const AAI_AGENT_URL = process.env.AAI_AGENT_URL || "wss://agents.assemblyai.com/v1/realtime";`. The docs use `wss://agents.assemblyai.com/v1/ws`. We opened both paths with an unauthenticated WebSocket upgrade. Both answered `HTTP/1.1 101 Switching Protocols`, then the same frame: `{"code":"unauthorized","message":"Authentication failed","session_id":null,"param":null,"type":"session.error",...}`. So `/v1/realtime` is not retired. No page says whether it is an alias.
+- **Time lost (estimate):** About 20 minutes. Basis: none in git. We wrote the page code to accept both shapes.
+- **Workaround:** The business page reads `event.text ?? event.delta ?? ""` (`web/call/index.html:217`) and connects to `/v1/ws` (`web/call/index.html:186`), both in `41fb071`.
+- **Fix we ask for:** Generate both pages and the example repository from the AsyncAPI specification. State whether `/v1/realtime` is an alias of `/v1/ws`.
 
-- **Task:** Turn on DNS-rebinding protection and host/origin allowlists on `StreamableHTTPServerTransport`.
-- **Steps:** Follow the documented `allowedOrigins` / `allowedHosts` / `enableDnsRebindingProtection` constructor options.
-- **Expected:** The transport rejects foreign origins itself.
-- **Actual:** In 1.30 those options are deprecated (the type is still present but flagged); a fresh install lands you on the deprecated surface with no replacement named in the deprecation message.
-- **Severity:** Important
-- **Workaround:** Enforced origin/host allowlists as explicit middleware in `src/server.ts` ahead of the transport — same checks, ours to own.
-- **Suggestion:** Name the replacement in the deprecation notice, or keep the options stable until the successor API ships.
+### 8. AssemblyAI Voice Agent API: a per-call greeting needs a new stored agent per call
 
-### 2026-10-12 — MCP Apps spec vs Alexa docs: where does `ui.resourceUri` live?
+- **Tool and version:** AssemblyAI Voice Agent API, no version published. Pages `greeting.md`, `connect-your-own-llm.md` and `events-reference.md`, fetched with `curl` on 2026-10-18.
+- **Date:** 2026-10-18, workaround in `41fb071`.
+- **Severity:** Low. It is a design limit with a workaround, at the cost of one API call per phone call.
+- **Steps:** Read these three statements:
+  1. `greeting.md`: the greeting "lives on the agent ... or inline over the WebSocket via [`session.update`]". It also says: "Whatever string you put here is exactly what the user hears, word for word."
+  2. `connect-your-own-llm.md`: "Add an `llm` array to a [create] or [update] request." Our own endpoint therefore needs a stored agent.
+  3. `events-reference.md`, row `session.agent_id`: "Bind a stored agent by ID. First `session.update` only, and mutually exclusive with the inline fields below."
+- **Expected:** We can bind a stored agent that has our `llm` and still set a per-call `greeting`. Every call must open with an exact disclosure that names the household member.
+- **Actual:** A session bound by `agent_id` cannot carry an inline `greeting`. The disclosure differs per call, so each call needs its own stored agent. The error code for a violation is `agent_id_not_first`, defined in `events-reference.md` as "`agent_id` was sent after the first `session.update`, or alongside inline fields in the same message". We did not trigger it, because we read the rule before coding.
+- **Time lost (estimate):** About 20 minutes. Basis: none in git. The cost that remains is one extra REST call before every call, plus a cleanup of the agent afterwards (`de30e8d`).
+- **Workaround:** One stored agent per call (`src/calls/rooms.ts`, `41fb071`). Retire it when the line ends (`de30e8d`).
+- **Fix we ask for:** Accept `greeting` and `system_prompt` in the same `session.update` as `agent_id`.
 
-- **Task:** Attach an MCP App view to a tool result.
-- **Steps:** Compare the MCP Apps spec (resource URI on the tool *definition*) with the Alexa-side docs (`_meta.ui` on tool *results*), plus the deprecated flat `ui/resourceUri` key.
-- **Expected:** One documented location both sides read.
-- **Actual:** Three candidate locations, none of which documents which reader Alexa+ honors. Reproduced by reading both specs during Task 3.3; no client exists to disambiguate.
-- **Severity:** Important
-- **Workaround:** Emit `_meta.ui.resourceUri` on tool results and register the `ui://ambient/task` resource; the bundled sim host renders it, which is the only verifiable contract available.
-- **Suggestion:** Publish the exact field path Alexa+ reads, with a minimal working tool result example.
+## Our own bugs (not vendor friction)
 
-### 2026-10-12 — Alexa+ documentation: protocol version ambiguity
+These bugs were in our code. We list them so judges can see the whole path. We do not count them as friction with a vendor.
 
-- **Task:** Decide which MCP `protocolVersion` to negotiate for the Alexa+ client lifecycle.
-- **Steps:** Read the Alexa+ client lifecycle documentation and the hackathon rules together.
-- **Expected:** A single required version.
-- **Actual:** The lifecycle doc shows `initialize` with `protocolVersion "2025-03-26"`; the hackathon requires 2025-11-25 or later. It is unclear which version Alexa+ actually sends.
-- **Severity:** Important
-- **Workaround:** The server advertises `2025-11-25` (its real supported spec); MCP version negotiation tolerates a newer client.
-- **Suggestion:** Update the lifecycle doc to the hackathon-required version, or state that Alexa+ negotiates whatever the server advertises.
+### A. A `PORT` override without `PUBLIC_BASE_URL` returns `forbidden_origin`
 
-### 2026-10-12 — Alexa+ documentation vs MCP authorization spec: `WWW-Authenticate`
+- **Version:** Ambient at `1bb0ca3`, Node v24.21.0.
+- **Date:** 2026-10-12, note added in `8330e91`.
+- **Steps:** `PORT=3102 pnpm demo`, then request `/sim/api/state` with the browser's origin:
 
-- **Task:** Decide how an unauthorized client discovers OAuth endpoints on our MCP server.
-- **Steps:** Read the Alexa+ guidance on unsupported headers alongside the MCP authorization spec.
-- **Expected:** Compatible discovery rules.
-- **Actual:** Alexa+ guidance says `WWW-Authenticate` is unsupported, while the MCP authorization spec uses `401 + WWW-Authenticate` for discovery — a documented conflict (also noted in `docs/compatibility.md`).
-- **Severity:** Important
-- **Workaround:** The server still returns `WWW-Authenticate` per the MCP spec (standards clients need it) and additionally documents the OAuth endpoints in README/`.env.example` for Alexa-style configuration.
-- **Suggestion:** State whether Alexa+ performs its own discovery (e.g. a well-known URI) so self-hosted servers can expose exactly one mechanism.
+  ```
+  curl -i -H 'Origin: http://127.0.0.1:3102' http://127.0.0.1:3102/sim/api/state
+  HTTP/1.1 403 Forbidden
+  {"error":"forbidden_origin"}
+  ```
 
-### 2026-10-12 — Node.js: `node:sqlite` experimental warning on every process
+- **Cause:** The origin allowlist comes from `PUBLIC_BASE_URL`, which defaults to `http://127.0.0.1:3000` (`src/config.ts:21`).
+- **Workaround:** Set `PUBLIC_BASE_URL` to match `PORT`, or list the origin in `AMBIENT_ALLOWED_ORIGINS`. `.env.example` now says so (`8330e91`). Deriving the allowlist from the bound port would remove the trap.
 
-- **Task:** Start the server and run tests on Node 26.
-- **Steps:** `pnpm demo`, `pnpm test`, any `node`/`tsx` invocation importing `node:sqlite`.
-- **Expected:** Stable API warnings only where behavior may change.
-- **Actual:** `ExperimentalWarning: SQLite` prints once per process start — including every test file — adding noise to logs judges will read.
-- **Severity:** Nice-to-have
-- **Workaround:** None needed; cosmetic. (Non-Amazon tool — include only if the friction form allows it.)
-- **Suggestion:** Graduate `node:sqlite` out of experimental status, or de-duplicate the warning per install rather than per process.
+### B. The `import.meta.url === \`file://${process.argv[1]}\`` entry guard never matches on Windows
 
-### 2026-10-12 — Node.js 26: `pnpm` absent until manually installed
+- **Version:** Node v24.21.0, Windows 11.
+- **Date:** 2026-10-18, fix `1ffda6a`.
+- **Steps:** Save this as `main.mjs` and run `node main.mjs`:
 
-- **Task:** Bootstrap the toolchain on a fresh Node 26 install.
-- **Steps:** `pnpm i` → `command not found`; `corepack enable` → corepack itself is no longer shipped with Node 26.
-- **Expected:** `packageManager: pnpm@10.33.0` in `package.json` activates the pinned toolchain.
-- **Actual:** Corepack was removed from the Node distribution; the documented bootstrap path no longer works.
-- **Severity:** Nice-to-have (cost ~1 minute, but blocks a cold start)
-- **Workaround:** `npm i -g pnpm@10.33.0`. (Non-Amazon tool.)
-- **Suggestion:** Re-ship corepack, or have Node honor `packageManager` natively so one `package.json` field is the whole bootstrap story.
+  ```js
+  console.log(import.meta.url); console.log(process.argv[1]);
+  if (import.meta.url === `file://${process.argv[1]}`) console.log("guard: match"); else console.log("guard: no match");
+  ```
 
-### 2026-10-12 — This project: `PORT` override without `PUBLIC_BASE_URL` 403s the browser
+- **Result:**
 
-- **Task:** Record the demo video against `pnpm demo` on a non-default port (3102) because the default was already in use.
-- **Steps:** `PORT=3102 pnpm demo`, then drive `/sim` from a headless browser.
-- **Expected:** The page works; same-origin fetches to `/sim/api/*` succeed.
-- **Actual:** Every browser request carried `Origin: http://127.0.0.1:3102`, which was not in the origin allowlist (seeded only from `PUBLIC_BASE_URL`, still `…:3000`) — `/sim` returned `forbidden_origin` and the elicitation card silently never appeared. Correct behavior from the middleware (DNS-rebinding protection is the point), but the failure mode was opaque: turns "worked" while follow-up calls were rejected.
-- **Severity:** Important
-- **Workaround:** Run with `PUBLIC_BASE_URL=http://127.0.0.1:<port>` (or add the origin via `AMBIENT_ALLOWED_ORIGINS`) whenever `PORT` differs.
-- **Suggestion:** For loopback dev, derive the origin allowlist from the bound port automatically — `PUBLIC_BASE_URL` and `PORT` disagreeing is an easy trap. (Self-friction, not an Amazon tool.)
+  ```
+  file:///C:/Users/mukes/AppData/Local/Temp/fr-esm/main.mjs
+  C:\Users\mukes\AppData\Local\Temp\fr-esm\main.mjs
+  guard: no match
+  ```
 
-### 2026-10-18 — pnpm 10 on Windows: inline env assignments in `package.json` scripts fail
+  With this guard, our server exited with code 0 and printed nothing.
+- **Workaround:** Compare against `pathToFileURL(process.argv[1]).href` (`1ffda6a`).
 
-- **Task:** Run the zero-key judge path, `pnpm demo`, on a Windows 11 PC (Node 24.21, pnpm 10.33.0).
-- **Steps:** `pnpm demo`, where the script was `AMBIENT_HOST=127.0.0.1 AMBIENT_RUNTIMES_FILE=runtimes.demo.json ALLOW_UNAUTHENTICATED=true tsx src/server.ts`.
-- **Expected:** The demo server starts, as it does on macOS and Linux.
-- **Actual:** `'AMBIENT_HOST' is not recognized as an internal or external command`. pnpm runs scripts through `cmd.exe` on Windows, which has no `VAR=value cmd` syntax. The judge path failed on the first command.
-- **Severity:** Critical
-- **Workaround:** Move the variables to a committed `demo.env` and run `tsx --env-file=demo.env src/server.ts`. Node's `--env-file` behaves the same on every OS and needs no `cross-env` dependency.
-- **Suggestion:** pnpm could warn when a script starts with a POSIX env assignment and `script-shell` is unset on Windows.
+### C. `findLast` does not type-check with `lib: ES2022`
 
-### 2026-10-18 — Node.js ESM on Windows: the `import.meta.url === file://${argv[1]}` entry guard never matches
+- **Version:** TypeScript 5.9.3 (`pnpm exec tsc -v`), Node v24.21.0.
+- **Date:** 2026-10-18, fix `fab717c`.
+- **Steps:** Save `const turns: number[] = [1, 2, 3]; export const last = turns.findLast(n => n > 1);` as `fl.ts`, then run `pnpm exec tsc --noEmit --target ES2022 --lib ES2022 fl.ts`.
+- **Result:** `fl.ts(2,27): error TS2550: Property 'findLast' does not exist on type 'number[]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2023' or later.`
+- **Cause:** `findLast` is in `lib.es2023.array`. Our `lib` did not include it. TypeScript behaves as designed.
+- **Workaround:** `"lib": ["ES2023", "DOM", "DOM.Iterable"]` in `tsconfig.json` (`fab717c`).
 
-- **Task:** Start the server after the `demo.env` fix above.
-- **Steps:** `pnpm demo` on Windows. `src/server.ts` started only when `import.meta.url === \`file://${process.argv[1]}\``.
-- **Expected:** The server listens on port 3000.
-- **Actual:** The process exited with code 0 and printed nothing. On Windows, `import.meta.url` is `file:///C:/Users/...` while `argv[1]` is `C:\Users\...`, so the guard is false and nothing runs. No error makes the cause visible.
-- **Severity:** Critical
-- **Workaround:** Compare against `pathToFileURL(process.argv[1]).href`.
-- **Suggestion:** Node could ship `import.meta.main` (as Deno and Bun do) so scripts stop hand-rolling this check.
+## Reproduction scripts
 
-### 2026-10-18 — AssemblyAI Voice Agent API: the bring-your-own-LLM request is undocumented
+`elicit.mts` for entry 1. Save it inside a project that has `@modelcontextprotocol/sdk` 1.30.0 and `tsx`, and run it with `node --import tsx elicit.mts <mode>`, where `<mode>` is `json`, `sse`, `sse-related` or `json-related`.
 
-- **Task:** Point an AssemblyAI voice agent at our own OpenAI-compatible `/chat/completions` endpoint, so our call reducer decides every word the agent says.
-- **Steps:** Read the "Connect your own LLM" page, the events reference, and the AsyncAPI spec for the Voice Agent API.
-- **Expected:** The request AssemblyAI sends to our endpoint: body shape (is the agent's system prompt included, how history is shaped), the auth header, `stream` flags, timeouts, and whether `tools` are forwarded.
-- **Actual:** None of these are documented. The page states only that AssemblyAI calls `POST {base_url}/chat/completions`, that streaming is required, and that `base_url` must be public HTTPS. The agent-create response field for the new id is also not shown. We had to write the endpoint defensively (read every `user` message, accept string or part-array content, read `agent_id` then `id`).
-- **Severity:** Important
-- **Workaround:** Treat the request as OpenAI-shaped, compare user-message counts to find new turns, and stream OpenAI chunks back. Plan to log one real request before the demo.
-- **Suggestion:** Publish one recorded request and response for the BYO-LLM call, including headers.
+```ts
+import http from "node:http";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { randomUUID } from "node:crypto";
 
-### 2026-10-18 — AssemblyAI Voice Agent API: docs disagree on event fields, and the official Twilio example uses a retired endpoint
+const mode = process.argv[2];
+const server = new McpServer({ name: "repro", version: "0.0.1" });
+server.registerTool("ask", { description: "elicit" }, async (extra) => {
+  console.log("server: calling elicitInput");
+  const schema = { type: "object" as const, properties: { x: { type: "string" as const } } };
+  const options = mode.endsWith("related") ? { relatedRequestId: extra.requestId } : undefined;
+  const r = await server.server.elicitInput({ message: "ok?", requestedSchema: schema }, options);
+  console.log("server: elicitInput returned", r.action);
+  return { content: [{ type: "text", text: "done" }] };
+});
+const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), enableJsonResponse: mode.startsWith("json") });
+await server.connect(transport);
+const srv = http.createServer((req, res) => {
+  const chunks: Buffer[] = [];
+  req.on("data", c => chunks.push(c));
+  req.on("end", () => void transport.handleRequest(req, res, chunks.length ? JSON.parse(Buffer.concat(chunks).toString()) : undefined));
+});
+await new Promise<void>(r => srv.listen(0, "127.0.0.1", r));
+const url = `http://127.0.0.1:${(srv.address() as { port: number }).port}/`;
+const H = { accept: "application/json, text/event-stream", "content-type": "application/json" };
+const init = await fetch(url, { method: "POST", headers: H, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: { elicitation: {} }, clientInfo: { name: "raw", version: "0" } } }) });
+const S = { ...H, "mcp-session-id": init.headers.get("mcp-session-id")! };
+await init.text();
+await fetch(url, { method: "POST", headers: S, body: JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) });
+console.log(`client: tools/call, mode=${mode}`);
+const call = fetch(url, { method: "POST", headers: S, body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "ask", arguments: {} } }) });
+const res = await Promise.race([call, new Promise<null>(r => setTimeout(() => r(null), 3000))]);
+if (!res) console.log("client: no response headers after 3000 ms");
+else {
+  console.log("client: status", res.status, res.headers.get("content-type"));
+  const reader = res.body!.getReader();
+  const first = await Promise.race([reader.read().then(x => (x.done ? "<closed>" : new TextDecoder().decode(x.value))), new Promise<string>(r => setTimeout(() => r("<no frame after 3000 ms>"), 3000))]);
+  console.log("client: first frame:", first.replace(/\n/g, "\\n").slice(0, 260));
+}
+process.exit(0);
+```
 
-- **Task:** Handle user transcripts and replies in the browser page that streams audio to the Voice Agent.
-- **Steps:** Compare `transcript.user.delta` and `reply.started` across the events reference and the message-sequence page; compare the endpoint in `AssemblyAI/voice-agent-api-twilio-example` with the docs.
-- **Expected:** One field name per event and one endpoint.
-- **Actual:** The events reference gives `transcript.user.delta` a `text` field; the message-sequence page shows `delta`. `reply.started`/`reply.done` carry ids on one page and none on the other. The example repo's README bridges to `wss://agents.assemblyai.com/v1/realtime`; every doc page uses `/v1/ws`.
-- **Severity:** Nice-to-have
-- **Workaround:** The page reads `event.text ?? event.delta` and uses `/v1/ws`.
-- **Suggestion:** Generate both doc pages and the example from the AsyncAPI spec.
-
-### 2026-10-18 — AssemblyAI Voice Agent API: a per-call greeting needs a stored agent per call
-
-- **Task:** Make the first sentence of every call an exact AI disclosure that names the household member ("calling for Maya").
-- **Steps:** `greeting` is spoken verbatim and skips the LLM, which is what we need. But bring-your-own-LLM is only available on a stored agent, and a session bound with `agent_id` cannot set any inline field, including `greeting`.
-- **Expected:** A per-session greeting override on a stored agent.
-- **Actual:** To vary the disclosure per call we create a stored agent per call (`POST /v1/agents`) before the business answers. That adds a REST round trip and leaves agents behind.
-- **Severity:** Nice-to-have
-- **Workaround:** One stored agent per call (`src/calls/rooms.ts`).
-- **Suggestion:** Allow `greeting` (and `system_prompt`) next to `agent_id` in the first `session.update`.
-
-### 2026-10-18 — TypeScript 5.9: `Array.prototype.findLast` needs `lib: ES2023` although Node 22 ships it
-
-- **Task:** Find the latest business turn in the call transcript with `turns.findLast(...)`.
-- **Steps:** `pnpm typecheck` with `"target": "ES2022"` and `"lib": ["ES2022", ...]` on Node 22.
-- **Expected:** The method Node 22 supports type-checks.
-- **Actual:** `TS2550: Property 'findLast' does not exist on type 'CallTurn[]'. Do you need to change your target library?` The first workaround (`[...turns].reverse().find(...)`) copies the array on every call.
-- **Severity:** Nice-to-have
-- **Workaround:** Set `"lib": ["ES2023", "DOM", "DOM.Iterable"]`; Node 22 is already the floor in `engines`.
-- **Suggestion:** A `@tsconfig/node22` base used by `tsc --init` when `engines.node` says 22.
+`negotiate.mts` for entry 3: create an `McpServer` and a JSON-response `StreamableHTTPServerTransport` with `sessionIdGenerator: undefined`, `POST` an `initialize` request with `protocolVersion` set to `2025-03-26` and then `2025-11-25`, and print `result.protocolVersion` from each response.
