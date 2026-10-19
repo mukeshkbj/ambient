@@ -89,7 +89,7 @@ pnpm call
 ## Verification
 
 ```sh
-pnpm scan    # typecheck, eslint, knip, and 544 tests
+pnpm scan    # typecheck, eslint, knip, and 561 tests
 pnpm build
 pnpm smoke:mcp            # a full simulated call through /mcp
 python scripts/shots-sim.py   # every call state, light and dark, into docs/media/
@@ -110,7 +110,7 @@ pnpm brain:latency        # time to first word on Claude (needs ANTHROPIC_API_KE
 | MCP server on `/mcp` (spec 2025-11-25, Streamable HTTP) | Real | `pnpm smoke:mcp` runs a full call through it; `test/mcp.test.ts` |
 | Simulator on `/sim` | Real | A real MCP client over loopback, standing in for the gated Alexa+ host |
 | MCP App card `ui://ambient/task` | Real | Rendered by the `/sim` host; not yet rendered by an Alexa+ host |
-| Call reducer honesty rules (`src/calls/session.ts`) | Real | Table tests (`test/call-session.test.ts`), a 158-reply corpus (`test/read-back-replies.test.ts`), and a seeded property test over 4,000 generated calls (`test/call-honesty.test.ts`) |
+| Call reducer honesty rules (`src/calls/session.ts`) | Real | Table tests (`test/call-session.test.ts`), a 192-reply corpus (`test/read-back-replies.test.ts`), and a seeded property test over 4,000 generated calls (`test/call-honesty.test.ts`) |
 | Scripted brain and the demo business | Simulated | `simulatedLine` plays Joe's Plumbing in `pnpm demo`; every action is a real MCP tool call |
 | Claude brain (`claudeBrain` in `src/calls/brain.ts`) | Built but not yet run live | Tests against a stubbed stream (`test/brain.test.ts`); `pnpm brain:latency` has not run |
 | AssemblyAI voice line and chat-completions shim (`src/calls/rooms.ts`) | Built but not yet run live | `test/assemblyai-line.test.ts` and `test/call-routes.test.ts`; no live API call yet ([friction log](docs/friction-log.md)) |

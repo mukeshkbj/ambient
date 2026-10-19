@@ -209,7 +209,7 @@ $("answer").onclick = async () => {
           post("/event", { type: "ready" });
           break;
         }
-        case "reply.started": call.replying = true; call.expectReply = false; document.body.dataset.state = "speaking"; break;
+        case "reply.started": call.replying = true; call.expectReply = false; call.agentText = ""; document.body.dataset.state = "speaking"; break;
         case "reply.audio": play(event.data); break;
         case "transcript.agent":
           caption("Ambient · AI", event.text, "agent");

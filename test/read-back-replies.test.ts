@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { agreesTo, offerIn } from "../src/calls/rules.js";
 import { startCall, step, type CallState } from "../src/calls/session.js";
 import { parsePhoneNumber, type CallBrief, type CallInput } from "../src/calls/types.js";
 
@@ -12,11 +13,11 @@ const brief: CallBrief = {
 
 const BOOKS = [
   "Yes.", "Yes, that's right.", "Yeah.", "Yep.", "Yup, that's correct.", "Correct.", "That's right.", "Right.", "Sure.", "Sure thing.", "Okay.", "OK, sounds good.",
-  "Alright.", "All right, see you then.", "Perfect.", "Great, see you Tuesday.", "Exactly.", "Definitely.", "Certainly.", "Absolutely.", "Mhm.", "Mm-hmm.", "Mm hmm.",
+  "Alright.", "All right, see you then.", "Perfect.", "Yes, great, see you Tuesday.", "Exactly.", "Definitely.", "Certainly.", "Absolutely.", "Mhm.", "Mm-hmm.", "Mm hmm.",
   "Uh-huh.", "Uh huh, yes.", "Indeed.", "Looks good.", "Sounds good.", "Sounds great, thanks.", "That works.", "That'll work.", "Works for me.", "No problem.",
   "Yes, no problem.", "Not a problem.", "No worries, yes.", "You got it.", "You bet.", "Of course.", "Yes, Tuesday at three.", "Yes, one sixty.", "Yes, $160.",
   "Yes, $160.00, Tuesday at 3:00.", "Yes, one hundred sixty dollars.", "Yep, sorry, that's right.", "Sorry, yes, that's right.", "Yes sir.", "Yes, we'll see you then.",
-  "Okay, great, thank you.", "Yes, you're all set.", "Booked.", "Yes, you're booked.", "Yeah, that's it.", "That is correct.", "Fine.", "Deal."
+  "Okay, great, thank you.", "Yes, you're all set.", "Yes, you're booked.", "Yeah, that's it.", "That is correct.", "Deal."
 ] as const;
 
 const DOES_NOT_BOOK = [
@@ -37,7 +38,9 @@ const DOES_NOT_BOOK = [
   "That works, but Thursday.", "Sounds good, Thursday then.", "Perfect, three thirty.", "Great, at four.", "OK, call-out only.", "Yeah, the repair is separate.",
   "Yes, labor only.", "Yes, not including parts.", "Mm, no.", "Uh, no.", "Nah.", "Never mind.", "Wait.", "Hold on.", "Just a second.", "Hang on.",
   "Who is this?", "Is this a robot?", "Yes, is this a robot?", "Yeah, for real?", "Seriously?", "Huh?", "Pardon?", "Come again?", "Yes, I'll put it in pencil.",
-  "Tentatively, yes.", "Pencil it in.", "Yes, pending approval.", "Yes, subject to availability.", "Yes, once I see it.", "Yes, after I look at it."
+  "Tentatively, yes.", "Pencil it in.", "Yes, pending approval.", "Yes, subject to availability.", "Yes, once I see it.", "Yes, after I look at it.",
+  "Yes, twelve fifty.", "Yes, nineteen ninety nine dollars.", "Yes, five five five.", "Thank you.", "Thank you, goodbye.", "Okay, bye.", "Okay, goodbye.",
+  "Fine, oh well.", "Sorry, that's it.", "Great, see you Tuesday.", "Fine.", "Booked.", "Yes, one sixty, two hundred.", "Yes, a hundred and eighty."
 ] as const;
 
 const READ_BACK = "Just to confirm: one hundred sixty dollars total, Tuesday at three. Is that right?";
@@ -160,10 +163,41 @@ describe("read-back replies", () => {
     expect(owner.readBack).toBeUndefined();
   });
 
+  it("does not let a word from the read-back carry a no", () => {
+    expect(agreesTo("No, that's right.", "no price is set, Friday", undefined)).toBe(false);
+    expect(agreesTo("Yes, that's right.", "no price is set, Friday", undefined)).toBe(true);
+  });
+
+  it("keeps thousands separators inside an amount", () => {
+    expect(agreesTo("Yes, $1,000.", "one thousand dollars total, Friday", 1000)).toBe(true);
+    expect(agreesTo("Yes, $1,000.", "one hundred dollars total, Friday", 100)).toBe(false);
+  });
+
+  it("ends the call after five read-backs even if each one is cancelled before it plays", () => {
+    let state = run([{ kind: "answered" }, { kind: "heard", text: "It's $160 for Tuesday at three." }]);
+    for (let round = 0; round < 6 && state.phase.kind !== "ended"; round += 1) {
+      state = run([book(160, "Tuesday at three"), { kind: "heard", text: "Um, hold on." }], state);
+    }
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "unconfirmed" } });
+  });
+
+  it("leaves no read-back pending while the owner is being asked", () => {
+    const asked = run([{ kind: "answered" }, { kind: "heard", text: "It's $160 for Tuesday at three." }, book(160, "Tuesday at three"), book(400, "Tuesday at three")]);
+    expect(asked.phase.kind).toBe("waiting_for_owner");
+    expect(asked.readBack).toBeUndefined();
+  });
+
   it("does not arm on a played report for a different line", () => {
     let state = readBackState();
     state = { ...state, readBack: state.readBack && { ...state.readBack, armed: false } };
     const next = step(state, { kind: "played", text: "Still checking with Maya, thanks for holding." }, "2026-10-20T17:01:00.000Z").state;
     expect(next.readBack).toMatchObject({ armed: false });
+  });
+});
+
+describe("owner offers", () => {
+  it("does not treat a question as an offer", () => {
+    expect(offerIn("Would you pay 300?")).toBeUndefined();
+    expect(offerIn("offer 300")).toBe(300);
   });
 });

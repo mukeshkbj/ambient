@@ -91,42 +91,67 @@ const AMOUNT_ONLY = /^(?:[\s$.,!?-]|\d|\b(?:a|and|dollars|bucks|hundred|thousand
 
 export function offerIn(text: string): number | undefined {
   const amounts = amountsIn(text);
-  if (amounts.length !== 1 || NEGATION.test(text)) return undefined;
+  if (amounts.length !== 1 || NEGATION.test(text) || text.includes("?")) return undefined;
   return OFFER_CUE.test(text) || AMOUNT_ONLY.test(text) ? amounts[0] : undefined;
 }
 
-const AGREEMENT = [
-  "that's right", "that is right", "that's correct", "that is correct", "that's it", "sounds good", "sounds great", "looks good", "see you then", "see you",
-  "you bet", "of course", "that'll work", "that works", "works for me", "no problem", "not a problem", "no worries", "all set", "you're all set", "you got it",
-  "you're booked", "thank you", "sure thing", "all right", "mm-hmm", "mm hmm", "uh-huh", "uh huh", "yes", "yeah", "yep", "yup", "correct", "right", "sure",
-  "okay", "ok", "alright", "perfect", "great", "exactly", "definitely", "certainly", "absolutely", "mhm", "indeed", "fine", "deal", "booked"
-].sort((a, b) => b.length - a.length);
-const AGREEMENT_PATTERN = new RegExp(`(?:^|\\s)(?:${AGREEMENT.join("|")})(?=\\s|$)`, "g");
-const FILLER = new Set(["and", "then", "so", "oh", "um", "uh", "well", "sorry", "sir", "ma'am", "thanks", "good", "bye", "goodbye", "we'll", "the", "that's", "that", "it's", "it", "is", "o'clock", "am", "pm"]);
+const phrases = (list: string[]) => new RegExp(`(?:^|\\s)(?:${[...list].sort((a, b) => b.length - a.length).join("|")})(?=\\s|$)`, "g");
+const CONFIRMATION = phrases([
+  "that's right", "that is right", "that's correct", "that is correct", "sounds good", "sounds great", "looks good", "you bet", "of course", "that'll work",
+  "that works", "works for me", "no problem", "not a problem", "no worries", "all set", "you're all set", "you got it", "you're booked", "sure thing",
+  "all right", "mm-hmm", "mm hmm", "uh-huh", "uh huh", "yes", "yeah", "yep", "yup", "correct", "right", "sure", "okay", "ok", "alright", "perfect",
+  "exactly", "definitely", "certainly", "absolutely", "mhm", "indeed", "deal"
+]);
+const COURTESY = phrases(["thank you", "see you then", "see you", "thanks", "great", "good"]);
+const NEGATIVE_WORDS = new Set(["no", "not", "never", "nope", "nah"]);
+const FILLER = new Set(["and", "then", "so", "oh", "um", "uh", "sorry", "sir", "ma'am", "we'll", "the", "that's", "that", "it's", "it", "is", "o'clock", "am", "pm"]);
+const isNumber = (token: string) => /^\$?\d+(\.\d+)?$/.test(token) || NUMBER_WORDS.has(token);
 
 function plainWords(text: string): string {
   return text
     .normalize("NFKC")
     .replace(/[’‘]/g, "'")
     .toLowerCase()
+    .replace(/(\d),(?=\d{3}\b)/g, "$1")
     .replace(/(\d+):00\b/g, "$1")
-    .replace(/[^a-z0-9'$.\s-]/g, " ")
+    .replace(/[,;!]/g, " | ")
+    .replace(/[^a-z0-9'$.|\s-]/g, " ")
     .replace(/(?<!\d)\.|\.(?!\d)/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
+function numberRuns(tokens: string[]): string[][] {
+  const runs: string[][] = [];
+  let run: string[] = [];
+  for (const token of [...tokens, "|"]) {
+    if (isNumber(token) || ((token === "a" || token === "and") && run.length > 0)) run.push(token);
+    else {
+      while (run.length > 0 && !isNumber(run.at(-1)!)) run.pop();
+      if (run.length > 0) runs.push(run);
+      run = [];
+    }
+  }
+  return runs;
+}
+
 export function agreesTo(reply: string, terms: string, amountUsd: number | undefined): boolean {
   if (reply.includes("?")) return false;
   const words = plainWords(reply);
-  const agreed = words.match(AGREEMENT_PATTERN) ?? [];
-  if (agreed.length === 0) return false;
-  const known = new Set(plainWords(terms).split(" "));
+  const tokens = words.split(" ").filter(token => token && token !== "|").flatMap(token => token.split("-").filter(Boolean));
+  if (tokens.length > 14) return false;
+  if (!CONFIRMATION.test(words)) return false;
+  CONFIRMATION.lastIndex = 0;
   const numbers = [...amountsIn(terms), ...(amountUsd !== undefined ? [amountUsd] : [])];
-  if (!amountsIn(words).every(number => numbers.includes(number))) return false;
-  if (!chargedIn(words).every(charge => charge === amountUsd)) return false;
-  const allowed = (part: string) => /^\$?\d+(\.\d+)?$/.test(part) || NUMBER_WORDS.has(part) || FILLER.has(part) || known.has(part);
-  return words.replace(AGREEMENT_PATTERN, " ").split(" ").filter(Boolean).every(token => token.split("-").filter(Boolean).every(allowed));
+  if (!chargedIn(words.replaceAll("|", " ")).every(charge => charge === amountUsd)) return false;
+  const runs = numberRuns(words.split(" ").flatMap(token => token.split("-").filter(Boolean)));
+  if (!runs.every(run => {
+    const values = amountsIn(run.join(" "));
+    return values.length === 1 && numbers.includes(values[0]!);
+  })) return false;
+  const known = new Set(plainWords(terms).split(" ").filter(word => !NEGATIVE_WORDS.has(word)));
+  const rest = words.replace(CONFIRMATION, " ").replace(COURTESY, " ").split(" ").filter(token => token && token !== "|").flatMap(token => token.split("-").filter(Boolean));
+  return rest.every(token => isNumber(token) || token === "a" || FILLER.has(token) || known.has(token));
 }
 
 export function noteFromCall(fact: string): string | undefined {

@@ -199,7 +199,7 @@ function confirm(state: CallState, outcome: Confirmed, now: string): Transition 
     return askOwner(state, `${brief.business.name} confirmed${when} but gave no price. Should I agree without a price?`, undefined, now, true);
   }
   const flushed = flushDraft(state, now);
-  if (state.readBacks >= 3) {
+  if (state.readBacks >= 3 || state.readBacksSpoken >= 5) {
     const line = `I'll have ${owner} follow up to confirm. Thanks for your time, goodbye.`;
     return end(withTurn(flushed, "agent", line, now), { kind: "unconfirmed", reason: "they never clearly confirmed it" }, [say(line), { kind: "hang_up" }]);
   }
@@ -232,7 +232,7 @@ function askOwner(state: CallState, question: string, amountUsd: number | undefi
   const line = `One moment, let me check with ${state.brief.ownerName}.`;
   const amount = amountUsd !== undefined ? { amountUsd } : {};
   const limit = state.brief.maxUsd !== undefined ? { limitUsd: state.brief.maxUsd } : {};
-  const waiting = withTurn(flushDraft(state, now), "agent", line, now);
+  const waiting = { ...withTurn(flushDraft(state, now), "agent", line, now), readBack: undefined };
   return {
     state: { ...waiting, asks, phase: { kind: "waiting_for_owner", requestId, question, ...amount, ...(unpriced ? { unpriced: true as const } : {}), since: now, lastHoldLine: now } },
     effects: [

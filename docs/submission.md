@@ -37,7 +37,7 @@ The US FCC ruled on 8 February 2024 that the TCPA's rules for "artificial or pre
 
 ## How we built it
 
-One pure function owns the call: `step(state, input, now)` in `src/calls/session.ts`. It has no clock, no network, and no model inside it. Every honesty rule is a table test against it. A seeded property test plays 4,000 generated calls with mixed event orders and checks that every booking followed a clean yes to a fully played read-back of that exact amount. A labelled corpus of 158 business replies pins what counts as a yes.
+One pure function owns the call: `step(state, input, now)` in `src/calls/session.ts`. It has no clock, no network, and no model inside it. Every honesty rule is a table test against it. A seeded property test plays 4,000 generated calls with mixed event orders and checks that every booking followed a clean yes to a fully played read-back of that exact amount. A labelled corpus of 192 business replies pins what counts as a yes.
 
 The surfaces are an MCP server on `/mcp` (spec 2025-11-25, Streamable HTTP), a custom Alexa skill on `/alexa`, an MCP App card `ui://ambient/task`, and a browser simulator on `/sim` that is a real MCP client over loopback.
 
@@ -63,7 +63,7 @@ A gated toolkit. The Alexa+ MCP toolkit and simulator were gated during the buil
 
 ## Accomplishments
 
-The honesty rules live in a pure reducer, not in a prompt. 544 tests enforce them, including the 4,000-call property test and the 158-reply corpus.
+The honesty rules live in a pure reducer, not in a prompt. 561 tests enforce them, including the 4,000-call property test and the 192-reply corpus.
 
 Two reducer reviews and seven structural review rounds tried to break the rules and the voice line ([progress log](../progress.md)). Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
 
