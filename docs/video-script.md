@@ -45,7 +45,7 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 
 - Ambient, to Joe: "One moment, let me check with Maya."
 - Echo Dot: "Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Say approve to book it, offer an amount, or hang up."
-- Echo Show card: "Fix the kitchen sink", "$180 · Tuesday at ten", "$30 over your $150 limit", with "Book $180 · Tells Joe's Plumbing yes", "Offer $150 · Your limit", and "Decline · Ambient hangs up" (`docs/media/sim-card-hero.png`).
+- Echo Show card: "Fix the kitchen sink", "$180 · Tuesday at ten", "$30 over your $150 limit", with "Book $180 · Tells them yes", "Offer $150 · Your limit", and "Decline · Ambient hangs up" (`docs/media/sim-card-hero.png`).
 - Needs: HW for the Echo. The card renders in `/sim` without hardware.
 
 ### 5. The owner counters, and Joe counters back (1:00 to 1:20)
@@ -54,7 +54,7 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 - Alexa: "Okay, offering one hundred fifty dollars."
 - Ambient, to Joe: "Thanks for waiting. Could you do one fifty?"
 - Joe: "One fifty is too low for me. I could do one sixty."
-- Echo Show: the card asks again, "Book $160 · Tells Joe's Plumbing yes" (`docs/media/sim-countered.png`). Alexa: "Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer an amount, or hang up."
+- Echo Show: the card asks again, "Book $160 · Tells them yes" (`docs/media/sim-countered.png`). Alexa: "Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer an amount, or hang up."
 - Owner: "Alexa, tell Ambient approve." Or tap "Book $160". The owner approves a price over the limit on purpose; nothing above the limit books without this step.
 - Ambient, to Joe: "Thanks for waiting. Maya says one sixty is fine. Please go ahead and book Tuesday at ten."
 - Joe: "Hmm, one sixty. Alright, that works if you're my first job that morning. I'll put you down for Tuesday at ten."
