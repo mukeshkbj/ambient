@@ -955,3 +955,12 @@ describe("round 20 review findings", () => {
     expect(agreesTo(reply, `one hundred dollars total, ${when}`, 100, when)).toBe(true);
   });
 });
+
+describe("time re-ask cap", () => {
+  it("ends unconfirmed after the business twice gives a time that is not plain", () => {
+    const vague = confirm(100, "ok", "Friday at 3, ask for Sam");
+    const { state, effects } = play([answered, heard("It's 100"), vague, heard("Friday at 3, ask for Sam"), vague, heard("Like I said, ask for Sam"), vague], undefined, { ...brief, maxUsd: 300 });
+    expect(spoken(effects).filter(line => line === "Sorry, could you give me just the day and time?")).toHaveLength(2);
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "unconfirmed" } });
+  });
+});

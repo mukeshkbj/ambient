@@ -18,7 +18,7 @@ import { buildRuntimeRegistry, type RuntimeRegistry } from "./runtimes/registry.
 import { SimHost } from "./sim.js";
 import { AmbientStore } from "./store.js";
 import type { RunView } from "./types.js";
-import { approvalAsk } from "./voice.js";
+import { approvalAsk, speak } from "./voice.js";
 
 type McpSession = {
   server: McpServer;
@@ -143,9 +143,12 @@ export function watchApprovals(registry: RuntimeRegistry, cue: Cue): () => void 
       } catch {
         return;
       }
-      if (view.status !== "waiting_approval" || !view.approval || announced.has(view.approval.id)) return;
-      announced.add(view.approval.id);
-      void cue.needsYou(approvalAsk(view, { label: entry.descriptor.label })).catch((error: unknown) => {
+      const failedCall = view.subject !== undefined && (view.status === "failed" || (view.status === "completed" && view.outcome?.kind === "unconfirmed"));
+      const key = failedCall ? `ended:${view.id}` : view.status === "waiting_approval" ? view.approval?.id : undefined;
+      if (!key || announced.has(key)) return;
+      announced.add(key);
+      const ctx = { label: entry.descriptor.label, state: entry.engine.runtime().state };
+      void cue.needsYou(failedCall ? speak(view, ctx) : approvalAsk(view, ctx)).catch((error: unknown) => {
         console.error(error instanceof Error ? error.message : String(error));
       });
     });

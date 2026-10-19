@@ -187,8 +187,13 @@ function confirm(state: CallState, proposed: Confirmed, now: string): Transition
   const { brief } = state;
   const owner = brief.ownerName;
   if (outcome.when !== undefined && !plainTime(outcome.when)) {
-    const line = "Sorry, could you give me just the day and time?";
-    return { state: { ...withTurn(flushDraft(state, now), "agent", line, now), readBack: undefined }, effects: [say(line)] };
+    const ask = "Sorry, could you give me just the day and time?";
+    const flushed = flushDraft(state, now);
+    if (flushed.turns.filter(turn => turn.speaker === "agent" && turn.text === ask).length >= 2) {
+      const line = `I'll have ${brief.ownerName} follow up to confirm. Thanks for your time, goodbye.`;
+      return end(withTurn(flushed, "agent", line, now), { kind: "unconfirmed", reason: `${brief.business.name} never gave a clear day and time` }, [say(line), { kind: "hang_up" }]);
+    }
+    return { state: { ...withTurn(flushed, "agent", ask, now), readBack: undefined }, effects: [say(ask)] };
   }
   const claimed = [...(outcome.amountUsd !== undefined ? [outcome.amountUsd] : []), ...chargedIn(outcome.summary)].filter(amount => Number.isFinite(amount) && amount > 0);
   const charge = claimed.length > 0 ? Math.round(Math.max(...claimed) * 100) / 100 : undefined;

@@ -93,4 +93,24 @@ describe("approval cue wiring", () => {
     entry.engine.close();
     store.close();
   });
+
+  it("tells the owner once when a call ends without a booking", async () => {
+    const store = new AmbientStore();
+    const fake = fakeAssistant();
+    const entry = fakeRuntimeEntry("caller", "Ambient", fake.client, store);
+    const registry = new RuntimeRegistry(store, [entry]);
+    const needsYou = vi.fn().mockResolvedValue(undefined);
+    const unwatch = watchApprovals(registry, { needsYou });
+    await entry.engine.ask("call the plumber", undefined, true);
+    fake.emit({ type: "status.update", sessionId: "runtime-1", payload: { text: "Calling Joe's Plumbing", subject: "Joe's Plumbing" } });
+    fake.emit({ type: "message.complete", sessionId: "runtime-1", payload: { text: "done", outcome: { kind: "unconfirmed", reason: "nobody picked up" } } });
+    await flush();
+    fake.emit({ type: "status.update", sessionId: "runtime-1", payload: { text: "late" } });
+    await flush();
+    expect(needsYou).toHaveBeenCalledTimes(1);
+    expect(needsYou).toHaveBeenLastCalledWith(expect.stringContaining("Joe's Plumbing wasn't confirmed: nobody picked up."));
+    unwatch();
+    entry.engine.close();
+    store.close();
+  });
 });

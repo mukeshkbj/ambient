@@ -88,13 +88,13 @@ export function speak(view: RunView, ctx: SpeakContext): string {
     if (view.status === "waiting_approval") {
       const ask = approvalAsk(view, ctx);
       if (ask.endsWith(", or hang up.")) return ask;
-      const choices = view.approval?.kind === "dial" ? "Say yes to place the call, or no." : view.approval?.amountUsd === undefined ? "Say approve or deny." : "Say approve, offer followed by a price, or hang up.";
+      const choices = view.approval?.kind === "dial" ? "Say yes to place the call, or no." : view.approval?.amountUsd === undefined ? "Say approve to book it, or hang up." : "Say approve, offer followed by a price, or hang up.";
       return `${ask} ${choices}`;
     }
     if (view.status === "cancelled") return `You ended the call before ${business} confirmed. Nothing was booked.`;
     if (view.status === "running" || view.status === "accepted" || view.status === "queued") {
       const heard = lastLineFrom(view, business);
-      if (heard) return `${label} is on the phone with ${business}. They just said: ${clampSentences(heard, 1)} Say status again, or hang up.`;
+      if (heard) return `${label} is on the phone with ${business}. They just said: ${clampSentences(heard, 1)} Say status for the latest, or hang up.`;
       return view.steps.some(step => step.startsWith("Connected to")) ? `${label} is on the phone with ${business}.` : `${label} is calling ${business} now.`;
     }
   }
@@ -105,16 +105,15 @@ export function speak(view: RunView, ctx: SpeakContext): string {
         const undated = outcome.when && !CALENDAR_DATE.test(outcome.when) ? " They gave a day but no date, so check which one." : "";
         return `${clampSentences(outcome.summary, 1)}${undated}`;
       }
-      if (outcome?.kind === "unconfirmed") return `Not confirmed: ${stripEnd(outcome.reason)}, so I won't assume it's booked. Say call, followed by who to call, to try again.`;
+      if (outcome?.kind === "unconfirmed") return `${callee(view) ?? "The call"} wasn't confirmed: ${stripEnd(outcome.reason)}. Nothing is booked. Say call, followed by who to call, to try again.`;
       const declined = outcome && /^\S+ declined (.+)$/.exec(outcome.reason);
       if (declined) return `You said no to ${stripEnd(declined[1]!)}, so I ended the call. Nothing is booked.`;
       if (outcome) return clampSentences(`${stripEnd(outcome.reason)}.`);
       return clampSentences(view.answer ?? `${label} finished ${title}.`);
     }
     case "failed": {
-      const reason = stripEnd(clampSentences(view.failure ?? view.answer ?? "It hit an error.", 1));
       const business = callee(view);
-      return business ? `The call to ${business} didn't go through, and nothing was booked. Say call, followed by who to call, to try again.` : `${label} couldn't finish ${title}: ${reason}.`;
+      return business ? `The call to ${business} hit an error, so I can't confirm a booking. Say call, followed by who to call, to try again.` : `${label} couldn't finish ${title}. Say call, followed by who to call, to try again.`;
     }
     case "cancelled":
       return `${label} stopped ${title}.`;
