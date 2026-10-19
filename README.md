@@ -130,8 +130,7 @@ For each call, [`src/calls/rooms.ts`](src/calls/rooms.ts) creates an AssemblyAI 
 
 ```sh
 cp .env.example .env
-# in .env: ANTHROPIC_API_KEY, ASSEMBLYAI_API_KEY, an https PUBLIC_BASE_URL,
-# and AMBIENT_RUNTIMES_FILE=runtimes.call.json
+# in .env: ANTHROPIC_API_KEY, ASSEMBLYAI_API_KEY and an https PUBLIC_BASE_URL
 pnpm call
 ```
 

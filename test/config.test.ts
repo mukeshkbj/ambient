@@ -62,3 +62,16 @@ describe("readConfig", () => {
     });
   });
 });
+
+describe("the shipped .env.example", () => {
+  it("starts the server config when copied as is", async () => {
+    const { readFileSync } = await import("node:fs");
+    const env = Object.fromEntries(
+      readFileSync(new URL("../.env.example", import.meta.url), "utf8")
+        .split(/\r?\n/)
+        .filter(line => /^[A-Z_]+=/.test(line))
+        .map(line => [line.slice(0, line.indexOf("=")), line.slice(line.indexOf("=") + 1)])
+    );
+    expect(() => readConfig(env)).not.toThrow();
+  });
+});

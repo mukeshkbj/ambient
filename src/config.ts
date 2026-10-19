@@ -91,7 +91,7 @@ function runtimeEntries(runtimesFile: string): RuntimeConfigEntry[] {
 }
 
 export function readConfig(env: Record<string, string | undefined> = process.env): AppConfig {
-  const parsed = EnvSchema.parse(env);
+  const parsed = EnvSchema.parse(Object.fromEntries(Object.entries(env).filter(([, value]) => value !== "")));
   const oauthValues = [
     parsed.OAUTH_ISSUER,
     parsed.OAUTH_SIGNING_SECRET,

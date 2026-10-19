@@ -34,7 +34,7 @@ Then:
 
 Notes that cost time otherwise:
 
-- `cp .env.example .env` does not work. `.env.example` has empty `ALEXA_SKILL_ID=` and `ALEXA_REDIRECT_URIS=` lines, and the config parser rejects empty strings (checked with `readConfig` on 2026-10-19: `ALEXA_SKILL_ID` "Too small"). The minimal file above avoids them.
+- `cp .env.example .env` also works: empty lines count as unset, and a test (`test/config.test.ts`) starts the config from the shipped example.
 - `ALLOW_UNAUTHENTICATED=true` is needed because the `/sim` page sends no token. The tunnel then exposes `/mcp` and `/sim/api` without a login for as long as it runs. Keep the run short and stop the tunnel afterwards.
 - `AMBIENT_CAPTURE_LLM_REQUESTS=1` is the capture switch. It is off by default.
 - The brain model is `CALLER_MODEL`, default `claude-opus-5-5`.
