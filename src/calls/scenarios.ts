@@ -84,7 +84,7 @@ export const SCENARIOS: Scenario[] = [
     line: simulated(VET),
     brain: scriptedBrain(bookingScript(VET.name, "Hi, I'd like to book a checkup appointment for Maya's dog Biscuit. When do you have an opening?")),
     owner: "once",
-    expect: { kind: "confirmed", transcript: [/Maya: Approved: .*gave no price/, /Just to confirm: no price is set/] }
+    expect: { kind: "confirmed", transcript: [/Maya: Approved: a booking with no price/, /Just to confirm: no price is set/] }
   },
   {
     title: "A dental office hedges every read-back",

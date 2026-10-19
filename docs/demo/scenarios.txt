@@ -6,7 +6,7 @@ Ambient must ask the owner before agreeing to no price, say so in the read-back,
   Ambient: Hi, I'd like to book a checkup appointment for Maya's dog Biscuit. When do you have an opening?
   Happy Paws Veterinary: We can see Biscuit on Thursday the twenty-second at three pm.
   Ambient: One moment, let me check with Maya.
-  Maya: Approved: Happy Paws Veterinary confirmed for Thursday the twenty-second at 3 pm but gave no price. Should I agree without a price?
+  Maya: Approved: a booking with no price for Thursday the twenty-second at 3 pm
   Ambient: Just to confirm: no price is set, Thursday the twenty-second at 3 pm. Is that right?
   Happy Paws Veterinary: Yes, that's right.
   Ambient: Great, Maya will expect you Thursday the twenty-second at 3 pm. Thanks, goodbye.
@@ -51,7 +51,7 @@ The plumber holds at one hundred eighty against a limit of one hundred fifty; Ma
   Ambient: Hmm, okay. Is there any room on the price?
   Joe's Plumbing: Best I can do is one eighty, honestly. Parts went up this year.
   Ambient: One moment, let me check with Maya.
-  Maya: Declined: Joe's Plumbing can come Tuesday the 20th at 10 am for one hundred eighty dollars, over your limit of one hundred fifty dollars. Should I book it?
+  Maya: Declined: one hundred eighty dollars for Tuesday the 20th at 10 am
   Ambient: Okay, thanks for your time. Goodbye.
 
   Owner asked: Joe's Plumbing can come Tuesday the 20th at 10 am for one hundred eighty dollars, over your limit of one hundred fifty dollars. Should I book it?

@@ -934,3 +934,11 @@ describe("round 19 review findings", () => {
     expect(agreesTo("Yes, ten.", "one hundred eighty dollars total, Tuesday 10:00 AM", 180, "Tuesday 10:00 AM")).toBe(true);
   });
 });
+
+describe("owner notes", () => {
+  it("records the decision as the terms, not the question", () => {
+    const asked = play([answered, heard("It'll be 180"), confirm(180, "Tuesday at ten", "Tuesday at ten")]);
+    const approved = play([{ kind: "owner_decided", requestId: requestOf(asked.state), decision: "once" }], asked.state);
+    expect(approved.state.turns.at(-1)).toMatchObject({ speaker: "owner", text: "Approved: one hundred eighty dollars for Tuesday at ten" });
+  });
+});

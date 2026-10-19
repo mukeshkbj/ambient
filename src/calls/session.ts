@@ -140,7 +140,8 @@ function transition(state: CallState, input: CallInput, now: string): Transition
     case "owner_decided": {
       if (phase.kind !== "waiting_for_owner" || phase.requestId !== input.requestId) return unchanged(state);
       const approved = input.decision === "once";
-      const note = `${approved ? "Approved" : "Declined"}: ${phase.question}`;
+      const terms = `${phase.amountUsd !== undefined ? price(phase.amountUsd) : "a booking with no price"}${phase.when ? ` for ${phase.when}` : ""}`;
+      const note = `${approved ? "Approved" : "Declined"}: ${terms}`;
       const amount = phase.amountUsd;
       const grant: Grant = { ...(amount !== undefined ? { amountUsd: amount } : {}), ...(phase.when ? { when: phase.when } : {}) };
       const ledger = amount === undefined
