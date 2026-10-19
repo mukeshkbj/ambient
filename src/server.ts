@@ -143,7 +143,7 @@ export function watchApprovals(registry: RuntimeRegistry, cue: Cue): () => void 
       } catch {
         return;
       }
-      const endedCall = view.subject !== undefined && (view.status === "failed" || view.status === "unknown" || (view.status === "completed" && view.outcome !== undefined && ownerRefused(view.outcome) === undefined));
+      const endedCall = view.subject !== undefined && (view.status === "failed" || view.status === "unknown" || (view.status === "completed" && view.outcome !== undefined && ownerRefused(view) === undefined));
       const key = endedCall ? `ended:${view.id}` : view.status === "waiting_approval" ? view.approval?.id : undefined;
       if (!key || announced.has(key)) return;
       announced.add(key);

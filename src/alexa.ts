@@ -306,8 +306,8 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
       const ctx = { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state };
       const amount = approval.amountUsd !== undefined ? ` at ${dollarsInWords(approval.amountUsd)}` : "";
       const reply = run.status === "completed" || run.status === "waiting_approval"
-        ? `${choice === "once" || run.status === "completed" ? "Okay." : "Okay, I'll say no."} ${speak(run, ctx)}`
-        : choice === "once" ? `Okay, telling them yes${amount}. Say status to hear how it went.` : "Okay, I'll say no. Say status to hear how it went.";
+        ? `Okay. ${speak(run, ctx)}`
+        : choice === "once" ? `Okay, telling them yes${amount}. Say status to hear how it went.` : "Okay, telling them no. Say status to hear how it went.";
       return response(reply, runAttributes(attributes, run), false, isLive(run));
     } catch (error) {
       return response(errorText(error), attributes);

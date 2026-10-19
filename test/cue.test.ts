@@ -135,7 +135,8 @@ describe("approval cue wiring", () => {
     expect(needsYou).toHaveBeenLastCalledWith(expect.stringContaining("Joe's Plumbing turned it down, so nothing is booked."), "result");
     await entry.engine.ask("call the plumber again");
     fake.emit({ type: "status.update", sessionId: "runtime-1", payload: { text: "Calling Joe's Plumbing", subject: "Joe's Plumbing" } });
-    fake.emit({ type: "message.complete", sessionId: "runtime-1", payload: { text: "done", outcome: { kind: "no_deal", reason: "Maya declined one hundred eighty dollars" } } });
+    fake.emit({ type: "status.update", sessionId: "runtime-1", payload: { text: "Maya: Declined: one hundred eighty dollars" } });
+    fake.emit({ type: "message.complete", sessionId: "runtime-1", payload: { text: "done", outcome: { kind: "no_deal", reason: "Maya declined the one hundred eighty dollar quote." } } });
     await flush();
     expect(needsYou).toHaveBeenCalledTimes(1);
     unwatch();

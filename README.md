@@ -60,7 +60,7 @@ The end of the same run, from the call transcript:
 
 ```text
   Maya: Approved: one hundred sixty dollars for Tuesday the 20th at 10 am
-  Ambient: Okay, thanks for waiting. Maya says one sixty is fine. Please go ahead and book Tuesday at ten.
+  Ambient: Okay, Maya says one sixty is fine. Please go ahead and book Tuesday at ten.
   Joe's Plumbing: Hmm, one sixty. Alright, that works. I'll put you down for Tuesday the 20th at 10 am.
   Ambient: Okay, so just to confirm, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?
   Joe's Plumbing: Yes, plus parts.

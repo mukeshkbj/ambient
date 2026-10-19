@@ -150,10 +150,11 @@ describe("speak", () => {
     });
 
     it("tells the owner in their own terms that they declined", () => {
-      const ended = call({ status: "completed", outcome: { kind: "no_deal", reason: "Maya declined one hundred eighty dollars" } });
-      expect(speak(ended, { label: "Ambient" })).toBe("You said no to one hundred eighty dollars, so I ended the call. Nothing is booked.");
-      const fullName = call({ status: "completed", outcome: { kind: "no_deal", reason: "Maya Patel declined one hundred eighty dollars" } });
-      expect(speak(fullName, { label: "Ambient" })).toBe("You said no to one hundred eighty dollars, so I ended the call. Nothing is booked.");
+      const steps = ["Calling Joe's Plumbing", "Maya Patel: Declined: one hundred eighty dollars for Tuesday the 20th at 10 am"];
+      const ended = call({ status: "completed", steps, outcome: { kind: "no_deal", reason: "Maya declined the one hundred eighty dollar quote." } });
+      expect(speak(ended, { label: "Ambient" })).toBe("You said no to one hundred eighty dollars for Tuesday the 20th at 10 am, so I ended the call. Nothing is booked.");
+      const laterYes = call({ status: "completed", steps: [...steps, "Maya Patel: Approved: one hundred sixty dollars"], outcome: { kind: "no_deal", reason: "They hung up." } });
+      expect(speak(laterYes, { label: "Ambient" })).not.toContain("You said no");
     });
 
     it("never says the owner refused when the business turned the job down", () => {

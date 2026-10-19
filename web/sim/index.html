@@ -332,7 +332,7 @@ function renderTranscript(steps, biz) {
     nodes.push(`<div class="bubble ${role}">${esc(nb(text))}</div>`);
     lastWho = who;
   }
-  const html = nodes.join("") || `<div class="empty"><strong>The call shows here, word for word.</strong><span>You see what Ambient says and what Joe's Plumbing says back, as it happens.</span><div class="try"><b>You can say, during the call</b><span>“Alexa, offer one forty”</span><span>“Alexa, tell Ambient to book it”</span><span>“Alexa, hang up”</span></div></div>`;
+  const html = nodes.join("") || `<div class="empty"><strong>The call shows here, word for word.</strong><span>You see what Ambient says and what Joe's Plumbing says back, as it happens.</span><div class="try"><b>You can say, during the call</b><span>“Alexa, tell Ambient offer one forty”</span><span>“Alexa, tell Ambient to book it”</span><span>“Alexa, tell Ambient to hang up”</span></div></div>`;
   if (box.dataset.html !== html) { box.dataset.html = html; box.innerHTML = html; }
   requestAnimationFrame(() => {
     box.scrollTop = box.scrollHeight;

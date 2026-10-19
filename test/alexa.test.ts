@@ -243,7 +243,7 @@ describe("Alexa call intents", () => {
     });
     const result = await handleAlexaRequest(request("AMAZON.NoIntent"), deps);
     expect(fake.client.respondToApproval).toHaveBeenCalledWith("runtime-1", "req-1", "deny");
-    expect(speechOf(result)).toContain("say no");
+    expect(speechOf(result)).toContain("telling them no");
     close();
   });
 

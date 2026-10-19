@@ -60,12 +60,13 @@ function lastLineFrom(view: RunView, speaker: string): string | undefined {
 
 const ownerChoices = (limit: number) => `Say yes to book it, offer a price${limit > 0 ? ` like ${priceInWords(limit)}` : ""}, or say no.`;
 
-/** The approval ask on its own — used as the elicitation message. */
-export function ownerRefused(outcome: RunView["outcome"]): string | undefined {
-  if (outcome?.kind !== "no_deal") return undefined;
-  return /^.+? declined (.+ dollars?(?: and .+ cents?)?|a deal with no price)\.?$/.exec(outcome.reason)?.[1];
+export function ownerRefused(view: RunView): string | undefined {
+  if (view.outcome?.kind !== "no_deal") return undefined;
+  const decision = view.steps.findLast(step => /: (?:Approved|Declined): /.test(step));
+  return decision && /: Declined: (.+)$/.exec(decision)?.[1];
 }
 
+/** The approval ask on its own — used as the elicitation message. */
 export function approvalAsk(view: RunView, ctx: SpeakContext): string {
   const business = callee(view);
   const approval = view.approval;
@@ -121,7 +122,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
           ? `${business ?? "The business"} wasn't reached: ${reason}, so nothing is booked. ${RETRY}`
           : `I can't confirm a booking with ${business ?? "the business"}: ${reason}. Check with them before you try again.`;
       }
-      const refused = ownerRefused(outcome);
+      const refused = ownerRefused(view);
       if (refused) return `You said no to ${refused}, so I ended the call. Nothing is booked.`;
       if (outcome?.kind === "declined") return `${callee(view) ?? "The business"} turned it down, so nothing is booked.`;
       if (outcome) return clampSentences(`${stripEnd(outcome.reason)}.`);

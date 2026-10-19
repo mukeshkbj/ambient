@@ -77,7 +77,7 @@ Beat 3 now has about 3.8 s of slack, because Joe's "Sure, we can come" line is c
 - Alexa: "Joe's Plumbing turned down your offer and is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no." **CUT** (the card carries it)
 - Owner: "Alexa, tell Ambient to book it." Or tap "Book $160". The owner approves a price over the limit on purpose; nothing above the limit books without this step.
 - Screen: the transcript shows the owner's note "Maya: Approved: one hundred sixty dollars for Tuesday the 20th at 10 am". It is not spoken.
-- Ambient, to Joe: "Okay, thanks for waiting. Maya says one sixty is fine. Please go ahead and book Tuesday at ten." **CUT**
+- Ambient, to Joe: "Okay, Maya says one sixty is fine. Please go ahead and book Tuesday at ten." **CUT**
 - Joe: "Hmm, one sixty. Alright, that works. I'll put you down for Tuesday the 20th at 10 am."
 - Needs: HW for voice. None for the card taps.
 

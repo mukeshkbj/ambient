@@ -89,7 +89,7 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
     when: /approved:/i,
     reply: (match, state) => {
       const amount = Math.max(...amountsIn(match.input ?? ""));
-      return [{ kind: "say", text: `Okay, thanks for waiting. ${state.brief.ownerName} says ${priceInWords(amount)} is fine. Please go ahead and book Tuesday at ten.`, last: true }];
+      return [{ kind: "say", text: `Okay, ${state.brief.ownerName} says ${priceInWords(amount)} is fine. Please go ahead and book Tuesday at ten.`, last: true }];
     }
   },
   {
