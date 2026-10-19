@@ -1,108 +1,75 @@
 # Product feedback
 
-One section per tool, from building Ambient against them. Honest scope notes
-are included where we could not reach a live environment from this machine.
+One section per tool we used to build Ambient. Each section follows the hackathon's required fields: what we used it for, what worked, what needs work, onboarding, and whether we would build with it again. Where we could not reach a live service, the section says so. The matching failures, with reproduction steps, are in [`docs/friction-log.md`](friction-log.md).
 
-## Alexa+ developer documentation and design guide
+## Alexa+ developer documentation and MCP integration guidance
 
-- **Used for:** the voice-first tool surface (`delegate`, `status`, `approve`,
-  `stop`, `agents`, `briefing`) — descriptions written in the guide's
-  "when + what" style; device-class adaptation (`deviceClass` voice-only /
-  mobile / display / TV) in the bundled simulator.
-- **Worked:** the voice guidance translated directly into testable rules —
-  two sentences, outcome first, never an internal id — and our golden speech
-  corpus (`test/voice.test.ts`) enforces it mechanically.
-- **Needs work:** the Alexa+ MCP toolkit, CLI, and web simulator were gated
-  for hackathon entrants during the build, and some setup pages lacked the
-  preview banner the FAQ describes; we built `/sim` — a real MCP client host
-  — as the verifiable stand-in. The protocol-version and `WWW-Authenticate`
-  ambiguities are in `docs/friction-log.md`.
-- **Time to hello world:** unmeasurable — gated. For the public docs alone,
-  roughly an afternoon to internalize the lifecycle + tools guidance.
-- **Build again?** Yes — the approval/elicitation model is the right shape
-  for ambient agents; we'd want the toolkit available for the end-to-end
-  check.
+- **Used it for:** the voice-first MCP tool surface in `src/mcp.ts` (`delegate`, `status`, `approve`, `stop`, `agents`, `briefing`). We wrote each tool description in the guide's "when and what" style. The device-class handling in the `/sim` host follows the guide's device list.
+- **What worked:** the voice guidance turned into rules we can test. Speech leads with the outcome, uses at most two sentences, asks one question, and never reads an internal id. `test/voice.test.ts` enforces these rules on every reply.
+- **What needs work:** the Alexa+ MCP toolkit, CLI, and web simulator were gated for hackathon entrants while we built. Three pages show three different MCP protocol versions (friction entry 3). The authentication page lists `WWW-Authenticate` as unsupported, but the MCP specification requires clients to parse it (friction entry 4). We built the `/sim` host as a stand-in. It is our own MCP client, so it cannot prove what Alexa+ renders.
+- **Onboarding:** the public docs took about an afternoon to read and apply. The end-to-end path was not reachable, because the toolkit was gated.
+- **Would we build with it again?** Yes. Elicitation and approvals are the right shape for an agent that needs a person's consent. We would want the toolkit open before the build starts.
 
-## ASK custom skills and account linking
+## Alexa Skills Kit custom skill and request verification
 
-- **Used for:** the `/alexa` endpoint (`src/alexa.ts`), the en-US/en-GB
-  interaction models (`alexa/interaction-model.*.json`), and request
-  verification (`src/alexa-verify.ts` — SignatureCertChainUrl pinning, SAN
-  `echo-api.amazon.com`, chain + signature checks over the raw body, ±150 s
-  timestamps).
-- **Worked:** the interaction model JSON format is clean; carrier-phrase +
-  `SearchQuery` slots covered every utterance we needed without id-bearing
-  slots. The documented signature-verification contract was precise enough
-  to implement and test offline with generated cert chains.
-- **Needs work:** verification could not be exercised against the live Alexa
-  service from this machine (skill registration needs the developer account);
-  it is implemented to spec and unit-tested, not live-verified — stated in
-  `docs/acceptance.md`.
-- **Time to hello world:** ~1 hour to a buildable model + handler; live
-  console verification still pending.
-- **Build again?** Yes, if the project targets the skill surface; for this
-  submission the MCP host path carries more weight.
+- **Used it for:** the `/alexa` endpoint (`src/alexa.ts`) with call intents (start a call, steer it, offer an amount, approve or deny, status, hang up), the en-US and en-GB interaction models in `alexa/`, and request verification in `src/alexa-verify.ts` (certificate URL pinning, the `echo-api.amazon.com` SAN, the chain and signature checks over the raw body, and a 150-second timestamp window).
+- **What worked:** the interaction model format is clear. The signature-verification contract is precise enough to implement and test offline with generated certificate chains (`test/security.test.ts`).
+- **What needs work:** we have not registered the skill. Skill registration and an Echo Dot test need the owner's developer account and hardware. The endpoint is tested against recorded request shapes only.
+- **Onboarding:** about an hour to a buildable model and handler. The console step has not run.
+- **Would we build with it again?** Yes. A custom skill is still the only way to hold a multi-turn voice decision on an Echo Dot today.
 
-## MCP TypeScript SDK (`@modelcontextprotocol/sdk` 1.30)
+## ASK Proactive Events and Voice Monkey (the "needs you" cue)
 
-- **Used for:** the entire server — `McpServer`, `registerTool`,
-  `registerResource`, `StreamableHTTPServerTransport`, `server.server.elicitInput`,
-  client-side `Client` + `StreamableHTTPClientTransport` (the `/sim` host is
-  a real client on loopback), `InMemoryTransport` in tests.
-- **Worked:** the 2025-11-25 surface is current — elicitation with form-mode
-  schemas, capability negotiation, `ui://` resources, sessions with
-  `Mcp-Session-Id`. In-memory transports made the elicitation round-trips
-  unit-testable (3 tests).
-- **Needs work:** `enableJsonResponse: true` silently cannot deliver in-call
-  server→client requests — elicitations hang with no diagnostic (friction
-  entry). Concurrent in-call elicitations across outstanding requests are
-  not multiplexed (friction entry). Transport security options were
-  deprecated mid-build with no named successor.
-- **Time to hello world:** ~30 minutes to a working server; a day to
-  elicitation + sessions + resources done carefully.
-- **Build again?** Yes — the only practical path to a standards MCP server
-  in TS today, and it tracks the spec closely.
+- **Used it for:** `src/cue.ts`. When a call needs the owner, Ambient sends a Voice Monkey announcement (spoken on the Echo Dot) and a Proactive Events notification (the yellow ring), at most once per approval.
+- **What worked:** both APIs are small. Each one is a single authenticated POST, and both are unit tested with recorded responses (`test/cue.test.ts`).
+- **What needs work:** Alexa has no first-party way for a skill to speak unprompted. Proactive Events shows a notification from a fixed schema, so the spoken cue depends on Voice Monkey, a third-party service. We could not confirm from the docs whether the console accepts an HTTPS `events.endpoint` for a non-Lambda skill; `reference-alexa.md` marks it UNVERIFIED. Neither API has run live, because both need the owner's tokens and an Echo device.
+- **Onboarding:** about two hours to read both docs and write the client. Live setup has not run.
+- **Would we build with it again?** Yes, for the notification. We would replace Voice Monkey with a first-party "announce to this household" API if Amazon offered one.
 
-## MCP Apps (tool-result UI resources)
+## MCP TypeScript SDK (`@modelcontextprotocol/sdk` 1.30.0)
 
-- **Used for:** `ui://ambient/task` — the live task card the sim renders in
-  an iframe with the `ui/initialize` handshake and `hostContext.deviceClass`
-  re-fit on `host-context-changed`.
-- **Worked:** resource-URI indirection keeps tool results small; the
-  handshake is one round-trip; device-class adaptation is a clean contract.
-- **Needs work:** field placement ambiguity (definition `_meta.ui` vs result
-  `_meta.ui.resourceUri` vs deprecated flat `ui/resourceUri`) — which reader
-  honors which is undocumented (friction entry).
-- **Time to hello world:** ~2 hours including the host side.
-- **Build again?** Yes — a task card beside the transcript is exactly what
-  ambient supervision needs.
+- **Used it for:** the whole server and client: `McpServer`, `registerTool`, `registerResource`, `StreamableHTTPServerTransport`, `server.server.elicitInput`, and the `Client` with `StreamableHTTPClientTransport` that the `/sim` host and `scripts/smoke-mcp.ts` use over loopback.
+- **What worked:** the SDK tracks the 2025-11-25 specification closely. Elicitation with form schemas, capability negotiation, `ui://` resources, and `Mcp-Session-Id` sessions all worked as specified. In-memory transports made elicitation round trips testable without a network.
+- **What needs work:** `elicitInput` inside a tool call reaches the client only on an SSE response tied to that request. In the other modes the call hangs with no error and no log (friction entry 1, severity High). One clear error would have saved most of a day.
+- **Onboarding:** about 30 minutes to a working server. About a day to get elicitation, sessions, and resources right.
+- **Would we build with it again?** Yes. It is the practical way to ship a standards MCP server in TypeScript.
 
-## Amazon Bedrock Converse
+## MCP Apps (`ui://` task card)
 
-- **Used for:** `src/runtimes/bedrock.ts` — a real runtime adapter built on
-  the Converse API shape (`modelId`, `messages`, `toolConfig.tools[].toolSpec`,
-  `stopReason: "tool_use"` loop) with approval-gated tools, transcript
-  persistence, and abort → interrupt.
-- **Worked:** the tool-loop shape mapped cleanly onto our event model —
-  `toolUse`/`toolResult` blocks become `tool.start`/`tool.complete`,
-  `stopReason` becomes `message.complete`.
-- **Needs work:** honest note — this machine has no AWS credentials (no CLI,
-  `~/.aws`, or env vars), so the adapter is unit-tested against a mocked
-  `send` (7 tests covering the tool loop, approval gate, cancel, and
-  transcript resume) but not live-verified. Model access/region onboarding
-  friction is unmeasured.
-- **Time to hello world:** adapter implementation ~4 hours; live onboarding
-  unmeasured.
-- **Build again?** Yes — Converse's uniform tool interface across models is
-  the right abstraction for multi-agent supervision.
+- **Used it for:** `ui://ambient/task` in `src/task-view.ts`, the Echo Show card with the call's state, the over-limit decision, and the booked result. The card calls tools back through the host with `tools/call`, and it adapts to `hostContext.deviceClass`.
+- **What worked:** the resource indirection keeps tool results small. The `ui/initialize` handshake is one round trip, and a card that calls tools through the host lets the owner approve on the screen.
+- **What needs work:** Alexa's docs put `resourceUri` in the tool response. The MCP Apps specification puts it in the tool definition (friction entry 5). We emit both, and we cannot test which one Alexa+ reads.
+- **Onboarding:** about two hours, including our own host.
+- **Would we build with it again?** Yes. A decision card next to the voice prompt is what makes the over-limit moment clear.
 
-## AWS CDK, EC2, Secrets Manager
+## Anthropic API and TypeScript SDK (`@anthropic-ai/sdk` 0.135)
 
-- **Used for:** deployment preparation — `aws-cdk-lib`/`constructs` are
-  devDependencies with `docs/deployment.md` covering the TLS + secrets path.
-- **Worked:** moving CDK to devDependencies keeps `pnpm i` light for judges.
-- **Needs work:** deployment is pending (requires the account owner's go-ahead
-  — it's paid infrastructure); the receipt is blocked in
-  `docs/acceptance.md`, not faked.
-- **Build again?** Yes for the real deployment; the honest answer is it's
-  the one path we haven't exercised end-to-end.
+- **Used it for:** the call brain in `src/calls/brain.ts` (`claude-opus-5-5`, streamed through `client.beta.messages.stream` with low effort, server-side fallbacks, and strict tools with eager input streaming) and business discovery in `src/calls/discover.ts` (the web search tool plus a strict `report_candidates` tool).
+- **What worked:** strict tools gave us typed `ask_owner`, `end_call`, and `remember` steps, which the reducer can trust structurally. Streaming text deltas let the voice line start speaking before the turn ends. The brain is tested against a stubbed stream (`test/brain.test.ts`).
+- **What needs work:** `output_config.format` cannot be combined with web-search citations, so structured discovery output had to go through a strict tool instead. We have not run the brain live or measured time to first word, because that spends API money and waits for the owner's approval (`pnpm brain:latency` is ready).
+- **Onboarding:** under an hour to a streaming call with tools. The SDK types made the beta features easy to find.
+- **Would we build with it again?** Yes. The model can negotiate, and the strict tool calls are why a pure reducer can keep the honesty rules outside the model.
+
+## AssemblyAI Voice Agent API
+
+- **Used it for:** the voice line in `src/calls/rooms.ts` and `web/call/index.html`. Each call creates a stored agent whose greeting is the AI disclosure and whose LLM is our own `/call/<id>/v1/chat/completions` endpoint. The business's browser connects with a single-use token.
+- **What worked:** bring-your-own-LLM lets our reducer decide every word the agent says. The greeting is spoken verbatim, which guarantees the disclosure comes first.
+- **What needs work:** the request AssemblyAI sends to a bring-your-own LLM endpoint is not documented (friction entry 6, severity High). Two docs pages disagree on event field names (friction entry 7). A per-call greeting needs a new stored agent per call (friction entry 8). There is no documented delete, so we clear the agent's LLM settings when a call ends. AssemblyAI cannot dial out, so the business answers on a web link. The line is tested against recorded frames only; it has not run against the live API.
+- **Onboarding:** about half a day, most of it spent working out the undocumented request shape.
+- **Would we build with it again?** Yes, if outbound calling arrives. The bring-your-own-LLM design is the right one for agents that must control what they say.
+
+## AWS CDK, EC2, and Secrets Manager
+
+- **Used it for:** `infra/stack.ts`, a single EC2 instance in a public subnet, an IAM role, a Secrets Manager secret for the OAuth signing key, and an Elastic IP for a stable HTTPS endpoint.
+- **What worked:** `pnpm infra:synth` synthesizes the stack with no AWS credentials, so we could review the template before spending anything. Keeping CDK in devDependencies keeps the judges' `pnpm install` light.
+- **What needs work:** nothing is deployed. A deploy costs money and waits for the owner's approval. This machine has no AWS credentials, so we have not exercised account setup, regions, or deploy errors. We do not use Bedrock in this version; the call brain uses the Anthropic API directly.
+- **Onboarding:** about an hour to a synthesizable stack. Deploy onboarding has not run.
+- **Would we build with it again?** Yes. CDK in TypeScript keeps the deploy in the same language and the same review as the server.
+
+## Twilio ConversationRelay (evaluated, not used)
+
+- **Used it for:** nothing in the shipped code. It was the first choice for real outbound calls (`docs/plans/2026-10-18-handle-the-call/decisions.md`).
+- **What worked:** the docs describe a clean text-in, text-out bridge to an LLM, which fits our reducer.
+- **What needs work:** a trial account cannot run `<ConversationRelay>`, and the account also needs an AI features addendum. Real outbound calls therefore need a paid account from day one. We had no budget for it.
+- **Onboarding:** not started.
+- **Would we build with it again?** Yes, with a budget. It is the shortest path to a real phone ringing, which our demo lacks.
