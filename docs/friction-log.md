@@ -6,7 +6,7 @@ We did not run a timer. Where git shows when a problem started and when it was f
 
 ## Reproduce every entry with one command
 
-`pnpm repro:friction` runs `scripts/repro-friction.sh`. It re-runs entries 1, 2, B and C locally and fetches the vendor pages for entries 3 to 8. It exits non-zero if any entry no longer reproduces. Output on 2026-10-19 (Windows 11, Node v24.21.0, pnpm 10.33.0, MCP SDK 1.30.0):
+`pnpm repro:friction` runs `scripts/repro-friction.sh`. It re-runs entries 1, 2, B and C locally and fetches the vendor pages for entries 3 to 9. It exits non-zero if any entry no longer reproduces. Output on 2026-10-19 (Windows 11, Node v24.21.0, pnpm 10.33.0, MCP SDK 1.30.0):
 
 ```text
 entry 1: reproduced: elicitInput frame per mode: json:silent sse:silent sse-related:delivered json-related:silent
@@ -17,6 +17,7 @@ entry 5: reproduced: Alexa: "resourceUri defined in the tool response"; MCP Apps
 entry 6: reproduced: the page names POST {base_url}/chat/completions and never mentions messages, timeout or tools
 entry 7: reproduced: reply.started has reply_id in one page and none in the other; the example repository uses /v1/realtime
 entry 8: reproduced: agent_id_not_first: agent_id is mutually exclusive with the inline fields
+entry 9: reproduced: supported-languages: "uses Universal-3.5 Pro Streaming"; docs index: a Universal-3.6 Pro page at a universal-3-5-pro URL
 entry B: reproduced: guard: no match
 entry C: reproduced: TS2550
 ```
@@ -27,7 +28,7 @@ entry C: reproduced: TS2550
 |---|---|---|
 | Onboarding and SDK install | Hit | `pnpm install` of `@modelcontextprotocol/sdk` 1.30.0 worked with no friction; no entry. The first server run on Windows failed (entry 2). |
 | MCP SDK at runtime | Hit | Entry 1. Elicitation inside a tool call hung with no error. |
-| Docs | Hit | Entries 3 to 8. Six documentation problems: pages that disagree with each other or leave a field unstated. |
+| Docs | Hit | Entries 3 to 9. Seven documentation problems: pages that disagree with each other or leave a field unstated. |
 | Alexa developer console and skill registration | Not reached | The owner's developer account step has not run. `alexa/interaction-model.en-US.json`, `alexa/interaction-model.en-GB.json` and `alexa/skill.json` exist but were never imported. `progress.md` phase 7: "Echo Dot run pending". |
 | ASK CLI | Not reached | `progress.md` records no `ask` or `alexa-ai` command run. `docs/product-feedback.md` says the Alexa+ MCP toolkit, CLI and web simulator were gated for hackathon entrants during the build. |
 | Account linking and OAuth | Not reached live | The OAuth metadata routes and the request verification (`src/alexa-verify.ts`) are written and unit tested. No live Alexa service call exercised them. Entry 4 covers the docs gap. |
@@ -38,7 +39,7 @@ entry C: reproduced: TS2550
 | AWS: CDK | Hit, no friction | `pnpm infra:synth` exits 0 on 2026-10-18 with no AWS credentials. |
 | AWS: deploy | Blocked | `cdk deploy` costs money and waits for the owner's approval (`progress.md`, phase 10). |
 | Twilio | Dropped by decision | The owner has no Twilio budget (`progress.md`, "Decisions taken this session"). See the note below the table. No Twilio account step ran. |
-| AssemblyAI | Hit | Entries 6 to 8. The code is tested against fixtures written from the docs. No frame was captured from the live API. `progress.md`, phase 6: "not yet run against the live API". |
+| AssemblyAI | Hit | Entries 6 to 9. The code is tested against fixtures written from the docs. No frame was captured from the live API. `progress.md`, phase 6: "not yet run against the live API". |
 | Real-device testing | Not reached | Needs the skill registered, the Voice Monkey token and the Echo Dot run. |
 
 Twilio decision. We chose Twilio ConversationRelay first (`docs/plans/2026-10-18-handle-the-call/decisions.md`). We then dropped it for lack of budget. These facts from `docs/plans/2026-10-18-handle-the-call/reference-twilio.md` drove the decision:
@@ -256,6 +257,26 @@ Access date for every quote below: 2026-10-18.
 - **Time lost:** Not measured. The cost that remains is one extra REST call before every call, plus a cleanup of the agent afterwards (`de30e8d`).
 - **Workaround:** One stored agent per call (`src/calls/rooms.ts`, `41fb071`). Retire it when the line ends (`de30e8d`).
 - **Fix we ask for:** Accept `greeting` and `system_prompt` in the same `session.update` as `agent_id`.
+
+### 9. AssemblyAI Voice Agent API: the docs name two different speech models for the same agent
+
+- **Task attempted:** Confirm that the voice agent recognizes Spanish before we set `input.language_codes` to `["es"]` for a Spanish call.
+- **Tool and version:** AssemblyAI Voice Agent API, no version published. Pages `supported-languages.md` and https://www.assemblyai.com/docs/llms.txt, and https://www.assemblyai.com/pricing, fetched with `curl` on 2026-10-19.
+- **Date:** 2026-10-19, while building the Spanish line in `13a9a7c`.
+- **Severity:** Low. Both models list Spanish, so our code did not change. A team that needs a language on only one of the lists cannot tell which list applies.
+- **Steps:**
+
+  ```
+  B=https://www.assemblyai.com/docs/voice-agents/voice-agent-api
+  curl -sSL "$B/supported-languages.md" | grep -n "Universal-3"
+  curl -sSL https://www.assemblyai.com/docs/llms.txt | grep -n "Universal-3.6 Pro on Pipecat"
+  ```
+
+- **Expected:** One name for the speech model behind the Voice Agent API, and one language list for it.
+- **Actual:** `supported-languages.md` line 13 says: "The Voice Agent API uses Universal-3.5 Pro Streaming for speech recognition." The docs index lists "[Universal-3.6 Pro on Pipecat](https://www.assemblyai.com/docs/voice-agents/pipecat-universal-3-5-pro)": a 3.6 title on a 3.5 URL. The pricing page names "Universal-3.6 Pro Realtime" 13 times and "Universal-3.5 Pro" 14 times.
+- **Time lost:** About 10 minutes on 2026-10-19 to compare the pages. This is an estimate, not a timer.
+- **Workaround:** We rely on the language list on `supported-languages.md`, the page that the Voice Agent docs link to. That list includes Spanish. No live Spanish call has run, so the list is not verified.
+- **Fix we ask for:** Name the model once on the Voice Agent pages, and make the titles and URLs agree.
 
 ## Our own bugs (not vendor friction)
 

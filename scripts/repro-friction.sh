@@ -56,6 +56,10 @@ example="$(curl -sSL https://raw.githubusercontent.com/AssemblyAI/voice-agent-ap
 
 report 8 "$(grep -oE 'agent_id_not_first' "$work/ev.md" | head -1)$(grep -q 'mutually exclusive with the inline fields' "$work/ev.md" && echo ': agent_id is mutually exclusive with the inline fields')"
 
+langs="$(curl -sSL "$aai/supported-languages.md" | grep -o 'uses Universal-3.5 Pro Streaming' | head -1)"
+index="$(curl -sSL https://www.assemblyai.com/docs/llms.txt | grep -o 'Universal-3.6 Pro on Pipecat\](https://www.assemblyai.com/docs/voice-agents/pipecat-universal-3-5-pro)' | head -1)"
+[ -n "$langs" ] && [ -n "$index" ] && report 9 "supported-languages: \"$langs\"; docs index: a Universal-3.6 Pro page at a universal-3-5-pro URL" || report 9 ""
+
 printf '%s\n' 'console.log(import.meta.url); console.log(process.argv[1]);' 'if (import.meta.url === `file://${process.argv[1]}`) console.log("guard: match"); else console.log("guard: no match");' > "$work/main.mjs"
 report B "$(node "$work/main.mjs" | grep -o 'guard: no match')"
 
