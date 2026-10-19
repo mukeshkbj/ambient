@@ -132,8 +132,12 @@ export function speak(view: RunView, ctx: SpeakContext): string {
     case "waiting_approval": {
       return `${approvalAsk(view, ctx)} Say approve to allow it once, or deny.`;
     }
-    case "unknown":
-      return `${label} lost the connection during ${title}, so the outcome is unknown. It won't retry by itself. Say call, followed by who to call, once it's back.`;
+    case "unknown": {
+      const business = callee(view);
+      return business
+        ? `I lost the connection during the call to ${business}, so I don't know if anything is booked. Check with them before you try again.`
+        : `${label} lost the connection during ${title}, so the outcome is unknown. It won't retry by itself.`;
+    }
     default: {
       if (ctx.state === "offline") {
         return `${label} is offline; ${title} is marked ${view.status} until it reconnects.`;

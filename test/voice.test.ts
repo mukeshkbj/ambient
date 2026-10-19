@@ -139,6 +139,12 @@ describe("speak", () => {
       );
     });
 
+    it("tells the owner to check with the business when the call drops mid-way", () => {
+      expect(speak(call({ status: "unknown" }), { label: "Ambient" })).toBe(
+        "I lost the connection during the call to Joe's Plumbing, so I don't know if anything is booked. Check with them before you try again."
+      );
+    });
+
     it("echoes the amount when the owner offers one", () => {
       expect(steerReply(call({ status: "running" }), { label: "Ambient" }, "offer 160")).toBe("Okay, offering one hundred sixty dollars. Say status to hear their answer.");
     });

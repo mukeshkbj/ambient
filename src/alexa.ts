@@ -275,7 +275,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
       : slotValue(intent, "message", "instruction");
     if (!message) return response(name === "OfferAmountIntent" ? "How much should I offer?" : "What should I tell them?", attributes);
     const target = activeCall(registry, attributes);
-    if (!target) return response("There's no call in progress. Say call, followed by who to call.", attributes);
+    if (!target) return response("There's no call in progress. Say, for example, call Joe's Plumbing.", attributes);
     try {
       const run = await target.entry.engine.steer(target.run.id, message);
       const ctx = { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state };
@@ -312,7 +312,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
   }
   if (name === "HangUpIntent") {
     const target = activeCall(registry, attributes);
-    if (!target) return response("There's no call in progress. Say call, followed by who to call.", attributes);
+    if (!target) return response("There's no call in progress. Say, for example, call Joe's Plumbing.", attributes);
     try {
       const run = await target.entry.engine.cancel(target.run.id);
       return response(speak(run, { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state }), runAttributes(attributes, run));
