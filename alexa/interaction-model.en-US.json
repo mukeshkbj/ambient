@@ -41,6 +41,10 @@
           "name": "CallStatusIntent",
           "samples": [
             "how's the call going",
+            "how did it go",
+            "how it went",
+            "how it's going",
+            "how is it going",
             "status",
             "what's the status",
             "any update",

@@ -35,7 +35,7 @@ pnpm demo
 > status
   Alexa: Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer an amount, or hang up.
 > delegate {"task":"offer 150"}
-  Alexa: Okay, offering one hundred fifty dollars.
+  Alexa: Okay, offering one hundred fifty dollars. Say status to hear their answer.
 > status
   Alexa: Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer an amount, or hang up.
 > approve {"decision":"once"}
@@ -49,7 +49,7 @@ The end of the same run, from the call transcript:
 ```text
   Ambient: Just to confirm: one hundred sixty dollars total, Tuesday at ten. Is that right?
   Joe's Plumbing: Yes, plus parts.
-  Ambient: Sorry, I can only book a total price. With parts, what's the total?
+  Ambient: I need one total price. What is the total with parts?
   Joe's Plumbing: Fair enough. A sink like that needs no parts, so that's all in.
   Ambient: Let me check once more: one hundred sixty dollars total, Tuesday at ten. Is that right?
   Joe's Plumbing: Yes, that's right. See you then.

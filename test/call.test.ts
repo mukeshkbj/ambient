@@ -84,7 +84,7 @@ describe("runCall with the simulated line", () => {
     const texts = final.turns.map(turn => `${turn.speaker}: ${turn.text}`);
     const plus = texts.indexOf("business: Yes, plus parts.");
     expect(plus).toBeGreaterThan(0);
-    expect(texts[plus + 1]).toBe("agent: Sorry, I can only book a total price. With parts, what's the total?");
+    expect(texts[plus + 1]).toBe("agent: I need one total price. What is the total with parts?");
     expect(texts.slice(plus).some(text => text.startsWith("agent: Let me check once more: one hundred eighty dollars total"))).toBe(true);
     expect(final.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 180 } });
   });

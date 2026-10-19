@@ -133,7 +133,7 @@ describe("speak", () => {
     });
 
     it("echoes the amount when the owner offers one", () => {
-      expect(steerReply(call({ status: "running" }), { label: "Ambient" }, "offer 160")).toBe("Okay, offering one hundred sixty dollars.");
+      expect(steerReply(call({ status: "running" }), { label: "Ambient" }, "offer 160")).toBe("Okay, offering one hundred sixty dollars. Say status to hear their answer.");
     });
 
     it("tells the owner in their own terms that they declined", () => {
@@ -160,7 +160,7 @@ describe("speak", () => {
     });
 
     it("confirms a steer by naming who will hear it", () => {
-      expect(steerReply(call({ status: "running" }), { label: "Ambient" })).toBe("Okay, I'll tell Joe's Plumbing.");
+      expect(steerReply(call({ status: "running" }), { label: "Ambient" })).toBe("Okay, I'll tell Joe's Plumbing. Say status to hear their answer.");
       expect(steerReply(view({ status: "running" }), { label: "My Agent" })).toBe('Noted — passed that to My Agent while it works on "Book a table for four".');
     });
   });

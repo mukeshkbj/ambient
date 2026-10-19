@@ -227,7 +227,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
   if (name === "AMAZON.StopIntent" || name === "AMAZON.CancelIntent") {
     const live = activeCall(registry, attributes);
     const goodbye = !live ? "Goodbye." : live.run.approval
-      ? `Goodbye. ${live.run.subject ?? "The business"} is still holding for your answer. Say, Alexa, open Ambient, to hear it again.`
+      ? `Goodbye. ${live.run.subject ?? "The business"} is holding for now and will hang up soon. Say, Alexa, open Ambient, to answer.`
       : "Goodbye. The call is still going. Ask me how it went when you're back.";
     return response(goodbye, attributes, true);
   }
@@ -260,7 +260,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     try {
       const run = await target.entry.engine.steer(target.run.id, message);
       const ctx = { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state };
-      return response(run.subject ? steerReply(run, ctx, message) : "Okay, I'll tell them.", runAttributes(attributes, run), false, isLive(run));
+      return response(run.subject ? steerReply(run, ctx, message) : "Okay, I'll tell them. Say status to hear their answer.", runAttributes(attributes, run), false, isLive(run));
     } catch (error) {
       return response(errorText(error), attributes);
     }

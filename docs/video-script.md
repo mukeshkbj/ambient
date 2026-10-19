@@ -51,7 +51,7 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 ### 5. The owner counters, and Joe counters back (1:00 to 1:20)
 
 - Owner: "Alexa, tell Ambient offer one fifty." Or tap "Offer $150 · Your limit".
-- Alexa: "Okay, offering one hundred fifty dollars."
+- Alexa: "Okay, offering one hundred fifty dollars. Say status to hear their answer."
 - Ambient, to Joe: "Thanks for waiting. Could you do one fifty?"
 - Joe: "One fifty is too low for me. I could do one sixty."
 - Echo Show: the card asks again, "Book $160 · Tells them yes" (`docs/media/sim-countered.png`). Alexa: "Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer an amount, or hang up."
@@ -64,7 +64,7 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 
 - Ambient: "Just to confirm: one hundred sixty dollars total, Tuesday at ten. Is that right?"
 - Joe: "Yes, plus parts."
-- Ambient: "Sorry, I can only book a total price. With parts, what's the total?"
+- Ambient: "I need one total price. What is the total with parts?"
 - Screen: the transcript at the refusal (`docs/media/sim-refused.png`). Nothing is booked.
 - Show this beat uncut. A refusal on screen is the strongest honesty evidence.
 - Needs: none on the sim path.

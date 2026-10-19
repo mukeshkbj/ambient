@@ -70,7 +70,7 @@ export function approvalAsk(view: RunView, ctx: SpeakContext): string {
     return asked.includes(amount) ? asked : `${asked} That's ${amount}.`;
   }
   return request
-    ? `${ctx.label} is asking: ${stripEnd(request)}.`
+    ? `${ctx.label} is asking: ${/[?]$/.test(request.trim()) ? request.trim() : `${stripEnd(request)}.`}`
     : `${ctx.label} needs your approval to continue "${view.title}".`;
 }
 
@@ -86,7 +86,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
     if (view.status === "waiting_approval") {
       const ask = approvalAsk(view, ctx);
       if (ask.endsWith(OWNER_CHOICES)) return ask;
-      const choices = view.approval?.kind === "dial" ? "Say yes to place the call, or no." : "Say approve, deny, or offer a different amount.";
+      const choices = view.approval?.kind === "dial" ? "Say yes to place the call, or no." : view.approval?.amountUsd === undefined ? "Say approve or deny." : "Say approve, deny, or offer a different amount.";
       return `${ask} ${choices}`;
     }
     if (view.status === "cancelled") return `You ended the call before ${business} confirmed. Nothing was booked.`;
@@ -143,8 +143,8 @@ export function heldStatus(view: RunView): string | undefined {
 export function steerReply(view: RunView, ctx: SpeakContext, said?: string): string {
   const business = callee(view);
   const offer = said === undefined ? undefined : offerIn(said);
-  if (business && offer !== undefined) return `Okay, offering ${dollarsInWords(offer)}.`;
-  return business ? `Okay, I'll tell ${business}.` : `Noted — passed that to ${ctx.label} while it works on "${view.title}".`;
+  if (business && offer !== undefined) return `Okay, offering ${dollarsInWords(offer)}. Say status to hear their answer.`;
+  return business ? `Okay, I'll tell ${business}. Say status to hear their answer.` : `Noted — passed that to ${ctx.label} while it works on "${view.title}".`;
 }
 
 export type VoiceResult = {

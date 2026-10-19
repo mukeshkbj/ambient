@@ -118,7 +118,7 @@ describe("Alexa call intents", () => {
     expect(speechOf(launched)).toContain("one hundred eighty dollars");
     expect(launched.response.reprompt?.outputSpeech.ssml).toMatch(/^<speak>Say approve to /);
     const stopped = await handleAlexaRequest(request("AMAZON.StopIntent"), deps);
-    expect(speechOf(stopped)).toContain("still holding for your answer");
+    expect(speechOf(stopped)).toContain("is holding for now and will hang up soon");
     close();
   });
 
@@ -146,7 +146,7 @@ describe("Alexa call intents", () => {
     const language = model.interactionModel.languageModel;
     const samples = (name: string): string[] => language.intents.find((intent: { name: string }) => intent.name === name)?.samples ?? [];
     const approve = language.types.find((type: { name: string }) => type.name === "Decision").values.find((value: { name: { value: string } }) => value.name.value === "approve").name;
-    expect(samples("CallStatusIntent")).toEqual(expect.arrayContaining(["status", "what's the status"]));
+    expect(samples("CallStatusIntent")).toEqual(expect.arrayContaining(["status", "what's the status", "how it went", "how it's going"]));
     expect(samples("HangUpIntent")).toContain("hang up");
     expect(samples("OfferAmountIntent")).toContain("offer {amount}");
     expect([approve.value, ...approve.synonyms]).toEqual(expect.arrayContaining(["approve", "book"]));

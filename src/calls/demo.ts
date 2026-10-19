@@ -38,7 +38,7 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
   },
   {
     when: /\bplus parts\b/i,
-    reply: () => [{ kind: "say", text: "Sorry, I can only book a total price. With parts, what's the total?", last: true }]
+    reply: () => [{ kind: "say", text: "I need one total price. What is the total with parts?", last: true }]
   },
   {
     when: /\ball in\b/i,

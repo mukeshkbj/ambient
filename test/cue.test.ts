@@ -21,7 +21,7 @@ describe("voiceMonkeyCue", () => {
       body: JSON.stringify({
         token: "vm-token",
         device: "echo-dot",
-        speech: "The plumber wants one hundred eighty dollars. Start with: Alexa, tell Ambient."
+        speech: "The plumber wants one hundred eighty dollars. To answer, say: Alexa, tell Ambient approve."
       })
     });
   });

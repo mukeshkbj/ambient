@@ -64,7 +64,7 @@ async def main():
             await page.frame_locator("#show8").get_by_role("button", name=re.compile(r"^Book \$160")).wait_for(timeout=30000)
             await shot(page, "countered")
             await tap(page, r"^Book \$160")
-            await page.get_by_text("With parts, what's the total?").wait_for(timeout=30000)
+            await page.get_by_text("What is the total with parts?").wait_for(timeout=30000)
             await shot(page, "refused")
             await page.wait_for_selector(".outcome.ok", timeout=30000)
             await shot(page, "confirmed")
