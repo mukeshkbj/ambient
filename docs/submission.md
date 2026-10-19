@@ -47,7 +47,7 @@ People who put off calls. In a 2023 US survey for weBoost, 47% of Gen Z said the
 
 Small businesses are hard to reach by phone. Invoca analyzed 70 million tracked inbound calls and classified 44% as missed, meaning they never reached a person ([Invoca Lead Conversion Benchmarks Report 2026, as summarized by JustCall](https://justcall.io/blog/missed-call-statistics.html)). The data comes from businesses that pay for call tracking, so JustCall notes the true rate is probably higher. An agent that calls a business must expect to wait, retry, and end the call unconfirmed.
 
-Ambient is also for anyone who cannot easily make a call: a parent holding a baby, a person with a speech or hearing difficulty, an older adult who finds phone menus hard. In a 2024 US survey of adults with hearing loss, 54% said they had difficulty communicating over the phone because of it ([Statista Research Department](https://www.statista.com/statistics/1550270/hearing-loss-barriers-us-adults)). The CDC reports that 26.8% of US adults aged 65 and over had some difficulty hearing in 2019, even with a hearing aid ([NCHS Data Brief 414](https://www.cdc.gov/nchs/products/databriefs/db414.htm)).
+Ambient is also for anyone who cannot easily make a call: a parent holding a baby, a person with a speech or hearing difficulty, an older adult who finds phone menus hard. In a 2024 US survey of adults with hearing loss, 54% said they had difficulty communicating over the phone because of it ([Statista Research Department](https://www.statista.com/statistics/1550270/hearing-loss-barriers-us-adults), page fetched on 2026-10-19). The CDC reports that 26.8% of US adults aged 65 and over had some difficulty hearing in 2019, even with a hearing aid ([NCHS Data Brief 414](https://www.cdc.gov/nchs/products/databriefs/db414.htm)).
 
 A home service is the first call a household would hand to Alexa. The call is short and has two outcomes, a time and a price. The agent can read both back to the business word for word, and the owner can set a limit on the price.
 
@@ -89,9 +89,9 @@ A gated toolkit. The Alexa+ MCP toolkit and simulator were gated as of 2026-10-1
 
 ## Accomplishments
 
-The honesty rules live in a pure reducer, not in a prompt. Five test files enforce them: `test/call-session.test.ts`, `test/call-honesty.test.ts`, `test/read-back-replies.test.ts`, `test/call.test.ts`, and `test/caller.test.ts`. `pnpm exec vitest list` shows 498 tests in those files on 2026-10-19. They include the 4,000-call property test and the 192-reply corpus. The whole suite lists 655 tests. The other 171 cover the rest, including voice, Alexa, and security.
+The honesty rules live in a pure reducer, not in a prompt. Five test files enforce them: `test/call-session.test.ts`, `test/call-honesty.test.ts`, `test/read-back-replies.test.ts`, `test/call.test.ts`, and `test/caller.test.ts`. `pnpm exec vitest list` shows 509 tests in those files on 2026-10-19. They include the 4,000-call property test and the 192-reply corpus. The whole suite lists 673 tests. The other 164 cover the rest, including voice, Alexa, and security.
 
-Three adversarial reviews of the reducer and twelve structural review rounds, all by AI reviewers, tried to break the rules and the voice line ([progress log](../progress.md)). Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
+Three adversarial reviews of the reducer and repeated structural review rounds, all by AI reviewers, tried to break the rules and the voice line. Each round is logged in the [progress log](../progress.md). Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
 
 The demo needs no keys and no accounts. `pnpm install && pnpm demo` runs a full call in the browser, and `pnpm smoke:mcp` drives the same call through `/mcp`.
 

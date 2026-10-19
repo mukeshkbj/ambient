@@ -34,8 +34,8 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 - Ambient: "Hi, this is an AI assistant calling for Maya. This call is transcribed." Keep it audible.
 - Joe: "Oh, okay. Joe's Plumbing, this is Joe. How can I help?"
 - Ambient: "Hi Joe. I'd like to book a visit to fix a leaking kitchen sink. The address is 12 Elm Street. When could you come?"
-- Joe: "Sure, we can come Tuesday at ten."
-- Ambient: "Tuesday at ten works. What would it cost?"
+- Joe: "Sure, we can come Tuesday the twentieth at ten."
+- Ambient: "Tuesday the twentieth at ten works. What would it cost?"
 - Joe: "It'll be one eighty for the call-out and the repair."
 - Ambient: "Hmm, okay. Is there any room on the price?"
 - Joe: "Best I can do is one eighty, honestly. Parts went up this year."
@@ -44,8 +44,8 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 ### 4. Over the limit (0:40 to 1:00)
 
 - Ambient, to Joe: "One moment, let me check with Maya."
-- Echo Dot: "Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Say approve to book it, offer a price like one fifty, or hang up."
-- Echo Show card: "Fix the kitchen sink", "$180 · Tuesday at ten", "$30 over your $150 limit", with "Book $180 · Tells them yes", "Offer $150 · Your limit", and "Decline · Ambient hangs up" (`docs/media/sim-card-hero.png`).
+- Echo Dot: "Joe's Plumbing wants one hundred eighty dollars for Tuesday the twentieth at ten. Your limit is one hundred fifty dollars. Say approve to book it, offer a price like one fifty, or hang up."
+- Echo Show card: "Fix the kitchen sink", "$180 · Tuesday the twentieth at ten", "$30 over your $150 limit", with "Book $180 · Tells them yes", "Offer $150 · Your limit", and "Decline · Ambient hangs up" (`docs/media/sim-card-hero.png`).
 - Needs: HW for the Echo. The card renders in `/sim` without hardware.
 
 ### 5. The owner counters, and Joe counters back (1:00 to 1:20)
@@ -62,7 +62,7 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 
 ### 6. The read-back, and a refusal (1:20 to 1:40)
 
-- Ambient: "Just to confirm: one hundred sixty dollars total, Tuesday at ten. Is that right?"
+- Ambient: "Just to confirm: one hundred sixty dollars total, Tuesday the twentieth at ten. Is that right?"
 - Joe: "Yes, plus parts."
 - Ambient: "Sorry, I need one total price. What is the total with parts?"
 - Screen: the transcript at the refusal (`docs/media/sim-refused.png`). Nothing is booked.
@@ -72,11 +72,11 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 ### 7. Read again, then the report (1:40 to 1:50)
 
 - Joe: "Fair enough. A sink like that needs no parts, so that's all in."
-- Ambient: "Let me check once more: one hundred sixty dollars total, Tuesday at ten. Is that right?"
+- Ambient: "Let me check once more: one hundred sixty dollars total, Tuesday the twentieth at ten. Is that right?"
 - Joe: "Yes, that's right. See you then."
-- Ambient: "Great, Maya will expect you Tuesday at ten. Thanks, goodbye."
-- Alexa: "Joe's Plumbing confirmed Tuesday at ten for one hundred sixty dollars."
-- Echo Show: the check draws itself; the card says Ambient read back the total and the time (`docs/media/sim-confirmed.png`).
+- Ambient: "Great, Maya will expect you Tuesday the twentieth at ten. Thanks, goodbye."
+- Alexa: "Joe's Plumbing confirmed Tuesday the twentieth at ten for one hundred sixty dollars."
+- Echo Show: the check draws itself; the card reads "Booked · Confirmed by Joe's Plumbing" and says Ambient read back the total and the time (`docs/media/sim-confirmed.png`).
 
 ### 8. The honest failure (1:50 to 2:05)
 
@@ -89,6 +89,7 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 
 - Screen: `docs/media/architecture.png`.
 - Voiceover (22 words): "One pure function decides every word Ambient says on the call. Alexa reaches it through MCP. AssemblyAI carries the voice. Claude thinks."
+- On-screen caption for the whole beat: **"This demo run is simulated. The live voice line and the Claude brain are built but not yet run live."** The voiceover describes the design. In the demo run, neither AssemblyAI nor Claude executes.
 - Needs: none.
 
 ### 10. End card (2:15 to 2:25)
