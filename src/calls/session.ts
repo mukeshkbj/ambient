@@ -192,7 +192,7 @@ function confirm(state: CallState, proposed: Confirmed, now: string): Transition
     const asked = flushed.turns.filter(turn => turn.speaker === "agent" && asks.includes(turn.text)).length;
     const ask = asks[Math.min(asked, asks.length - 1)]!;
     if (asked >= 2) {
-      const line = `I'll have ${brief.ownerName} follow up to confirm. Thanks for your time, goodbye.`;
+      const line = `I'll let ${brief.ownerName} know. Thanks for your time, goodbye.`;
       return end(withTurn(flushed, "agent", line, now), { kind: "unconfirmed", reason: "they never gave a clear day and time" }, [say(line), { kind: "hang_up" }]);
     }
     return { state: { ...withTurn(flushed, "agent", ask, now), readBack: undefined }, effects: [say(ask)] };
@@ -218,7 +218,7 @@ function confirm(state: CallState, proposed: Confirmed, now: string): Transition
   }
   const flushed = flushDraft(state, now);
   if (state.readBacks >= 3 || state.readBacksSpoken >= 5) {
-    const line = `I'll have ${owner} follow up to confirm. Thanks for your time, goodbye.`;
+    const line = `I'll let ${owner} know. Thanks for your time, goodbye.`;
     return end(withTurn(flushed, "agent", line, now), { kind: "unconfirmed", reason: "they never clearly confirmed it" }, [say(line), { kind: "hang_up" }]);
   }
   const when = outcome.when ? `, ${outcome.when}` : "";

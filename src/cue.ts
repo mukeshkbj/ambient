@@ -28,7 +28,9 @@ export function voiceMonkeyCue(options: { token: string; device: string; fetch?:
           speech: kind === "result"
             ? question.includes("say: call them again.")
               ? question.replace("say: call them again.", "say: Alexa, tell Ambient to call them again.")
-              : `${question} To hear it again, say: Alexa, open Ambient.`
+              : question.endsWith("before you try again.")
+                ? `${question} Then say: Alexa, tell Ambient to call them again.`
+                : `${question} To hear it again, say: Alexa, open Ambient.`
             : `${question.replace(/\s*Say [^.?!]*[.?!]$/, "")} To answer, say: Alexa, open Ambient.`
         })
       });

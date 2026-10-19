@@ -27,7 +27,7 @@ The business never says yes, so the call must end unconfirmed after the read-bac
   Bright Smile Dental: Probably, let me check with my manager.
   Ambient: Once more: one hundred twenty dollars total, Thursday the twenty-second at 3 pm. Is that right?
   Bright Smile Dental: Probably, let me check with my manager.
-  Ambient: I'll have Maya follow up to confirm. Thanks for your time, goodbye.
+  Ambient: I'll let Maya know. Thanks for your time, goodbye.
 
   Owner asked: never
   Outcome: unconfirmed. they never clearly confirmed it

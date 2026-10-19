@@ -127,10 +127,12 @@ describe("result cues", () => {
     const cue = voiceMonkeyCue({ token: "vm-token", device: "echo-dot", fetch: send });
     await cue.needsYou("Mr. Rooter wasn't reached: nobody picked up, so nothing is booked. To try again, say: call them again.", "result");
     await cue.needsYou("Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.", "result");
+    await cue.needsYou("I can't confirm a booking with Joe's Plumbing: they never clearly confirmed it. Check with them before you try again.", "result");
     const spoken = send.mock.calls.map(call => (JSON.parse(String(call[1]?.body)) as { speech: string }).speech);
     expect(spoken).toEqual([
       "Mr. Rooter wasn't reached: nobody picked up, so nothing is booked. To try again, say: Alexa, tell Ambient to call them again.",
-      "Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars. To hear it again, say: Alexa, open Ambient."
+      "Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars. To hear it again, say: Alexa, open Ambient.",
+      "I can't confirm a booking with Joe's Plumbing: they never clearly confirmed it. Check with them before you try again. Then say: Alexa, tell Ambient to call them again."
     ]);
   });
 });

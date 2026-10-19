@@ -152,20 +152,22 @@ describe("speak", () => {
     it("tells the owner in their own terms that they declined", () => {
       const ended = call({ status: "completed", outcome: { kind: "no_deal", reason: "Maya declined one hundred eighty dollars" } });
       expect(speak(ended, { label: "Ambient" })).toBe("You said no to one hundred eighty dollars, so I ended the call. Nothing is booked.");
+      const fullName = call({ status: "completed", outcome: { kind: "no_deal", reason: "Maya Patel declined one hundred eighty dollars" } });
+      expect(speak(fullName, { label: "Ambient" })).toBe("You said no to one hundred eighty dollars, so I ended the call. Nothing is booked.");
     });
 
     it("names the business from the run's subject even after early steps scroll away", () => {
       const view0 = view({ title: "Find a plumber", subject: "Pete's Pipes", status: "running", steps: ["Pete's Pipes: Hello?"] });
-      expect(speak(view0, { label: "Ambient" })).toBe("Ambient is on the phone with Pete's Pipes. They just said: Hello? Say status for the latest, or hang up.");
+      expect(speak(view0, { label: "Ambient" })).toBe("I'm on the phone with Pete's Pipes. They just said: Hello? Say status for the latest, or hang up.");
     });
 
     it("says who it is calling before they answer", () => {
-      expect(speak(call({ status: "running" }), { label: "Ambient" })).toBe("Ambient is calling Joe's Plumbing now.");
+      expect(speak(call({ status: "running" }), { label: "Ambient" })).toBe("I'm calling Joe's Plumbing now.");
     });
 
     it("says what the business last said once connected", () => {
       const steps = ["Calling Joe's Plumbing", "Connected to Joe's Plumbing", "Ambient: Hi, this is an AI assistant calling for Maya.", "Joe's Plumbing: We can come Tuesday at ten."];
-      expect(speak(call({ status: "running", steps }), { label: "Ambient" })).toBe("Ambient is on the phone with Joe's Plumbing. They just said: We can come Tuesday at ten. Say status for the latest, or hang up.");
+      expect(speak(call({ status: "running", steps }), { label: "Ambient" })).toBe("I'm on the phone with Joe's Plumbing. They just said: We can come Tuesday at ten. Say status for the latest, or hang up.");
     });
 
     it("says the owner ended the call and nothing was booked", () => {

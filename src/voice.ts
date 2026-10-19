@@ -97,8 +97,8 @@ export function speak(view: RunView, ctx: SpeakContext): string {
     if (view.status === "cancelled") return `You ended the call before ${business} confirmed. Nothing was booked.`;
     if (view.status === "running" || view.status === "accepted" || view.status === "queued") {
       const heard = lastLineFrom(view, business);
-      if (heard) return `${label} is on the phone with ${business}. They just said: ${clampSentences(heard, 1)} Say status for the latest, or hang up.`;
-      return view.steps.some(step => step.startsWith("Connected to")) ? `${label} is on the phone with ${business}.` : `${label} is calling ${business} now.`;
+      if (heard) return `I'm on the phone with ${business}. They just said: ${clampSentences(heard, 1)} Say status for the latest, or hang up.`;
+      return view.steps.some(step => step.startsWith("Connected to")) ? `I'm on the phone with ${business}.` : `I'm calling ${business} now.`;
     }
   }
   switch (view.status) {
@@ -116,7 +116,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
           ? `${business ?? "The business"} wasn't reached: ${reason}, so nothing is booked. ${RETRY}`
           : `I can't confirm a booking with ${business ?? "the business"}: ${reason}. Check with them before you try again.`;
       }
-      const declined = outcome && /^\S+ declined (.+)$/.exec(outcome.reason);
+      const declined = outcome && /^.+? declined (.+)$/.exec(outcome.reason);
       if (declined) return `You said no to ${stripEnd(declined[1]!)}, so I ended the call. Nothing is booked.`;
       if (outcome) return clampSentences(`${stripEnd(outcome.reason)}.`);
       return clampSentences(view.answer ?? `${label} finished ${title}.`);

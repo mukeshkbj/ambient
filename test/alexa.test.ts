@@ -134,8 +134,8 @@ describe("Alexa call intents", () => {
 
   it("names a next step when there is no call or nothing to decide", async () => {
     const { deps, close } = setup();
-    expect(speechOf(await handleAlexaRequest(request("HangUpIntent"), deps))).toContain("no call in progress. Say, for example, call Joe");
-    expect(speechOf(await handleAlexaRequest(request("SteerCallIntent", { message: "hello" }), deps))).toContain("no call in progress. Say, for example, call Joe");
+    expect(speechOf(await handleAlexaRequest(request("HangUpIntent"), deps))).toContain("no call in progress.</speak>");
+    expect(speechOf(await handleAlexaRequest(request("SteerCallIntent", { message: "hello" }), deps))).toContain("no call in progress. To start one, say call");
     await startCall(deps);
     expect(speechOf(await handleAlexaRequest(request("RespondApprovalIntent", { decision: "approve" }), deps))).toBe("<speak>Nothing is waiting on you. Say status to hear where the call stands.</speak>");
     close();
@@ -161,6 +161,38 @@ describe("Alexa call intents", () => {
     const result = await handleAlexaRequest(request("RetryCallIntent"), deps);
     expect(entry.engine.listRuns(1)[0]).toMatchObject({ instruction: "call Joe's Plumbing to fix the kitchen sink" });
     expect(speechOf(result)).toContain("Calling");
+    close();
+  });
+
+  it("hears \"call them again\" as a retry even when Alexa routes it to the call intent", async () => {
+    const { deps, entry, fake, close } = setup();
+    await startCall(deps, "call Joe's Plumbing to fix the kitchen sink");
+    fake.emit({ type: "message.complete", sessionId: "runtime-1", payload: { text: "done", outcome: { kind: "unconfirmed", reason: "nobody picked up" } } });
+    await new Promise(resolve => setTimeout(resolve, 0));
+    await handleAlexaRequest(request("StartCallIntent", { task: "them again" }), deps);
+    expect(entry.engine.listRuns(1)[0]).toMatchObject({ instruction: "call Joe's Plumbing to fix the kitchen sink" });
+    close();
+  });
+
+  it("does not redial a call that already booked", async () => {
+    const { deps, entry, fake, close } = setup();
+    await startCall(deps, "call Joe's Plumbing to fix the kitchen sink");
+    fake.emit({ type: "status.update", sessionId: "runtime-1", payload: { text: "Calling Joe's Plumbing", subject: "Joe's Plumbing" } });
+    fake.emit({ type: "message.complete", sessionId: "runtime-1", payload: { text: "done", outcome: { kind: "confirmed", summary: "Booked", amountUsd: 160, when: "Tuesday at ten" } } });
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const before = entry.engine.listRuns(10).length;
+    const result = await handleAlexaRequest(request("RetryCallIntent"), deps);
+    expect(entry.engine.listRuns(10)).toHaveLength(before);
+    expect(speechOf(result)).toContain("already booked with Joe&apos;s Plumbing");
+    close();
+  });
+
+  it("gives the status instead of dialling twice while the call is still going", async () => {
+    const { deps, entry, close } = setup();
+    await startCall(deps, "call Joe's Plumbing to fix the kitchen sink");
+    const before = entry.engine.listRuns(10).length;
+    await handleAlexaRequest(request("RetryCallIntent"), deps);
+    expect(entry.engine.listRuns(10)).toHaveLength(before);
     close();
   });
 
