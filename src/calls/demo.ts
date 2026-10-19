@@ -9,6 +9,7 @@ export const JOES_PLUMBING: BusinessPersona = {
   rules: [
     { when: /^just to confirm\b/i, reply: "Yes, that's right. See you then." },
     { when: /\b(one (hundred )?sixty|160)\b/i, reply: "Hmm, one sixty. Alright, that works if you're my first job that morning. I'll put you down for Tuesday at ten." },
+    { when: /\bone (hundred )?fifty\b/i, reply: "One fifty is too low for me. I could do one sixty." },
     { when: /\bany room on the price\b/i, reply: "Best I can do is one eighty, honestly. Parts went up this year." },
     { when: /\b(go ahead|book it|that works)\b/i, reply: "Great, you're booked for Tuesday at ten. That's one eighty." },
     { when: /\b(sink|leak|visit|plumb)/i, reply: "Sure, we can come Tuesday at ten. It'll be one eighty for the call-out and the repair." }
@@ -62,7 +63,19 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
   },
   {
     when: /approved:/i,
-    reply: (_, state) => [{ kind: "say", text: `Thanks for waiting. ${state.brief.ownerName} says one eighty is fine. Please go ahead and book Tuesday at ten.`, last: true }]
+    reply: (match, state) => {
+      const amount = Math.max(...amountsIn(match.input ?? ""));
+      return [{ kind: "say", text: `Thanks for waiting. ${state.brief.ownerName} says ${dollarsInWords(amount)} is fine. Please go ahead and book Tuesday at ten.`, last: true }];
+    }
+  },
+  {
+    when: /\bi could do one sixty\b/i,
+    reply: (_, state) => [{
+      kind: "ask_owner",
+      question: `Joe's Plumbing came down to one hundred sixty dollars for Tuesday at ten, still over your limit of ${dollarsInWords(state.brief.maxUsd ?? 0)}. Should I book it?`,
+      amountUsd: 160,
+      when: "Tuesday at ten"
+    }]
   },
   {
     when: /declined:/i,

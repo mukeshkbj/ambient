@@ -63,7 +63,7 @@ A gated toolkit. The Alexa+ MCP toolkit and simulator were gated during the buil
 
 ## Accomplishments
 
-The honesty rules live in a pure reducer, not in a prompt. 561 tests enforce them, including the 4,000-call property test and the 192-reply corpus.
+The honesty rules live in a pure reducer, not in a prompt. 563 tests enforce them, including the 4,000-call property test and the 192-reply corpus.
 
 Two reducer reviews and seven structural review rounds tried to break the rules and the voice line ([progress log](../progress.md)). Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
 

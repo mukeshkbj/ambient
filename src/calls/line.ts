@@ -2,7 +2,7 @@ import type { LineInput, PhoneNumber } from "./types.js";
 
 export type Line = {
   readonly joinUrl?: string | undefined;
-  dial(to: PhoneNumber, callId: string, ownerName: string): Promise<void>;
+  dial(to: PhoneNumber, callId: string, ownerName: string, about?: string): Promise<void>;
   say(text: string, last: boolean): void;
   hangUp(): void;
   onInput(listener: (input: LineInput) => void): () => void;

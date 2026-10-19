@@ -63,6 +63,19 @@ describe("runCall with the simulated line", () => {
     expect(final.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 180 } });
   });
 
+  it("asks the owner again when the business counters the owner's limit, then books the approved counter", async () => {
+    const { call, events } = start();
+    await until(call, "waiting_for_owner");
+    call.ownerSaid("offer 150");
+    for (let tries = 0; tries < 400 && events.filter(event => event.type === "approval.request").length < 2; tries++) await new Promise(resolve => setTimeout(resolve, 2));
+    const counter = events.filter(event => event.type === "approval.request").at(-1);
+    expect(counter?.payload).toMatchObject({ amountUsd: 160, kind: "spend" });
+    call.ownerDecided(String(counter?.payload.requestId), "once");
+    const final = await call.done;
+    expect(final.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 160 } });
+    expect(final.turns.some(turn => turn.speaker === "business" && /one fifty is too low/i.test(turn.text))).toBe(true);
+  });
+
   it("ends without a deal when the owner declines", async () => {
     const { call, events } = start();
     await until(call, "waiting_for_owner");

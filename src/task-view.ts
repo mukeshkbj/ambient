@@ -54,7 +54,9 @@ body.booked .check path{animation:draw 600ms 180ms cubic-bezier(0.2,0,0,1) both}
 .actions button{min-height:2.5em;padding:0 1em;border-radius:.55em;background:var(--btn);font-weight:600;font-size:.95em}
 .actions button.primary{background:var(--go);color:#fff;padding:0 1.4em}
 .actions button.offer{background:transparent;box-shadow:inset 0 0 0 1.5px oklch(1 0 0 / .4)}
-.actions button.quiet{background:transparent;color:var(--stop);padding:0 .8em;min-height:max(44px,2.5em)}
+.actions button.quiet{background:transparent;color:var(--stop);padding:0 .8em;box-shadow:inset 0 0 0 1.5px oklch(0.68 0.20 25 / .45)}
+body[data-state="live"]:not([data-device="tv"]),body[data-state="done"]:not([data-device="tv"]){justify-content:center}
+body[data-state="needs"] .actions button{min-height:max(56px,2.9em);min-width:44px}
 .actions button small{display:block;font-size:.72em;font-weight:500;opacity:.8}
 .actions button.offer{padding-top:.3em;padding-bottom:.3em}
 .actions button.call{background:var(--fg);color:var(--bg)}
@@ -113,8 +115,8 @@ function business(steps){for(const s of steps){const m=/^(?:Calling|Connected to
 function speaker(s,biz){const who=["Ambient",biz].find(n=>n&&s.startsWith(n+": "));if(who)return{who,text:s.slice(who.length+2)};const m=/^([^:]{1,40}): (.+)$/.exec(s);return m?{who:m[1],text:m[2]}:null;}
 function speakers(steps,biz){return steps.map(s=>speaker(s,biz)).filter(Boolean);}
 function act(name,args){return rpc("tools/call",{name,arguments:args}).catch(()=>undefined);}
-function offers(ap){const limit=ap.limitUsd,amount=ap.amountUsd;if(limit===undefined||amount===undefined)return [];
- const out=[];for(let v=limit+10;v<amount&&out.length<1;v+=10)out.push(v);return out;}
+function offers(ap,said){const limit=ap.limitUsd,amount=ap.amountUsd;if(limit===undefined||amount===undefined||amount<=limit)return [];
+ return said.some(l=>l.who!=="Ambient"&&l.text.trim().toLowerCase()==="offer "+limit)?[]:[limit];}
 function buttons(list){const box=$("actions");box.innerHTML="";
  for(const b of list){const el=document.createElement("button");el.type="button";el.textContent=b.label;if(b.note){const n=document.createElement("small");n.textContent=b.note;el.appendChild(n);}if(b.kind)el.className=b.kind;el.onclick=()=>{el.disabled=true;b.run();};box.appendChild(el);}}
 function foot(lines){const box=$("foot");
@@ -135,7 +137,7 @@ function render(d){
  const kind=ap?"needs":o?"done":live?"live":"idle";
  document.body.classList.remove("booked","arrive");
  if(kind==="needs"&&shown!=="needs"){void document.body.offsetWidth;document.body.classList.add("arrive");}
- shown=kind;
+ shown=kind;document.body.dataset.state=kind;
  over.textContent="";hint.textContent="";tv.textContent="";$("what").textContent="";$("clock").textContent="";buttons([]);foot([]);
  if(ap){chip.className="chip needs";chip.textContent="Needs you";
   tv.textContent="Over your limit";
@@ -147,9 +149,10 @@ function render(d){
   const hold=()=>{$("clock").textContent=Number.isFinite(asked)?(Date.now()-asked<1000?"Waiting":"Waiting "+clock(Date.now()-asked)):"";};
   if(ap.kind!=="dial"){hold();tick=setInterval(hold,1000);}
   if(theirs)foot([{who:biz+" said",text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
-  buttons([{label:ap.amountUsd!==undefined?"Approve "+usd(ap.amountUsd):"Approve",kind:"primary",run:()=>act("approve",{decision:"once"})},
-   ...offers(ap).map(v=>({label:"Offer "+usd(v)+" instead",note:ap.limitUsd!==undefined&&v>ap.limitUsd?usd(v-ap.limitUsd)+" over your limit":"",kind:"offer",run:()=>act("delegate",{task:"offer "+v})})),
-   {label:ap.amountUsd!==undefined?"Decline "+usd(ap.amountUsd):"Decline",kind:"quiet",run:()=>act("approve",{decision:"deny"})}]);
+  const spend=ap.kind!=="dial";
+  buttons([{label:ap.amountUsd!==undefined?"Book "+usd(ap.amountUsd):"Approve",note:spend?"Tells "+biz+" yes":"",kind:"primary",run:()=>act("approve",{decision:"once"})},
+   ...offers(ap,said).map(v=>({label:"Offer "+usd(v)+" instead",note:"Your limit",kind:"offer",run:()=>act("delegate",{task:"offer "+v})})),
+   {label:"Decline",note:spend?"Ambient hangs up":"",kind:"quiet",run:()=>act("approve",{decision:"deny"})}]);
   }
  else if(o){const ok=o.kind==="confirmed";chip.className="chip "+(ok?"done":"warn");
   if(ok)document.body.classList.add("booked");

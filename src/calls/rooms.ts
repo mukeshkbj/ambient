@@ -30,6 +30,7 @@ export class CallRoom implements Line {
   joinUrl: string | undefined;
   private callId = "";
   private ownerName = "";
+  private about: string | undefined;
   private agentId: string | undefined;
   private readonly listeners = new Set<(input: LineInput) => void>();
   private readonly pages = new Set<(event: PageEvent) => void>();
@@ -44,9 +45,10 @@ export class CallRoom implements Line {
 
   constructor(private readonly rooms: CallRooms, private readonly options: RoomsOptions) {}
 
-  async dial(_to: PhoneNumber, callId: string, ownerName: string): Promise<void> {
+  async dial(_to: PhoneNumber, callId: string, ownerName: string, about?: string): Promise<void> {
     this.callId = callId;
     this.ownerName = ownerName;
+    this.about = about;
     this.joinUrl = `${this.options.publicBaseUrl}/call/${callId}`;
     this.agentId = await this.options.ai.createAgent({
       name: `ambient-${callId}`,
@@ -63,8 +65,8 @@ export class CallRoom implements Line {
     this.joinTimer.unref();
   }
 
-  info(): { ownerName: string } {
-    return { ownerName: this.ownerName };
+  info(): { ownerName: string; about?: string } {
+    return { ownerName: this.ownerName, ...(this.about ? { about: this.about } : {}) };
   }
 
   async session(): Promise<{ token: string; agentId: string; ownerName: string; pageKey: string }> {

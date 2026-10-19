@@ -65,6 +65,12 @@ describe("CallRooms line", () => {
     expect(line.joinUrl).toBe("https://ambient.example.com/call/call-1");
   });
 
+  it("tells the business page what the call is about before anyone answers", async () => {
+    const { rooms, line } = setup();
+    await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya", "Book a plumber visit to fix a leaking kitchen sink");
+    expect(rooms.room("call-1")!.info()).toEqual({ ownerName: "Maya", about: "Book a plumber visit to fix a leaking kitchen sink" });
+  });
+
   it("answers when the business's page is ready, and hands the page a token and agent", async () => {
     const { rooms, line, inputs } = setup();
     await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
