@@ -4,7 +4,7 @@ import { runCall, type CallHandle } from "../calls/call.js";
 import type { Candidate } from "../calls/discover.js";
 import type { Line } from "../calls/line.js";
 import { EARLIER_CALL } from "../calls/prompt.js";
-import { amountsIn, blockedNumber, checkDialLimits, noteFromCall, type PlacedCall } from "../calls/rules.js";
+import { amountsIn, blockedNumber, checkDialLimits, noteFromCall, OPTED_OUT, type PlacedCall } from "../calls/rules.js";
 import { parsePhoneNumber, type CallBrief, type CallOutcome, type CallRecord, type PhoneNumber } from "../calls/types.js";
 import { householdFacts, type Household } from "../household.js";
 import { dollarsInWords, numberInWords } from "../words.js";
@@ -412,6 +412,13 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
 
   private placeCall(callId: string, business: Business, instruction: string, maxUsd: number | undefined, emit: (event: AssistantEvent) => void, compare = false): CallHandle | undefined {
     const { household, memory } = this.options;
+    if (memory?.facts(business.phone).includes(OPTED_OUT)) {
+      emit({
+        type: "message.complete",
+        payload: { text: `${business.name} asked not to be called by an AI, so I didn't call.`, status: "completed", outcome: { kind: "no_deal", reason: "they asked not to be called by an AI" } }
+      });
+      return undefined;
+    }
     const now = new Date().toISOString();
     const placed = [...(memory?.placedCalls() ?? []), ...this.inFlight.values()];
     const blocked = blockedNumber(business.phone);

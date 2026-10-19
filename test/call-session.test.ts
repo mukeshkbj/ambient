@@ -10,6 +10,7 @@ import {
   HOLD_LINE_MS,
   offerIn,
   noteFromCall,
+  OPTED_OUT,
   OWNER_PATIENCE_MS,
   redactDigits,
   sameTime
@@ -1044,5 +1045,24 @@ describe("proof of yes", () => {
         }
       }
     });
+  });
+});
+
+describe("a business that asks not to be called", () => {
+  it.each([
+    "Please don't call us with an AI.",
+    "Take us off your list.",
+    "Stop calling this number.",
+    "We don't talk to robots, don't call here again."
+  ])("ends politely, books nothing, and remembers it: %s", said => {
+    const { state, effects } = play([answered, [heard(said), 1000]]);
+    expect(state.phase).toEqual({ kind: "ended", outcome: { kind: "declined", reason: "they asked not to be called by an AI" } });
+    expect(spoken(effects).at(-1)).toBe("Understood, I won't call again. Sorry to bother you, goodbye.");
+    expect(effects).toContainEqual({ kind: "remember", fact: OPTED_OUT });
+  });
+
+  it("keeps calling a business that only says it is busy", () => {
+    const { state } = play([answered, [heard("Sorry, we're slammed today, can you call back tomorrow?"), 1000]]);
+    expect(state.phase.kind).not.toBe("ended");
   });
 });

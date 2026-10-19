@@ -1,5 +1,5 @@
 import { dollarsInWords, numberInWords } from "../words.js";
-import { agreesTo, chargedIn, disclosure, HOLD_LINE_MS, holdTrailingDigits, offerIn, OWNER_PATIENCE_MS, plainTime, redactDigits, sameTime } from "./rules.js";
+import { agreesTo, chargedIn, disclosure, HOLD_LINE_MS, holdTrailingDigits, offerIn, OPTED_OUT, optsOut, OWNER_PATIENCE_MS, plainTime, redactDigits, sameTime } from "./rules.js";
 import type { BrainStep, CallBrief, CallEffect, CallInput, CallOutcome, CallPhase, CallTurn, Speaker } from "./types.js";
 
 export type CallState = {
@@ -81,6 +81,10 @@ function transition(state: CallState, input: CallInput, now: string): Transition
         return { state: next.state, effects: [...live.effects, ...next.effects] };
       }
       const heard = withTurn(flushDraft(state, now), "business", input.text, now);
+      if (optsOut(input.text)) {
+        const line = "Understood, I won't call again. Sorry to bother you, goodbye.";
+        return end(withTurn(heard, "agent", line, now), { kind: "declined", reason: "they asked not to be called by an AI" }, [{ kind: "remember", fact: OPTED_OUT }, say(line), { kind: "hang_up" }]);
+      }
       if (phase.kind === "waiting_for_owner") {
         if (phase.lastHoldLine !== phase.since && !(Date.parse(now) - Date.parse(phase.lastHoldLine) >= HOLD_LINE_MS)) return { state: heard, effects: [] };
         const line = holdLine(state);

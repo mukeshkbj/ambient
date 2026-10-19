@@ -127,6 +127,18 @@ describe("CallerClient discovery and memory", () => {
     close();
   });
 
+  it("never calls a business again after it asked not to be called by an AI", async () => {
+    const optOut: BusinessPersona = { ...JOES_PLUMBING, rules: [{ when: /\b(sink|leak|visit|plumb)/i, reply: "Take us off your list, we don't take AI calls." }] };
+    const { engine, close } = setup(optOut, { memory: true });
+    const first = await engine.ask("Call Joe's Plumbing and book a visit", undefined, true);
+    expect((await until(engine, first.id, item => item.status === "completed")).outcome).toEqual({ kind: "declined", reason: "they asked not to be called by an AI" });
+    const second = await engine.ask("Call Joe's Plumbing again", undefined, true);
+    const view = await until(engine, second.id, item => item.status === "completed");
+    expect(view.outcome).toEqual({ kind: "no_deal", reason: "they asked not to be called by an AI" });
+    expect(view.steps.some(line => line.startsWith("Calling "))).toBe(false);
+    close();
+  });
+
   it("never dials a premium-rate number, even with dial limits off", async () => {
     const { engine, close } = setup(JOES_PLUMBING, { discover: async () => [], limitDials: false });
     const run = await engine.ask("call 1-900-555-0100 and book a visit", undefined, true);

@@ -228,6 +228,14 @@ export function agreesTo(reply: string, terms: string, amountUsd: number | undef
   return rest.every(token => isNumber(token) || token === "a" || FILLER.has(token) || known.has(token));
 }
 
+export const OPTED_OUT = "They asked not to be called by an AI assistant.";
+
+const OPT_OUT = /\b(?:don'?t|do not|never|stop)\s+(?:call|calling|ring|ringing)\b(?!\s+back)|\b(?:take|remove)\s+(?:us|me|this number)\s+off\b|\bwe\s+don'?t\s+(?:take|accept|talk to)\s+(?:ai|robots?|bots?|automated)/i;
+
+export function optsOut(text: string): boolean {
+  return OPT_OUT.test(text);
+}
+
 export function noteFromCall(fact: string): string | undefined {
   const note = fact.replace(/\[[^\]]*\]/g, "").replace(/\s+/g, " ").trim();
   return note && note.length <= 200 ? note : undefined;
