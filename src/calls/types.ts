@@ -22,7 +22,7 @@ export type CallOutcome =
 export type CallPhase =
   | { kind: "dialing" }
   | { kind: "talking" }
-  | { kind: "waiting_for_owner"; requestId: string; question: string; amountUsd?: number; unpriced?: true; since: string; lastHoldLine: string }
+  | { kind: "waiting_for_owner"; requestId: string; question: string; amountUsd?: number; unpriced?: true; when?: string; since: string; lastHoldLine: string }
   | { kind: "ended"; outcome: CallOutcome };
 
 export type LineInput =

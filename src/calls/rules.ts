@@ -100,6 +100,16 @@ export function offerIn(text: string): number | undefined {
   return amounts.length === 1 ? amounts[0] : undefined;
 }
 
+function timeKey(when: string): string {
+  const plain = when.normalize("NFKC").toLowerCase().replace(/(\d+):00\b/g, "$1");
+  const words = (plain.match(/[a-z']+/g) ?? []).filter(word => !NUMBER_WORDS.has(word) && word !== "o'clock");
+  return `${words.join(" ")}|${amountsIn(plain).join(" ")}`;
+}
+
+export function sameTime(a: string | undefined, b: string | undefined): boolean {
+  return a === undefined || b === undefined || timeKey(a) === timeKey(b);
+}
+
 const phrases = (list: string[]) => new RegExp(`(?:^|\\s)(?:${[...list].sort((a, b) => b.length - a.length).join("|")})(?=\\s|$)`, "g");
 const CONFIRMATION = phrases([
   "that's right", "that is right", "that's correct", "that is correct", "sounds good", "sounds great", "looks good", "you bet", "of course", "that'll work",

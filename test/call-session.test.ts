@@ -184,6 +184,21 @@ describe("rule 3: a price above the limit needs the owner", () => {
     expect(emitted(effects, "approval.request")[0]?.payload).toMatchObject({ amountUsd: 180, when: "Tuesday at ten" });
   });
 
+  it("asks the owner again when the business moves the approved price to another time", () => {
+    const asked = play([answered, heard("It'll be 180"), confirm(180, "Tuesday at ten", "Tuesday at ten")]);
+    const approved = play([{ kind: "owner_decided", requestId: requestOf(asked.state), decision: "once" }], asked.state);
+    const moved = play([heard("Actually Tuesday's gone, Wednesday at six"), confirm(180, "Wednesday at six", "Wednesday at six")], approved.state);
+    expect(moved.state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 180 });
+    expect(emitted(moved.effects, "approval.request")[0]?.payload).toMatchObject({ amountUsd: 180, when: "Wednesday at six" });
+  });
+
+  it("keeps the approval when the business repeats the approved time in other words", () => {
+    const asked = play([answered, heard("It'll be 180"), confirm(180, "Tuesday at ten", "Tuesday at ten")]);
+    const approved = play([{ kind: "owner_decided", requestId: requestOf(asked.state), decision: "once" }], asked.state);
+    const same = play([confirm(180, "Tuesday at ten", "tuesday at 10")], approved.state);
+    expect(same.state.readBack).toBeDefined();
+  });
+
   it("checks dollar amounts in the summary when the brain omits amountUsd", () => {
     const { state } = play([answered, heard("It's $400"), confirm(undefined, "Booked Tuesday for $400")]);
     expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 400 });

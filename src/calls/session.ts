@@ -1,5 +1,5 @@
 import { dollarsInWords, numberInWords } from "../words.js";
-import { agreesTo, chargedIn, disclosure, HOLD_LINE_MS, holdTrailingDigits, offerIn, OWNER_PATIENCE_MS, redactDigits } from "./rules.js";
+import { agreesTo, chargedIn, disclosure, HOLD_LINE_MS, holdTrailingDigits, offerIn, OWNER_PATIENCE_MS, redactDigits, sameTime } from "./rules.js";
 import type { BrainStep, CallBrief, CallEffect, CallInput, CallOutcome, CallPhase, CallTurn, Speaker } from "./types.js";
 
 export type CallState = {
@@ -9,7 +9,7 @@ export type CallState = {
   turns: CallTurn[];
   turn: number;
   asks: number;
-  approvedUsd: number[];
+  approved: Array<{ amountUsd: number; when?: string }>;
   deniedUsd: number[];
   disclosed: boolean;
   readBack: ReadBack | undefined;
@@ -41,7 +41,7 @@ export function startCall(brief: CallBrief, callId: string): Transition {
       turns: [],
       turn: 0,
       asks: 0,
-      approvedUsd: [],
+      approved: [],
       deniedUsd: [],
       disclosed: false,
       readBack: undefined,
@@ -128,7 +128,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       return brainStep(state, input.step, now);
     case "owner_said": {
       const offer = offerIn(input.text);
-      const ledger = offer !== undefined ? { approvedUsd: [...state.approvedUsd, offer], deniedUsd: state.deniedUsd.filter(amount => amount !== offer) } : {};
+      const ledger = offer !== undefined ? { approved: [...state.approved, { amountUsd: offer }], deniedUsd: state.deniedUsd.filter(amount => amount !== offer) } : {};
       const noted = { ...ownerNote(flushDraft(state, now), input.text, now, ledger), readBack: undefined };
       if (phase.kind === "dialing") return { state: noted, effects: [] };
       return think({ ...noted, phase: { kind: "talking" } });
@@ -140,7 +140,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       const amount = phase.amountUsd;
       const ledger = amount === undefined
         ? (phase.unpriced ? (approved ? { approvedUnpriced: true } : { deniedUnpriced: true }) : {})
-        : approved ? { approvedUsd: [...state.approvedUsd, amount] } : { deniedUsd: [...state.deniedUsd, amount] };
+        : approved ? { approved: [...state.approved, { amountUsd: amount, ...(phase.when ? { when: phase.when } : {}) }] } : { deniedUsd: [...state.deniedUsd, amount] };
       return think({ ...ownerNote(state, note, now, ledger), phase: { kind: "talking" } });
     }
     case "hold_tick": {
@@ -186,7 +186,7 @@ function confirm(state: CallState, outcome: Confirmed, now: string): Transition 
     return close(state, { kind: "no_deal", reason: `${owner} declined ${dollarsInWords(charge)}` }, now,
       `Okay. ${owner} won't go ahead at that price, so we'll leave it there. Thanks for your time, goodbye.`);
   }
-  if (charge !== undefined && charge > limit && !state.approvedUsd.includes(charge)) {
+  if (charge !== undefined && charge > limit && !state.approved.some(grant => grant.amountUsd === charge && sameTime(grant.when, outcome.when))) {
     const question = `${brief.business.name} wants ${price(charge)}, over your limit of ${price(limit)}. Should I agree?`;
     return askOwner(state, question, charge, now, false, outcome.when);
   }
@@ -234,7 +234,7 @@ function askOwner(state: CallState, question: string, amountUsd: number | undefi
   const limit = state.brief.maxUsd !== undefined ? { limitUsd: state.brief.maxUsd } : {};
   const waiting = { ...withTurn(flushDraft(state, now), "agent", line, now), readBack: undefined };
   return {
-    state: { ...waiting, asks, phase: { kind: "waiting_for_owner", requestId, question, ...amount, ...(unpriced ? { unpriced: true as const } : {}), since: now, lastHoldLine: now } },
+    state: { ...waiting, asks, phase: { kind: "waiting_for_owner", requestId, question, ...amount, ...(unpriced ? { unpriced: true as const } : {}), ...(when ? { when } : {}), since: now, lastHoldLine: now } },
     effects: [
       say(line),
       {
@@ -261,7 +261,7 @@ function think(state: CallState): Transition {
   return { state: { ...state, turn, draft: "", held: "" }, effects: [{ kind: "think", turn }] };
 }
 
-function ownerNote(state: CallState, note: string, now: string, ledger: Partial<Pick<CallState, "approvedUsd" | "deniedUsd" | "approvedUnpriced" | "deniedUnpriced">>): CallState {
+function ownerNote(state: CallState, note: string, now: string, ledger: Partial<Pick<CallState, "approved" | "deniedUsd" | "approvedUnpriced" | "deniedUnpriced">>): CallState {
   return { ...withTurn(state, "owner", note, now), ...ledger };
 }
 
