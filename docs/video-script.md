@@ -6,7 +6,7 @@ There is no phone dial-out in this version, so no real phone rings. The business
 
 ## Draft cut
 
-`python scripts/render-video.py` renders a draft of this video from the simulator into `.ambient/video/ambient-draft.mp4`. It starts three fresh zero-key demo servers at half the demo speed, records the single call, the call-around and the "Try to fool it" panel, and cuts them by event marks with ffmpeg. It adds the captions, the title cards, the montage stills and the "simulated" label. The draft runs about 2:04 and has no voice, because the simulator's speech is not recorded. Use it as the fallback video, or as a cut guide for the take with a voiceover. Each frame of the draft was checked by eye on 2026-10-19.
+`python scripts/render-video.py` renders a draft of this video from the simulator into `.ambient/video/ambient-draft.mp4`. It starts three fresh zero-key demo servers at half the demo speed, records the single call, the call-around and the "Try to fool it" panel, and cuts them by event marks with ffmpeg. It adds the captions, the title cards, the montage stills and the "simulated" label. The draft runs about 2:04 and has no voice, because the simulator's speech is not recorded. Use it as the fallback video, or as a cut guide for the take with a voiceover. A contact sheet of the draft, one frame every 3 seconds, and three full-size frames were checked by eye on 2026-10-19.
 
 ## What each beat needs
 
