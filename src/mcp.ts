@@ -53,7 +53,7 @@ function parseSince(value: string | undefined): string | undefined {
 function pendingSpeech(candidates: PendingApproval[]): string {
   const parts = candidates.slice(0, 3).map(item => `"${item.approval.command}" from ${item.entry.descriptor.label}`);
   const suffix = candidates.length > 3 ? `, and ${candidates.length - 3} more` : "";
-  return `${candidates.length} approvals are waiting: ${parts.join("; ")}${suffix}. Say approve or deny plus which one.`;
+  return `${candidates.length} approvals are waiting: ${parts.join("; ")}${suffix}. Say yes or no, and which one.`;
 }
 
 export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): McpServer {
@@ -372,7 +372,7 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
         parts.push(`Since then: ${counts}.`);
         const latest = runs[0]!;
         if (latest.answer) parts.push(`Latest: ${registry.label(latest.runtimeId)} — "${latest.title}": ${latest.answer}`);
-        else if (latest.status === "waiting_approval") parts.push(`"${latest.title}" is waiting on you — say approve or deny.`);
+        else if (latest.status === "waiting_approval") parts.push(`"${latest.title}" is waiting on you — say yes or no.`);
         else parts.push(`Latest: ${registry.label(latest.runtimeId)} is ${latest.status.replace("_", " ")} on "${latest.title}".`);
       }
       registry.setMeta("last_briefing_at", new Date().toISOString());

@@ -9,7 +9,7 @@ Ambient must ask the owner before agreeing to no price, say so in the read-back,
   Maya: Approved: a booking with no price for Thursday the twenty-second at 3 pm
   Ambient: Okay, so just to confirm, no price is set, Thursday the twenty-second at 3 pm. Is that right?
   Happy Paws Veterinary: Yes, that's right.
-  Ambient: Great, Maya will expect you Thursday the twenty-second at 3 pm. Thanks so much, bye.
+  Ambient: Great, that's set for Thursday the twenty-second at 3 pm. Thanks so much, bye.
 
   Owner asked: Happy Paws Veterinary confirmed for Thursday the twenty-second at 3 pm but gave no price. Should I agree without a price?
   Outcome: confirmed. Happy Paws Veterinary confirmed Thursday the twenty-second at 3 pm with no price set.
@@ -23,7 +23,7 @@ The business never says yes, so the call must end unconfirmed after the read-bac
   Bright Smile Dental: We can fit you in on Thursday the twenty-second at three pm for one hundred twenty.
   Ambient: Okay, so just to confirm, one hundred twenty dollars total, Thursday the twenty-second at 3 pm. Is that right?
   Bright Smile Dental: Probably, let me check with my manager.
-  Ambient: Sorry, just so I have it right, one hundred twenty dollars total, Thursday the twenty-second at 3 pm. Is that right?
+  Ambient: Let me say it back, one hundred twenty dollars total, Thursday the twenty-second at 3 pm. Is that right?
   Bright Smile Dental: Probably, let me check with my manager.
   Ambient: One more time, one hundred twenty dollars total, Thursday the twenty-second at 3 pm. Is that right?
   Bright Smile Dental: Probably, let me check with my manager.

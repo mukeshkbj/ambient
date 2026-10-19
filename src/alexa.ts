@@ -246,7 +246,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
   if (!name) throw new AlexaRequestError(400, "Alexa intent name is required");
   const registry = dependencies.registry;
   if (name === "AMAZON.HelpIntent") {
-    return response("Say call, followed by what you need, and I'll phone them. During the call you can ask how it's going, tell them something, offer an amount, approve or deny, or say hang up.", attributes);
+    return response("Say call, followed by what you need, and I'll phone them. During the call you can ask how it's going, tell them something, offer an amount, say yes or no, or hang up.", attributes);
   }
   if (name === "AMAZON.StopIntent" || name === "AMAZON.CancelIntent") {
     const live = activeCall(registry, attributes);
@@ -306,7 +306,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
       const ctx = { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state };
       const amount = approval.amountUsd !== undefined ? ` at ${dollarsInWords(approval.amountUsd)}` : "";
       const reply = run.status === "completed" || run.status === "waiting_approval"
-        ? `${choice === "once" ? "Okay." : "Okay, I'll say no."} ${speak(run, ctx)}`
+        ? `${choice === "once" || run.status === "completed" ? "Okay." : "Okay, I'll say no."} ${speak(run, ctx)}`
         : choice === "once" ? `Okay, telling them yes${amount}. Say status to hear how it went.` : "Okay, I'll say no. Say status to hear how it went.";
       return response(reply, runAttributes(attributes, run), false, isLive(run));
     } catch (error) {

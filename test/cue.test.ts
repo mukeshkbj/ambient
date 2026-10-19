@@ -119,6 +119,29 @@ describe("approval cue wiring", () => {
     entry.engine.close();
     store.close();
   });
+
+  it("tells the owner when the business turns the job down, but not when the owner said no", async () => {
+    const store = new AmbientStore();
+    const fake = fakeAssistant();
+    const entry = fakeRuntimeEntry("caller", "Ambient", fake.client, store);
+    const registry = new RuntimeRegistry(store, [entry]);
+    const needsYou = vi.fn().mockResolvedValue(undefined);
+    const unwatch = watchApprovals(registry, { needsYou });
+    await entry.engine.ask("call the plumber", undefined, true);
+    fake.emit({ type: "status.update", sessionId: "runtime-1", payload: { text: "Calling Joe's Plumbing", subject: "Joe's Plumbing" } });
+    fake.emit({ type: "message.complete", sessionId: "runtime-1", payload: { text: "done", outcome: { kind: "declined", reason: "Joe's Plumbing declined to take the job." } } });
+    await flush();
+    expect(needsYou).toHaveBeenCalledTimes(1);
+    expect(needsYou).toHaveBeenLastCalledWith(expect.stringContaining("Joe's Plumbing turned it down, so nothing is booked."), "result");
+    await entry.engine.ask("call the plumber again");
+    fake.emit({ type: "status.update", sessionId: "runtime-1", payload: { text: "Calling Joe's Plumbing", subject: "Joe's Plumbing" } });
+    fake.emit({ type: "message.complete", sessionId: "runtime-1", payload: { text: "done", outcome: { kind: "no_deal", reason: "Maya declined one hundred eighty dollars" } } });
+    await flush();
+    expect(needsYou).toHaveBeenCalledTimes(1);
+    unwatch();
+    entry.engine.close();
+    store.close();
+  });
 });
 
 describe("result cues", () => {

@@ -65,7 +65,7 @@ describe("speak", () => {
         createdAt: "2026-10-11T10:00:00.000Z"
       }
     }), ctx);
-    expect(text).toBe('My Agent is asking: Book Lupa for 4 on Saturday at 7pm — $40 deposit. Say approve to allow it once, or deny.');
+    expect(text).toBe('My Agent is asking: Book Lupa for 4 on Saturday at 7pm — $40 deposit. Say yes to allow it once, or say no.');
     expect(text).not.toMatch(ID_LIKE);
   });
 
@@ -154,6 +154,18 @@ describe("speak", () => {
       expect(speak(ended, { label: "Ambient" })).toBe("You said no to one hundred eighty dollars, so I ended the call. Nothing is booked.");
       const fullName = call({ status: "completed", outcome: { kind: "no_deal", reason: "Maya Patel declined one hundred eighty dollars" } });
       expect(speak(fullName, { label: "Ambient" })).toBe("You said no to one hundred eighty dollars, so I ended the call. Nothing is booked.");
+    });
+
+    it("never says the owner refused when the business turned the job down", () => {
+      const refused = call({ status: "completed", outcome: { kind: "declined", reason: "Joe's Plumbing declined to take the job." } });
+      expect(speak(refused, { label: "Ambient" })).toBe("Joe's Plumbing turned it down, so nothing is booked.");
+    });
+
+    it("keeps the cents in a price and gives no example offer when the limit is zero", () => {
+      const cents = { ...approval, amountUsd: 180.5, limitUsd: 0, when: "Tuesday at ten" };
+      expect(speak(call({ status: "waiting_approval", approval: cents }), { label: "Ambient" })).toBe(
+        "Joe's Plumbing wants one hundred eighty dollars and fifty cents for Tuesday at ten. Your limit is zero dollars. Say yes to book it, offer a price, or say no."
+      );
     });
 
     it("names the business from the run's subject even after early steps scroll away", () => {

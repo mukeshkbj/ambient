@@ -116,7 +116,7 @@ describe("Alexa call intents", () => {
     const launched = await handleAlexaRequest({ ...request("unused"), request: { type: "LaunchRequest", requestId: "request-2" } }, deps);
     expect(speechOf(launched)).not.toContain("Who should I call?");
     expect(speechOf(launched)).toContain("one hundred eighty dollars");
-    expect(launched.response.reprompt?.outputSpeech.ssml).toMatch(/^<speak>Say approve to /);
+    expect(launched.response.reprompt?.outputSpeech.ssml).toMatch(/^<speak>Say yes to /);
     const stopped = await handleAlexaRequest(request("AMAZON.StopIntent"), deps);
     expect(speechOf(stopped)).toContain("is holding for now and will hang up soon");
     close();

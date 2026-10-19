@@ -93,7 +93,7 @@ describe("approval via MCP elicitation", () => {
       const result = await call;
       const structured = result.structuredContent as { status: string; speech: string };
       expect(structured.status).toBe("waiting_approval");
-      expect(structured.speech).toContain("approve");
+      expect(structured.speech).toContain("Say yes");
       expect(assistant.client.respondToApproval).not.toHaveBeenCalled();
     } finally {
       await close();
@@ -114,7 +114,7 @@ describe("approval via MCP elicitation", () => {
       const structured = result.structuredContent as { status: string; speech: string; approvals: { command: string }[] };
       expect(structured.status).toBe("waiting_approval");
       expect(structured.approvals[0]!.command).toContain("Book Lupa");
-      expect(structured.speech).toContain("Say approve");
+      expect(structured.speech).toContain("Say yes");
 
       const answerCall = client.callTool({ name: "approve", arguments: { decision: "deny" } });
       await sleep(15);

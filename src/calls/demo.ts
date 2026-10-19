@@ -8,7 +8,7 @@ export const JOES_PLUMBING: BusinessPersona = {
   opening: "Oh, okay. Joe's Plumbing, this is Joe. How can I help?",
   rules: [
     { when: /^okay, so just to confirm\b/i, reply: "Yes, plus parts." },
-    { when: /^sorry, just so i have it right\b/i, reply: "Yes, that's right. See you then." },
+    { when: /^let me say it back\b/i, reply: "Yes, that's right. See you then." },
     { when: /\bwith parts\b/i, reply: "Fair enough. A sink like that needs no parts, so that's all in." },
     { when: /\bwhat would it cost\b/i, reply: "It'll be one eighty for the call-out and the repair." },
     { when: /\b(one (hundred )?sixty|160)\b/i, reply: "Hmm, one sixty. Alright, that works. I'll put you down for Tuesday the 20th at 10 am." },

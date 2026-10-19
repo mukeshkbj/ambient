@@ -29,5 +29,9 @@ export function priceInWords(value: number): string {
 }
 
 export function dollarsInWords(value: number): string {
-  return `${numberInWords(value)} dollars`;
+  const total = Math.round(value * 100);
+  const whole = Math.floor(total / 100);
+  const cents = total % 100;
+  const dollars = `${numberInWords(whole)} ${whole === 1 ? "dollar" : "dollars"}`;
+  return cents === 0 ? dollars : `${dollars} and ${numberInWords(cents)} ${cents === 1 ? "cent" : "cents"}`;
 }

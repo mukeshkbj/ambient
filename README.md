@@ -66,9 +66,9 @@ The end of the same run, from the call transcript:
   Joe's Plumbing: Yes, plus parts.
   Ambient: Sorry, I need one total price. What is the total with parts?
   Joe's Plumbing: Fair enough. A sink like that needs no parts, so that's all in.
-  Ambient: Sorry, just so I have it right, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?
+  Ambient: Let me say it back, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?
   Joe's Plumbing: Yes, that's right. See you then.
-  Ambient: Great, Maya will expect you Tuesday the 20th at 10 am. Thanks so much, bye.
+  Ambient: Great, that's set for Tuesday the 20th at 10 am. Thanks so much, bye.
 smoke: ok, the business countered, "yes, plus parts" did not book, and the call booked at the approved counter
 ```
 

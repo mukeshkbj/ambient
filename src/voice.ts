@@ -58,9 +58,14 @@ function lastLineFrom(view: RunView, speaker: string): string | undefined {
   return view.steps.findLast(step => step.startsWith(prefix))?.slice(prefix.length);
 }
 
-const ownerChoices = (limit: number) => `Say yes to book it, offer a price like ${priceInWords(limit)}, or say no.`;
+const ownerChoices = (limit: number) => `Say yes to book it, offer a price${limit > 0 ? ` like ${priceInWords(limit)}` : ""}, or say no.`;
 
 /** The approval ask on its own — used as the elicitation message. */
+export function ownerRefused(outcome: RunView["outcome"]): string | undefined {
+  if (outcome?.kind !== "no_deal") return undefined;
+  return /^.+? declined (.+ dollars?(?: and .+ cents?)?|a deal with no price)\.?$/.exec(outcome.reason)?.[1];
+}
+
 export function approvalAsk(view: RunView, ctx: SpeakContext): string {
   const business = callee(view);
   const approval = view.approval;
@@ -116,8 +121,9 @@ export function speak(view: RunView, ctx: SpeakContext): string {
           ? `${business ?? "The business"} wasn't reached: ${reason}, so nothing is booked. ${RETRY}`
           : `I can't confirm a booking with ${business ?? "the business"}: ${reason}. Check with them before you try again.`;
       }
-      const declined = outcome && /^.+? declined (.+)$/.exec(outcome.reason);
-      if (declined) return `You said no to ${stripEnd(declined[1]!)}, so I ended the call. Nothing is booked.`;
+      const refused = ownerRefused(outcome);
+      if (refused) return `You said no to ${refused}, so I ended the call. Nothing is booked.`;
+      if (outcome?.kind === "declined") return `${callee(view) ?? "The business"} turned it down, so nothing is booked.`;
       if (outcome) return clampSentences(`${stripEnd(outcome.reason)}.`);
       return clampSentences(view.answer ?? `${label} finished ${title}.`);
     }
@@ -130,7 +136,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
     case "cancel_requested":
       return `Asking ${label} to stop ${title}.`;
     case "waiting_approval": {
-      return `${approvalAsk(view, ctx)} Say approve to allow it once, or deny.`;
+      return `${approvalAsk(view, ctx)} Say yes to allow it once, or say no.`;
     }
     case "unknown": {
       const business = callee(view);

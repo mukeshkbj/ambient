@@ -85,7 +85,7 @@ describe("runCall with the simulated line", () => {
     const plus = texts.indexOf("business: Yes, plus parts.");
     expect(plus).toBeGreaterThan(0);
     expect(texts[plus + 1]).toBe("agent: Sorry, I need one total price. What is the total with parts?");
-    expect(texts.slice(plus).some(text => text.startsWith("agent: Sorry, just so I have it right, one hundred eighty dollars total"))).toBe(true);
+    expect(texts.slice(plus).some(text => text.startsWith("agent: Let me say it back, one hundred eighty dollars total"))).toBe(true);
     expect(final.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 180 } });
   });
 

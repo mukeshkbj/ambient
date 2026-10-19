@@ -93,9 +93,9 @@ Beat 3 now has about 3.8 s of slack, because Joe's "Sure, we can come" line is c
 ### 7. Read again, then the report (1:36 to 1:55)
 
 - Joe: "Fair enough. A sink like that needs no parts, so that's all in."
-- Ambient: "Sorry, just so I have it right, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?"
+- Ambient: "Let me say it back, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?"
 - Joe: "Yes, that's right. See you then."
-- Ambient: "Great, Maya will expect you Tuesday the 20th at 10 am. Thanks so much, bye." **CUT**
+- Ambient: "Great, that's set for Tuesday the 20th at 10 am. Thanks so much, bye." **CUT**
 - Alexa: "Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars."
 - Echo Show: the check draws itself; the card reads "Booked · confirmed by Joe's Plumbing" and says Ambient read back the total and the time (`docs/media/sim-confirmed.png`).
 

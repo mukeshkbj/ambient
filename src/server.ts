@@ -18,7 +18,7 @@ import { buildRuntimeRegistry, type RuntimeRegistry } from "./runtimes/registry.
 import { SimHost } from "./sim.js";
 import { AmbientStore } from "./store.js";
 import type { RunView } from "./types.js";
-import { approvalAsk, speak } from "./voice.js";
+import { approvalAsk, ownerRefused, speak } from "./voice.js";
 
 type McpSession = {
   server: McpServer;
@@ -143,7 +143,7 @@ export function watchApprovals(registry: RuntimeRegistry, cue: Cue): () => void 
       } catch {
         return;
       }
-      const endedCall = view.subject !== undefined && (view.status === "failed" || view.status === "unknown" || (view.status === "completed" && (view.outcome?.kind === "unconfirmed" || view.outcome?.kind === "confirmed")));
+      const endedCall = view.subject !== undefined && (view.status === "failed" || view.status === "unknown" || (view.status === "completed" && view.outcome !== undefined && ownerRefused(view.outcome) === undefined));
       const key = endedCall ? `ended:${view.id}` : view.status === "waiting_approval" ? view.approval?.id : undefined;
       if (!key || announced.has(key)) return;
       announced.add(key);

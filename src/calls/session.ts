@@ -25,7 +25,7 @@ type Confirmed = Extract<CallOutcome, { kind: "confirmed" }>;
 type Grant = { amountUsd?: number; when?: string };
 type ReadBack = { outcome: Confirmed; line: string; terms: string; armed: boolean; earlyYes: boolean };
 
-const READ_BACK_OPENERS = ["Okay, so just to confirm,", "Sorry, just so I have it right,", "One more time,", "Just so I'm sure,"];
+const READ_BACK_OPENERS = ["Okay, so just to confirm,", "Let me say it back,", "One more time,", "Just so I'm sure,"];
 const talkedOver = (terms: string) => `Sorry, I talked over you. Was that a yes to ${terms}?`;
 
 export type Transition = { state: CallState; effects: CallEffect[] };
@@ -246,7 +246,7 @@ function price(amount: number): string {
 }
 
 function close(state: CallState, outcome: Exclude<CallOutcome, { kind: "unconfirmed" }>, now: string, line?: string): Transition {
-  const closing = line ?? (outcome.kind === "confirmed" ? (outcome.when ? `Great, ${state.brief.ownerName} will expect you ${outcome.when}. Thanks so much, bye.` : "Perfect, thanks so much. Bye.") : "Okay, no worries. Thanks for your time, bye.");
+  const closing = line ?? (outcome.kind === "confirmed" ? (outcome.when ? `Great, that's set for ${outcome.when}. Thanks so much, bye.` : "Perfect, thanks so much. Bye.") : "Okay, no worries. Thanks for your time, bye.");
   return end(withTurn(flushDraft(state, now), "agent", closing, now), outcome, [say(closing), { kind: "hang_up" }]);
 }
 
