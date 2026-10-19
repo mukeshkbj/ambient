@@ -155,6 +155,12 @@ body[data-phase="needs"] .show8{box-shadow:0 0 0 3px var(--needs),var(--lift)}
   opacity:0;transform:translateY(8px);transition:opacity 250ms var(--ease),transform 250ms var(--ease)}
 body[data-phase="needs"] .corner{opacity:1;transform:none}
 body[data-phase="needs"] .screen .title{opacity:0}
+.screen .shade{position:absolute;inset:0;background:oklch(0.10 0.01 270 / .45);opacity:0;transition:opacity 250ms var(--ease)}
+.screen .paused{position:absolute;left:50%;top:36%;display:flex;gap:9px;opacity:0;transform:translate(-50%,-50%) scale(.85);transition:opacity 200ms var(--ease),transform 200ms var(--ease)}
+.screen .paused i{width:11px;height:36px;border-radius:3px;background:oklch(1 0 0 / .92)}
+.screen .pausenote{position:absolute;left:5%;top:8%;font-size:12px;font-weight:650;color:oklch(1 0 0 / .9);opacity:0;transition:opacity 200ms var(--ease)}
+body[data-phase="needs"] .screen .shade,body[data-phase="needs"] .screen .pausenote{opacity:1}
+body[data-phase="needs"] .screen .paused{opacity:1;transform:translate(-50%,-50%) scale(1)}
 
 .talk{background:var(--surface);border-radius:var(--r-panel);box-shadow:var(--lift);padding:20px;display:flex;flex-direction:column;gap:12px;align-self:start}
 .talk h2{font-size:16px;font-weight:650}
@@ -248,7 +254,7 @@ body[data-phase="needs"] .tv .devlabel{visibility:hidden}
         </div>
       </div>
       <div class="tv">
-        <div class="screen"><span class="title">Now playing · a film</span><div class="corner"><iframe id="tvcard" title="Fire TV notification" data-device="tv" data-w="600" data-h="200"></iframe></div></div>
+        <div class="screen"><span class="shade" aria-hidden="true"></span><span class="paused" aria-hidden="true"><i></i><i></i></span><span class="pausenote">Film paused · the call needs you</span><span class="title">Now playing · a film</span><div class="corner"><iframe id="tvcard" title="Fire TV notification" data-device="tv" data-w="600" data-h="200"></iframe></div></div>
         <span class="devlabel"><b>Fire TV</b> · living room, simulated. The card appears only when the call needs you.</span>
       </div>
     </div>
