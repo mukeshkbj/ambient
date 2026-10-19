@@ -23,6 +23,7 @@ const EnvSchema = z.object({
   AMBIENT_ALLOWED_HOSTS: z.string().optional(),
   AMBIENT_DATA_DIR: z.string().min(1).default(".ambient"),
   AMBIENT_RUNTIMES_FILE: z.string().min(1).optional(),
+  AMBIENT_CAPTURE_LLM_REQUESTS: z.string().default("0").transform(value => value === "1" || value === "true"),
   AMBIENT_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
   AMBIENT_ASK_WAIT_MS: z.coerce.number().int().nonnegative().default(6000),
   AMBIENT_ACCESS_TOKEN: z.string().min(16).optional(),
@@ -53,6 +54,7 @@ export type AppConfig = {
   runtimes: RuntimeConfigEntry[];
   defaultRuntimeId: string;
   dataDir: string;
+  captureDir?: string;
   retentionDays: number;
   askWaitMs: number;
   accessToken?: string;
@@ -142,6 +144,7 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     runtimes,
     defaultRuntimeId: runtimes.find(entry => entry.default)?.id ?? runtimes[0]!.id,
     dataDir: parsed.AMBIENT_DATA_DIR,
+    ...(parsed.AMBIENT_CAPTURE_LLM_REQUESTS ? { captureDir: join(parsed.AMBIENT_DATA_DIR, "captures") } : {}),
     retentionDays: parsed.AMBIENT_RETENTION_DAYS,
     askWaitMs: parsed.AMBIENT_ASK_WAIT_MS,
     ...(parsed.AMBIENT_ACCESS_TOKEN ? { accessToken: parsed.AMBIENT_ACCESS_TOKEN } : {}),

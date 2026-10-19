@@ -27,6 +27,7 @@
     "infra:typecheck": "tsc -p infra/tsconfig.json --noEmit",
     "brain:latency": "tsx scripts/brain-latency.ts",
     "call:dry": "tsx scripts/call-dry.ts",
+    "scenarios": "tsx scripts/scenarios.ts",
     "call": "tsx --env-file=.env src/server.ts"
   },
   "dependencies": {

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { join } from "node:path";
 import type { CallRooms, PageReport } from "./calls/rooms.js";
@@ -32,7 +32,19 @@ function report(value: unknown): PageReport | undefined {
   return undefined;
 }
 
-export async function handleCallRoute(rooms: CallRooms, assetsDir: string, request: IncomingMessage, response: ServerResponse, pathname: string): Promise<boolean> {
+const SECRET_HEADER = /authorization|cookie|key|token|secret/i;
+
+function captureFirstRequest(dir: string, callId: string, request: IncomingMessage, pathname: string, body: unknown): void {
+  const headers = Object.fromEntries(Object.entries(request.headers).map(([name, value]) => [name, SECRET_HEADER.test(name) ? "<redacted>" : value]));
+  try {
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, `llm-request-${callId}.json`), `${JSON.stringify({ method: request.method, path: pathname, headers, body }, null, 2)}\n`, { flag: "wx" });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") console.error(`[call ${callId}] could not capture the chat request: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+export async function handleCallRoute(rooms: CallRooms, assetsDir: string, request: IncomingMessage, response: ServerResponse, pathname: string, captureDir?: string): Promise<boolean> {
   const match = ROUTE.exec(pathname);
   if (!match) return false;
   const room = rooms.room(match[1]!);
@@ -82,13 +94,17 @@ export async function handleCallRoute(rooms: CallRooms, assetsDir: string, reque
       return true;
     }
     if (action === "/v1/chat/completions" && request.method === "POST") {
-      if (!room.accepts(request.headers.authorization)) {
-        json(response, 401, { error: "unauthorized" });
-        return true;
+      const authorized = room.accepts(request.headers.authorization);
+      if (authorized || captureDir) {
+        const body = await readJson(request);
+        if (captureDir) captureFirstRequest(captureDir, match[1]!, request, pathname, body);
+        if (authorized) {
+          response.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache, no-transform", connection: "keep-alive" });
+          room.chat(body, request.headers.authorization, { write: chunk => response.write(chunk), end: () => response.end() });
+          return true;
+        }
       }
-      const body = await readJson(request);
-      response.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache, no-transform", connection: "keep-alive" });
-      room.chat(body, request.headers.authorization, { write: chunk => response.write(chunk), end: () => response.end() });
+      json(response, 401, { error: "unauthorized" });
       return true;
     }
   } catch (error) {

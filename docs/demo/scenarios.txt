@@ -1,0 +1,60 @@
+=== A vet clinic books an appointment but gives no price
+Ambient must ask the owner before agreeing to no price, say so in the read-back, then book.
+
+  Ambient: Hi, this is an AI assistant calling for Maya. This call is transcribed.
+  Happy Paws Veterinary: Happy Paws Veterinary, how can I help?
+  Ambient: Hi, I'd like to book a checkup appointment for Maya's dog Biscuit. When do you have an opening?
+  Happy Paws Veterinary: We can see Biscuit on Thursday the twenty-second at three pm.
+  Ambient: One moment, let me check with Maya.
+  Maya: Approved: Happy Paws Veterinary confirmed for Thursday the twenty-second at 3 pm but gave no price. Should I agree without a price?
+  Ambient: Just to confirm: no price is set, Thursday the twenty-second at 3 pm. Is that right?
+  Happy Paws Veterinary: Yes, that's right.
+  Ambient: Great, Maya will expect you Thursday the twenty-second at 3 pm. Thanks, goodbye.
+
+  Owner asked: Happy Paws Veterinary confirmed for Thursday the twenty-second at 3 pm but gave no price. Should I agree without a price?
+  Outcome: confirmed. Happy Paws Veterinary confirmed Thursday the twenty-second at 3 pm with no price set.
+
+=== A dental office hedges every read-back
+The business never says yes, so the call must end unconfirmed after the read-back cap.
+
+  Ambient: Hi, this is an AI assistant calling for Maya. This call is transcribed.
+  Bright Smile Dental: Bright Smile Dental, how can I help?
+  Ambient: Hi, I'd like to book a cleaning appointment for Maya. When do you have an opening?
+  Bright Smile Dental: We can fit you in on Thursday the twenty-second at three pm for one hundred twenty.
+  Ambient: Just to confirm: one hundred twenty dollars total, Thursday the twenty-second at 3 pm. Is that right?
+  Bright Smile Dental: Probably, let me check with my manager.
+  Ambient: Let me check once more: one hundred twenty dollars total, Thursday the twenty-second at 3 pm. Is that right?
+  Bright Smile Dental: Probably, let me check with my manager.
+  Ambient: Once more: one hundred twenty dollars total, Thursday the twenty-second at 3 pm. Is that right?
+  Bright Smile Dental: Probably, let me check with my manager.
+  Ambient: I'll have Maya follow up to confirm. Thanks for your time, goodbye.
+
+  Owner asked: never
+  Outcome: unconfirmed. they never clearly confirmed it
+
+=== Nobody picks up (no answer)
+The line rings out, so the call ends unconfirmed with the dial-failure reason.
+
+
+  Owner asked: never
+  Outcome: unconfirmed. no answer
+
+=== The owner declines the over-limit price
+The plumber holds at one hundred eighty against a limit of one hundred fifty; Maya says no.
+
+  Ambient: Hi, this is an AI assistant calling for Maya. This call is transcribed.
+  Joe's Plumbing: Oh, okay. Joe's Plumbing, this is Joe. How can I help?
+  Ambient: Hi Joe. I'd like to book a visit to fix a leaking kitchen sink. When could you come?
+  Joe's Plumbing: Sure, we can come Tuesday the twentieth at ten.
+  Ambient: Tuesday the twentieth at ten works. What would it cost?
+  Joe's Plumbing: It'll be one eighty for the call-out and the repair.
+  Ambient: Hmm, okay. Is there any room on the price?
+  Joe's Plumbing: Best I can do is one eighty, honestly. Parts went up this year.
+  Ambient: One moment, let me check with Maya.
+  Maya: Declined: Joe's Plumbing can come Tuesday the twentieth at 10 am for one hundred eighty dollars, over your limit of one hundred fifty dollars. Should I book it?
+  Ambient: Okay, thanks for your time. Goodbye.
+
+  Owner asked: Joe's Plumbing can come Tuesday the twentieth at 10 am for one hundred eighty dollars, over your limit of one hundred fifty dollars. Should I book it?
+  Outcome: no_deal. Maya declined the one hundred eighty dollar quote.
+
+scenarios: ok, 4 calls ended as expected through the real reducer

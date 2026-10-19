@@ -37,6 +37,13 @@ describe("readConfig", () => {
       .toEqual({ apiKey: "k", apiBase: "http://127.0.0.1:4000/v1" });
   });
 
+  it("captures LLM requests only when AMBIENT_CAPTURE_LLM_REQUESTS is set, under the data directory", () => {
+    const runtimes = runtimesFile([planner]);
+    expect(readConfig({ AMBIENT_RUNTIMES_FILE: runtimes })).not.toHaveProperty("captureDir");
+    expect(readConfig({ AMBIENT_RUNTIMES_FILE: runtimes, AMBIENT_CAPTURE_LLM_REQUESTS: "0" })).not.toHaveProperty("captureDir");
+    expect(readConfig({ AMBIENT_RUNTIMES_FILE: runtimes, AMBIENT_CAPTURE_LLM_REQUESTS: "1", AMBIENT_DATA_DIR: "data" }).captureDir).toBe(join("data", "captures"));
+  });
+
   it("requires at least one runtime", () => {
     expect(() => readConfig({ AMBIENT_RUNTIMES_FILE: "/nonexistent/runtimes.json" })).toThrow("At least one runtime");
   });

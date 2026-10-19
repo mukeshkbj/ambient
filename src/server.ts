@@ -63,7 +63,7 @@ export type AmbientHttpDependencies = {
   sessionTtlMs?: number;
   sweepIntervalMs?: number;
   sim?: SimHost;
-  calls?: { rooms: CallRooms; assetsDir: string };
+  calls?: { rooms: CallRooms; assetsDir: string; captureDir?: string };
   alexa?: {
     applicationId?: string;
     auth?: OAuthProvider;
@@ -306,7 +306,7 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
       }
       return;
     }
-    if (dependencies.calls && url.pathname.startsWith("/call/") && await handleCallRoute(dependencies.calls.rooms, dependencies.calls.assetsDir, request, response, url.pathname)) return;
+    if (dependencies.calls && url.pathname.startsWith("/call/") && await handleCallRoute(dependencies.calls.rooms, dependencies.calls.assetsDir, request, response, url.pathname, dependencies.calls.captureDir)) return;
     if (dependencies.sim && (url.pathname === "/sim" || url.pathname.startsWith("/sim/"))) {
       const sim = dependencies.sim;
       if (url.pathname.startsWith("/sim/api/") && !(await authorize(dependencies, request, undefined))) {
@@ -528,7 +528,7 @@ export async function startFromEnvironment(env: Record<string, string | undefine
     ...(alexa ? { alexa } : {}),
     askWaitMs: config.askWaitMs,
     sim,
-    ...(rooms ? { calls: { rooms, assetsDir: assetDir("call") } } : {}),
+    ...(rooms ? { calls: { rooms, assetsDir: assetDir("call"), ...(config.captureDir ? { captureDir: config.captureDir } : {}) } } : {}),
     allowedOrigins: config.allowedOrigins,
     allowedHosts: config.allowedHosts,
     allowUnauthenticated: !auth && !config.accessToken && config.allowUnauthenticated
