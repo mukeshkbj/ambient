@@ -60,7 +60,7 @@ function speech(value: string): { type: "SSML"; ssml: string } {
 
 function repromptFor(value: string, live: boolean): string {
   const question = value.match(/[^.?!]+\?$/)?.[0]?.trim();
-  const choices = value.match(/Say approve[^.?!]*\.$/)?.[0];
+  const choices = value.match(/Say (?:approve|yes)[^.?!]*\.$/)?.[0];
   return question ?? choices ?? (live ? "Say status, or hang up." : "Who should I call?");
 }
 
@@ -258,7 +258,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
   if (name === "AMAZON.FallbackIntent") {
     const live = activeCall(registry, attributes);
     const limit = live?.run.approval?.limitUsd;
-    if (live?.run.approval) return response(`Sorry, I didn't catch that. Say approve, offer a price${limit !== undefined ? ` like ${priceInWords(limit)}` : ""}, or hang up.`, attributes, false, true);
+    if (live?.run.approval) return response(`Sorry, I didn't catch that. Say yes, offer a price${limit !== undefined ? ` like ${priceInWords(limit)}` : ""}, or say no.`, attributes, false, true);
     if (live) return response("Sorry, I didn't catch that. Say status, or hang up.", attributes, false, true);
     return response("I did not understand that. Say call, followed by what you need, or say help.", attributes);
   }
@@ -296,7 +296,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     const choice = name === "RespondApprovalIntent"
       ? decision(slotValue(intent, "decision"))
       : name === "AMAZON.YesIntent" ? "once" : "deny";
-    if (!choice) return response("Say approve or deny.", attributes);
+    if (!choice) return response("Say yes or no.", attributes);
     const target = activeCall(registry, attributes);
     const approval = target?.run.approval;
     if (!target || !approval) return response("Nothing is waiting on you. Say status to hear where the call stands.", attributes);

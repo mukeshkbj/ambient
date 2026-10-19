@@ -63,7 +63,7 @@ Beat 3 now has about 3.8 s of slack, because Joe's "Sure, we can come" line is c
 ### 4. Over the limit (0:37 to 0:55)
 
 - Ambient, to Joe: "One moment, let me check with Maya."
-- Echo Dot: "Joe's Plumbing wants one hundred eighty dollars for Tuesday the 20th at 10 am. Your limit is one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up."
+- Echo Dot: "Joe's Plumbing wants one hundred eighty dollars for Tuesday the 20th at 10 am. Your limit is one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no."
 - Echo Show card: "Fix the kitchen sink", "$180 · Tuesday the 20th at 10 am", "$30 over your $150 limit", with "Book $180 · Tells them yes", "Offer $150 · Your limit", and "Decline · Ambient hangs up" (`docs/media/sim-card-hero.png`). Show the card while the Echo Dot speaks.
 - Needs: HW for the Echo. The card renders in `/sim` without hardware.
 
@@ -74,7 +74,7 @@ Beat 3 now has about 3.8 s of slack, because Joe's "Sure, we can come" line is c
 - Ambient, to Joe: "Okay, thanks for waiting. Could you do one fifty?"
 - Joe: "One fifty is too low for me. I could do one sixty."
 - Echo Show: the card asks again, "Book $160 · Tells them yes" (`docs/media/sim-countered.png`). Hold it for about 3 s.
-- Alexa: "Joe's Plumbing turned down your offer and is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up." **CUT** (the card carries it)
+- Alexa: "Joe's Plumbing turned down your offer and is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no." **CUT** (the card carries it)
 - Owner: "Alexa, tell Ambient approve." Or tap "Book $160". The owner approves a price over the limit on purpose; nothing above the limit books without this step.
 - Screen: the transcript shows the owner's note "Maya: Approved: one hundred sixty dollars for Tuesday the 20th at 10 am". It is not spoken.
 - Ambient, to Joe: "Okay, thanks for waiting. Maya says one sixty is fine. Please go ahead and book Tuesday at ten." **CUT**

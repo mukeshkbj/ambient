@@ -216,7 +216,7 @@ describe("Alexa call intents", () => {
     await startCall(deps);
     expect(speechOf(await handleAlexaRequest(request("AMAZON.FallbackIntent"), deps))).toBe("<speak>Sorry, I didn&apos;t catch that. Say status, or hang up.</speak>");
     fake.emit({ type: "approval.request", sessionId: "runtime-1", payload: { requestId: "req-1", command: "book at one hundred eighty dollars", amountUsd: 180, kind: "spend" } });
-    expect(speechOf(await handleAlexaRequest(request("AMAZON.FallbackIntent"), deps))).toBe("<speak>Sorry, I didn&apos;t catch that. Say approve, offer a price, or hang up.</speak>");
+    expect(speechOf(await handleAlexaRequest(request("AMAZON.FallbackIntent"), deps))).toBe("<speak>Sorry, I didn&apos;t catch that. Say yes, offer a price, or say no.</speak>");
     close();
   });
 

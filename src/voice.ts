@@ -58,7 +58,7 @@ function lastLineFrom(view: RunView, speaker: string): string | undefined {
   return view.steps.findLast(step => step.startsWith(prefix))?.slice(prefix.length);
 }
 
-const ownerChoices = (limit: number) => `Say approve to book it, offer followed by a price like ${priceInWords(limit)}, or hang up.`;
+const ownerChoices = (limit: number) => `Say yes to book it, offer a price like ${priceInWords(limit)}, or say no.`;
 
 /** The approval ask on its own — used as the elicitation message. */
 export function approvalAsk(view: RunView, ctx: SpeakContext): string {
@@ -90,8 +90,8 @@ export function speak(view: RunView, ctx: SpeakContext): string {
   if (business) {
     if (view.status === "waiting_approval") {
       const ask = approvalAsk(view, ctx);
-      if (ask.endsWith(", or hang up.")) return ask;
-      const choices = view.approval?.kind === "dial" ? "Say yes to place the call, or no." : view.approval?.amountUsd === undefined ? "Say approve to book it, or hang up." : "Say approve, offer followed by a price, or hang up.";
+      if (ask.endsWith(", or say no.")) return ask;
+      const choices = view.approval?.kind === "dial" ? "Say yes to place the call, or no." : view.approval?.amountUsd === undefined ? "Say yes to book it, or no." : "Say yes, offer a price, or say no.";
       return `${ask} ${choices}`;
     }
     if (view.status === "cancelled") return `You ended the call before ${business} confirmed. Nothing was booked.`;
@@ -157,7 +157,7 @@ export function heldStatus(view: RunView): string | undefined {
   if (!business || view.status !== "waiting_approval" || view.approval?.kind !== "spend" || amount === undefined) return undefined;
   const offered = view.steps.map(step => offerIn(step.slice(step.indexOf(": ") + 2))).findLast(offer => offer !== undefined);
   const countered = offered !== undefined && offered < amount ? `${business} turned down your offer and` : business;
-  if (limit === undefined) return `${countered} is holding at ${dollarsInWords(amount)}. Say approve or hang up.`;
+  if (limit === undefined) return `${countered} is holding at ${dollarsInWords(amount)}. Say yes or no.`;
   return `${countered} is holding at ${dollarsInWords(amount)}, over your limit of ${dollarsInWords(limit)}. ${ownerChoices(limit)}`;
 }
 

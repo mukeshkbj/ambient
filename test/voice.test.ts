@@ -114,20 +114,20 @@ describe("speak", () => {
 
     it("asks the call's question as written, without repeating the amount", () => {
       expect(approvalAsk(call({ status: "waiting_approval", approval }), { label: "Ambient" })).toBe(question);
-      expect(speak(call({ status: "waiting_approval", approval }), { label: "Ambient" })).toBe(`${question} Say approve, offer followed by a price, or hang up.`);
+      expect(speak(call({ status: "waiting_approval", approval }), { label: "Ambient" })).toBe(`${question} Say yes, offer a price, or say no.`);
     });
 
     it("asks one short question when the price is over the limit", () => {
       const overLimit = { ...approval, limitUsd: 150, when: "Tuesday at ten" };
       expect(speak(call({ status: "waiting_approval", approval: overLimit }), { label: "Ambient" })).toBe(
-        "Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up."
+        "Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no."
       );
     });
 
     it("asks a shorter question when the owner checks status on a call that is waiting", () => {
       const overLimit = { ...approval, limitUsd: 150, when: "Tuesday at ten" };
       expect(heldStatus(call({ status: "waiting_approval", approval: overLimit }))).toBe(
-        "Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up."
+        "Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no."
       );
       expect(heldStatus(call({ status: "running" }))).toBeUndefined();
     });
@@ -135,7 +135,7 @@ describe("speak", () => {
     it("says the business turned down the owner's offer when it counters", () => {
       const counter = { ...approval, amountUsd: 160, limitUsd: 150, when: "Tuesday at ten" };
       expect(heldStatus(call({ status: "waiting_approval", approval: counter, steps: ["Calling Joe's Plumbing", "Maya: offer 150"] }))).toBe(
-        "Joe's Plumbing turned down your offer and is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up."
+        "Joe's Plumbing turned down your offer and is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no."
       );
     });
 
