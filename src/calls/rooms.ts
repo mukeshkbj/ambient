@@ -143,7 +143,7 @@ export class CallRoom implements Line {
     }
     this.draft += text;
     if (!last) return;
-    this.queued += this.draft;
+    this.queued = this.queued ? `${this.queued} ${this.draft}` : this.draft;
     this.draft = "";
     this.notify({ type: "speak" });
   }

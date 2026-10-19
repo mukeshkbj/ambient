@@ -91,7 +91,7 @@ describe("read-back replies", () => {
     expect(state.readBacks).toBe(0);
   });
 
-  it("waits through an agreeing backchannel during playback, then books on the yes after it", () => {
+  it("asks once more after an agreeing backchannel during playback, then books on the yes", () => {
     let state = startCall(brief, "call-1").state;
     const inputs: CallInput[] = [
       { kind: "answered" },
@@ -99,12 +99,65 @@ describe("read-back replies", () => {
       { kind: "brain", turn: 1, step: { kind: "end_call", outcome: { kind: "confirmed", summary: "Tuesday at three for $160", amountUsd: 160, when: "Tuesday at three" } } },
       { kind: "heard", text: "Mm-hmm." },
       { kind: "played", text: READ_BACK },
+      { kind: "played", text: "Sorry, I talked over you. Was that a yes?" },
       { kind: "heard", text: "Yes, that's right." }
     ];
     inputs.forEach((input, index) => {
       state = step(state, input, new Date(Date.UTC(2026, 9, 20, 17, 0, index)).toISOString()).state;
     });
     expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 160 } });
+  });
+
+  const run = (inputs: CallInput[], from = startCall(brief, "call-1").state) => {
+    let state = from;
+    inputs.forEach((input, index) => {
+      const resolved = input.kind === "brain" ? { ...input, turn: state.turn } : input;
+      state = step(state, resolved, new Date(Date.UTC(2026, 9, 20, 17, 0, index)).toISOString()).state;
+    });
+    return state;
+  };
+  const book = (amountUsd: number, when: string): CallInput => ({ kind: "brain", turn: 0, step: { kind: "end_call", outcome: { kind: "confirmed", summary: "Booked", amountUsd, when } } });
+
+  it("words each retry differently, so a late played report for an earlier read-back cannot arm a later one", () => {
+    const first = run([{ kind: "answered" }, { kind: "heard", text: "It's $160 for Tuesday at three." }, book(160, "Tuesday at three")]);
+    const firstLine = first.readBack!.line;
+    const second = run([{ kind: "heard", text: "Um, hold on." }, book(160, "Tuesday at three")], first);
+    expect(second.readBack!.line).not.toBe(firstLine);
+    const stale = run([{ kind: "played", text: firstLine }, { kind: "heard", text: "Yes." }], second);
+    expect(stale.phase).not.toMatchObject({ outcome: { kind: "confirmed" } });
+  });
+
+  it("arms when the read-back played at the end of a longer reply", () => {
+    const asked = run([{ kind: "answered" }, { kind: "heard", text: "It's $160 for Tuesday at three." }, book(160, "Tuesday at three")]);
+    const state = run([{ kind: "played", text: `Great, Tuesday works for us. ${asked.readBack!.line}` }, { kind: "heard", text: "Yes." }], asked);
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 160 } });
+  });
+
+  it("asks once more when the yes came while the read-back was still playing", () => {
+    const asked = run([{ kind: "answered" }, { kind: "heard", text: "It's $160 for Tuesday at three." }, book(160, "Tuesday at three"), { kind: "heard", text: "Yes." }]);
+    const replayed = run([{ kind: "played", text: asked.readBack!.line }], asked);
+    expect(replayed.turns.at(-1)).toMatchObject({ speaker: "agent", text: "Sorry, I talked over you. Was that a yes?" });
+    const done = run([{ kind: "played", text: "Sorry, I talked over you. Was that a yes?" }, { kind: "heard", text: "Yes." }], replayed);
+    expect(done.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 160 } });
+  });
+
+  it.each([
+    ["Yes, 3 dollars.", 200, "Tuesday at 3", false],
+    ["Yes, at three.", 200, "Tuesday at 3", true],
+    ["Yes, that's two hundred dollars.", 200, "Tuesday at 3", true],
+    ["Yes, three o'clock.", 200, "Tuesday at ten", false]
+  ] as const)("checks money and time in separate buckets: %s", (reply, amount, when, books) => {
+    const asked = run([{ kind: "answered" }, { kind: "heard", text: `It's $${amount}.` }, book(amount, when)]);
+    const state = run([{ kind: "played", text: asked.readBack!.line }, { kind: "heard", text: reply }], asked);
+    expect(state.phase.kind === "ended" && state.phase.outcome.kind === "confirmed").toBe(books);
+  });
+
+  it("drops a pending read-back as soon as the agent says anything else or asks the owner", () => {
+    const asked = run([{ kind: "answered" }, { kind: "heard", text: "It's $160 for Tuesday at three." }, book(160, "Tuesday at three")]);
+    const spoke = run([{ kind: "brain", turn: 0, step: { kind: "say", text: "The address is 12 Elm Street.", last: true } }], asked);
+    expect(spoke.readBack).toBeUndefined();
+    const owner = run([{ kind: "brain", turn: 0, step: { kind: "ask_owner", question: "Is 200 okay?", amountUsd: 200 } }], asked);
+    expect(owner.readBack).toBeUndefined();
   });
 
   it("does not arm on a played report for a different line", () => {

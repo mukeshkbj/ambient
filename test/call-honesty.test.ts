@@ -32,6 +32,9 @@ const AGENT = ["Okay. The address is 12 Elm Street.", "Could you do it for less?
 
 type Reply = { text: string; clean: boolean };
 
+const READ_BACK = /^(Just to confirm:|Let me check once more:|One last check:|To be sure:) /;
+const TALKED_OVER = "Sorry, I talked over you. Was that a yes?";
+
 function playCall(seed: number) {
   const next = random(seed);
   const pick = <T,>(items: readonly T[]): T => items[Math.floor(next() * items.length)]!;
@@ -67,6 +70,13 @@ function playCall(seed: number) {
       if (order < 0.15) run({ kind: "interrupted", spokenSoFar: "Just to confirm" });
       else if (order < 0.25) run({ kind: "owner_said", text: "wait a moment" });
       else if (order < 0.8) run({ kind: "played", text: state.readBack.line });
+      else if (order < 0.88) {
+        const early = pick(CLEAN_YES);
+        replies.push({ text: early, clean: false });
+        run({ kind: "heard", text: early });
+        run({ kind: "played", text: `Okay. ${state.readBack?.line ?? ""}` });
+        continue;
+      }
       const reply: Reply = next() < 0.5 ? { text: pick(CLEAN_YES), clean: true } : { text: pick(NOT_YES), clean: false };
       replies.push({ ...reply, clean: reply.clean && order >= 0.25 && order < 0.8 });
       run({ kind: "heard", text: reply.text });
@@ -91,14 +101,15 @@ describe("honesty over generated calls", () => {
       const amount = state.phase.outcome.amountUsd;
       const turns = state.turns.filter(turn => turn.speaker !== "owner");
       const closing = turns.length - 1;
-      const readBackAt = turns.slice(0, closing).findLastIndex(turn => turn.speaker === "agent");
+      const readBackAt = turns.slice(0, closing).findLastIndex(turn => turn.speaker === "agent" && READ_BACK.test(turn.text));
       const readBack = turns[readBackAt];
       const after = turns.slice(readBackAt + 1, closing);
       const reply = after.at(-1);
-      if (after.some(turn => !(CLEAN_YES as readonly string[]).includes(turn.text))) failures.push(`seed ${seed}: something other than a clean yes followed the read-back`);
       const transcript = turns.map(turn => `${turn.speaker}: ${turn.text}`).join(" | ");
       const fail = (why: string) => failures.push(`seed ${seed}: ${why}: ${transcript}`);
-      if (!readBack?.text.startsWith("Just to confirm:")) fail("no read-back before the booking");
+      if (after.some(turn => !(CLEAN_YES as readonly string[]).includes(turn.text) && turn.text !== TALKED_OVER)) fail("something other than a clean yes followed the read-back");
+      if (reply?.speaker !== "business") fail("the booking did not follow a business reply");
+      if (!readBack) fail("no read-back before the booking");
       else if (amount !== undefined && !amountsIn(readBack.text.split(" total")[0] ?? "").includes(amount)) fail(`booked ${amount}, which the read-back did not say`);
       if (replies.at(-1)?.clean !== true || reply?.text !== replies.at(-1)?.text) fail("booked without a clean yes");
       if (amount === undefined ? !approved.includes(undefined) : amount > (limit ?? 0) && !approved.includes(amount)) fail(`booked ${amount} without the owner`);

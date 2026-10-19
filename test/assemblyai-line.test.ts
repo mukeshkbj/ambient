@@ -202,6 +202,18 @@ describe("CallRooms line", () => {
     expect(reply.done()).toBe(true);
   });
 
+  it("keeps a space between two queued lines", async () => {
+    const { rooms, line } = setup();
+    await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");
+    const room = rooms.room("call-1")!;
+    room.attach(() => {});
+    line.say("Still checking with Maya.", true);
+    line.say("Just to confirm: one hundred sixty dollars total. Is that right?", true);
+    const reply = writer();
+    room.chat({ messages: [] }, `Bearer ${room.secret}`, reply.sink);
+    expect(reply.text()).toBe("Still checking with Maya. Just to confirm: one hundred sixty dollars total. Is that right?");
+  });
+
   it("passes on the business's new words even when it flushes a queued reply", async () => {
     const { rooms, line, inputs } = setup();
     await line.dial(parsePhoneNumber("4155550134"), "call-1", "Maya");

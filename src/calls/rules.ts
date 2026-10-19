@@ -102,7 +102,7 @@ const AGREEMENT = [
   "okay", "ok", "alright", "perfect", "great", "exactly", "definitely", "certainly", "absolutely", "mhm", "indeed", "fine", "deal", "booked"
 ].sort((a, b) => b.length - a.length);
 const AGREEMENT_PATTERN = new RegExp(`(?:^|\\s)(?:${AGREEMENT.join("|")})(?=\\s|$)`, "g");
-const FILLER = new Set(["and", "then", "so", "oh", "um", "uh", "well", "sorry", "sir", "ma'am", "thanks", "good", "bye", "goodbye", "we'll", "the"]);
+const FILLER = new Set(["and", "then", "so", "oh", "um", "uh", "well", "sorry", "sir", "ma'am", "thanks", "good", "bye", "goodbye", "we'll", "the", "that's", "that", "it's", "it", "is", "o'clock", "am", "pm"]);
 
 function plainWords(text: string): string {
   return text
@@ -122,12 +122,10 @@ export function agreesTo(reply: string, terms: string, amountUsd: number | undef
   const agreed = words.match(AGREEMENT_PATTERN) ?? [];
   if (agreed.length === 0) return false;
   const known = new Set(plainWords(terms).split(" "));
-  const amounts = [...amountsIn(terms), ...(amountUsd !== undefined ? [amountUsd] : [])];
-  const allowed = (part: string) => {
-    const number = part.replace(/^\$/, "");
-    if (/^\d+(\.\d+)?$/.test(number)) return amounts.includes(Number(number));
-    return FILLER.has(part) || known.has(part);
-  };
+  const numbers = [...amountsIn(terms), ...(amountUsd !== undefined ? [amountUsd] : [])];
+  if (!amountsIn(words).every(number => numbers.includes(number))) return false;
+  if (!chargedIn(words).every(charge => charge === amountUsd)) return false;
+  const allowed = (part: string) => /^\$?\d+(\.\d+)?$/.test(part) || NUMBER_WORDS.has(part) || FILLER.has(part) || known.has(part);
   return words.replace(AGREEMENT_PATTERN, " ").split(" ").filter(Boolean).every(token => token.split("-").filter(Boolean).every(allowed));
 }
 
