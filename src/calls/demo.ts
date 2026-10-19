@@ -15,7 +15,7 @@ export const JOES_PLUMBING: BusinessPersona = {
     { when: /\bone (hundred )?fifty\b/i, reply: "One fifty is too low for me. I could do one sixty." },
     { when: /\bany room on the price\b/i, reply: "Best I can do is one eighty, honestly. Parts went up this year." },
     { when: /\b(go ahead|book it|that works)\b/i, reply: "Great, you're booked for Tuesday at ten. That's one eighty." },
-    { when: /\b(sink|leak|visit|plumb)/i, reply: "Sure, we can come Tuesday at ten." }
+    { when: /\b(sink|leak|visit|plumb)/i, reply: "Sure, we can come Tuesday the twentieth at ten." }
   ]
 };
 
@@ -23,6 +23,8 @@ export const JOES_PLUMBING_HANGS_UP: BusinessPersona = {
   ...JOES_PLUMBING,
   rules: [{ when: /\b(sink|leak|visit|plumb)/i, reply: "It's one eighty, take it or leave it. I've got another call.", hangUp: true }]
 };
+
+const WHEN = "Tuesday the twentieth at ten";
 
 export const DEMO_SCRIPT: ScriptedTurn[] = [
   {
@@ -44,13 +46,13 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
       const amount = amountsIn(readBack.split(" total")[0] ?? "").at(-1);
       return [{
         kind: "end_call",
-        outcome: { kind: "confirmed", summary: `Joe's Plumbing confirmed Tuesday at ten${amount !== undefined ? ` for ${dollarsInWords(amount)}` : ""}.`, ...(amount !== undefined ? { amountUsd: amount } : {}), when: "Tuesday at ten" }
+        outcome: { kind: "confirmed", summary: `Joe's Plumbing confirmed ${WHEN}${amount !== undefined ? ` for ${dollarsInWords(amount)}` : ""}.`, ...(amount !== undefined ? { amountUsd: amount } : {}), when: WHEN }
       }];
     }
   },
   {
-    when: /\bwe can come tuesday at ten\.$/i,
-    reply: () => [{ kind: "say", text: "Tuesday at ten works. What would it cost?", last: true }]
+    when: /\bwe can come tuesday the twentieth at ten\.$/i,
+    reply: () => [{ kind: "say", text: "Tuesday the twentieth at ten works. What would it cost?", last: true }]
   },
   {
     when: /\b(booked|works)\b/i,
@@ -61,9 +63,9 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
         kind: "end_call",
         outcome: {
           kind: "confirmed",
-          summary: `Joe's Plumbing confirmed Tuesday at ten${amount !== undefined ? ` for ${dollarsInWords(amount)}` : ""}.`,
+          summary: `Joe's Plumbing confirmed ${WHEN}${amount !== undefined ? ` for ${dollarsInWords(amount)}` : ""}.`,
           ...(amount !== undefined ? { amountUsd: amount } : {}),
-          when: "Tuesday at ten"
+          when: WHEN
         }
       }];
     }
@@ -78,9 +80,9 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
     when: /\bbest i can do is one eighty\b/i,
     reply: (_, state) => [{
       kind: "ask_owner",
-      question: `Joe's Plumbing can come Tuesday at ten for one hundred eighty dollars, over your limit of ${dollarsInWords(state.brief.maxUsd ?? 0)}. Should I book it?`,
+      question: `Joe's Plumbing can come ${WHEN} for one hundred eighty dollars, over your limit of ${dollarsInWords(state.brief.maxUsd ?? 0)}. Should I book it?`,
       amountUsd: 180,
-      when: "Tuesday at ten"
+      when: WHEN
     }]
   },
   {
@@ -94,9 +96,9 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
     when: /\bi could do one sixty\b/i,
     reply: (_, state) => [{
       kind: "ask_owner",
-      question: `Joe's Plumbing came down to one hundred sixty dollars for Tuesday at ten, still over your limit of ${dollarsInWords(state.brief.maxUsd ?? 0)}. Should I book it?`,
+      question: `Joe's Plumbing came down to one hundred sixty dollars for ${WHEN}, still over your limit of ${dollarsInWords(state.brief.maxUsd ?? 0)}. Should I book it?`,
       amountUsd: 160,
-      when: "Tuesday at ten"
+      when: WHEN
     }]
   },
   {

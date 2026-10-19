@@ -24,6 +24,8 @@ export function titleFor(instruction: string): string {
   return title || "new task";
 }
 
+const CALENDAR_DATE = /\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|\d{1,2}\/\d{1,2}|\bthe (?:\d{1,2}(?:st|nd|rd|th)|(?:twenty|thirty)?-? ?(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth)|tenth|eleventh|twelfth|thirteenth|fourteenth|fifteenth|sixteenth|seventeenth|eighteenth|nineteenth|twentieth|thirtieth)\b/i;
+
 function clampSentences(value: string, max = 2): string {
   const sentences = value.match(/[^.!?]+[.!?]+["')\]]*|[^.!?]+$/g) ?? [];
   const picked = sentences.slice(0, max).map(sentence => sentence.trim()).filter(Boolean);
@@ -99,7 +101,10 @@ export function speak(view: RunView, ctx: SpeakContext): string {
   switch (view.status) {
     case "completed": {
       const outcome = view.outcome;
-      if (outcome?.kind === "confirmed") return clampSentences(outcome.summary);
+      if (outcome?.kind === "confirmed") {
+        const undated = outcome.when && !CALENDAR_DATE.test(outcome.when) ? " They gave a day but no date, so check which one." : "";
+        return `${clampSentences(outcome.summary, 1)}${undated}`;
+      }
       if (outcome?.kind === "unconfirmed") return "The call ended before they confirmed, so I won't assume it's booked.";
       const declined = outcome && /^\S+ declined (.+)$/.exec(outcome.reason);
       if (declined) return `You said no to ${stripEnd(declined[1]!)}, so I ended the call. Nothing is booked.`;

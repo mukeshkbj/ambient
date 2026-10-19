@@ -316,7 +316,7 @@ describe("CallRooms line", () => {
     room.pageEvent({ type: "ended" });
     const final = await call.done;
     expect(said[0]).toMatch(/^Hi Joe\./);
-    expect(said[2]).toBe("Just to confirm: one hundred eighty dollars total, Tuesday at ten. Is that right?");
+    expect(said[2]).toBe("Just to confirm: one hundred eighty dollars total, Tuesday the twentieth at ten. Is that right?");
     expect(final.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 180 } });
   });
 });

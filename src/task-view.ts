@@ -46,6 +46,7 @@ body.booked .check path{animation:draw 600ms 180ms cubic-bezier(0.2,0,0,1) both}
 @keyframes land{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
 @keyframes draw{0%{stroke-dashoffset:24}100%{stroke-dashoffset:0}}
 .stake{font-size:2.6em;font-weight:680;letter-spacing:-.025em;line-height:1.04;font-variant-numeric:tabular-nums;text-wrap:balance}
+.stake.long{font-size:2em}
 .over{font-size:1.05em;font-weight:620;color:var(--needs);font-variant-numeric:tabular-nums;margin-top:-.4em}
 .over:empty{display:none}
 .flag{font-size:.72em;font-weight:600;color:var(--needs);margin-top:-.4em}
@@ -126,14 +127,14 @@ function speakers(steps,biz){return steps.map(s=>speaker(s,biz)).filter(Boolean)
 function act(name,args){return rpc("tools/call",{name,arguments:args}).catch(()=>undefined);}
 function offers(ap,said){const limit=ap.limitUsd,amount=ap.amountUsd;if(limit===undefined||amount===undefined||amount<=limit)return [];
  return said.some(l=>l.who!=="Ambient"&&l.text.trim().toLowerCase()==="offer "+limit)?[]:[limit];}
-function dated(when){return /\\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\b|\\d{1,2}\\/\\d{1,2}/i.test(when||"");}
+function dated(when){return /\\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\b|\\d{1,2}\\/\\d{1,2}|\\bthe (?:\\d{1,2}(?:st|nd|rd|th)|(?:twenty|thirty)?-? ?(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth)|tenth|eleventh|twelfth|thirteenth|fourteenth|fifteenth|sixteenth|seventeenth|eighteenth|nineteenth|twentieth|thirtieth)\\b/i.test(when||"");}
 function buttons(list){const box=$("actions");box.innerHTML="";
  for(const b of list){const el=document.createElement("button");el.type="button";el.textContent=b.label;if(b.note){const n=document.createElement("small");n.textContent=b.note;el.appendChild(n);}if(b.kind)el.className=b.kind;el.onclick=()=>{el.disabled=true;b.run();};box.appendChild(el);}}
 function foot(lines){const box=$("foot");
  box.innerHTML=lines.map(l=>'<div class="line"><b>'+esc(l.who)+'</b><span>'+l.text+'</span></div>').join("");}
 function ownerSaid(line,biz){if(!line)return "";const decided=/^(Approved|Declined): /.exec(line.text);if(decided)return "You "+decided[1].toLowerCase()+" it.";
  const offer=/^offer\\s+\\$?(\\d+)/i.exec(line.text);return offer?"You offered "+usd(offer[1])+". Waiting for "+biz+".":"You told them: \\u201c"+cap(line.text)+"\\u201d";}
-function setStake(amount,when){const el=$("stake");
+function setStake(amount,when){const el=$("stake");el.classList.toggle("long",String(when||"").length>16);
  el.innerHTML=amount===undefined?'<span class="when">'+esc(when)+'</span>':esc(usd(amount))+'<span class="sep"> \\u00b7 </span><span class="when">'+esc(when)+'</span>';}
 let shown="";
 function render(d){

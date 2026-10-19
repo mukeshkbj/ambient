@@ -352,7 +352,7 @@ function render() {
   if (o || t?.status === "cancelled") {
     const ok = o?.kind === "confirmed";
     out.className = "outcome show " + (ok ? "ok" : "not");
-    const undated = ok && !/\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|\d{1,2}\/\d{1,2}/i.test(o.when ?? "");
+    const undated = ok && !/\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|\d{1,2}\/\d{1,2}|\bthe (?:\d{1,2}(?:st|nd|rd|th)|(?:twenty|thirty)?-? ?(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth)|tenth|eleventh|twelfth|thirteenth|fourteenth|fifteenth|sixteenth|seventeenth|eighteenth|nineteenth|twentieth|thirtieth)\b/i.test(o.when ?? "");
     const caveat = `${/\b(?:mon|tues|wednes|thurs|fri|satur|sun)day\b/i.test(o.when ?? "") ? "Only the weekday was given" : "No date was given"} · ask ${biz} for the date`;
     out.classList.toggle("caveat", undated);
     $("outcomeLabel").textContent = ok ? (undated ? "Booked · price confirmed" : `Confirmed by ${biz}`) : t.status === "cancelled" ? "Not booked" : o.kind === "unconfirmed" ? "Not booked" : o.kind === "declined" ? "They declined" : "No deal";

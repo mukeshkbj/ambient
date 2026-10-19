@@ -206,3 +206,16 @@ describe("speak", () => {
     expect(result._meta).toMatchObject({ ui: { resourceUri: "ui://ambient/task" } });
   });
 });
+
+describe("the confirmed report", () => {
+  const ctx = { label: "Ambient", state: "online" as const };
+  const done = (when: string) => view({ status: "completed", outcome: { kind: "confirmed", summary: `Joe's Plumbing confirmed ${when} for one hundred sixty dollars.`, amountUsd: 160, when } });
+
+  it("says plainly when the business gave a day but no date", () => {
+    expect(speak(done("Tuesday at ten"), ctx)).toBe("Joe's Plumbing confirmed Tuesday at ten for one hundred sixty dollars. They gave a day but no date, so check which one.");
+  });
+
+  it.each(["Tuesday the twentieth at ten", "October 20 at ten", "10/20 at ten", "Tuesday the 20th at ten"])("adds nothing when the business gave a date: %s", when => {
+    expect(speak(done(when), ctx)).toBe(`Joe's Plumbing confirmed ${when} for one hundred sixty dollars.`);
+  });
+});
