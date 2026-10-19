@@ -64,8 +64,8 @@ function businessPage(callUrl: string): { done: Promise<void> } {
       ws.on("open", () => ws.send(JSON.stringify({ type: "session.update", session: { agent_id: session.agentId } })));
       ws.on("close", end);
       ws.on("message", raw => {
-        const event = JSON.parse((raw as Buffer).toString()) as { type: string; text?: string; interrupted?: boolean; status?: string };
-        if (event.type === "session.ready") void post("/event", { type: "ready" }, session.pageKey);
+        const event = JSON.parse((raw as Buffer).toString()) as { type: string; text?: string; interrupted?: boolean; status?: string; session_id?: string };
+        if (event.type === "session.ready") void post("/event", { type: "ready", sessionId: event.session_id }, session.pageKey);
         if (event.type === "reply.started") Object.assign(page, { replying: true, expectReply: false, agentText: "" });
         if (event.type === "transcript.agent") {
           page.agentText = event.text ?? "";
@@ -152,8 +152,11 @@ export async function runCallDry(options: { log?: (line: string) => void } = {})
     check(status(finalStatus) === "completed" && /one hundred eighty dollars/.test(summary), `the call did not confirm at the approved price: ${status(finalStatus)}: ${summary}`);
     for (let waited = 0; fake.agents.get(agentId)!.llm.length > 0 && waited < 1000; waited += 50) await sleep(50);
     check(fake.agents.get(agentId)!.llm.length === 0, "the stored agent kept our endpoint after the call");
+    const taskId = (finalStatus.structuredContent as { task?: { id?: string } } | undefined)?.task?.id;
+    const clip = (await client.callTool({ name: "hear_proof", arguments: { taskId } }) as { structuredContent?: { url?: string; fromMs?: number; toMs?: number } }).structuredContent;
+    check(clip?.url?.endsWith("/audio.ogg") && clip.fromMs !== undefined && clip.toMs !== undefined && clip.fromMs > 0 && clip.toMs > clip.fromMs, `hear_proof did not return a clip of the recording: ${JSON.stringify(clip)}`);
     log(transcript.join("\n"));
-    log(`call:dry: ok, the disclosure came first, the owner was asked at one hundred eighty dollars, "Yes, plus parts." was refused, and the call confirmed at one hundred eighty dollars`);
+    log(`call:dry: ok, the disclosure came first, the owner was asked at one hundred eighty dollars, "Yes, plus parts." was refused, the call confirmed at one hundred eighty dollars, and hear_proof found the read-back and the yes in the recording`);
     return { transcript, summary, requestShape: REQUEST_SHAPE };
   } finally {
     await client.close().catch(() => {});

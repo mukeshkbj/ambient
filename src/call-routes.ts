@@ -26,7 +26,8 @@ function json(response: ServerResponse, status: number, value: unknown): void {
 
 function report(value: unknown): PageReport | undefined {
   if (!value || typeof value !== "object" || !("type" in value)) return undefined;
-  if (value.type === "ready" || value.type === "ended") return { type: value.type };
+  if (value.type === "ready") return "sessionId" in value && typeof value.sessionId === "string" && /^[\w-]{1,100}$/.test(value.sessionId) ? { type: "ready", sessionId: value.sessionId } : { type: "ready" };
+  if (value.type === "ended") return { type: value.type };
   if (value.type === "played") return { type: "played", text: "text" in value && typeof value.text === "string" ? value.text : "" };
   if (value.type === "interrupted") return { type: "interrupted", spokenSoFar: "spokenSoFar" in value && typeof value.spokenSoFar === "string" ? value.spokenSoFar : "" };
   return undefined;

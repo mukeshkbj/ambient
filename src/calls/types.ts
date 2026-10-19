@@ -14,7 +14,8 @@ export type CallBrief = {
   facts: string[];
 };
 
-type ProofOfYes = { readBack: string; readBackAt: string; yes: string; yesAt: string; language?: Language; inEnglish?: string };
+export type Recording = { sessionId: string; agentId: string };
+export type ProofOfYes = { readBack: string; readBackAt: string; yes: string; yesAt: string; language?: Language; inEnglish?: string; recording?: Recording };
 
 export type Speaker = "agent" | "business" | "owner";
 export type CallTurn = { speaker: Speaker; text: string; at: string };
@@ -32,7 +33,7 @@ export type CallPhase =
   | { kind: "ended"; outcome: CallOutcome };
 
 export type LineInput =
-  | { kind: "answered" }
+  | { kind: "answered"; recording?: Recording }
   | { kind: "heard"; text: string }
   | { kind: "interrupted"; spokenSoFar: string }
   | { kind: "played"; text: string }

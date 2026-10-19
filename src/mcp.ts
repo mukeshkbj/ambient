@@ -3,6 +3,8 @@ import { InMemoryTaskMessageQueue, InMemoryTaskStore } from "@modelcontextprotoc
 import type { RequestTaskStore } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import type { RequestId, Task } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import type { Clip } from "./calls/assemblyai.js";
+import type { ProofOfYes } from "./calls/types.js";
 import { TASK_HTML } from "./task-view.js";
 import type { PendingApproval, RuntimeEntry, RuntimeRegistry } from "./runtimes/registry.js";
 import type { RunStatus, RunView } from "./types.js";
@@ -11,6 +13,7 @@ import { approvalAsk, heldStatus, runResult, say, steerReply, TASK_RESOURCE_URI 
 export type McpDependencies = {
   registry: RuntimeRegistry;
   askWaitMs?: number;
+  hearProof?: (proof: ProofOfYes) => Promise<Clip | undefined>;
 };
 
 const CANCELLABLE: ReadonlySet<RunStatus> = new Set(["queued", "accepted", "running", "waiting_approval", "cancel_requested"]);
@@ -56,7 +59,7 @@ function pendingSpeech(candidates: PendingApproval[]): string {
   return `${candidates.length} approvals are waiting: ${parts.join("; ")}${suffix}. Say yes or no, and which one.`;
 }
 
-export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): McpServer {
+export function createMcpServer({ registry, askWaitMs = 0, hearProof }: McpDependencies): McpServer {
   const taskStore = new CancellingTaskStore();
   const server = new McpServer(
     { name: "Ambient", version: "0.1.0" },
@@ -336,6 +339,22 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
       const states = assistants.map(item => `${item.label} is ${item.state}`).join(". ");
       const selected = assistants.find(item => item.selected);
       return say(`${states}.${selected ? ` Currently using ${selected.label}.` : ""}`, { agents: assistants });
+    } catch (error) {
+      return failure(error);
+    }
+  });
+
+  if (hearProof) server.registerTool("hear_proof", {
+    title: "Hear the business say yes",
+    description: "For the task card only. Returns the part of the call recording where Ambient read the terms back and the business said yes.",
+    inputSchema: { taskId: z.string().min(1) },
+    _meta: { ui: { visibility: ["app"] } }
+  }, async ({ taskId }) => {
+    try {
+      const outcome = registry.engineForRun(taskId).getWork(taskId).outcome;
+      const clip = outcome?.kind === "confirmed" && outcome.proof ? await hearProof(outcome.proof) : undefined;
+      if (!clip) return say("There is no recording of this call.", {});
+      return say("Playing the read-back and their yes.", clip);
     } catch (error) {
       return failure(error);
     }

@@ -1,7 +1,7 @@
 import { dollarsInWords, numberInWords } from "../words.js";
 import { agreesInSpanish, lines, plainSpanishTime, sameSpanishTime, spanishPrice } from "./language.js";
 import { agreesTo, chargedIn, HOLD_LINE_MS, holdTrailingDigits, offerIn, OPTED_OUT, optsOut, OWNER_PATIENCE_MS, plainTime, redactDigits, sameTime } from "./rules.js";
-import type { BrainStep, CallBrief, CallEffect, CallInput, CallOutcome, CallPhase, CallTurn, Speaker } from "./types.js";
+import type { BrainStep, CallBrief, CallEffect, CallInput, CallOutcome, CallPhase, CallTurn, Recording, Speaker } from "./types.js";
 
 export type CallState = {
   callId: string;
@@ -20,6 +20,7 @@ export type CallState = {
   deniedUnpriced: boolean;
   draft: string;
   held: string;
+  recording: Recording | undefined;
 };
 
 type Confirmed = Extract<CallOutcome, { kind: "confirmed" }>;
@@ -50,7 +51,8 @@ export function startCall(brief: CallBrief, callId: string): Transition {
       readBacksSpoken: 0,
       deniedUnpriced: false,
       draft: "",
-      held: ""
+      held: "",
+      recording: undefined
     },
     effects: []
   };
@@ -70,7 +72,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
     case "answered":
       if (phase.kind !== "dialing") return unchanged(state);
       return {
-        state: { ...withTurn(state, "agent", lines(brief.language).disclosure(brief.ownerName), now), phase: { kind: "talking" }, disclosed: true },
+        state: { ...withTurn(state, "agent", lines(brief.language).disclosure(brief.ownerName), now), phase: { kind: "talking" }, disclosed: true, recording: input.recording },
         effects: [status(`Connected to ${brief.business.name}`)]
       };
     case "heard": {
@@ -261,7 +263,7 @@ function answerReadBack(state: CallState, readBack: ReadBack, reply: string, now
   const translation = state.brief.language === "es"
     ? { language: "es" as const, inEnglish: `${english.openers[0]} ${english.terms(readBack.outcome.amountUsd === undefined ? undefined : price(readBack.outcome.amountUsd), readBack.outcome.when ?? "")}. ${english.question}` }
     : {};
-  const proof = { readBack: full.text, readBackAt: full.at, yes: reply, yesAt: now, ...translation };
+  const proof = { readBack: full.text, readBackAt: full.at, yes: reply, yesAt: now, ...translation, ...(state.recording ? { recording: state.recording } : {}) };
   return close({ ...state, readBack: undefined }, { ...readBack.outcome, proof }, now);
 }
 

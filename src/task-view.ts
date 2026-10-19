@@ -183,7 +183,11 @@ function dated(when){return /\\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|d
 function buttons(list){const box=$("actions");box.innerHTML="";
  for(const b of list){const el=document.createElement("button");el.type="button";el.textContent=b.label;if(b.note){const n=document.createElement("small");n.textContent=b.note;el.appendChild(n);}if(b.kind)el.className=b.kind;el.onclick=()=>{if(!b.keep)el.disabled=true;b.run();};box.appendChild(el);}}
 const stamp=s=>{const d=new Date(s);return Number.isNaN(d.getTime())?"":d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",second:"2-digit"});};
-function replay(p){const voice=globalThis.speechSynthesis;if(!voice||typeof SpeechSynthesisUtterance!=="function")return;voice.cancel();
+function replay(p,id){if(!p.recording)return speakProof(p);
+ act("hear_proof",{taskId:id}).then(r=>{const c=r&&r.structuredContent;if(!c||!c.url)return speakProof(p);
+  const a=new Audio(c.url),end=c.toMs/1000;a.addEventListener("loadedmetadata",()=>{a.currentTime=c.fromMs/1000;a.play().catch(()=>speakProof(p));},{once:true});
+  a.addEventListener("timeupdate",()=>{if(a.currentTime>=end)a.pause();});a.addEventListener("error",()=>speakProof(p),{once:true});});}
+function speakProof(p){const voice=globalThis.speechSynthesis;if(!voice||typeof SpeechSynthesisUtterance!=="function")return;voice.cancel();
  const them=new SpeechSynthesisUtterance(p.yes);them.pitch=.75;them.rate=1.05;voice.speak(new SpeechSynthesisUtterance(p.readBack));voice.speak(them);}
 function foot(lines){const box=$("foot");
  box.innerHTML=lines.map(l=>'<div class="line"><b>'+esc(l.who)+'</b><span>'+l.text+'</span></div>').join("");}
@@ -246,7 +250,7 @@ function render(d){
   if(ok&&o.proof){sub.textContent="";document.body.classList.add("proof");
    const spanish=o.proof.language==="es"?" \u00b7 in Spanish":"";
    foot([{who:"Ambient \u00b7 "+stamp(o.proof.readBackAt)+spanish,text:"\u201c"+esc(o.proof.readBack)+"\u201d"+(o.proof.inEnglish?'<small class="gloss">In English: \u201c'+esc(o.proof.inEnglish)+'\u201d</small>':"")},{who:biz+" \u00b7 "+stamp(o.proof.yesAt),text:"\u201c"+esc(o.proof.yes)+"\u201d"}]);
-   buttons([{label:"Hear them say yes",note:"Replays the read-back and their answer",kind:"offer",keep:true,run:()=>replay(o.proof)}]);}
+   buttons([{label:"Hear them say yes",note:o.proof.recording?"Plays the call recording":"Replays the read-back and their answer",kind:"offer",keep:true,run:()=>replay(o.proof,t.id)}]);}
   if(!ok){if(theirs)foot([{who:"Last from "+biz,text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
    buttons([{label:"Call "+biz+" again",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);}}
  else if(live&&list){chip.className="chip";const quoted=list.filter(b=>b.amountUsd!==undefined).length;

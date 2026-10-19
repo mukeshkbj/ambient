@@ -1,11 +1,12 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
-import { chatChunk, CHAT_DONE, type AssemblyAi } from "./assemblyai.js";
+import { chatChunk, CHAT_DONE, proofClip, type AssemblyAi, type Clip } from "./assemblyai.js";
+import type { Language } from "./language.js";
 import type { Line } from "./line.js";
-import { disclosure } from "./rules.js";
-import type { LineInput, PhoneNumber } from "./types.js";
+import { lines } from "./language.js";
+import type { LineInput, PhoneNumber, ProofOfYes } from "./types.js";
 
 export type PageEvent = { type: "speak" } | { type: "hangup" } | { type: "receipt"; text: string };
-export type PageReport = { type: "ready" } | { type: "interrupted"; spokenSoFar: string } | { type: "played"; text: string } | { type: "ended" };
+export type PageReport = { type: "ready"; sessionId?: string } | { type: "interrupted"; spokenSoFar: string } | { type: "played"; text: string } | { type: "ended" };
 export type ChatWriter = { write(chunk: string): void; end(): void };
 
 type RoomsOptions = {
@@ -31,6 +32,7 @@ export class CallRoom implements Line {
   private callId = "";
   private ownerName = "";
   private about: string | undefined;
+  private language: Language | undefined;
   private agentId: string | undefined;
   private readonly listeners = new Set<(input: LineInput) => void>();
   private readonly pages = new Set<(event: PageEvent) => void>();
@@ -45,16 +47,17 @@ export class CallRoom implements Line {
 
   constructor(private readonly rooms: CallRooms, private readonly options: RoomsOptions) {}
 
-  async dial(_to: PhoneNumber, callId: string, ownerName: string, about?: string): Promise<void> {
+  async dial(_to: PhoneNumber, callId: string, ownerName: string, about?: string, language?: Language): Promise<void> {
     this.callId = callId;
     this.ownerName = ownerName;
     this.about = about;
+    this.language = language;
     this.joinUrl = `${this.options.publicBaseUrl}/call/${callId}`;
     this.agentId = await this.options.ai.createAgent({
       name: `ambient-${callId}`,
-      greeting: disclosure(ownerName),
+      greeting: lines(language).disclosure(ownerName),
       systemPrompt: AGENT_PROMPT,
-      voice: this.options.voice ?? "jane",
+      ...(language === "es" ? { voice: "lola", languageCodes: ["es"] } : { voice: this.options.voice ?? "jane" }),
       baseUrl: `${this.options.publicBaseUrl}/call/${callId}/v1`,
       secret: this.secret
     });
@@ -65,8 +68,8 @@ export class CallRoom implements Line {
     this.joinTimer.unref();
   }
 
-  info(): { ownerName: string; about?: string } {
-    return { ownerName: this.ownerName, ...(this.about ? { about: this.about } : {}) };
+  info(): { ownerName: string; about?: string; language?: Language } {
+    return { ownerName: this.ownerName, ...(this.about ? { about: this.about } : {}), ...(this.language === "es" ? { language: this.language } : {}) };
   }
 
   async session(): Promise<{ token: string; agentId: string; ownerName: string; pageKey: string; wsUrl: string }> {
@@ -93,7 +96,7 @@ export class CallRoom implements Line {
         if (this.answered) return;
         this.answered = true;
         clearTimeout(this.joinTimer);
-        this.send({ kind: "answered" });
+        this.send(report.sessionId && this.agentId ? { kind: "answered", recording: { sessionId: report.sessionId, agentId: this.agentId } } : { kind: "answered" });
         return;
       case "interrupted":
         this.draft = "";
@@ -230,5 +233,12 @@ export class CallRooms {
 
   unregister(callId: string): void {
     this.rooms.delete(callId);
+  }
+
+  async proofAudio(proof: ProofOfYes): Promise<Clip | undefined> {
+    if (!proof.recording) return undefined;
+    const recording = await this.options.ai.recording(proof.recording.sessionId);
+    if (!recording || recording.agentId !== proof.recording.agentId) return undefined;
+    return proofClip(recording, proof.readBack, proof.readBackAt);
   }
 }

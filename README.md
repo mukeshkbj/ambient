@@ -117,7 +117,7 @@ Rule 2 in detail:
 - After three unanswered read-backs, or five in all, the call ends unconfirmed. A dropped line is always unconfirmed.
 - A labelled corpus of 192 replies pins the reply check. A seeded test plays 4,000 generated calls and checks that every booking followed a clean yes to a read-back of that exact amount.
 - In Spanish, the reply books only if it is a clean yes ("sí", "correcto", "así es", "de acuerdo") with courtesy words and nothing else. Any number, qualifier or question returns to the conversation. The read-back needs a plain Spanish day and time that names the same day, date and hour as the English booking it records. Its price is spoken in Spanish words.
-- Each booking keeps its proof: the full read-back the business heard and the reply that booked it, each with its time. The 4,000-call test checks that the proof is exactly that pair. The card quotes both lines, and "Hear them say yes" replays them in the simulator. A live call does not record audio yet.
+- Each booking keeps its proof: the full read-back the business heard and the reply that booked it, each with its time. The 4,000-call test checks that the proof is exactly that pair. The card quotes both lines. On a live call, "Hear them say yes" plays that moment from the call recording. AssemblyAI records each voice session, and Ambient finds the read-back in the session timeline. It plays a recording only from the agent that made this call. The simulator has no recording, so there the card speaks both lines. `pnpm call:dry` checks the recording path against a local fake. No real recording has played yet.
 
 ![The simulator at the read-back: the business answers "Yes, plus parts." and Ambient asks for the total instead of booking](docs/media/sim-refused.png)
 

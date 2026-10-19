@@ -10,6 +10,7 @@ export const REQUEST_SHAPE =
 
 type Agent = { greeting: string; systemPrompt: string; llm: { base_url: string; model: string; api_key: string }[] };
 type Session = { agent: Agent; history: { role: "user" | "assistant"; content: string }[]; turn: Promise<void> };
+type Recorded = { agentId: string; startedAt: number; turns: { agent_text: string; agent_reply_started_at_ms: number }[]; completed: boolean };
 
 export type FakeAssemblyAi = {
   apiBase: string;
@@ -62,6 +63,7 @@ async function completion(agent: Agent, history: Session["history"]): Promise<st
 
 export async function startFakeAssemblyAi(options: { apiKey: string; persona: BusinessPersona; pauseMs?: number }): Promise<FakeAssemblyAi> {
   const agents = new Map<string, Agent>();
+  const recorded = new Map<string, Recorded>();
   const tokens = new Set<string>();
   const transcript: string[] = [];
   const sockets = new Set<WebSocket>();
@@ -72,6 +74,12 @@ export async function startFakeAssemblyAi(options: { apiKey: string; persona: Bu
     void (async () => {
       const url = new URL(request.url ?? "/", "http://fake.invalid");
       const agentId = /^\/v1\/agents\/([^/]+)$/.exec(url.pathname)?.[1];
+      const artifact = /^\/artifacts\/([^/]+)\/(audio\.ogg|timeline\.json)$/.exec(url.pathname);
+      if (artifact && request.method === "GET") {
+        const session = recorded.get(artifact[1]!);
+        if (!session) return reply(response, 404, { error: "not_found" });
+        return reply(response, 200, { session_id: artifact[1], started_at_unix_ms: session.startedAt, turns: session.turns });
+      }
       if (url.pathname === "/v1/token" && request.method === "GET") {
         if (request.headers.authorization !== `Bearer ${options.apiKey}`) return reply(response, 401, { error: "unauthorized" });
         const token = randomUUID();
@@ -88,6 +96,13 @@ export async function startFakeAssemblyAi(options: { apiKey: string; persona: Bu
           llm: body.llm as Agent["llm"]
         });
         return reply(response, 200, { agent_id: id });
+      }
+      const sessionId = /^\/v1\/sessions\/([^/]+)$/.exec(url.pathname)?.[1];
+      const session = sessionId ? recorded.get(sessionId) : undefined;
+      if (session && request.method === "GET") {
+        const root = `http://127.0.0.1:${(http.address() as AddressInfo).port}/artifacts/${sessionId}`;
+        const artifacts = session.completed ? [{ type: "audio", url: `${root}/audio.ogg`, content_type: "audio/ogg" }, { type: "timeline", url: `${root}/timeline.json`, content_type: "application/json" }] : [];
+        return reply(response, 200, { id: sessionId, agent_id: session.agentId, status: session.completed ? "completed" : "active", artifacts });
       }
       const agent = agentId ? agents.get(agentId) : undefined;
       if (agent && request.method === "PUT") {
@@ -111,13 +126,18 @@ export async function startFakeAssemblyAi(options: { apiKey: string; persona: Bu
 
   function connect(ws: WebSocket): void {
     sockets.add(ws);
-    ws.on("close", () => sockets.delete(ws));
+    ws.on("close", () => {
+      sockets.delete(ws);
+      if (recording) recording.completed = true;
+    });
     let session: Session | undefined;
+    let recording: Recorded | undefined;
     const send = (value: unknown) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(value));
     const speak = (text: string) => {
       const replyId = randomUUID();
       send({ type: "reply.started", reply_id: replyId, item_id: randomUUID() });
       send({ type: "reply.audio", data: SILENCE });
+      recording?.turns.push({ agent_text: text, agent_reply_started_at_ms: Date.now() });
       send({ type: "transcript.agent", text, reply_id: replyId, item_id: randomUUID(), interrupted: false });
       send({ type: "reply.done", reply_id: replyId, status: "completed" });
       transcript.push(`Ambient: ${text}`);
@@ -149,7 +169,10 @@ export async function startFakeAssemblyAi(options: { apiKey: string; persona: Bu
         const agent = agents.get(message.session?.agent_id ?? "");
         if (!agent) return void send({ type: "session.error", code: "agent_not_found", message: "No such agent" });
         session = { agent, history: [], turn: Promise.resolve() };
-        send({ type: "session.ready", session_id: randomUUID() });
+        const id = `sess_${randomUUID().replaceAll("-", "")}`;
+        recording = { agentId: message.session!.agent_id!, startedAt: Date.now(), turns: [], completed: false };
+        recorded.set(id, recording);
+        send({ type: "session.ready", session_id: id });
         speak(agent.greeting);
         queue(() => businessSays(options.persona.opening));
       } else if (message.type === "reply.create" && session) {

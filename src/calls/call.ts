@@ -115,7 +115,7 @@ export function runCall(options: RunCallOptions): CallHandle {
   }
 
   const unsubscribe = options.line.onInput(dispatch);
-  options.line.dial(options.brief.business.phone, options.callId, options.brief.ownerName, options.brief.goal).catch((error: unknown) => {
+  options.line.dial(options.brief.business.phone, options.callId, options.brief.ownerName, options.brief.goal, options.brief.language).catch((error: unknown) => {
     log(`dial failed: ${error instanceof Error ? error.message : String(error)}`);
     dispatch({ kind: "line_ended", reason: "failed" });
   });

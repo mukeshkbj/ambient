@@ -67,7 +67,7 @@ body[data-state="ringing"] .avatar::after,body[data-state="speaking"] .avatar::a
 <div class="top">
   <span class="state" id="state">Incoming call</span>
   <h1>Ambient</h1>
-  <span class="ai">AI assistant</span>
+  <span class="ai" id="ai">AI assistant</span>
   <p class="why" id="why">Calling for a customer. This call is transcribed.</p>
   <p class="about" id="about"></p>
 </div>
@@ -75,17 +75,31 @@ body[data-state="ringing"] .avatar::after,body[data-state="speaking"] .avatar::a
 <div class="captions" id="captions" aria-live="polite"></div>
 <div class="spacer"></div>
 <div class="actions" id="ringingActions">
-  <div class="act"><button class="round end" id="decline" type="button" aria-label="Decline"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button>Decline</div>
-  <div class="act"><button class="round answer" id="answer" type="button" aria-label="Answer"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button>Answer</div>
+  <div class="act"><button class="round end" id="decline" type="button" aria-label="Decline"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button><span id="declineLabel">Decline</span></div>
+  <div class="act"><button class="round answer" id="answer" type="button" aria-label="Answer"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button><span id="answerLabel">Answer</span></div>
 </div>
 <div class="actions hidden" id="liveActions">
-  <div class="act"><button class="round end" id="hangup" type="button" aria-label="End call"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button>End</div>
+  <div class="act"><button class="round end" id="hangup" type="button" aria-label="End call"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button><span id="endLabel">End</span></div>
 </div>
-<div class="receipt hidden" id="receipt" role="status"><b>Your receipt from Ambient</b><span id="receiptText"></span></div>
+<div class="receipt hidden" id="receipt" role="status"><b id="receiptTitle">Your receipt from Ambient</b><span id="receiptText"></span></div>
 <p class="note" id="note">You're the business in this demo. Answer, then talk naturally: quote a price, offer a time.</p>
 
 <script>
 const $ = id => document.getElementById(id);
+const WORDS = {
+  en: { incoming: "Incoming call", ai: "AI assistant", why: owner => `Calling for ${owner}. This call is transcribed.`, about: text => `About: ${text.charAt(0).toLowerCase()}${text.slice(1)}.`, decline: "Decline", answer: "Answer", end: "End", endCall: "End call", receipt: "Your receipt from Ambient", note: "You're the business in this demo. Answer, then talk naturally: quote a price, offer a time.", connecting: "Connecting…", live: "Speak naturally. Ambient will check with its owner before agreeing to a higher price.", close: "You can close this page.", ended: "Call ended", declined: "Declined", youEnded: "You ended the call", ambientEnded: "Ambient ended the call", failed: "Couldn't connect", problem: "Connection problem", you: "You", agent: "Ambient · AI" },
+  es: { incoming: "Llamada entrante", ai: "Asistente de IA", why: owner => `Llama de parte de ${owner}. Esta llamada se transcribe.`, about: () => "", decline: "Rechazar", answer: "Contestar", end: "Colgar", endCall: "Colgar", receipt: "Su recibo de Ambient", note: "Usted es el negocio en esta demostración. Conteste y hable con naturalidad: dé un precio y una hora.", connecting: "Conectando…", live: "Hable con naturalidad. Ambient consultará con su cliente antes de aceptar un precio más alto.", close: "Puede cerrar esta página.", ended: "Llamada terminada", declined: "Rechazada", youEnded: "Usted colgó", ambientEnded: "Ambient terminó la llamada", failed: "No se pudo conectar", problem: "Problema de conexión", you: "Usted", agent: "Ambient · IA" }
+};
+let words = WORDS.en;
+function speakAs(language) {
+  words = WORDS[language] ?? WORDS.en;
+  document.documentElement.lang = language === "es" ? "es" : "en";
+  for (const [id, key] of [["ai", "ai"], ["declineLabel", "decline"], ["answerLabel", "answer"], ["endLabel", "end"], ["receiptTitle", "receipt"], ["note", "note"]]) $(id).textContent = words[key];
+  if (document.body.dataset.state === "ringing") $("state").textContent = words.incoming;
+  $("decline").setAttribute("aria-label", words.decline);
+  $("answer").setAttribute("aria-label", words.answer);
+  $("hangup").setAttribute("aria-label", words.endCall);
+}
 const base = location.pathname.replace(/\/$/, "");
 const call = { ws: null, ctx: null, mic: null, node: null, sources: new Set(), playAt: 0, replying: false, expectReply: false, endAfterReply: false, ended: false, started: 0, timer: null, pageKey: "", agentText: "", flushes: 0 };
 
@@ -160,15 +174,16 @@ function end(reason) {
   call.mic?.getTracks().forEach(track => track.stop());
   clearInterval(call.timer);
   post("/event", { type: "ended" });
-  setState("ended", reason ?? "Call ended");
+  setState("ended", reason ?? words.ended);
   $("liveActions").classList.add("hidden");
   $("ringingActions").classList.add("hidden");
-  $("note").textContent = "You can close this page.";
+  $("note").textContent = words.close;
 }
 
 fetch(base + "/info").then(r => r.ok ? r.json() : null).then(info => {
-  if (info?.ownerName) $("why").textContent = `Calling for ${info.ownerName}. This call is transcribed.`;
-  if (info?.about) $("about").textContent = `About: ${info.about.charAt(0).toLowerCase()}${info.about.slice(1)}.`;
+  if (info?.language) speakAs(info.language);
+  if (info?.ownerName) $("why").textContent = words.why(info.ownerName);
+  if (info?.about) $("about").textContent = words.about(info.about);
 }).catch(() => {});
 
 const events = new EventSource(base + "/events");
@@ -184,18 +199,18 @@ events.onmessage = e => {
   }
   if (event.type === "hangup") {
     call.endAfterReply = true;
-    if (!call.replying && !call.expectReply && call.sources.size === 0) setTimeout(() => end("Ambient ended the call"), 400);
-    setTimeout(() => end("Ambient ended the call"), 12000);
+    if (!call.replying && !call.expectReply && call.sources.size === 0) setTimeout(() => end(words.ambientEnded), 400);
+    setTimeout(() => end(words.ambientEnded), 12000);
   }
 };
 
-$("decline").onclick = () => end("Declined");
-$("hangup").onclick = () => end("You ended the call");
+$("decline").onclick = () => end(words.declined);
+$("hangup").onclick = () => end(words.youEnded);
 addEventListener("pagehide", () => end());
 
 $("answer").onclick = async () => {
   $("answer").disabled = true;
-  setState("connecting", "Connecting…");
+  setState("connecting", words.connecting);
   try {
     call.mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true } });
     call.ctx = new AudioContext();
@@ -203,7 +218,7 @@ $("answer").onclick = async () => {
     await call.ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET], { type: "text/javascript" })));
     const session = await post("/session").then(r => { if (!r.ok) throw new Error("This call is no longer available."); return r.json(); });
     call.pageKey = session.pageKey;
-    $("why").textContent = `Calling for ${session.ownerName}. This call is transcribed.`;
+    $("why").textContent = words.why(session.ownerName);
     const url = new URL(session.wsUrl);
     url.searchParams.set("token", session.token);
     const ws = new WebSocket(url);
@@ -225,18 +240,18 @@ $("answer").onclick = async () => {
           setState("live", "0:00");
           $("ringingActions").classList.add("hidden");
           $("liveActions").classList.remove("hidden");
-          $("note").textContent = "Speak naturally. Ambient will check with its owner before agreeing to a higher price.";
-          post("/event", { type: "ready" });
+          $("note").textContent = words.live;
+          post("/event", { type: "ready", sessionId: event.session_id });
           break;
         }
         case "reply.started": call.replying = true; call.expectReply = false; call.agentText = ""; document.body.dataset.state = "speaking"; break;
         case "reply.audio": play(event.data); break;
         case "transcript.agent":
-          caption("Ambient · AI", event.text, "agent");
+          caption(words.agent, event.text, "agent");
           call.agentText = event.text;
           if (event.interrupted) post("/event", { type: "interrupted", spokenSoFar: event.text });
           break;
-        case "transcript.user": caption("You", event.text ?? event.delta ?? "", "user"); break;
+        case "transcript.user": caption(words.you, event.text ?? event.delta ?? "", "user"); break;
         case "input.speech.started": if (call.replying) flushPlayback(); break;
         case "reply.done":
           call.replying = false;
@@ -246,15 +261,15 @@ $("answer").onclick = async () => {
             const text = call.agentText, flushes = call.flushes;
             setTimeout(() => { if (call.flushes === flushes) post("/event", { type: "played", text }); }, Math.max(0, (call.playAt - call.ctx.currentTime) * 1000));
           }
-          if (call.endAfterReply) setTimeout(() => end("Ambient ended the call"), Math.max(400, (call.playAt - call.ctx.currentTime) * 1000 + 300));
+          if (call.endAfterReply) setTimeout(() => end(words.ambientEnded), Math.max(400, (call.playAt - call.ctx.currentTime) * 1000 + 300));
           break;
-        case "session.error": caption("Ambient", `Connection problem: ${event.message ?? event.code}`, "agent"); break;
+        case "session.error": caption("Ambient", `${words.problem}: ${event.message ?? event.code}`, "agent"); break;
         case "session.ended": end(); break;
       }
     };
     ws.onclose = () => end();
   } catch (error) {
-    setState("ended", "Couldn't connect");
+    setState("ended", words.failed);
     $("note").textContent = error instanceof Error ? error.message : String(error);
     $("answer").disabled = false;
   }

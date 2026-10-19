@@ -99,7 +99,7 @@ Beat 3 now has about 3.8 s of slack, because Joe's "Sure, we can come" line is c
 - Joe: "Yes, that's right. See you then."
 - Ambient: "Great, that's set for Tuesday the 20th at 10 am. Thanks so much, bye." **CUT**
 - Alexa: "Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars."
-- Echo Show: the check draws itself; the card reads "Booked · confirmed by Joe's Plumbing" and quotes the read-back and Joe's "Yes, that's right. See you then." with their times (`docs/media/sim-confirmed.png`). Tap "Hear them say yes" to replay both lines; in the simulator it replays the transcript, not a recording.
+- Echo Show: the check draws itself; the card reads "Booked · confirmed by Joe's Plumbing" and quotes the read-back and Joe's "Yes, that's right. See you then." with their times (`docs/media/sim-confirmed.png`). Tap "Hear them say yes". On a live call it plays the moment from the call recording. In the simulator it speaks both lines, because the simulator has no recording.
 
 ### 8. The honest failure (1:55 to 2:04)
 

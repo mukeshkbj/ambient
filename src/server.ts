@@ -10,6 +10,7 @@ import { OAuthError, OAuthProvider, type Principal } from "./auth.js";
 import { AlexaRequestError, handleAlexaRequest } from "./alexa.js";
 import { assemblyAi } from "./calls/assemblyai.js";
 import { CallRooms } from "./calls/rooms.js";
+import type { ProofOfYes } from "./calls/types.js";
 import { handleCallRoute } from "./call-routes.js";
 import { verifyAlexaRequest, type AlexaVerifyOptions } from "./alexa-verify.js";
 import { combinedCue, proactiveEventsCue, voiceMonkeyCue, type Cue } from "./cue.js";
@@ -433,9 +434,11 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
       return;
     }
     if (!entry) {
+      const rooms = dependencies.calls?.rooms;
       const mcp = createMcpServer({
         registry: dependencies.registry,
-        ...(dependencies.askWaitMs !== undefined ? { askWaitMs: dependencies.askWaitMs } : {})
+        ...(dependencies.askWaitMs !== undefined ? { askWaitMs: dependencies.askWaitMs } : {}),
+        ...(rooms ? { hearProof: (proof: ProofOfYes) => rooms.proofAudio(proof) } : {})
       });
       const ref: { current?: McpSession } = {};
       const transport = new StreamableHTTPServerTransport({

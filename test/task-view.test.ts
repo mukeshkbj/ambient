@@ -20,10 +20,11 @@ function card() {
   const elements = new Map<string, Stub>();
   const document = { body: element(), getElementById: (id: string) => elements.get(id) ?? elements.set(id, element()).get(id)!, createElement: element };
   const script = /<script>([\s\S]*)<\/script>/.exec(TASK_HTML)![1]!;
-  const context = vm.createContext({ document, parent: { postMessage() {} }, addEventListener() {}, setTimeout() {}, setInterval() { return 0; }, clearInterval() {}, Date, Number, String, Math, Map, Intl });
+  const posted: unknown[] = [];
+  const context = vm.createContext({ document, parent: { postMessage(message: unknown) { posted.push(message); } }, addEventListener() {}, setTimeout() {}, setInterval() { return 0; }, clearInterval() {}, Date, Number, String, Math, Map, Intl });
   vm.runInContext(script, context);
   const render = (data: unknown) => (context as unknown as { render(data: unknown): void }).render(data);
-  return { render, text: (id: string) => document.getElementById(id).textContent, html: (id: string) => document.getElementById(id).innerHTML, buttons: () => document.getElementById("actions").children.map(child => child.textContent) };
+  return { render, text: (id: string) => document.getElementById(id).textContent, html: (id: string) => document.getElementById(id).innerHTML, buttons: () => document.getElementById("actions").children.map(child => child.textContent), click: (label: string) => document.getElementById("actions").children.find(child => child.textContent === label)!.onclick!(), posted };
 }
 
 const board = (states: Array<[string, string, number?, string?]>) => states.map(([business, state, amountUsd, when]) => ({ business, state, ...(amountUsd !== undefined ? { amountUsd } : {}), ...(when ? { when } : {}) }));
@@ -79,5 +80,20 @@ describe("the Echo Show card", () => {
     expect(view.html("foot")).toContain("“Yes, that's right. See you then.”");
     expect(view.html("foot")).toMatch(/Joe&#39;s Plumbing · \d{1,2}:04:14 [AP]M|Joe's Plumbing · \d{1,2}:04:14 [AP]M/);
     expect(view.buttons()).toEqual(["Hear them say yes"]);
+  });
+
+  it("asks the server for the call recording when the proof has one", () => {
+    const view = card();
+    view.render({
+      task: {
+        id: "run-7", status: "completed", instruction: "Call Joe's Plumbing", subject: "Joe's Plumbing", steps: [],
+        outcome: {
+          kind: "confirmed", summary: "Joe's Plumbing confirmed it.", amountUsd: 160, when: "Tuesday the 20th at 10 am",
+          proof: { readBack: "One hundred sixty dollars total. Is that right?", readBackAt: "2026-10-19T17:04:12.000Z", yes: "Yes.", yesAt: "2026-10-19T17:04:14.000Z", recording: { sessionId: "sess_1", agentId: "agent-1" } }
+        }
+      }
+    });
+    view.click("Hear them say yes");
+    expect(view.posted).toContainEqual(expect.objectContaining({ method: "tools/call", params: { name: "hear_proof", arguments: { taskId: "run-7" } } }));
   });
 });

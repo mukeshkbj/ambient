@@ -23,7 +23,7 @@ The plumber call then succeeds. After the plumber answers "Yes, that's right. Se
 
 Ambient can also call around. "Get quotes from plumbers to fix the kitchen sink, under 150" asks once, then calls three businesses at the same time. Each quote appears on the Echo Show as it arrives. In the demo the cheapest plumber speaks Spanish. Ambient discloses that it is an AI in Spanish, reads the price and time back in Spanish, and books on "Sí, correcto." The owner reads the English on the Show. Ambient books the cheapest quote under the limit through that call's read-back and thanks the other two businesses. A pick within the limit is never recorded as the owner's approval.
 
-Every booking keeps its proof: the full read-back the business heard and the reply that booked it, each with its time. The booked card quotes both lines. In the simulator, "Hear them say yes" replays them. A live call does not record audio yet.
+Every booking keeps its proof: the full read-back the business heard and the reply that booked it, each with its time. The booked card quotes both lines. On a live call, "Hear them say yes" plays that moment from the call recording. AssemblyAI records each voice session, and Ambient finds the read-back in the session timeline. It plays a recording only from the agent that made this call. The simulator has no recording, so there the card speaks both lines. `pnpm call:dry` checks the recording path against a local fake. No real recording has played yet.
 
 The business gets a receipt too. When a call books, the business's call page shows "Booked for Maya: $160 total, Tuesday the 20th at 10 am.", in the business's language. A business that says "take us off your list" is never called again.
 
@@ -75,7 +75,7 @@ Phone trees are not handled yet.
 - It does not navigate phone trees.
 - It does not wait in a hold queue for an agent.
 - It calls at most three businesses at once, and only when the owner asks for quotes.
-- It speaks English and Spanish. The live voice line is not yet set for Spanish speech recognition or a Spanish voice.
+- It speaks English and Spanish. A Spanish call uses AssemblyAI's Spanish voice `lola` and Spanish speech recognition, and the business's call page is in Spanish. No live Spanish call has run yet.
 - It cannot use a live phone line without paid telephony.
 - Cost per call is not measured. The AssemblyAI pricing page, as recorded in `docs/plans/2026-10-18-handle-the-call/reference-assemblyai.md` on 2026-10-18, lists the Voice Agent API at $0.075 per minute, billed per second of connected time. Our own LLM cost is on top, and the repo records no price for it. The cost of one call depends on its length, the number of Claude turns, and the Claude token counts. None of these has been measured on a live call.
 
