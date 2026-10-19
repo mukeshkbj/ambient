@@ -98,7 +98,7 @@ describe("speak", () => {
 
   it("speaks an unconfirmed call outcome without assuming the booking", () => {
     const text = speak(view({ status: "completed", outcome: { kind: "unconfirmed", reason: "line ended" } }), ctx);
-    expect(text).toBe("The call ended before they confirmed, so I won't assume it's booked.");
+    expect(text).toBe("Not confirmed: line ended, so I won't assume it's booked. Say call, followed by who to call, to try again.");
     expect(text).not.toMatch(ID_LIKE);
     expect(text).not.toMatch(/\b\d+\b/);
   });
@@ -120,14 +120,14 @@ describe("speak", () => {
     it("asks one short question when the price is over the limit", () => {
       const overLimit = { ...approval, limitUsd: 150, when: "Tuesday at ten" };
       expect(speak(call({ status: "waiting_approval", approval: overLimit }), { label: "Ambient" })).toBe(
-        "Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Say approve to book it, offer a price like one fifty, or hang up."
+        "Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up."
       );
     });
 
     it("asks a shorter question when the owner checks status on a call that is waiting", () => {
       const overLimit = { ...approval, limitUsd: 150, when: "Tuesday at ten" };
       expect(heldStatus(call({ status: "waiting_approval", approval: overLimit }))).toBe(
-        "Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer a price like one fifty, or hang up."
+        "Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up."
       );
       expect(heldStatus(call({ status: "running" }))).toBeUndefined();
     });

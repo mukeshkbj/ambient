@@ -11,7 +11,7 @@ export const JOES_PLUMBING: BusinessPersona = {
     { when: /^let me check once more\b/i, reply: "Yes, that's right. See you then." },
     { when: /\bwith parts\b/i, reply: "Fair enough. A sink like that needs no parts, so that's all in." },
     { when: /\bwhat would it cost\b/i, reply: "It'll be one eighty for the call-out and the repair." },
-    { when: /\b(one (hundred )?sixty|160)\b/i, reply: "Hmm, one sixty. Alright, that works if you're my first job that morning. I'll put you down for Tuesday at ten." },
+    { when: /\b(one (hundred )?sixty|160)\b/i, reply: "Hmm, one sixty. Alright, that works. I'll put you down for Tuesday the twentieth at 10 am." },
     { when: /\bone (hundred )?fifty\b/i, reply: "One fifty is too low for me. I could do one sixty." },
     { when: /\bany room on the price\b/i, reply: "Best I can do is one eighty, honestly. Parts went up this year." },
     { when: /\b(go ahead|book it|that works)\b/i, reply: "Great, you're booked for Tuesday at ten. That's one eighty." },
@@ -24,7 +24,7 @@ export const JOES_PLUMBING_HANGS_UP: BusinessPersona = {
   rules: [{ when: /\b(sink|leak|visit|plumb)/i, reply: "It's one eighty, take it or leave it. I've got another call.", hangUp: true }]
 };
 
-const WHEN = "Tuesday the twentieth at ten";
+const WHEN = "Tuesday the twentieth at 10 am";
 
 export const DEMO_SCRIPT: ScriptedTurn[] = [
   {

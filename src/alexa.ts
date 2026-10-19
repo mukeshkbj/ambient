@@ -212,8 +212,8 @@ function startedCall(entry: RuntimeEntry, run: RunView): string {
   if (ACTIVE_STATUSES.has(run.status) && run.status !== "waiting_approval") {
     const business = run.subject ?? /^calling\s+(.+?)\.?$/i.exec(run.progress ?? "")?.[1];
     return business
-      ? `Calling ${business} now. Ask me how it's going any time.`
-      : "Calling now. Ask me how it's going any time.";
+      ? `Calling ${business} now. Say status any time.`
+      : "Calling now. Say status any time.";
   }
   return speak(run, { label: entry.descriptor.label, state: entry.engine.runtime().state });
 }
@@ -234,7 +234,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     const live = activeCall(registry, attributes);
     const goodbye = !live ? "Goodbye." : live.run.approval
       ? `Goodbye. ${live.run.subject ?? "The business"} is holding for now and will hang up soon. Say, Alexa, open Ambient, to answer.`
-      : "Goodbye. The call is still going. Ask me how it went when you're back.";
+      : "Goodbye. The call is still going. Say status when you're back.";
     return response(goodbye, attributes, true);
   }
   if (name === "AMAZON.FallbackIntent") {
@@ -287,7 +287,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
       const amount = approval.amountUsd !== undefined ? ` at ${dollarsInWords(approval.amountUsd)}` : "";
       const reply = run.status === "completed" || run.status === "waiting_approval"
         ? `${choice === "once" ? "Okay." : "Okay, I'll say no."} ${speak(run, ctx)}`
-        : choice === "once" ? `Okay, telling them yes${amount}. Ask me how it went.` : "Okay, I'll say no. Ask me how it went.";
+        : choice === "once" ? `Okay, telling them yes${amount}. Say status to hear how it went.` : "Okay, I'll say no. Say status to hear how it went.";
       return response(reply, runAttributes(attributes, run), false, isLive(run));
     } catch (error) {
       return response(errorText(error), attributes);

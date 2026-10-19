@@ -72,7 +72,7 @@ describe("Alexa call intents", () => {
     expect(runs[0]).toMatchObject({ runtimeId: "caller", instruction: "a plumber for tomorrow" });
     expect(fake.client.createSession).toHaveBeenCalled();
     expect(speechOf(result)).toContain("Calling");
-    expect(speechOf(result)).toContain("Ask me how it&apos;s going any time.");
+    expect(speechOf(result)).toContain("Say status any time.");
     expect(result.response.reprompt?.outputSpeech.ssml).toBe("<speak>Say status, or hang up.</speak>");
     close();
   });

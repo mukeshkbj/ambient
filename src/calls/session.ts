@@ -181,11 +181,12 @@ function brainStep(state: CallState, brain: BrainStep, now: string): Transition 
   }
 }
 
-function confirm(state: CallState, outcome: Confirmed, now: string): Transition {
+function confirm(state: CallState, proposed: Confirmed, now: string): Transition {
+  const outcome = proposed.when ? { ...proposed, when: proposed.when.replace(/\.+$/, "") } : proposed;
   const { brief } = state;
   const owner = brief.ownerName;
   if (outcome.when !== undefined && !plainTime(outcome.when)) {
-    const line = "Sorry, could you give me the total price and the day and time once more?";
+    const line = "Sorry, what day and time was that, on its own?";
     return { state: { ...withTurn(flushDraft(state, now), "agent", line, now), readBack: undefined }, effects: [say(line)] };
   }
   const claimed = [...(outcome.amountUsd !== undefined ? [outcome.amountUsd] : []), ...chargedIn(outcome.summary)].filter(amount => Number.isFinite(amount) && amount > 0);

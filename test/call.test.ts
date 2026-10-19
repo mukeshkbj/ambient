@@ -48,7 +48,7 @@ describe("runCall with the simulated line", () => {
     await until(call, "waiting_for_owner");
     call.ownerSaid("offer 160");
     const final = await call.done;
-    expect(final.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 160, when: "Tuesday the twentieth at ten" } });
+    expect(final.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 160, when: "Tuesday the twentieth at 10 am" } });
     expect(spoken.join("")).toContain("one hundred sixty dollars");
     expect(final.turns.some(turn => turn.speaker === "business" && /one sixty\. Alright, that works/i.test(turn.text))).toBe(true);
     expect(final.turns.some(turn => turn.speaker === "owner" && turn.text === "offer 160")).toBe(true);

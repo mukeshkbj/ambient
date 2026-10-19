@@ -55,7 +55,7 @@ function lastLineFrom(view: RunView, speaker: string): string | undefined {
   return view.steps.findLast(step => step.startsWith(prefix))?.slice(prefix.length);
 }
 
-const ownerChoices = (limit: number) => `Say approve to book it, offer a price like ${priceInWords(limit)}, or hang up.`;
+const ownerChoices = (limit: number) => `Say approve to book it, offer followed by a price like ${priceInWords(limit)}, or hang up.`;
 
 /** The approval ask on its own — used as the elicitation message. */
 export function approvalAsk(view: RunView, ctx: SpeakContext): string {
@@ -72,7 +72,7 @@ export function approvalAsk(view: RunView, ctx: SpeakContext): string {
     return asked.includes(amount) ? asked : `${asked} That's ${amount}.`;
   }
   return request
-    ? `${ctx.label} is asking: ${/[?]$/.test(request.trim()) ? request.trim() : `${stripEnd(request)}.`}`
+    ? `${callee(view) ? "" : `${ctx.label} is asking: `}${/[?]$/.test(request.trim()) ? request.trim() : `${stripEnd(request)}.`}`
     : `${ctx.label} needs your approval to continue "${view.title}".`;
 }
 
@@ -105,7 +105,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
         const undated = outcome.when && !CALENDAR_DATE.test(outcome.when) ? " They gave a day but no date, so check which one." : "";
         return `${clampSentences(outcome.summary, 1)}${undated}`;
       }
-      if (outcome?.kind === "unconfirmed") return "The call ended before they confirmed, so I won't assume it's booked.";
+      if (outcome?.kind === "unconfirmed") return `Not confirmed: ${stripEnd(outcome.reason)}, so I won't assume it's booked. Say call, followed by who to call, to try again.`;
       const declined = outcome && /^\S+ declined (.+)$/.exec(outcome.reason);
       if (declined) return `You said no to ${stripEnd(declined[1]!)}, so I ended the call. Nothing is booked.`;
       if (outcome) return clampSentences(`${stripEnd(outcome.reason)}.`);
@@ -113,7 +113,8 @@ export function speak(view: RunView, ctx: SpeakContext): string {
     }
     case "failed": {
       const reason = stripEnd(clampSentences(view.failure ?? view.answer ?? "It hit an error.", 1));
-      return `${label} couldn't finish ${title}: ${reason}.`;
+      const business = callee(view);
+      return business ? `The call to ${business} failed: ${reason}. Say call, followed by who to call, to try again.` : `${label} couldn't finish ${title}: ${reason}.`;
     }
     case "cancelled":
       return `${label} stopped ${title}.`;

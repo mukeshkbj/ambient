@@ -806,7 +806,7 @@ describe("round 14 review findings", () => {
     const { state, effects } = play([answered, heard("It's 80, plus a deposit"), confirm(80, "ok", "Friday at 3, plus a $400 deposit")], undefined, { ...brief, maxUsd: 100 });
     expect(state.readBack).toBeUndefined();
     expect(state.phase).toMatchObject({ kind: "talking" });
-    expect(spoken(effects).at(-1)).toBe("Sorry, could you give me the total price and the day and time once more?");
+    expect(spoken(effects).at(-1)).toBe("Sorry, what day and time was that, on its own?");
   });
 
   it.each(["Yes, ten.", "Yes, 10.", "Yes, thirty.", "Yes, 30.", "Yes, ten o'clock."])("does not book part of the read-back time: %s", reply => {
@@ -832,7 +832,7 @@ describe("round 14 review findings", () => {
 });
 
 describe("round 15 review findings", () => {
-  const ASK_TOTAL = /^Sorry, (?:I need one total price|could you give me)/;
+  const ASK_TOTAL = /^Sorry, what day and time was that, on its own\?$/;
   it.each([
     "Friday at 3, plus a 400 deposit", "Friday at three, deposit of four hundred", "Friday at 3, 400 down", "Friday at 3, plus a 4k deposit",
     "Friday at 3, plus a €400 deposit", "Friday at 3, plus a ＄400 deposit", "Friday at 3, plus ４００ dollars", "Friday at 3, ask for Sam"
