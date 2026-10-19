@@ -5,6 +5,8 @@ Track: Alexa+
 Demo video: [VIDEO URL]
 Public repo: [PUBLIC REPO URL]
 
+Ambient lets Alexa phone a business for the household, discloses that it is an AI, and books only on a clear yes to the exact price and time.
+
 **What you can run today, and what is not live yet.** The whole call runs end to end with zero keys: `pnpm demo` in a browser, and `pnpm smoke:mcp` through the MCP server. In that demo the business is simulated, and so is the Alexa+ host, because the Alexa+ MCP toolkit was gated for entrants as of 2026-10-18. The voice line, the Claude brain, the Alexa skill, the spoken cue, and the AWS stack are built and tested against fixtures written from the docs, but none has run live yet. No real phone call has been placed. The [README table](../README.md#what-is-real-and-what-is-simulated) lists each piece with its evidence.
 
 ## Inspiration
@@ -18,6 +20,8 @@ This section describes the design. The demo runs all of it against a simulated b
 Start with a call that does not book. At the read-back, the plumber answers "Yes, plus parts." Ambient does not treat that as a yes. It says "Sorry, I need one total price. What is the total with parts?" In another demo call, a dental office answers every read-back with "Probably, let me check with my manager." After three read-backs the call ends, and the outcome reads "unconfirmed. Bright Smile Dental never clearly confirmed it". Nothing is booked in either case.
 
 The plumber call then succeeds. After the plumber answers "Yes, that's right. See you then." to a second read-back, Alexa reports "Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars."
+
+If a call ends without a booking, the owner says "call them again". Ambient redials the same business with the original job, and never redials a call that booked or one that is still going.
 
 You ask Alexa to call a business for the household. An AI agent makes the call. Its first words are an AI disclosure: "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else.
 
@@ -70,7 +74,7 @@ Phone trees and businesses that have opted out of calls are not handled yet.
 
 People who put off calls. In a 2023 US survey for weBoost, 47% of Gen Z said they feel anxious when they see someone is calling them ([report, PDF](https://assets.wilsonelectronics.com/m/3788b144e055bd3f/original/weBoost-Good-Call-Survey-Full-Report-Presentation.pdf)). The errand still has to happen: a plumber, a vet, a repair shop.
 
-Small businesses are hard to reach by phone. Invoca analyzed 70 million tracked inbound calls and classified 44% as missed, meaning they never reached a person ([Invoca Lead Conversion Benchmarks Report 2026, as summarized by JustCall](https://justcall.io/blog/missed-call-statistics.html)). The data comes from businesses that pay for call tracking, so JustCall notes the true rate is probably higher. The call code plans for that. While the owner decides, the agent speaks a hold line every 15 seconds. After 90 seconds without an answer from the owner, it ends the call unconfirmed. After three unanswered read-backs, or five in all, it also ends unconfirmed. The code has no automatic redial or retry.
+Small businesses are hard to reach by phone. Invoca analyzed 70 million tracked inbound calls and classified 44% as missed, meaning they never reached a person ([Invoca Lead Conversion Benchmarks Report 2026, as summarized by JustCall](https://justcall.io/blog/missed-call-statistics.html)). The data comes from businesses that pay for call tracking, so JustCall notes the true rate is probably higher. The call code plans for that. While the owner decides, the agent speaks a hold line every 15 seconds. After 90 seconds without an answer from the owner, it ends the call unconfirmed. After three unanswered read-backs, or five in all, it also ends unconfirmed. The code never redials by itself. The owner can say "call them again" to redial with the original job.
 
 Ambient is also for anyone who cannot easily make a call: a parent holding a baby, a person with a speech or hearing difficulty, an older adult who finds phone menus hard. In a 2024 US survey of adults with hearing loss, 54% said they had difficulty communicating over the phone because of it ([Statista Research Department](https://www.statista.com/statistics/1550270/hearing-loss-barriers-us-adults), page fetched on 2026-10-19). The CDC reports that 26.8% of US adults aged 65 and over had some difficulty hearing in 2019, even with a hearing aid ([NCHS Data Brief 414](https://www.cdc.gov/nchs/products/databriefs/db414.htm)).
 

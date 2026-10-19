@@ -4,14 +4,14 @@
 
 ![The simulated call, 21 seconds: Ambient discloses it is an AI, the owner offers $150, Joe counters at $160, the owner approves, Joe answers the read-back with "Yes, plus parts.", Ambient asks for one total, and the call books](docs/media/demo.gif)
 
-**Status today.** No live call has happened. The demo runs this whole flow against a simulated business and a simulated Alexa+ host. The voice line, the Claude brain, and the Alexa skill are built but have not run live. See [What is real and what is simulated](#what-is-real-and-what-is-simulated) and [Limits](#limits-stated-plainly).
-
 Ambient negotiates under your limit, asks you again when the business counters, and refuses an unclear yes. You ask Alexa to call the plumber, and an AI agent makes the call and says first that it is an AI. The agent books only after a clear yes to a read-back of the exact price and time, and Alexa reports only what the business confirmed.
+
+**Status today.** No live call has happened. The demo runs this whole flow against a simulated business and a simulated Alexa+ host. The voice line, the Claude brain, and the Alexa skill are built but have not run live. See [What is real and what is simulated](#what-is-real-and-what-is-simulated) and [Limits](#limits-stated-plainly).
 
 | | Google Duplex | Pixel Hold for Me | Ambient |
 |---|---|---|---|
 | Who places the call | The Assistant, for a client | The user | An AI agent, on the owner's request |
-| What the business hears about the caller | Tested wording names Google and the recording. No fetched source shows an "I am an AI" line | "Hold for Me will inform them you're returning and notify you that they're ready." The spoken string is unverified | "Hi, this is an AI assistant calling for Maya. This call is transcribed." as the first words, in the demo. The live line has not run |
+| What the business hears about the caller | Names Google and the recording. An "I am an AI" line is unverified | "Hold for Me will inform them you're returning". The spoken words are unverified | "Hi, this is an AI assistant calling for Maya. This call is transcribed." as the first words, in the demo. The live line has not run |
 | What it does that Ambient does not | Works over a real phone network | Waits in hold queues | Not applicable |
 
 The cells come from the pages fetched on 2026-10-18. The [reference bar](docs/plans/2026-10-18-handle-the-call/reference-bar.md#5-full-comparison-table) holds the sources and the full table, which adds Pixel Call Screen and Apple's Call Screening and Hold Assist.
@@ -96,11 +96,20 @@ Rules 1 to 4 are enforced in the reducer and tested in [`test/call-session.test.
 | Rule | What the code does |
 |---|---|
 | 1. The first words are an AI disclosure | The line speaks "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else. |
-| 2. "Confirmed" means the business confirmed | Only the brain's `end_call` can start a booking. The reducer then reads the terms back word for word ("Okay, so just to confirm, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?"). The read-back counts only after it has fully played; the voice page reports playback, and speech during playback that is not agreement cancels it. It books only if the business's reply is short, contains a confirmation word ("yes", "that's right", "sounds good"), and otherwise holds only courtesy words and the exact amount and time from the read-back. Any other word or number, a negation, or a question returns to the conversation. Each retry is worded differently, so a late playback report cannot arm the wrong one. A labelled corpus of 192 replies pins this. After three unanswered read-backs, or five in all, the call ends unconfirmed. A dropped line is always unconfirmed. A seeded test plays 4,000 generated calls and checks that every booking followed a clean yes to a read-back of that exact amount. |
+| 2. "Confirmed" means the business confirmed | The call books only on a short, clean yes to a fully played read-back of the exact total and time ("Okay, so just to confirm, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?"). The details are under this table. |
 | 3. A price above the limit needs the owner | The reducer turns an over-limit confirmation into a question for the owner. Only a clear offer ("offer 160", "one sixty") counts as approval. "Don't pay 180" does not. A declined price ends the call with no deal. A deal with no price also needs the owner. |
 | 4. No card numbers | Runs of 12 or more digits, spoken or written, become "that number". The check holds digits back across stream chunks, so a number split over several chunks is still caught. |
 | 5. Dialing an unknown business needs approval | A business found by web search gets a "Call them?" approval. A number the user gives is dialed directly. |
 | 6. Call limits | At most 3 calls to one number and 20 calls in total per 24 hours, on real lines, counting calls still in progress. |
+
+Rule 2 in detail:
+
+- Only the brain's `end_call` can start a booking. The reducer then reads the terms back word for word.
+- The read-back counts only after it has fully played. The voice page reports playback, and speech during playback that is not agreement cancels it.
+- The reply books only if it is short, contains a confirmation word ("yes", "that's right", "sounds good"), and otherwise holds only courtesy words and the exact amount and time from the read-back. Any other word or number, a negation, or a question returns to the conversation.
+- Each retry is worded differently, so a late playback report cannot arm the wrong one.
+- After three unanswered read-backs, or five in all, the call ends unconfirmed. A dropped line is always unconfirmed.
+- A labelled corpus of 192 replies pins the reply check. A seeded test plays 4,000 generated calls and checks that every booking followed a clean yes to a read-back of that exact amount.
 
 ![The simulator at the read-back: the business answers "Yes, plus parts." and Ambient asks for the total instead of booking](docs/media/sim-refused.png)
 
@@ -125,6 +134,7 @@ Three adversarial reviews of the reducer and repeated structural review rounds, 
 
 - **Echo Dot.** The custom skill ([`src/alexa.ts`](src/alexa.ts), [`alexa/interaction-model.en-US.json`](alexa/interaction-model.en-US.json)) starts, steers, approves, and ends calls in one sentence each. When a call needs the owner, a Voice Monkey announcement speaks the question and Proactive Events adds a notification ([`src/cue.ts`](src/cue.ts)).
 - **Echo Show and Fire TV.** The MCP App card leads with the stake ("$180 · Tuesday the 20th at 10 am"). On a screen it carries "Book $180", "Offer $150", and "Decline", which call the `approve` and `delegate` tools through the host. If the business agrees a day but gives no calendar date, the card says "Booked · date still open" with "Only the weekday was given · ask <business> for the date", and Alexa adds "They gave a day but no date, so check which one."
+- **Calling again.** If a call ends without a booking, say "call them again". Ambient redials the same business with the original job. It does not redial a call that booked or one that is still going ([`test/alexa.test.ts`](test/alexa.test.ts)).
 - **Memory.** Each call is stored in SQLite. The next call to the same business starts with what the last one learned ("Remembered from Oct 18 — confirmed, quoted one hundred sixty dollars, Tuesday the 20th at 10 am").
 
 ## Real calls

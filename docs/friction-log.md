@@ -274,7 +274,7 @@ These bugs were in our code. We list them so judges can see the whole path. We d
   {"error":"forbidden_origin"}
   ```
 
-- **Cause:** The origin allowlist comes from `PUBLIC_BASE_URL`, which defaults to `http://127.0.0.1:3000` (`src/config.ts:21`).
+- **Cause:** The origin allowlist comes from `PUBLIC_BASE_URL`, which defaults to `http://127.0.0.1:3000` (the `PUBLIC_BASE_URL` default in the env schema in `src/config.ts`).
 - **Workaround:** Set `PUBLIC_BASE_URL` to match `PORT`, or list the origin in `AMBIENT_ALLOWED_ORIGINS`. `.env.example` now says so (`8330e91`). Deriving the allowlist from the bound port would remove the trap.
 
 ### B. The `import.meta.url === \`file://${process.argv[1]}\`` entry guard never matches on Windows
