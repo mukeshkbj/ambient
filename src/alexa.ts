@@ -214,8 +214,8 @@ function startedCall(entry: RuntimeEntry, run: RunView): string {
   if (ACTIVE_STATUSES.has(run.status) && run.status !== "waiting_approval") {
     const business = run.subject ?? /^calling\s+(.+?)\.?$/i.exec(run.progress ?? "")?.[1];
     return business
-      ? `Calling ${business} now. Say status any time.`
-      : "Calling now. Say status any time.";
+      ? `I'm calling ${business} now. Say status any time.`
+      : "I'm calling now. Say status any time.";
   }
   return speak(run, { label: entry.descriptor.label, state: entry.engine.runtime().state });
 }
@@ -265,7 +265,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
   if (name === "StartCallIntent") {
     const task = slotValue(intent, "task", "request");
     if (!task) return response("Who should I call? Say, for example, call Joe's Plumbing.", attributes);
-    if (/^(?:them |it |the call )?again$/i.test(task)) return retryCall(registry, attributes, dependencies);
+    if (/^(?:(?:them|him|her|it|that|the call) )?(?:again|back)$/i.test(task)) return retryCall(registry, attributes, dependencies);
     const entry = defaultEntry(registry);
     if (!entry) return response("I could not reach the assistant.", attributes);
     try {

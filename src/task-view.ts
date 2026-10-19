@@ -184,7 +184,7 @@ function render(d){
   if(ok){$("what").textContent=what?biz+" \\u00b7 "+what:biz;setStake(o.amountUsd,cap(o.when||biz));
    if(!dated(o.when)){flag.className="flag date";flag.textContent=(/\\b(?:mon|tues|wednes|thurs|fri|satur|sun)day\\b/i.test(o.when||"")?"Only the weekday was given":"No date was given")+" \\u00b7 ask "+biz+" for the date";}}
   else{stake.textContent="Nothing was booked.";$("what").textContent=[biz,what,limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");}
-  const readBack=said.some(l=>l.who==="Ambient"&&/^(Just to confirm|Let me check once more|One last check|To be sure):/.test(l.text));
+  const readBack=said.some(l=>l.who==="Ambient"&&/\\bIs that right\\?$/.test(l.text));
   sub.textContent=ok?(theirs?(readBack?"Ambient read back the total and the time. "+biz+" said \\u201c"+theirs.text+"\\u201d":"In their words: \\u201c"+theirs.text+"\\u201d"):"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed.":cap(o.reason)+".";
   const mine=said.filter(l=>l.who!=="Ambient"&&l.who!==biz);
   if(ok)hint.textContent=mine.some(l=>/^Approved: /.test(l.text))?"You approved this price from home.":mine.some(l=>/^offer\\b/i.test(l.text))?"You offered this price from home.":limitOf(t.instruction)?"Within your "+limitOf(t.instruction).slice(6)+" limit.":"";

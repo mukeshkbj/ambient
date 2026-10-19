@@ -37,7 +37,7 @@ const AGENT = ["Okay. The address is 12 Elm Street.", "Could you do it for less?
 
 type Reply = { text: string; clean: boolean };
 
-const READ_BACK = /^(Just to confirm:|Let me check once more:|Once more:|To be sure:) /;
+const READ_BACK = /^(Okay, so just to confirm,|Sorry, just so I have it right,|One more time,|Just so I'm sure,) .+\. Is that right\?$/;
 const TALKED_OVER = /^Sorry, I talked over you\. Was that a yes to .+\?$/;
 
 function playCall(seed: number) {
@@ -88,7 +88,7 @@ function playCall(seed: number) {
     }
     if (state.readBack && next() < 0.8) {
       const order = next();
-      if (order < 0.15) run({ kind: "interrupted", spokenSoFar: "Just to confirm" });
+      if (order < 0.15) run({ kind: "interrupted", spokenSoFar: "Okay, so just" });
       else if (order < 0.25) run({ kind: "owner_said", text: "wait a moment" });
       else if (order < 0.8) run({ kind: "played", text: state.readBack.line });
       else if (order < 0.88) {

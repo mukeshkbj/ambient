@@ -60,15 +60,15 @@ The end of the same run, from the call transcript:
 
 ```text
   Maya: Approved: one hundred sixty dollars for Tuesday the 20th at 10 am
-  Ambient: Thanks for waiting. Maya says one sixty is fine. Please go ahead and book Tuesday at ten.
+  Ambient: Okay, thanks for waiting. Maya says one sixty is fine. Please go ahead and book Tuesday at ten.
   Joe's Plumbing: Hmm, one sixty. Alright, that works. I'll put you down for Tuesday the 20th at 10 am.
-  Ambient: Just to confirm: one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?
+  Ambient: Okay, so just to confirm, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?
   Joe's Plumbing: Yes, plus parts.
   Ambient: Sorry, I need one total price. What is the total with parts?
   Joe's Plumbing: Fair enough. A sink like that needs no parts, so that's all in.
-  Ambient: Let me check once more: one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?
+  Ambient: Sorry, just so I have it right, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?
   Joe's Plumbing: Yes, that's right. See you then.
-  Ambient: Great, Maya will expect you Tuesday the 20th at 10 am. Thanks, goodbye.
+  Ambient: Great, Maya will expect you Tuesday the 20th at 10 am. Thanks so much, bye.
 smoke: ok, the business countered, "yes, plus parts" did not book, and the call booked at the approved counter
 ```
 
@@ -96,7 +96,7 @@ Rules 1 to 4 are enforced in the reducer and tested in [`test/call-session.test.
 | Rule | What the code does |
 |---|---|
 | 1. The first words are an AI disclosure | The line speaks "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else. |
-| 2. "Confirmed" means the business confirmed | Only the brain's `end_call` can start a booking. The reducer then reads the terms back word for word ("Just to confirm: one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?"). The read-back counts only after it has fully played; the voice page reports playback, and speech during playback that is not agreement cancels it. It books only if the business's reply is short, contains a confirmation word ("yes", "that's right", "sounds good"), and otherwise holds only courtesy words and the exact amount and time from the read-back. Any other word or number, a negation, or a question returns to the conversation. Each retry is worded differently, so a late playback report cannot arm the wrong one. A labelled corpus of 192 replies pins this. After three unanswered read-backs, or five in all, the call ends unconfirmed. A dropped line is always unconfirmed. A seeded test plays 4,000 generated calls and checks that every booking followed a clean yes to a read-back of that exact amount. |
+| 2. "Confirmed" means the business confirmed | Only the brain's `end_call` can start a booking. The reducer then reads the terms back word for word ("Okay, so just to confirm, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?"). The read-back counts only after it has fully played; the voice page reports playback, and speech during playback that is not agreement cancels it. It books only if the business's reply is short, contains a confirmation word ("yes", "that's right", "sounds good"), and otherwise holds only courtesy words and the exact amount and time from the read-back. Any other word or number, a negation, or a question returns to the conversation. Each retry is worded differently, so a late playback report cannot arm the wrong one. A labelled corpus of 192 replies pins this. After three unanswered read-backs, or five in all, the call ends unconfirmed. A dropped line is always unconfirmed. A seeded test plays 4,000 generated calls and checks that every booking followed a clean yes to a read-back of that exact amount. |
 | 3. A price above the limit needs the owner | The reducer turns an over-limit confirmation into a question for the owner. Only a clear offer ("offer 160", "one sixty") counts as approval. "Don't pay 180" does not. A declined price ends the call with no deal. A deal with no price also needs the owner. |
 | 4. No card numbers | Runs of 12 or more digits, spoken or written, become "that number". The check holds digits back across stream chunks, so a number split over several chunks is still caught. |
 | 5. Dialing an unknown business needs approval | A business found by web search gets a "Call them?" approval. A number the user gives is dialed directly. |

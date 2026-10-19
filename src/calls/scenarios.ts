@@ -20,7 +20,7 @@ const VET: BusinessPersona = {
   name: "Happy Paws Veterinary",
   opening: "Happy Paws Veterinary, how can I help?",
   rules: [
-    { when: /^just to confirm\b/i, reply: "Yes, that's right." },
+    { when: /\bis that right\?$/i, reply: "Yes, that's right." },
     { when: /\b(appointment|checkup)\b/i, reply: "We can see Biscuit on Thursday the twenty-second at three pm." }
   ]
 };
@@ -29,7 +29,7 @@ const DENTIST: BusinessPersona = {
   name: "Bright Smile Dental",
   opening: "Bright Smile Dental, how can I help?",
   rules: [
-    { when: /^(just to confirm|let me check once more|once more|to be sure)\b/i, reply: "Probably, let me check with my manager." },
+    { when: /\bis that right\?$/i, reply: "Probably, let me check with my manager." },
     { when: /\b(appointment|cleaning)\b/i, reply: "We can fit you in on Thursday the twenty-second at three pm for one hundred twenty." }
   ]
 };
@@ -84,7 +84,7 @@ export const SCENARIOS: Scenario[] = [
     line: simulated(VET),
     brain: scriptedBrain(bookingScript(VET.name, "Hi, I'd like to book a checkup appointment for Maya's dog Biscuit. When do you have an opening?")),
     owner: "once",
-    expect: { kind: "confirmed", transcript: [/Maya: Approved: a booking with no price/, /Just to confirm: no price is set/] }
+    expect: { kind: "confirmed", transcript: [/Maya: Approved: a booking with no price/, /Okay, so just to confirm, no price is set/] }
   },
   {
     title: "A dental office hedges every read-back",

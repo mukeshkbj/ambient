@@ -227,10 +227,10 @@ describe("CallRooms line", () => {
     const room = rooms.room("call-1")!;
     room.attach(() => {});
     line.say("Still checking with Maya.", true);
-    line.say("Just to confirm: one hundred sixty dollars total. Is that right?", true);
+    line.say("Okay, so just to confirm, one hundred sixty dollars total. Is that right?", true);
     const reply = writer();
     room.chat({ messages: [] }, `Bearer ${room.secret}`, reply.sink);
-    expect(reply.text()).toBe("Still checking with Maya. Just to confirm: one hundred sixty dollars total. Is that right?");
+    expect(reply.text()).toBe("Still checking with Maya. Okay, so just to confirm, one hundred sixty dollars total. Is that right?");
   });
 
   it("passes on the business's new words even when it flushes a queued reply", async () => {
@@ -329,7 +329,7 @@ describe("CallRooms line", () => {
     room.pageEvent({ type: "ended" });
     const final = await call.done;
     expect(said[0]).toMatch(/^Hi Joe\./);
-    expect(said[2]).toBe("Just to confirm: one hundred eighty dollars total, Tuesday the 20th at 10 am. Is that right?");
+    expect(said[2]).toBe("Okay, so just to confirm, one hundred eighty dollars total, Tuesday the 20th at 10 am. Is that right?");
     expect(final.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 180 } });
   });
 });

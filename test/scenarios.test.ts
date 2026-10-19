@@ -9,7 +9,7 @@ describe("scenarios through the real reducer", () => {
     const { outcome, transcript, asked } = await runScenario(named(/vet/i));
     expect(asked).toHaveLength(1);
     expect(asked[0]).toMatch(/gave no price/);
-    expect(transcript.some(line => line.startsWith("Ambient: Just to confirm: no price is set"))).toBe(true);
+    expect(transcript.some(line => line.startsWith("Ambient: Okay, so just to confirm, no price is set"))).toBe(true);
     expect(outcome).toMatchObject({ kind: "confirmed", when: "Thursday the twenty-second at 3 pm" });
     expect(outcome).not.toHaveProperty("amountUsd");
   });
@@ -17,7 +17,7 @@ describe("scenarios through the real reducer", () => {
   it("ends unconfirmed after three hedged read-backs and never books", async () => {
     const { outcome, transcript } = await runScenario(named(/hedg/i));
     expect(outcome).toEqual({ kind: "unconfirmed", reason: "they never clearly confirmed it" });
-    expect(transcript.filter(line => line.startsWith("Ambient: ") && /^Ambient: (Just to confirm|Let me check once more|Once more):/.test(line))).toHaveLength(3);
+    expect(transcript.filter(line => line.startsWith("Ambient: ") && /^Ambient: .+\. Is that right\?$/.test(line))).toHaveLength(3);
   });
 
   it("ends unconfirmed when nobody answers", async () => {

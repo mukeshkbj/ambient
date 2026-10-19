@@ -71,7 +71,7 @@ describe("Alexa call intents", () => {
     expect(runs).toHaveLength(1);
     expect(runs[0]).toMatchObject({ runtimeId: "caller", instruction: "a plumber for tomorrow" });
     expect(fake.client.createSession).toHaveBeenCalled();
-    expect(speechOf(result)).toContain("Calling");
+    expect(speechOf(result)).toContain("I&apos;m calling");
     expect(speechOf(result)).toContain("Say status any time.");
     expect(result.response.reprompt?.outputSpeech.ssml).toBe("<speak>Say status, or hang up.</speak>");
     close();
@@ -160,7 +160,7 @@ describe("Alexa call intents", () => {
     await new Promise(resolve => setTimeout(resolve, 0));
     const result = await handleAlexaRequest(request("RetryCallIntent"), deps);
     expect(entry.engine.listRuns(1)[0]).toMatchObject({ instruction: "call Joe's Plumbing to fix the kitchen sink" });
-    expect(speechOf(result)).toContain("Calling");
+    expect(speechOf(result)).toContain("I&apos;m calling");
     close();
   });
 
@@ -169,7 +169,7 @@ describe("Alexa call intents", () => {
     await startCall(deps, "call Joe's Plumbing to fix the kitchen sink");
     fake.emit({ type: "message.complete", sessionId: "runtime-1", payload: { text: "done", outcome: { kind: "unconfirmed", reason: "nobody picked up" } } });
     await new Promise(resolve => setTimeout(resolve, 0));
-    await handleAlexaRequest(request("StartCallIntent", { task: "them again" }), deps);
+    await handleAlexaRequest(request("StartCallIntent", { task: "her again" }), deps);
     expect(entry.engine.listRuns(1)[0]).toMatchObject({ instruction: "call Joe's Plumbing to fix the kitchen sink" });
     close();
   });

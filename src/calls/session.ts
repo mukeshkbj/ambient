@@ -25,7 +25,7 @@ type Confirmed = Extract<CallOutcome, { kind: "confirmed" }>;
 type Grant = { amountUsd?: number; when?: string };
 type ReadBack = { outcome: Confirmed; line: string; terms: string; armed: boolean; earlyYes: boolean };
 
-const READ_BACK_OPENERS = ["Just to confirm:", "Let me check once more:", "Once more:", "To be sure:"];
+const READ_BACK_OPENERS = ["Okay, so just to confirm,", "Sorry, just so I have it right,", "One more time,", "Just so I'm sure,"];
 const talkedOver = (terms: string) => `Sorry, I talked over you. Was that a yes to ${terms}?`;
 
 export type Transition = { state: CallState; effects: CallEffect[] };
@@ -202,7 +202,7 @@ function confirm(state: CallState, proposed: Confirmed, now: string): Transition
   const limit = brief.maxUsd ?? 0;
   if (charge !== undefined && state.deniedUsd.includes(charge)) {
     return close(state, { kind: "no_deal", reason: `${owner} declined ${dollarsInWords(charge)}` }, now,
-      `Okay. ${owner} won't go ahead at that price, so we'll leave it there. Thanks for your time, goodbye.`);
+      `Okay, no problem. ${owner} will pass at that price. Thanks for your time, bye.`);
   }
   if (charge !== undefined && charge > limit && !granted(state, charge, outcome.when)) {
     const question = `${brief.business.name} wants ${price(charge)}, over your limit of ${price(limit)}. Should I agree?`;
@@ -210,7 +210,7 @@ function confirm(state: CallState, proposed: Confirmed, now: string): Transition
   }
   if (charge === undefined && state.deniedUnpriced) {
     return close(state, { kind: "no_deal", reason: `${owner} declined a deal with no price` }, now,
-      `Okay. ${owner} won't book it without a price, so we'll leave it there. Thanks for your time, goodbye.`);
+      `Okay, no problem. ${owner} won't book it without a price. Thanks for your time, bye.`);
   }
   if (charge === undefined && !granted(state, undefined, outcome.when)) {
     const when = outcome.when ? ` for ${outcome.when}` : "";
@@ -246,7 +246,7 @@ function price(amount: number): string {
 }
 
 function close(state: CallState, outcome: Exclude<CallOutcome, { kind: "unconfirmed" }>, now: string, line?: string): Transition {
-  const closing = line ?? (outcome.kind === "confirmed" ? (outcome.when ? `Great, ${state.brief.ownerName} will expect you ${outcome.when}. Thanks, goodbye.` : "Perfect, thanks so much. Goodbye.") : "Okay, thanks for your time. Goodbye.");
+  const closing = line ?? (outcome.kind === "confirmed" ? (outcome.when ? `Great, ${state.brief.ownerName} will expect you ${outcome.when}. Thanks so much, bye.` : "Perfect, thanks so much. Bye.") : "Okay, no worries. Thanks for your time, bye.");
   return end(withTurn(flushDraft(state, now), "agent", closing, now), outcome, [say(closing), { kind: "hang_up" }]);
 }
 

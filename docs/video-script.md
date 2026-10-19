@@ -71,19 +71,19 @@ Beat 3 now has about 3.8 s of slack, because Joe's "Sure, we can come" line is c
 
 - Owner: "Alexa, tell Ambient offer one fifty." Or tap "Offer $150 · Your limit".
 - Alexa: "Okay, offering one hundred fifty dollars. Say status to hear their answer."
-- Ambient, to Joe: "Thanks for waiting. Could you do one fifty?"
+- Ambient, to Joe: "Okay, thanks for waiting. Could you do one fifty?"
 - Joe: "One fifty is too low for me. I could do one sixty."
 - Echo Show: the card asks again, "Book $160 · Tells them yes" (`docs/media/sim-countered.png`). Hold it for about 3 s.
 - Alexa: "Joe's Plumbing turned down your offer and is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up." **CUT** (the card carries it)
 - Owner: "Alexa, tell Ambient approve." Or tap "Book $160". The owner approves a price over the limit on purpose; nothing above the limit books without this step.
 - Screen: the transcript shows the owner's note "Maya: Approved: one hundred sixty dollars for Tuesday the 20th at 10 am". It is not spoken.
-- Ambient, to Joe: "Thanks for waiting. Maya says one sixty is fine. Please go ahead and book Tuesday at ten." **CUT**
+- Ambient, to Joe: "Okay, thanks for waiting. Maya says one sixty is fine. Please go ahead and book Tuesday at ten." **CUT**
 - Joe: "Hmm, one sixty. Alright, that works. I'll put you down for Tuesday the 20th at 10 am."
 - Needs: HW for voice. None for the card taps.
 
 ### 6. The read-back, and a refusal (1:20 to 1:36)
 
-- Ambient: "Just to confirm: one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?"
+- Ambient: "Okay, so just to confirm, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?"
 - Joe: "Yes, plus parts."
 - Ambient: "Sorry, I need one total price. What is the total with parts?"
 - Screen: the transcript at the refusal (`docs/media/sim-refused.png`). Nothing is booked.
@@ -93,9 +93,9 @@ Beat 3 now has about 3.8 s of slack, because Joe's "Sure, we can come" line is c
 ### 7. Read again, then the report (1:36 to 1:55)
 
 - Joe: "Fair enough. A sink like that needs no parts, so that's all in."
-- Ambient: "Let me check once more: one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?"
+- Ambient: "Sorry, just so I have it right, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?"
 - Joe: "Yes, that's right. See you then."
-- Ambient: "Great, Maya will expect you Tuesday the 20th at 10 am. Thanks, goodbye." **CUT**
+- Ambient: "Great, Maya will expect you Tuesday the 20th at 10 am. Thanks so much, bye." **CUT**
 - Alexa: "Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars."
 - Echo Show: the check draws itself; the card reads "Booked · confirmed by Joe's Plumbing" and says Ambient read back the total and the time (`docs/media/sim-confirmed.png`).
 

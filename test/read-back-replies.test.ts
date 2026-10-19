@@ -43,7 +43,7 @@ const DOES_NOT_BOOK = [
   "Fine, oh well.", "Sorry, that's it.", "Great, see you Tuesday.", "Fine.", "Booked.", "Yes, one sixty, two hundred.", "Yes, a hundred and eighty."
 ] as const;
 
-const READ_BACK = "Just to confirm: one hundred sixty dollars total, Tuesday at three. Is that right?";
+const READ_BACK = "Okay, so just to confirm, one hundred sixty dollars total, Tuesday at three. Is that right?";
 
 function readBackState(): CallState {
   let state = startCall(brief, "call-1").state;
@@ -218,7 +218,7 @@ describe("round 9 review findings", () => {
   });
 
   it("does not book an echo of the agent's own question", () => {
-    const line = "Just to confirm: two hundred dollars total, Tuesday at 3. Is that right?";
+    const line = "Okay, so just to confirm, two hundred dollars total, Tuesday at 3. Is that right?";
     expect(agreesTo("Is that right", "two hundred dollars total, Tuesday at 3", 200, "Tuesday at 3", line)).toBe(false);
     expect(agreesTo("that right", "two hundred dollars total, Tuesday at 3", 200, "Tuesday at 3", line)).toBe(false);
     expect(agreesTo("That's right.", "two hundred dollars total, Tuesday at 3", 200, "Tuesday at 3", line)).toBe(true);
