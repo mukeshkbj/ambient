@@ -21,6 +21,10 @@ Start with a call that does not book. At the read-back, the plumber answers "Yes
 
 The plumber call then succeeds. After the plumber answers "Yes, that's right. See you then." to a second read-back, Alexa reports "Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars."
 
+Ambient can also call around. "Get quotes from plumbers to fix the kitchen sink, under 150" asks once, then calls three businesses at the same time. Each quote appears on the Echo Show as it arrives. Ambient books the cheapest quote under the limit through that call's read-back and thanks the other two businesses. A pick within the limit is never recorded as the owner's approval.
+
+Every booking keeps its proof: the full read-back the business heard and the reply that booked it, each with its time. The booked card quotes both lines. In the simulator, "Hear them say yes" replays them. A live call does not record audio yet.
+
 If a call ends without a booking, the owner says "call them again". Ambient redials the same business with the original job, and never redials a call that booked or one that is still going.
 
 You ask Alexa to call a business for the household. An AI agent makes the call. Its first words are an AI disclosure: "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else.
@@ -57,9 +61,10 @@ This table lists only what the code enforces today.
 | An emergency or crisis short code such as 911, 988, 112 or 999 | `parsePhoneNumber` rejects it as "Not a phone number". It accepts only 10 digits, 11 digits that start with 1, or a `+` number of 8 to 15 digits. | `src/calls/types.ts` |
 | A premium-rate number, 1-900 or 1-976 | `blockedNumber` refuses it, and the caller checks it before dialing. The call ends with no deal. The check covers `+1` numbers only. | `src/calls/rules.ts`, `src/runtimes/caller.ts` |
 | More than 3 calls to one number, or more than 20 calls in total, in 24 hours | `checkDialLimits` refuses the call. It applies on real lines and counts calls still in progress. | `src/calls/rules.ts`, `src/runtimes/caller.ts` |
-| An unknown business found by search, without the owner's approval | The caller asks "Call them?" and dials only after the owner answers once. A number the owner gives is dialed directly. | `src/runtimes/caller.ts` |
+| An unknown business found by search, without the owner's approval | The caller asks "Call them?" and dials only after the owner answers once. When it calls around, one question names every business: "I found Pete's Pipes, Drain Bros and Rapid Rooter. Call all three and book the best quote under your limit?" A number the owner gives is dialed directly. | `src/runtimes/caller.ts` |
+| A business that asked not to be called | A line such as "take us off your list" or "don't call us with an AI" ends the call with no booking, and Ambient never dials that number again. | `src/calls/rules.ts`, `src/calls/session.ts`, `src/runtimes/caller.ts` |
 
-Phone trees and businesses that have opted out of calls are not handled yet.
+Phone trees are not handled yet.
 
 ## What it does not do
 

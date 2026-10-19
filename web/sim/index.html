@@ -419,10 +419,11 @@ function render() {
 }
 
 async function decide(decision) {
+  const dialing = approval()?.kind === "dial";
   if (state.elicitId) {
     const id = state.elicitId; state.elicitId = null;
     const answered = await fetch("/sim/api/elicit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, decision: decision === "deny" ? "deny" : "approve_once" }) });
-    if (answered.ok) { speak(decision === "deny" ? "Okay, I'll tell them no." : "Okay, I'll book it."); return; }
+    if (answered.ok) { speak(decision === "deny" ? "Okay, I'll tell them no." : dialing ? "Okay, calling them now." : "Okay, I'll book it."); return; }
   }
   const r = await tool("approve", { decision });
   if (!state.lastOutcome) speak(r.speech);

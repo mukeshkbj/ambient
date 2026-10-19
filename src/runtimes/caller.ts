@@ -357,7 +357,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
         }
         if (event.type === "status.update") {
           const text = event.payload.text?.replace(/^Ambient: /, `Ambient to ${business.name}: `);
-          if (errand.board[index]!.state === "calling" && text?.startsWith(`${business.name}: `)) mark(index, { state: "talking" });
+          if (errand.board[index]!.state === "calling" && (text?.startsWith(`${business.name}: `) || text === `Connected to ${business.name}`)) mark(index, { state: "talking" });
           if (text) this.emit({ type: "status.update", sessionId, payload: { text, board: errand.board } });
         }
       }, true);

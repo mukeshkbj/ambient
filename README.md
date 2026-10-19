@@ -6,6 +6,10 @@
 
 Ambient negotiates under your limit, asks you again when the business counters, and refuses an unclear yes. You ask Alexa to call the plumber, and an AI agent makes the call and says first that it is an AI. The agent books only after a clear yes to a read-back of the exact price and time, and Alexa reports only what the business confirmed.
 
+**Call around.** Say "Get quotes from plumbers to fix the kitchen sink, under 150." Ambient asks once, calls three businesses at the same time, and puts each quote on the Echo Show as it arrives. It books the cheapest quote under your limit through that call's read-back, thanks the other two, and keeps the read-back and the business's yes as proof.
+
+![Call around, simulated: three plumbers ring at once, quote $140, $125 and $160, and Ambient books the $125 quote under the $150 limit and releases the other two](docs/media/around.gif)
+
 **Status today.** No live call has happened. The demo runs this whole flow against a simulated business and a simulated Alexa+ host. The voice line, the Claude brain, and the Alexa skill are built but have not run live. See [What is real and what is simulated](#what-is-real-and-what-is-simulated) and [Limits](#limits-stated-plainly).
 
 | | Google Duplex | Pixel Hold for Me | Ambient |
@@ -28,7 +32,7 @@ The cells come from the pages fetched on 2026-10-18. The [reference bar](docs/pl
 
 ## Run it
 
-**Five-minute judge path:** run `pnpm demo`, open `/sim`, tap "Call Joe's Plumbing", and watch Ambient refuse "Yes, plus parts."; then run `pnpm smoke:mcp`, `pnpm call:dry` and `pnpm scenarios`.
+**Five-minute judge path:** run `pnpm demo`, open `/sim`, tap "Call Joe's Plumbing", and watch Ambient refuse "Yes, plus parts." Then tap "Start a new demo call" and "Get 3 quotes at once" to watch three calls run together. Then run `pnpm smoke:mcp`, `pnpm smoke:around`, `pnpm call:dry` and `pnpm scenarios`.
 
 The demo needs no keys and no accounts. The business is simulated. Every action is a real MCP tool call. Measured on 2026-10-19 (Windows 11, warm pnpm store): `pnpm install` took 20 seconds from a fresh clone, and `pnpm demo` served `/sim` 2.5 seconds after it started. The first install on a cold store took 122 seconds.
 
@@ -91,7 +95,7 @@ A call is a run in the existing engine ([`src/conversations.ts`](src/conversatio
 
 ## Honesty rules
 
-Rules 1 to 4 are enforced in the reducer and tested in [`test/call-session.test.ts`](test/call-session.test.ts). Rules 5 and 6 are enforced in the caller runtime and tested in [`test/caller.test.ts`](test/caller.test.ts).
+Rules 1 to 4 and 8 are enforced in the call reducer and tested in [`test/call-session.test.ts`](test/call-session.test.ts). Rules 5 and 6 are enforced in the caller runtime and tested in [`test/caller.test.ts`](test/caller.test.ts). Rule 7 is enforced in the errand reducer and tested in [`test/errand.test.ts`](test/errand.test.ts).
 
 | Rule | What the code does |
 |---|---|
@@ -101,6 +105,8 @@ Rules 1 to 4 are enforced in the reducer and tested in [`test/call-session.test.
 | 4. No card numbers | Runs of 12 or more digits, spoken or written, become "that number". The check holds digits back across stream chunks, so a number split over several chunks is still caught. |
 | 5. Dialing an unknown business needs approval | A business found by web search gets a "Call them?" approval. A number the user gives is dialed directly. |
 | 6. Call limits | At most 3 calls to one number and 20 calls in total per 24 hours, on real lines, counting calls still in progress. |
+| 7. One booking when calling around | The errand books at most one quote: the cheapest under the limit, or the cheapest after the owner says yes. Every other quote is released, and the business hears "Thanks so much for the quote. Maya is going with another option this time." A pick within the limit never writes an owner note, so the transcript never claims the owner approved it. |
+| 8. "Don't call us" is final | A business line such as "take us off your list" or "don't call us with an AI" ends the call with no booking. Ambient remembers it and never dials that number again. |
 
 Rule 2 in detail:
 
@@ -110,6 +116,7 @@ Rule 2 in detail:
 - Each retry is worded differently, so a late playback report cannot arm the wrong one.
 - After three unanswered read-backs, or five in all, the call ends unconfirmed. A dropped line is always unconfirmed.
 - A labelled corpus of 192 replies pins the reply check. A seeded test plays 4,000 generated calls and checks that every booking followed a clean yes to a read-back of that exact amount.
+- Each booking keeps its proof: the full read-back the business heard and the reply that booked it, each with its time. The 4,000-call test checks that the proof is exactly that pair. The card quotes both lines, and "Hear them say yes" replays them in the simulator. A live call does not record audio yet.
 
 ![The simulator at the read-back: the business answers "Yes, plus parts." and Ambient asks for the total instead of booking](docs/media/sim-refused.png)
 
@@ -125,6 +132,8 @@ Each rule maps to tests. The names below are the exact `it(...)` names.
 | 4. No card numbers | [`test/call-session.test.ts`](test/call-session.test.ts) | "never speaks a card number, even split across stream deltas"<br>"keeps redacting digits that keep streaming after a card number" |
 | 5. Dialing an unknown business needs approval | [`test/caller.test.ts`](test/caller.test.ts) | "asks to dial the first candidate and moves to the next on deny"<br>"dials a number given in the instruction with no dial approval" |
 | 6. Call limits | [`test/caller.test.ts`](test/caller.test.ts) | "ends no_deal at the per-number daily limit without dialing"<br>"counts calls still in progress against the daily limit" |
+| 7. One booking when calling around | [`test/errand.test.ts`](test/errand.test.ts) | "holds every rule across 4,000 random orderings of three businesses"<br>"books the cheapest quote within the limit and releases the others" |
+| 8. "Don't call us" is final | [`test/call-session.test.ts`](test/call-session.test.ts)<br>[`test/caller.test.ts`](test/caller.test.ts) | "ends politely, books nothing, and remembers it"<br>"never calls a business again after it asked not to be called by an AI" |
 
 [`test/read-back-replies.test.ts`](test/read-back-replies.test.ts) adds the 192-reply corpus for rule 2.
 
@@ -134,6 +143,8 @@ Three adversarial reviews of the reducer and repeated structural review rounds, 
 
 - **Echo Dot.** The custom skill ([`src/alexa.ts`](src/alexa.ts), [`alexa/interaction-model.en-US.json`](alexa/interaction-model.en-US.json)) starts, steers, approves, and ends calls in one sentence each. When a call needs the owner, a Voice Monkey announcement speaks the question and Proactive Events adds a notification ([`src/cue.ts`](src/cue.ts)).
 - **Echo Show and Fire TV.** The MCP App card leads with the stake ("$180 · Tuesday the 20th at 10 am"). On a screen it carries "Book $180", "Offer $150", and "Decline", which call the `approve` and `delegate` tools through the host. If the business agrees a day but gives no calendar date, the card says "Booked · date still open" with "Only the weekday was given · ask <business> for the date", and Alexa adds "They gave a day but no date, so check which one."
+- **Calling around.** One instruction calls up to three businesses at the same time. The Echo Show shows a tile per business: ringing, on the phone, its quote, then booked or passed. The booked card names the cheapest quote and lists the passed ones.
+- **Fire TV.** When the call needs the owner, the film pauses, the picture dims, and a corner card shows the stake. It plays on once the owner answers from any device.
 - **Calling again.** If a call ends without a booking, say "call them again". Ambient redials the same business with the original job. It does not redial a call that booked or one that is still going ([`test/alexa.test.ts`](test/alexa.test.ts)).
 - **Memory.** Each call is stored in SQLite. The next call to the same business starts with what the last one learned ("Remembered from Oct 18 — confirmed, quoted one hundred sixty dollars, Tuesday the 20th at 10 am").
 
@@ -157,6 +168,7 @@ pnpm call
 pnpm scan    # typecheck, eslint, knip, and the full test suite
 pnpm build
 pnpm smoke:mcp            # a full simulated call through /mcp
+pnpm smoke:around         # three simulated businesses at once through /mcp; the cheapest under the limit books
 pnpm call:dry             # the same call over the AssemblyAI voice-line code, against a local fake of AssemblyAI (no keys); the first line it prints is "brain: scripted … AssemblyAI: a local fake"
 python scripts/shots-sim.py   # every call state, light and dark, into docs/media/ (start pnpm demo with AMBIENT_DATA_DIR set to an empty directory first)
 pnpm brain:latency        # time to first word on Claude (needs ANTHROPIC_API_KEY)

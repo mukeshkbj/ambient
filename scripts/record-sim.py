@@ -15,7 +15,8 @@ from pathlib import Path
 from playwright.async_api import async_playwright
 
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:3000"
-OUT = Path(__file__).resolve().parent.parent / "docs" / "media" / "demo.gif"
+FLOW = sys.argv[2] if len(sys.argv) > 2 else "single"
+OUT = Path(__file__).resolve().parent.parent / "docs" / "media" / ("around.gif" if FLOW == "around" else "demo.gif")
 WIDTH = 1440
 FPS = 12
 
@@ -41,27 +42,46 @@ async def record(video_dir):
         await page.goto(f"{BASE}/sim")
         await page.frame_locator("#show8").get_by_role("button").first.wait_for()
         await beat(1.0)
-        await tap(page, "^Call Joe")
-        await page.wait_for_function("document.getElementById('callstate').textContent.startsWith('Ringing')", timeout=10000)
-        await beat(1.5)
-        await page.wait_for_selector(".bubble.business", timeout=15000)
-        await page.wait_for_selector('body[data-phase="needs"]', timeout=30000)
-        await beat(2.5)
-        await tap(page, r"^Offer \$150")
-        await page.wait_for_selector(".note", timeout=10000)
-        await beat(1.5)
-        await page.frame_locator("#show8").get_by_role("button", name=re.compile(r"^Book \$160")).wait_for(timeout=30000)
-        await beat(2.5)
-        await tap(page, r"^Book \$160")
-        await page.get_by_text("What is the total with parts?").wait_for(timeout=30000)
-        await beat(2.0)
-        await page.wait_for_selector(".outcome.ok", timeout=30000)
-        await beat(3.0)
+        if FLOW == "around":
+            await around(page)
+        else:
+            await single(page)
         video = page.video
         await context.close()
         path = Path(await video.path())
         await browser.close()
         return path
+
+
+async def around(page):
+    show = page.frame_locator("#show8")
+    await tap(page, "^Get 3 quotes")
+    await show.get_by_role("button", name=re.compile("^Call all three")).wait_for(timeout=15000)
+    await beat(2.5)
+    await tap(page, "^Call all three")
+    await show.get_by_text("Comparing quotes").or_(show.get_by_text("Booking the best quote")).first.wait_for(timeout=30000)
+    await beat(2.0)
+    await page.wait_for_selector(".outcome.ok", timeout=30000)
+    await beat(4.0)
+
+
+async def single(page):
+    await tap(page, "^Call Joe")
+    await page.wait_for_function("document.getElementById('callstate').textContent.startsWith('Ringing')", timeout=10000)
+    await beat(1.5)
+    await page.wait_for_selector(".bubble.business", timeout=15000)
+    await page.wait_for_selector('body[data-phase="needs"]', timeout=30000)
+    await beat(2.5)
+    await tap(page, r"^Offer \$150")
+    await page.wait_for_selector(".note", timeout=10000)
+    await beat(1.5)
+    await page.frame_locator("#show8").get_by_role("button", name=re.compile(r"^Book \$160")).wait_for(timeout=30000)
+    await beat(2.5)
+    await tap(page, r"^Book \$160")
+    await page.get_by_text("What is the total with parts?").wait_for(timeout=30000)
+    await beat(2.0)
+    await page.wait_for_selector(".outcome.ok", timeout=30000)
+    await beat(3.0)
 
 
 def convert(video, gif):
