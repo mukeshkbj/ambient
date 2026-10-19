@@ -61,7 +61,7 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
   const server = new McpServer(
     { name: "Ambient", version: "0.1.0" },
     {
-      instructions: "Ambient fronts the user's personal AI agents. Talk in terms of tasks, not ids: delegate starts or continues work, status reports the latest or a named task, approve and stop act on work, agents lists who's available, briefing summarizes recent activity. Approvals are answered through elicitation when the client supports it, otherwise tell the user to say yes or no.",
+      instructions: "Ambient fronts the user's personal AI agents. Talk in terms of tasks, not ids: delegate starts or continues work, status reports the latest or a named task, approve and stop act on work, agents lists who's available, briefing summarizes recent activity. Approvals are answered through elicitation when the client supports it, otherwise tell the user to say yes or no. Speak each tool's returned text to the user as written.",
       capabilities: {
         tasks: {
           list: {},

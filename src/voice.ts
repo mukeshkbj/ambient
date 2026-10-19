@@ -127,7 +127,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
       const refused = ownerRefused(view);
       if (refused) return `You said no to ${refused}, so I ended the call. Nothing is booked.`;
       if (outcome?.kind === "declined") return `${callee(view) ?? "The business"} turned it down, so nothing is booked.`;
-      if (outcome) return `${clampSentences(`${stripEnd(outcome.reason)}.`, 1)} Nothing is booked.`;
+      if (outcome) return `No deal with ${callee(view) ?? "the business"}: ${clampSentences(`${stripEnd(outcome.reason)}.`, 1)} Nothing is booked.`;
       return clampSentences(view.answer ?? `${label} finished ${title}.`);
     }
     case "failed": {

@@ -15,7 +15,7 @@ const status = (result: Result) => result.structuredContent?.status ?? "";
 
 async function call(name: string, args: Record<string, unknown> = {}): Promise<Result> {
   const result = await client.callTool({ name, arguments: args }) as Result;
-  console.log(`> ${name}${Object.keys(args).length ? ` ${JSON.stringify(args)}` : ""}\n  Alexa: ${speech(result)}`);
+  console.log(`> ${name}${Object.keys(args).length ? ` ${JSON.stringify(args)}` : ""}\n  Ambient reply: ${speech(result)}`);
   return result;
 }
 
@@ -24,7 +24,7 @@ async function waitFor(wanted: string[], timeoutMs = 20_000): Promise<Result> {
   for (;;) {
     const result = await client.callTool({ name: "status", arguments: {} }) as Result;
     if (wanted.includes(status(result))) {
-      console.log(`> status\n  Alexa: ${speech(result)}`);
+      console.log(`> status\n  Ambient reply: ${speech(result)}`);
       return result;
     }
     if (Date.now() > deadline) throw new Error(`Timed out waiting for ${wanted.join(" or ")}; last status ${status(result)}: ${speech(result)}`);
@@ -48,7 +48,7 @@ try {
     else await new Promise(resolve => setTimeout(resolve, 150));
   }
   if (!countered) throw new Error("The business never countered at one sixty");
-  console.log(`> status\n  Alexa: ${speech(countered)}`);
+  console.log(`> status\n  Ambient reply: ${speech(countered)}`);
   await call("approve", { decision: "once" });
   const done = await waitFor(["completed", "failed", "cancelled", "unknown"]);
   if (status(done) !== "completed" || !/one hundred sixty/i.test(speech(done))) throw new Error(`Expected a confirmed booking at 160, got ${status(done)}: ${speech(done)}`);

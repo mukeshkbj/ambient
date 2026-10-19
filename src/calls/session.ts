@@ -253,7 +253,7 @@ function close(state: CallState, outcome: Exclude<CallOutcome, { kind: "unconfir
 function askOwner(state: CallState, question: string, amountUsd: number | undefined, now: string, unpriced = false, when?: string): Transition {
   const asks = state.asks + 1;
   const requestId = `${state.callId}:ask-${asks}`;
-  const line = `One moment, let me check with ${state.brief.ownerName}.`;
+  const line = asks > 1 ? `Sorry, one more moment, let me check with ${state.brief.ownerName}.` : `One moment, let me check with ${state.brief.ownerName}.`;
   const amount = amountUsd !== undefined ? { amountUsd } : {};
   const limit = state.brief.maxUsd !== undefined ? { limitUsd: state.brief.maxUsd } : {};
   const waiting = { ...withTurn(flushDraft(state, now), "agent", line, now), readBack: undefined };

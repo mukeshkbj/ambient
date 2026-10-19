@@ -1,16 +1,16 @@
 tools: delegate, delegate_task, status, approve, stop, agents, briefing
 > delegate {"task":"Call Joe's Plumbing and book a visit to fix the kitchen sink, keep it under 150","newConversation":true}
-  Alexa: Joe's Plumbing wants one hundred eighty dollars for Tuesday the 20th at 10 am. Your limit is one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no.
+  Ambient reply: Joe's Plumbing wants one hundred eighty dollars for Tuesday the 20th at 10 am. Your limit is one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no.
 > status
-  Alexa: Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no.
+  Ambient reply: Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no.
 > delegate {"task":"offer 150"}
-  Alexa: Okay, offering one hundred fifty dollars. To hear their answer, ask how it's going.
+  Ambient reply: Okay, offering one hundred fifty dollars. To hear their answer, ask how it's going.
 > status
-  Alexa: Joe's Plumbing turned down your offer and is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no.
+  Ambient reply: Joe's Plumbing turned down your offer and is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no.
 > approve {"decision":"once"}
-  Alexa: Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.
+  Ambient reply: Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.
 > status
-  Alexa: Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.
+  Ambient reply: Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.
 
 The call itself (Ambient and the simulated business, with the owner's notes):
   Ambient: Hi, this is an AI assistant calling for Maya. This call is transcribed.
@@ -25,7 +25,7 @@ The call itself (Ambient and the simulated business, with the owner's notes):
   Maya: offer 150
   Ambient: Okay, thanks for waiting. Could you do one fifty?
   Joe's Plumbing: One fifty is too low for me. I could do one sixty.
-  Ambient: One moment, let me check with Maya.
+  Ambient: Sorry, one more moment, let me check with Maya.
   Maya: Approved: one hundred sixty dollars for Tuesday the 20th at 10 am
   Ambient: Okay, Maya says one sixty is fine. Please go ahead and book Tuesday at ten.
   Joe's Plumbing: Hmm, one sixty. Alright, that works. I'll put you down for Tuesday the 20th at 10 am.

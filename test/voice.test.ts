@@ -156,7 +156,7 @@ describe("speak", () => {
       const laterYes = call({ status: "completed", steps: [...steps, "Maya Patel: Approved: one hundred sixty dollars"], outcome: { kind: "no_deal", reason: "They hung up." } });
       expect(speak(laterYes, { label: "Ambient" })).not.toContain("You said no");
       const businessEnded = call({ status: "completed", steps: [...steps, "Maya Patel: offer 150", "Joe's Plumbing: Sorry, I can't go that low."], outcome: { kind: "no_deal", reason: "Joe would not go below one sixty" } });
-      expect(speak(businessEnded, { label: "Ambient" })).toBe("Joe would not go below one sixty. Nothing is booked.");
+      expect(speak(businessEnded, { label: "Ambient" })).toBe("No deal with Joe's Plumbing: Joe would not go below one sixty. Nothing is booked.");
     });
 
     it("says Ambient hung up when the owner did not answer in time", () => {

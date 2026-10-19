@@ -43,17 +43,17 @@ pnpm demo
 
 ```text
 > delegate {"task":"Call Joe's Plumbing and book a visit to fix the kitchen sink, keep it under 150","newConversation":true}
-  Alexa: Joe's Plumbing wants one hundred eighty dollars for Tuesday the 20th at 10 am. Your limit is one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no.
+  Ambient reply: Joe's Plumbing wants one hundred eighty dollars for Tuesday the 20th at 10 am. Your limit is one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no.
 > status
-  Alexa: Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no.
+  Ambient reply: Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no.
 > delegate {"task":"offer 150"}
-  Alexa: Okay, offering one hundred fifty dollars. To hear their answer, ask how it's going.
+  Ambient reply: Okay, offering one hundred fifty dollars. To hear their answer, ask how it's going.
 > status
-  Alexa: Joe's Plumbing turned down your offer and is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no.
+  Ambient reply: Joe's Plumbing turned down your offer and is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no.
 > approve {"decision":"once"}
-  Alexa: Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.
+  Ambient reply: Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.
 > status
-  Alexa: Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.
+  Ambient reply: Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.
 ```
 
 The end of the same run, from the call transcript:
