@@ -16,6 +16,8 @@ Ambient negotiates under your limit, asks you again when the business counters, 
 
 The cells come from the pages fetched on 2026-10-18 and recorded in the [reference bar](docs/plans/2026-10-18-handle-the-call/reference-bar.md). "Not described" means those pages do not say.
 
+![The simulated call, 21 seconds: Ambient discloses it is an AI, the owner offers $150, Joe counters at $160, the owner approves, Joe answers the read-back with "Yes, plus parts.", Ambient asks for one total, and the call books](docs/media/demo.gif)
+
 ![The Echo Show card: Joe's Plumbing quotes $180 for Tuesday the 20th at 10 am, $30 over the $150 limit, with the buttons Book $180, Offer $150, and Decline](docs/media/sim-card-hero.png)
 
 | | |
@@ -68,6 +70,8 @@ smoke: ok, the business countered, "yes, plus parts" did not book, and the call 
 ```
 
 The full run, with the call transcript, is in [`docs/demo/smoke-transcript.txt`](docs/demo/smoke-transcript.txt).
+
+`pnpm scenarios` runs four more calls through the same reducer, with no server: a vet that gives no price (the owner is asked, and the read-back says "no price is set"), a business that never gives a clean yes (unconfirmed after three read-backs), no answer, and an owner who declines the price. Output: [`docs/demo/scenarios.txt`](docs/demo/scenarios.txt).
 
 ## How a call works
 
