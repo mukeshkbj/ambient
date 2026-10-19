@@ -104,8 +104,31 @@ export function offerIn(text: string): number | undefined {
   return marked && amounts.length === 1 && amounts[0]! > 0 ? amounts[0] : undefined;
 }
 
+const TIME_WORDS = new Set([
+  ..."monday tuesday wednesday thursday friday saturday sunday mon tue tues wed thu thur thurs fri sat sun".split(" "),
+  ..."january february march april may june july august september october november december jan feb mar apr jun jul aug sep sept oct nov dec".split(" "),
+  ..."first second third fourth fifth sixth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth fifteenth sixteenth seventeenth eighteenth nineteenth twentieth thirtieth".split(" "),
+  ...Object.keys(ONES), ...Object.keys(TEENS), "twenty", "thirty", "forty", "fifty", "oh",
+  ..."at on the of in from to between and around about by after before until o'clock quarter half past am pm noon midnight morning afternoon evening night tonight today tomorrow next this week weekend early late".split(" ")
+]);
+const TIME_NUMBER = /^(?:\d{1,2}(?:st|nd|rd|th)?|\d{1,2}:\d{2}|\d{1,2}(?::\d{2})?(?:am|pm)|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|20\d{2})$/;
+
+export function plainTime(when: string): boolean {
+  const tokens = when.normalize("NFKC").toLowerCase().replace(/\b([ap])\.m\b\.?/g, "$1m").split(/[\s,;-]+/).map(token => token.replace(/\.$/, "")).filter(Boolean);
+  return tokens.length > 0 && tokens.every(token => TIME_WORDS.has(token) || TIME_NUMBER.test(token));
+}
+
+function clockGroups(when: string): string[] {
+  const groups: string[][] = [[]];
+  for (const token of timeKey(when).split(" ")) {
+    if (/^\d+$/.test(token)) groups.at(-1)!.push(token);
+    else groups.push([]);
+  }
+  return groups.filter(group => group.length > 0).map(group => group.join(" "));
+}
+
 function timeKey(when: string): string {
-  const tokens = when.normalize("NFKC").toLowerCase().replace(/:00\b/g, "").match(/[a-z']+|\d+/g) ?? [];
+  const tokens = when.normalize("NFKC").toLowerCase().replace(/:00\b/g, "").match(/\d+(?:st|nd|rd|th)\b|[a-z']+|\d+/g) ?? [];
   return tokens
     .filter(token => token !== "o'clock")
     .map(token => String(ONES[token] ?? TEENS[token] ?? TENS[token] ?? (/^\d+$/.test(token) ? Number(token) : token)))
@@ -168,7 +191,7 @@ export function agreesTo(reply: string, terms: string, amountUsd: number | undef
   const numbers = amountUsd !== undefined ? [amountUsd] : [];
   if (!chargedIn(words.replaceAll("|", " ")).every(charge => charge === amountUsd)) return false;
   const runs = numberRuns(words.split(" ").flatMap(token => token.split("-").filter(Boolean)));
-  const clocks = timeKey(when ?? "").split(/\s*[a-z'][a-z']*\s*/).map(group => group.trim()).filter(Boolean);
+  const clocks = clockGroups(when ?? "");
   if (!runs.every(run => {
     const values = amountsIn(run.join(" "));
     return (values.length === 1 && numbers.includes(values[0]!)) || clocks.includes(timeKey(run.join(" ")));

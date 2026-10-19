@@ -26,7 +26,7 @@ const QUOTES = [
 const CLEAN_YES = ["Yes, that's right.", "Yep, sorry, that's right.", "Yes, no problem.", "That'll work.", "Of course.", "Mm-hmm."] as const;
 const NOT_YES = [
   "No, it's more than that.", "Yeah, no, that's too low.", "Absolutely not.", "Okay, let me check with my manager.", "Are you sure?", "Yes, plus parts.",
-  "Yes, that's per hour.", "Sure, unless it's a bigger leak.", "Okay, 150.", "Yes. We're at 4500 Main Street.", "Sorry, we're booked.", "Hmm.", "Yes, ten.", "Yes, thirty."
+  "Yes, that's per hour.", "Sure, unless it's a bigger leak.", "Okay, 150.", "Yes. We're at 4500 Main Street.", "Sorry, we're booked.", "Hmm.", "Yes, ten.", "Yes, thirty.", "Yes, five.", "Yes, 400."
 ] as const;
 const OWNER: ReadonlyArray<(n: number) => [string, number | undefined]> = [
   n => [`offer $${n}`, n], n => [`tell them ${n} works`, n], n => [`go to ${n} dollars`, n], n => [`${n}`, undefined],
@@ -111,7 +111,7 @@ function playCall(seed: number) {
     if (next() < 0.4) run({ kind: "brain", turn: 0, step: { kind: "say", text: pick(AGENT), last: true } });
     if (next() < 0.4) run({ kind: "heard", text: pick(NOT_YES) });
     const claim = pick([undefined, quoted, Math.max(1, quoted - 60), 12, quoted + 40]);
-    const when = pick([undefined, "Tuesday at ten thirty", "Tuesday at ten forty-five", "Wednesday at six", "Wednesday at six, plus a $400 deposit", "Tuesday at ten thirty, card 4111 1111 1111 1111"]);
+    const when = pick([undefined, "Tuesday at ten thirty", "Tuesday at ten forty-five", "Wednesday at six", "Wednesday at six, plus a $400 deposit", "Tuesday at ten thirty, card 4111 1111 1111 1111", "Friday at 3, plus a 400 deposit", "Friday at three, deposit of four hundred", "Friday at 3, plus ４００ dollars", "June 5th at 3"]);
     run({ kind: "brain", turn: 0, step: { kind: "end_call", outcome: { kind: "confirmed", summary: pick(SUMMARIES), ...(claim !== undefined ? { amountUsd: claim } : {}), ...(when ? { when } : {}) } } });
   }
   return { state, limit, replies, approved, undisclosed };
@@ -145,6 +145,7 @@ describe("honesty over generated calls", () => {
       if (readBack && amountsIn(state.phase.outcome.summary).some(value => !amountsIn(readBack.text).includes(value))) fail(`reported "${state.phase.outcome.summary}", which the read-back did not say`);
       if (replies.at(-1)?.clean !== true || reply?.text !== replies.at(-1)?.text) fail("booked without a clean yes");
       const when = state.phase.outcome.when;
+      if (when && /\d{3,}|deposit|plus|card/i.test(when.normalize("NFKC"))) fail(`booked with "${when}", which carries more than a time`);
       const allowed = approved.some(grant => grant.amount === amount && (grant.when === undefined || grant.when === when));
       if ((amount === undefined || amount > (limit ?? 0)) && !allowed) fail(`booked ${amount} for ${when} without the owner`);
     }

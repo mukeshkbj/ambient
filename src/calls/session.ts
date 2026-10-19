@@ -1,5 +1,5 @@
 import { dollarsInWords, numberInWords } from "../words.js";
-import { agreesTo, chargedIn, disclosure, HOLD_LINE_MS, holdTrailingDigits, offerIn, OWNER_PATIENCE_MS, redactDigits, sameTime } from "./rules.js";
+import { agreesTo, chargedIn, disclosure, HOLD_LINE_MS, holdTrailingDigits, offerIn, OWNER_PATIENCE_MS, plainTime, redactDigits, sameTime } from "./rules.js";
 import type { BrainStep, CallBrief, CallEffect, CallInput, CallOutcome, CallPhase, CallTurn, Speaker } from "./types.js";
 
 export type CallState = {
@@ -181,16 +181,15 @@ function brainStep(state: CallState, brain: BrainStep, now: string): Transition 
   }
 }
 
-function confirm(state: CallState, proposed: Confirmed, now: string): Transition {
+function confirm(state: CallState, outcome: Confirmed, now: string): Transition {
   const { brief } = state;
   const owner = brief.ownerName;
-  if (chargedIn(proposed.when ?? "").length > 0) {
-    const line = "Sorry, I need one total price, including any deposit. What is the total?";
+  if (outcome.when !== undefined && !plainTime(outcome.when)) {
+    const line = "Sorry, could you give me the total price and the day and time once more?";
     return { state: { ...withTurn(flushDraft(state, now), "agent", line, now), readBack: undefined }, effects: [say(line)] };
   }
-  const outcome = proposed.when ? { ...proposed, when: redactDigits(proposed.when) } : proposed;
   const claimed = [...(outcome.amountUsd !== undefined ? [outcome.amountUsd] : []), ...chargedIn(outcome.summary)].filter(amount => Number.isFinite(amount) && amount > 0);
-  const charge = claimed.length > 0 ? Math.max(...claimed) : undefined;
+  const charge = claimed.length > 0 ? Math.round(Math.max(...claimed) * 100) / 100 : undefined;
   const limit = brief.maxUsd ?? 0;
   if (charge !== undefined && state.deniedUsd.includes(charge)) {
     return close(state, { kind: "no_deal", reason: `${owner} declined ${dollarsInWords(charge)}` }, now,

@@ -806,7 +806,7 @@ describe("round 14 review findings", () => {
     const { state, effects } = play([answered, heard("It's 80, plus a deposit"), confirm(80, "ok", "Friday at 3, plus a $400 deposit")], undefined, { ...brief, maxUsd: 100 });
     expect(state.readBack).toBeUndefined();
     expect(state.phase).toMatchObject({ kind: "talking" });
-    expect(spoken(effects).at(-1)).toBe("Sorry, I need one total price, including any deposit. What is the total?");
+    expect(spoken(effects).at(-1)).toBe("Sorry, could you give me the total price and the day and time once more?");
   });
 
   it.each(["Yes, ten.", "Yes, 10.", "Yes, thirty.", "Yes, 30.", "Yes, ten o'clock."])("does not book part of the read-back time: %s", reply => {
@@ -824,9 +824,38 @@ describe("round 14 review findings", () => {
     expect(spoken(effects)[0]?.startsWith(disclosure("Maya"))).toBe(true);
   });
 
-  it("redacts a card number that the brain put in the time", () => {
+  it("never speaks a card number that the brain put in the time", () => {
     const { state, effects } = play([answered, heard("Friday works"), confirm(80, "ok", "Friday at 3, card 4111 1111 1111 1111")], undefined, { ...brief, maxUsd: 100 });
     expect(spoken(effects).join(" ")).not.toMatch(/1111/);
-    expect(state.readBack?.line).not.toMatch(/1111/);
+    expect(state.readBack).toBeUndefined();
+  });
+});
+
+describe("round 15 review findings", () => {
+  const ASK_TOTAL = /^Sorry, (?:I need one total price|could you give me)/;
+  it.each([
+    "Friday at 3, plus a 400 deposit", "Friday at three, deposit of four hundred", "Friday at 3, 400 down", "Friday at 3, plus a 4k deposit",
+    "Friday at 3, plus a €400 deposit", "Friday at 3, plus a ＄400 deposit", "Friday at 3, plus ４００ dollars", "Friday at 3, ask for Sam"
+  ])("does not read back a time with anything but time words in it: %s", when => {
+    const { state, effects } = play([answered, heard("It's 100"), confirm(100, "ok", when)], undefined, { ...brief, maxUsd: 300 });
+    expect(state.readBack).toBeUndefined();
+    expect(spoken(effects).at(-1)).toMatch(ASK_TOTAL);
+  });
+
+  it.each(["Tuesday the twentieth at ten", "Tuesday, October 20th at 10 am", "next Tuesday morning", "between 9 and 11 on Tuesday", "Oct 20 at 10:30 pm", "10/20 at noon", "tomorrow at half past two"])(
+    "reads back a plain time: %s",
+    when => {
+      const { state } = play([answered, heard("It's 100"), confirm(100, "ok", when)], undefined, { ...brief, maxUsd: 300 });
+      expect(state.readBack).toBeDefined();
+    }
+  );
+
+  it.each([["Yes, five.", "June 5th at 3"], ["Yes, twenty.", "Tuesday the 20th at 10:30"], ["Yes, 20.", "Tuesday the 20th at 10:30"]] as const)("does not book a date number heard alone: %s for %s", (reply, when) => {
+    expect(agreesTo(reply, `one hundred dollars total, ${when}`, 100, when)).toBe(false);
+  });
+
+  it("reads back and books a price rounded to cents", () => {
+    const { state } = play([answered, heard("It's 99.995"), confirm(99.995, "ok", "Friday at 3"), ...yes], undefined, { ...brief, maxUsd: 300 });
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 100 } });
   });
 });
