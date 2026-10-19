@@ -219,7 +219,7 @@ pnpm brain:latency        # time to first word on Claude (needs ANTHROPIC_API_KE
 | Business answer page (`web/call`) | Built but not yet run live | Rendered screenshot `docs/media/call-business-ringing.png` |
 | "Try to fool it" panel on `/sim` | Real | Each answer runs through the call reducer (`src/calls/fool.ts`, `test/fool.test.ts`) |
 | Spanish voice line (voice `lola`, Spanish speech recognition, Spanish call page) | Built but not yet run live | `test/recording.test.ts`; screenshot `docs/media/call-business-ringing-es.png` |
-| Recorded proof of yes (`hear_proof`) | Built but not yet run live | `pnpm call:dry` plays the path against the local fake; `test/recording.test.ts` |
+| Recorded proof of yes (`hear_proof`) | Built but not yet run live | `pnpm call:dry` checks the path against the local fake; `test/recording.test.ts` |
 | Live-call preflight (`pnpm call:preflight`) | Built but not yet run with real keys | `test/preflight.test.ts` |
 | Alexa custom skill on `/alexa` | Built but not yet run live | `test/alexa.test.ts`; needs a public HTTPS deploy and an Echo Dot |
 | Spoken cue and notification (`src/cue.ts`) | Built but not yet run live | `test/cue.test.ts`; needs a Voice Monkey token and Echo hardware |
