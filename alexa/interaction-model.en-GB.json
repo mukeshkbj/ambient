@@ -63,6 +63,15 @@
           ]
         },
         {
+          "name": "RetryCallIntent",
+          "samples": [
+            "call them again",
+            "try again",
+            "call again",
+            "try the call again"
+          ]
+        },
+        {
           "name": "RespondApprovalIntent",
           "slots": [
             { "name": "decision", "type": "Decision" }

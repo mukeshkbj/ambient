@@ -148,7 +148,25 @@ describe("Alexa call intents", () => {
     fake.emit({ type: "message.complete", sessionId: "runtime-1", payload: { text: "done", outcome: { kind: "unconfirmed", reason: "nobody picked up" } } });
     await new Promise(resolve => setTimeout(resolve, 0));
     const launched = await handleAlexaRequest({ ...request("unused"), request: { type: "LaunchRequest", requestId: "request-3" } }, deps);
-    expect(speechOf(launched)).toContain("Joe&apos;s Plumbing wasn&apos;t reached: nobody picked up.");
+    expect(speechOf(launched)).toContain("Your last call: Joe&apos;s Plumbing wasn&apos;t reached: nobody picked up, so nothing is booked.");
+    close();
+  });
+
+  it("calls the same business again with the same job on \"call them again\"", async () => {
+    const { deps, entry, fake, close } = setup();
+    await startCall(deps, "call Joe's Plumbing to fix the kitchen sink");
+    fake.emit({ type: "status.update", sessionId: "runtime-1", payload: { text: "Calling Joe's Plumbing", subject: "Joe's Plumbing" } });
+    fake.emit({ type: "message.complete", sessionId: "runtime-1", payload: { text: "done", outcome: { kind: "unconfirmed", reason: "nobody picked up" } } });
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const result = await handleAlexaRequest(request("RetryCallIntent"), deps);
+    expect(entry.engine.listRuns(1)[0]).toMatchObject({ instruction: "call Joe's Plumbing to fix the kitchen sink" });
+    expect(speechOf(result)).toContain("Calling");
+    close();
+  });
+
+  it("asks who to call on \"call them again\" when there was no call", async () => {
+    const { deps, close } = setup();
+    expect(speechOf(await handleAlexaRequest(request("RetryCallIntent"), deps))).toContain("Who should I call?");
     close();
   });
 
@@ -178,6 +196,7 @@ describe("Alexa call intents", () => {
     const approve = language.types.find((type: { name: string }) => type.name === "Decision").values.find((value: { name: { value: string } }) => value.name.value === "approve").name;
     expect(samples("CallStatusIntent")).toEqual(expect.arrayContaining(["status", "what's the status", "how it went", "how it's going"]));
     expect(samples("HangUpIntent")).toContain("hang up");
+    expect(samples("RetryCallIntent")).toEqual(expect.arrayContaining(["call them again", "try again"]));
     expect(samples("OfferAmountIntent")).toEqual(expect.arrayContaining(["offer {amount}", "{amount}"]));
     expect([approve.value, ...approve.synonyms]).toEqual(expect.arrayContaining(["approve", "book"]));
   });

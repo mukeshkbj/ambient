@@ -236,7 +236,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     const live = activeCall(registry, attributes);
     const goodbye = !live ? "Goodbye." : live.run.approval
       ? `Goodbye. ${live.run.subject ?? "The business"} is holding for now and will hang up soon. Say, Alexa, open Ambient, to answer.`
-      : "Goodbye. The call is still going. Say status when you're back.";
+      : "Goodbye. The call is still going. Say, Alexa, open Ambient, when you're back.";
     return response(goodbye, attributes, true);
   }
   if (name === "AMAZON.FallbackIntent") {
@@ -254,6 +254,16 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     try {
       const run = await entry.engine.ask(task, undefined, true, { waitMs: dependencies.askWaitMs ?? 0 });
       return response(startedCall(entry, run), runAttributes(attributes, run), false, isLive(run));
+    } catch (error) {
+      return response(errorText(error), attributes);
+    }
+  }
+  if (name === "RetryCallIntent") {
+    const last = lastCall(registry, attributes);
+    if (!last) return response("Who should I call? Say, for example, call Joe's Plumbing.", attributes);
+    try {
+      const run = await last.entry.engine.ask(last.run.instruction, last.run.conversationId, false, { waitMs: dependencies.askWaitMs ?? 0 });
+      return response(startedCall(last.entry, run), runAttributes(attributes, run), false, isLive(run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
@@ -323,8 +333,8 @@ export async function handleAlexaRequest(input: unknown, dependencies: AlexaSkil
     const live = activeCall(dependencies.registry, attributes);
     if (live) return response(callStatus(live), runAttributes(attributes, live.run), false, true);
     const last = lastCall(dependencies.registry, attributes);
-    const recent = last && Date.now() - Date.parse(last.run.updatedAt) < RECENT_CALL_MS && (last.run.status === "failed" || last.run.outcome !== undefined);
-    if (last && recent) return response(callStatus(last), runAttributes(attributes, last.run));
+    const recent = last && Date.now() - Date.parse(last.run.updatedAt) < RECENT_CALL_MS && (last.run.status === "failed" || last.run.status === "unknown" || last.run.outcome !== undefined);
+    if (last && recent) return response(`Your last call: ${callStatus(last)}`, runAttributes(attributes, last.run));
     return response("Who should I call? You can say: call Joe's Plumbing to fix the kitchen sink.", attributes);
   }
   if (type === "SessionEndedRequest") return response("Goodbye.", attributes, true);

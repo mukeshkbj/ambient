@@ -25,7 +25,11 @@ export function voiceMonkeyCue(options: { token: string; device: string; fetch?:
         body: JSON.stringify({
           token: options.token,
           device: options.device,
-          speech: `${question.replace(/\s*(?:Say|To try) [^.?!]*[.?!]$/, "")} ${kind === "result" ? "For details" : "To answer"}, say: Alexa, open Ambient.`
+          speech: kind === "result"
+            ? question.includes("say: call them again.")
+              ? question.replace("say: call them again.", "say: Alexa, tell Ambient to call them again.")
+              : `${question} To hear it again, say: Alexa, open Ambient.`
+            : `${question.replace(/\s*Say [^.?!]*[.?!]$/, "")} To answer, say: Alexa, open Ambient.`
         })
       });
       if (!result.ok) throw new Error(`Voice Monkey announce failed (${result.status})`);

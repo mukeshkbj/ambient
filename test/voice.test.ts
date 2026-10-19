@@ -46,7 +46,7 @@ describe("speak", () => {
 
   it("does not read a raw error aloud when work fails", () => {
     const text = speak(view({ status: "failed", failure: "The restaurant API timed out" }), ctx);
-    expect(text).toBe('My Agent couldn\'t finish "Book a table for four". Say call, followed by who to call, to try again.');
+    expect(text).toBe('My Agent couldn\'t finish "Book a table for four". To try again, say: call them again.');
   });
 
   it("asks for a decision on pending approval without ids", () => {
@@ -98,7 +98,7 @@ describe("speak", () => {
 
   it("speaks an unconfirmed call outcome without assuming the booking", () => {
     const text = speak(view({ status: "completed", outcome: { kind: "unconfirmed", reason: "line ended" } }), ctx);
-    expect(text).toBe("The business didn't confirm: line ended. I can't confirm a booking, so check with them before you call again.");
+    expect(text).toBe("I can't confirm a booking with the business: line ended. Check with them before you try again.");
     expect(text).not.toMatch(ID_LIKE);
     expect(text).not.toMatch(/\b\d+\b/);
   });
