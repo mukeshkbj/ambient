@@ -4,6 +4,23 @@ This log lists the problems we hit while building Ambient for the Amazon Alexa "
 
 We did not run a timer. Where git shows when a problem started and when it was fixed, the entry gives that span and says it is a span, not working time. Where git shows nothing, the entry says "not measured".
 
+## Reproduce every entry with one command
+
+`pnpm repro:friction` runs `scripts/repro-friction.sh`. It re-runs entries 1, 2, B and C locally and fetches the vendor pages for entries 3 to 8. It exits non-zero if any entry no longer reproduces. Output on 2026-10-19 (Windows 11, Node v24.21.0, pnpm 10.33.0, MCP SDK 1.30.0):
+
+```text
+entry 1: reproduced: elicitInput frame per mode: json:silent sse:silent sse-related:delivered json-related:silent
+entry 2: reproduced: 'AMBIENT_HOST' is not recognized as an internal or external command
+entry 3: reproduced: "protocolVersion": "2025-03-26" supports the 2025-11-25 version "protocolVersion":"2025-06-18"
+entry 4: reproduced: WWW-Authenticate headers in 401 responses
+entry 5: reproduced: Alexa: "resourceUri defined in the tool response"; MCP Apps spec: _meta.ui on the tool (7 mentions)
+entry 6: reproduced: the page names POST {base_url}/chat/completions and never mentions messages, timeout or tools
+entry 7: reproduced: reply.started has reply_id in one page and none in the other; the example repository uses /v1/realtime
+entry 8: reproduced: agent_id_not_first: agent_id is mutually exclusive with the inline fields
+entry B: reproduced: guard: no match
+entry C: reproduced: TS2550
+```
+
 ## Journey coverage
 
 | Stage | Status | Detail |

@@ -21,6 +21,7 @@
     "check:mcp-contract": "tsx scripts/check-mcp-contract.ts",
     "check:runtime": "tsx scripts/check-runtime.ts",
     "smoke:mcp": "tsx scripts/smoke-mcp.ts",
+    "repro:friction": "bash scripts/repro-friction.sh",
     "latency": "tsx scripts/latency.ts",
     "infra:synth": "cdk synth",
     "infra:typecheck": "tsc -p infra/tsconfig.json --noEmit",
