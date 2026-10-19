@@ -28,6 +28,10 @@ const NOT_YES = [
   "No, it's more than that.", "Yeah, no, that's too low.", "Absolutely not.", "Okay, let me check with my manager.", "Are you sure?", "Yes, plus parts.",
   "Yes, that's per hour.", "Sure, unless it's a bigger leak.", "Okay, 150.", "Yes. We're at 4500 Main Street.", "Sorry, we're booked.", "Hmm."
 ] as const;
+const OWNER: ReadonlyArray<(n: number) => [string, number | undefined]> = [
+  n => [`offer $${n}`, n], n => [`tell them ${n} works`, n], n => [`go to ${n} dollars`, n], n => [`${n}`, undefined],
+  n => [`don't pay ${n}`, undefined], n => [`is ${n} okay?`, undefined], n => [`okay ${n}`, undefined], () => ["wait a moment", undefined]
+];
 const AGENT = ["Okay. The address is 12 Elm Street.", "Could you do it for less?", "What time works?"] as const;
 
 type Reply = { text: string; clean: boolean };
@@ -81,6 +85,11 @@ function playCall(seed: number) {
       replies.push({ ...reply, clean: reply.clean && order >= 0.25 && order < 0.8 });
       run({ kind: "heard", text: reply.text });
       continue;
+    }
+    if (next() < 0.2) {
+      const [text, offer] = pick(OWNER)(pick([quoted, quoted + 40]));
+      if (offer !== undefined) approved.push(offer);
+      run({ kind: "owner_said", text });
     }
     if (next() < 0.4) run({ kind: "brain", turn: 0, step: { kind: "say", text: pick(AGENT), last: true } });
     if (next() < 0.4) run({ kind: "heard", text: pick(NOT_YES) });

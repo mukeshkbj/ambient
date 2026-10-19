@@ -85,21 +85,16 @@ function transition(state: CallState, input: CallInput, now: string): Transition
         const line = `Still checking with ${brief.ownerName}, one moment.`;
         return { state: { ...withTurn(heard, "agent", line, now), phase: { ...phase, lastHoldLine: now } }, effects: [say(line)] };
       }
-      if (!state.disclosed) {
-        const line = disclosure(brief.ownerName);
-        const disclosed = { ...withTurn(heard, "agent", line, now), disclosed: true };
-        const thought = think(disclosed);
-        return { state: thought.state, effects: [say(line), ...thought.effects] };
-      }
+      if (!state.disclosed) return think(heard, now);
       if (state.readBack && !state.readBack.armed) {
         if (agreesTo(input.text, state.readBack.terms, state.readBack.outcome.amountUsd, state.readBack.outcome.when, state.readBack.line)) return { state: { ...heard, readBack: { ...state.readBack, earlyYes: true } }, effects: [] };
-        return think({ ...heard, readBack: undefined, readBacks: state.readBacks - 1 });
+        return think({ ...heard, readBack: undefined, readBacks: state.readBacks - 1 }, now);
       }
       if (state.readBack) {
         const answered = answerReadBack(heard, state.readBack, input.text, now);
         if (answered) return answered;
       }
-      return think({ ...heard, readBack: undefined });
+      return think({ ...heard, readBack: undefined }, now);
     }
     case "interrupted": {
       if (phase.kind === "dialing") return unchanged(state);
@@ -131,17 +126,17 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       const ledger = offer !== undefined ? { approved: [...state.approved, { amountUsd: offer }], deniedUsd: state.deniedUsd.filter(amount => amount !== offer) } : {};
       const noted = { ...ownerNote(flushDraft(state, now), input.text, now, ledger), readBack: undefined };
       if (phase.kind === "dialing") return { state: noted, effects: [] };
-      return think({ ...noted, phase: { kind: "talking" } });
+      return think({ ...noted, phase: { kind: "talking" } }, now);
     }
     case "owner_decided": {
       if (phase.kind !== "waiting_for_owner" || phase.requestId !== input.requestId) return unchanged(state);
       const approved = input.decision === "once";
-      const note = `${brief.ownerName} ${approved ? "approved" : "declined"}: ${phase.question}`;
+      const note = `${approved ? "Approved" : "Declined"}: ${phase.question}`;
       const amount = phase.amountUsd;
       const ledger = amount === undefined
         ? (phase.unpriced ? (approved ? { approvedUnpriced: true } : { deniedUnpriced: true }) : {})
         : approved ? { approved: [...state.approved, { amountUsd: amount, ...(phase.when ? { when: phase.when } : {}) }] } : { deniedUsd: [...state.deniedUsd, amount] };
-      return think({ ...ownerNote(state, note, now, ledger), phase: { kind: "talking" } });
+      return think({ ...ownerNote(state, note, now, ledger), phase: { kind: "talking" } }, now);
     }
     case "hold_tick": {
       if (phase.kind !== "waiting_for_owner") return unchanged(state);
@@ -256,9 +251,12 @@ function end(state: CallState, outcome: CallOutcome, effects: CallEffect[]): Tra
   };
 }
 
-function think(state: CallState): Transition {
+function think(state: CallState, now: string): Transition {
   const turn = state.turn + 1;
-  return { state: { ...state, turn, draft: "", held: "" }, effects: [{ kind: "think", turn }] };
+  const thinking = { ...state, turn, draft: "", held: "" };
+  if (state.disclosed) return { state: thinking, effects: [{ kind: "think", turn }] };
+  const line = disclosure(state.brief.ownerName);
+  return { state: { ...withTurn(thinking, "agent", line, now), disclosed: true }, effects: [say(line), { kind: "think", turn }] };
 }
 
 function ownerNote(state: CallState, note: string, now: string, ledger: Partial<Pick<CallState, "approved" | "deniedUsd" | "approvedUnpriced" | "deniedUnpriced">>): CallState {

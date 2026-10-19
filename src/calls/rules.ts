@@ -94,10 +94,13 @@ const OFFER_TAIL = /(?:[\s,]+(?:works|is fine|is ok|is okay))?$/;
 export function offerIn(text: string): number | undefined {
   const plain = text.normalize("NFKC").replace(/[’‘]/g, "'").toLowerCase().trim().replace(/[.!]+$/, "");
   if (plain.includes("?")) return undefined;
-  const core = plain.replace(OFFER_LEAD, "").replace(OFFER_VERB, "").replace(OFFER_TAIL, "").trim();
-  if (!core || !AMOUNT_ONLY.test(core)) return undefined;
+  const lead = plain.replace(OFFER_LEAD, "");
+  const verb = lead.replace(OFFER_VERB, "");
+  const core = verb.replace(OFFER_TAIL, "").trim();
+  if (!core || !AMOUNT_ONLY.test(core) || /(?:^|\D)\.\d|\d,(?!\d{3}(?!\d))/.test(core)) return undefined;
+  const marked = verb !== lead || core !== verb.trim() || /\$|\b(?:dollars|bucks)\b/.test(core);
   const amounts = amountsIn(core);
-  return amounts.length === 1 ? amounts[0] : undefined;
+  return marked && amounts.length === 1 && amounts[0]! > 0 ? amounts[0] : undefined;
 }
 
 function timeKey(when: string): string {
@@ -166,7 +169,9 @@ export function agreesTo(reply: string, terms: string, amountUsd: number | undef
     const values = amountsIn(run.join(" "));
     return values.length === 1 && numbers.includes(values[0]!);
   })) return false;
-  const known = new Set(plainWords(terms).split(" ").filter(word => !NEGATIVE_WORDS.has(word)));
+  if (/\b(?:is|was) (?:that|it) (?:right|correct|ok|okay)\b/.test(words.replaceAll("|", " "))) return false;
+  const clauses = plainWords(terms).split("|").map(clause => clause.split(" ").filter(Boolean));
+  const known = new Set(clauses.filter(clause => !clause.some(word => NEGATIVE_WORDS.has(word))).flat());
   const rest = words.replace(CONFIRMATION, " ").replace(COURTESY, " ").split(" ").filter(token => token && token !== "|").flatMap(token => token.split("-").filter(Boolean));
   return rest.every(token => isNumber(token) || token === "a" || FILLER.has(token) || known.has(token));
 }

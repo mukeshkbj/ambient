@@ -66,8 +66,8 @@ describe("read-back replies", () => {
     expect(readBackState().turns.at(-1)?.text).toBe(READ_BACK);
   });
 
-  it("has a corpus of at least 150 labelled replies", () => {
-    expect(BOOKS.length + DOES_NOT_BOOK.length).toBeGreaterThanOrEqual(150);
+  it("has a corpus of 192 labelled replies", () => {
+    expect(BOOKS.length + DOES_NOT_BOOK.length).toBe(192);
   });
 
   it.each(BOOKS)("books on %s", text => {
@@ -241,10 +241,22 @@ describe("round 10 review findings", () => {
     expect(offerIn(text)).toBeUndefined();
   });
 
-  it.each([["offer 250", 250], ["actually okay, go to 250", 250], ["yes, 250", 250], ["two fifty", 250], ["$250", 250], ["tell them 250 works", 250]] as const)(
+  it.each([["offer 250", 250], ["actually okay, go to 250", 250], ["yes, $250", 250], ["two fifty bucks", 250], ["$250", 250], ["tell them 250 works", 250]] as const)(
     "still reads an explicit offer: %s",
     (text, amount) => {
       expect(offerIn(text)).toBe(amount);
     }
   );
+});
+
+describe("round 11 review findings", () => {
+  it("does not book a reply that drops the no from a no-price read-back", () => {
+    expect(agreesTo("yes the price is set", "no price is set, Friday at 7", undefined, "Friday at 7")).toBe(false);
+    expect(agreesTo("yes, price set", "no price is set, Friday at 7", undefined, "Friday at 7")).toBe(false);
+    expect(agreesTo("Yes, Friday at 7.", "no price is set, Friday at 7", undefined, "Friday at 7")).toBe(true);
+  });
+
+  it.each(["yes friday at 7 is that right", "okay so friday at 7 is that correct", "sure, was it friday at 7 right"])("does not book a question asked without a question mark: %s", text => {
+    expect(agreesTo(text, "two hundred dollars total, Friday at 7", 200, "Friday at 7")).toBe(false);
+  });
 });

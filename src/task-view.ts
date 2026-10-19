@@ -124,7 +124,7 @@ function buttons(list){const box=$("actions");box.innerHTML="";
  for(const b of list){const el=document.createElement("button");el.type="button";el.textContent=b.label;if(b.note){const n=document.createElement("small");n.textContent=b.note;el.appendChild(n);}if(b.kind)el.className=b.kind;el.onclick=()=>{el.disabled=true;b.run();};box.appendChild(el);}}
 function foot(lines){const box=$("foot");
  box.innerHTML=lines.map(l=>'<div class="line"><b>'+esc(l.who)+'</b><span>'+l.text+'</span></div>').join("");}
-function ownerSaid(line,biz){if(!line)return "";const decided=/^\\S+ (approved|declined): /.exec(line.text);if(decided)return "You "+decided[1]+" it.";
+function ownerSaid(line,biz){if(!line)return "";const decided=/^(Approved|Declined): /.exec(line.text);if(decided)return "You "+decided[1].toLowerCase()+" it.";
  const offer=/^offer\\s+\\$?(\\d+)/i.exec(line.text);return offer?"You offered "+usd(offer[1])+". Waiting for "+biz+".":"You told them: \\u201c"+cap(line.text)+"\\u201d";}
 function setStake(amount,when){const el=$("stake");
  el.innerHTML=amount===undefined?'<span class="when">'+esc(when)+'</span>':esc(usd(amount))+'<span class="sep"> \\u00b7 </span><span class="when">'+esc(when)+'</span>';}
@@ -165,7 +165,7 @@ function render(d){
   const readBack=said.some(l=>l.who==="Ambient"&&/^(Just to confirm|Let me check once more|One last check|To be sure):/.test(l.text));
   sub.textContent=ok?(theirs?(readBack?"Ambient read back the total and the time. "+biz+" said \\u201c"+theirs.text+"\\u201d":"In their words: \\u201c"+theirs.text+"\\u201d"):"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed.":cap(o.reason)+".";
   const mine=said.filter(l=>l.who!=="Ambient"&&l.who!==biz);
-  if(ok)hint.textContent=mine.some(l=>/ approved: /.test(l.text))?"You approved this price from home.":mine.some(l=>/^offer\\b/i.test(l.text))?"You offered this price from home.":limitOf(t.instruction)?"Within your "+limitOf(t.instruction).slice(6)+" limit.":"";
+  if(ok)hint.textContent=mine.some(l=>/^Approved: /.test(l.text))?"You approved this price from home.":mine.some(l=>/^offer\\b/i.test(l.text))?"You offered this price from home.":limitOf(t.instruction)?"Within your "+limitOf(t.instruction).slice(6)+" limit.":"";
   if(!ok){if(theirs)foot([{who:"Last from "+biz,text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
    buttons([{label:"Call "+biz+" again",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);}}
  else if(live){chip.className="chip";chip.textContent=connected?"On the phone":"Calling";

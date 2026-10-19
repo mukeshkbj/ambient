@@ -24,7 +24,7 @@ The call itself (Ambient and the simulated business, with the owner's notes):
   Ambient: Thanks for waiting. Could you do it for one hundred fifty dollars?
   Joe's Plumbing: One fifty is too low for me. I could do one sixty.
   Ambient: One moment, let me check with Maya.
-  Maya: Maya approved: Joe's Plumbing came down to one hundred sixty dollars for Tuesday at ten, still over your limit of one hundred fifty dollars. Should I book it?
+  Maya: Approved: Joe's Plumbing came down to one hundred sixty dollars for Tuesday at ten, still over your limit of one hundred fifty dollars. Should I book it?
   Ambient: Thanks for waiting. Maya says one hundred sixty dollars is fine. Please go ahead and book Tuesday at ten.
   Joe's Plumbing: Hmm, one sixty. Alright, that works if you're my first job that morning. I'll put you down for Tuesday at ten.
   Ambient: Just to confirm: one hundred sixty dollars total, Tuesday at ten. Is that right?

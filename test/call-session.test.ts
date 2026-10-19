@@ -93,6 +93,13 @@ describe("rule 1: the disclosure comes first", () => {
     expect(state.turns.map(turn => turn.text)).toEqual(["Hi, this is an", "Hello? Who is this?", disclosure("Maya")]);
   });
 
+  it("repeats a cut-off disclosure before thinking when the owner speaks next", () => {
+    const { state, effects } = play([answered, { kind: "interrupted", spokenSoFar: "Hi," }, owner("go to 200")]);
+    expect(spoken(effects)).toEqual([disclosure("Maya")]);
+    expect(kinds(effects).indexOf("say")).toBeLessThan(kinds(effects).indexOf("think"));
+    expect(state.disclosed).toBe(true);
+  });
+
   it("treats speech heard before the answer event as an answer", () => {
     const { state, effects } = play([heard("Joe's Plumbing?")]);
     expect(state.turns.map(turn => turn.speaker)).toEqual(["agent", "business"]);
@@ -215,7 +222,7 @@ describe("rule 3: a price above the limit needs the owner", () => {
     const approved = play([{ kind: "owner_decided", requestId: requestOf(asked.state), decision: "once" }], asked.state);
     expect(approved.state.phase.kind).toBe("talking");
     expect(kinds(approved.effects)).toContain("think");
-    expect(approved.state.turns.at(-1)).toMatchObject({ speaker: "owner", text: expect.stringMatching(/^Maya approved: /) });
+    expect(approved.state.turns.at(-1)).toMatchObject({ speaker: "owner", text: expect.stringMatching(/^Approved: /) });
     expect(play([say("One eighty is fine, please book it."), heard("Great, you're booked."), confirm(180), ...yes], approved.state).state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 180 } });
   });
 
@@ -226,7 +233,7 @@ describe("rule 3: a price above the limit needs the owner", () => {
     expect(emitted(declined.effects, "approval.request")).toHaveLength(0);
   });
 
-  it.each(["offer 160", "tell him one sixty", "160", "one sixty", "$160", "counter at 160"])("treats \"%s\" as authorizing 160", text => {
+  it.each(["offer 160", "tell him one sixty", "$160", "one sixty dollars", "counter at 160"])("treats \"%s\" as authorizing 160", text => {
     const done = play([owner(text), heard("Fine, 160 it is"), confirm(160), ...yes], quoted().state);
     expect(done.state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 160 } });
   });
@@ -297,7 +304,17 @@ describe("round 2 review findings", () => {
     expect(offerIn(text)).toBeUndefined();
   });
 
-  it.each([["okay 160", 160], ["sure, 160", 160], ["yes 160 is fine", 160], ["160 works", 160], ["go with 160", 160], ["approve 160", 160], ["okay, one hundred and sixty", 160]] as const)(
+  it.each(["8", "three", "okay 160", "sure, 4", "yes 2", "offer 0", "offer $.50", "offer 20,00", "pay 2,50", "offer 1,2,3"])("does not treat \"%s\" as an offer", text => {
+    expect(offerIn(text)).toBeUndefined();
+  });
+
+  it("does not approve a price when the owner answers with a bare number", () => {
+    const { maxUsd: _, ...unlimited } = brief;
+    const { state } = play([answered, owner("8"), heard("There's an $8 booking fee"), confirm(8)], undefined, unlimited);
+    expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 8 });
+  });
+
+  it.each([["okay $160", 160], ["sure, 160 dollars", 160], ["yes 160 is fine", 160], ["160 works", 160], ["go with 160", 160], ["approve 160", 160], ["okay, offer one hundred and sixty", 160], ["offer 1,600", 1600], ["offer $12.50", 12.5]] as const)(
     "treats \"%s\" as authorizing %i",
     (text, amount) => {
       expect(offerIn(text)).toBe(amount);

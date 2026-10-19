@@ -322,9 +322,9 @@ function renderTranscript(steps, biz) {
     const [, who, text] = m;
     const role = who === "Ambient" ? "agent" : who === biz ? "business" : "owner";
     if (role === "owner") {
-      const decided = /^\S+ (approved|declined): /.exec(text);
+      const decided = /^(Approved|Declined): /.exec(text);
       const offer = /^offer\s+\$?(\d+)/i.exec(text);
-      nodes.push(`<div class="note">${decided ? `${esc(who)} ${decided[1]} it from home` : offer ? `${esc(who)} offered ${usd(offer[1])} from home` : `${esc(who)}, from home: “${esc(sentence(text))}”`}</div>`);
+      nodes.push(`<div class="note">${decided ? `${esc(who)} ${decided[1].toLowerCase()} it from home` : offer ? `${esc(who)} offered ${usd(offer[1])} from home` : `${esc(who)}, from home: “${esc(sentence(text))}”`}</div>`);
       lastWho = "";
       continue;
     }
