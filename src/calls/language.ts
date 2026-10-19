@@ -68,7 +68,7 @@ export function lines(language: Language | undefined): Lines {
 
 const plain = (text: string) => text.normalize("NFKC").toLowerCase().replace(/[.,!;:¡"“”'’…]/g, " ").replace(/\s+/g, " ").trim();
 
-const YES = /(?:^| )(?:sí|así es|correcto|exacto|de acuerdo|eso es|perfecto|claro que sí)(?= |$)/g;
+const YES = /(?:^| )(?:sí|si|así es|correcto|exacto|de acuerdo|eso es|perfecto|claro que sí|claro|vale|está bien)(?= |$)/g;
 const COURTESY = new Set("gracias muchas muy bien está vale nos vemos hasta luego entonces señor señora listo adiós buenas perfecto".split(" "));
 
 export function agreesInSpanish(reply: string): boolean {
@@ -89,6 +89,41 @@ export function plainSpanishTime(when: string): boolean {
   if (words.length === 0 || /[^\p{L}\p{Nd}\s:.,]/u.test(when)) return false;
   const known = words.every(word => TIME_WORDS.has(word) || /^\d{1,2}(?::\d{2})?$/.test(word));
   return known && words.some(word => ANCHORS.has(word) || /^\d/.test(word));
+}
+
+const SPANISH_DAYS: Record<string, string> = { lunes: "monday", martes: "tuesday", miércoles: "wednesday", jueves: "thursday", viernes: "friday", sábado: "saturday", domingo: "sunday", hoy: "today", mañana: "tomorrow" };
+const SPANISH_MONTHS = MONTHS.split(" ");
+const ENGLISH_MONTHS = "january february march april may june july august september october november december".split(" ");
+
+function spanishTerms(spoken: string) {
+  let words = plain(spoken);
+  const period = /\bde la (?:tarde|noche)\b/.test(words) ? "pm" : /\bde la mañana\b/.test(words) ? "am" : undefined;
+  words = words.replace(/\bde la (?:mañana|tarde|noche)\b/g, " ");
+  const tokens = words.split(" ").filter(Boolean);
+  return {
+    numbers: tokens.flatMap(token => token.match(/\d+/g) ?? []).map(Number).sort((a, b) => a - b),
+    days: tokens.flatMap(token => SPANISH_DAYS[token] ?? []).sort(),
+    months: tokens.flatMap(token => SPANISH_MONTHS.includes(token) ? [ENGLISH_MONTHS[SPANISH_MONTHS.indexOf(token)]!] : []).sort(),
+    period
+  };
+}
+
+function englishTerms(when: string) {
+  const words = when.toLowerCase().replace(/\b([ap])\.m\.?/g, "$1m");
+  const tokens = words.split(/[^a-z0-9]+/).filter(Boolean);
+  return {
+    numbers: (words.match(/\d+/g) ?? []).map(Number).sort((a, b) => a - b),
+    days: tokens.filter(token => Object.values(SPANISH_DAYS).includes(token)).sort(),
+    months: tokens.filter(token => ENGLISH_MONTHS.includes(token)).sort(),
+    period: /\bpm\b/.test(words) ? "pm" : /\bam\b/.test(words) ? "am" : undefined
+  };
+}
+
+export function sameSpanishTime(spoken: string, when: string): boolean {
+  const es = spanishTerms(spoken);
+  const en = englishTerms(when);
+  const same = (a: unknown[], b: unknown[]) => a.length === b.length && a.every((value, index) => value === b[index]);
+  return same(es.numbers, en.numbers) && same(es.days, en.days) && same(es.months, en.months) && (es.period === undefined || en.period === undefined || es.period === en.period);
 }
 
 const UNITS = ["cero", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez", "once", "doce", "trece", "catorce", "quince", "dieciséis", "diecisiete", "dieciocho", "diecinueve", "veinte", "veintiuno", "veintidós", "veintitrés", "veinticuatro", "veinticinco", "veintiséis", "veintisiete", "veintiocho", "veintinueve"];

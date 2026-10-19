@@ -1090,6 +1090,13 @@ describe("a call in Spanish", () => {
     expect(spoken(booked.effects).at(-1)).toBe("Perfecto, queda para el martes 20 a las 9 de la mañana. Muchas gracias, adiós.");
   });
 
+  it("never reads back a Spanish time that differs from the time it would book", () => {
+    const mismatch: Input = { kind: "brain", step: { kind: "end_call", outcome: { kind: "confirmed", summary: "booked", amountUsd: 140, when: "Wednesday at 3 pm", spokenWhen: "el martes a las 10" } } };
+    const { state, effects } = play([answered, [heard("Ciento cuarenta."), 1000], [mismatch, 2000]], undefined, spanish);
+    expect(state.readBack).toBeUndefined();
+    expect(spoken(effects).at(-1)).toBe("Perdón, ¿me puede dar solo el día y la hora?");
+  });
+
   it("asks again in Spanish when it has no Spanish time to read back", () => {
     const { state, effects } = play([answered, [heard("Ciento veinte."), 1000], [quote(), 2000]], undefined, spanish);
     expect(state.readBack).toBeUndefined();

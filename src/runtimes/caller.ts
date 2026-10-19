@@ -57,7 +57,14 @@ type Errand = {
   feed(input: ErrandInput): void;
 };
 
-const MOVE = /^(?:please\s+)?(?:move|reschedule|change)\b.*?\bto\s+(.+?)[.?!]*$/i;
+const MOVE = /^(?:please\s+)?(?:move|reschedule|change)\s+(?:it|(?:my|the|our)\s+(?:([a-z]+)\s+)?(?:booking|appointment|visit|reservation)|(?:my|the|our)\s+([a-z]+))\s+(?:to|for)\s+([^,]+?)[.?!]*$/i;
+
+export function moveRequest(instruction: string): { to: string; about?: string } | undefined {
+  const match = MOVE.exec(instruction.trim());
+  if (!match) return undefined;
+  const about = (match[1] ?? match[2])?.toLowerCase();
+  return { to: match[3]!, ...(about ? { about } : {}) };
+}
 
 const AROUND_WORDS = /\b(?:call around|shop around|compare|cheapest|quotes?)\b/i;
 
@@ -243,9 +250,9 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
   private async begin(sessionId: string, instruction: string): Promise<void> {
     const { household, business } = this.options;
     const maxUsd = spendingLimit(instruction) ?? household.maxUsdDefault;
-    const move = MOVE.exec(instruction);
+    const move = moveRequest(instruction);
     if (move) {
-      this.moveBooking(sessionId, move[1]!);
+      this.moveBooking(sessionId, move.to, move.about);
       return;
     }
     const given = phoneIn(instruction);
@@ -288,10 +295,14 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
     });
   }
 
-  private moveBooking(sessionId: string, to: string): void {
+  private moveBooking(sessionId: string, to: string, about?: string): void {
     const booking = this.options.memory?.lastBooking();
     if (!booking || booking.outcome.kind !== "confirmed") {
       this.emit({ type: "message.complete", sessionId, payload: { text: "I don't have a booking to move.", status: "completed", outcome: { kind: "no_deal", reason: "there is no booking to move" } } });
+      return;
+    }
+    if (about && !`${booking.businessName} ${booking.goal}`.toLowerCase().includes(about.slice(0, 5))) {
+      this.emit({ type: "message.complete", sessionId, payload: { text: `Your last booking is with ${booking.businessName}, not a ${about}, so I didn't call anyone.`, status: "completed", outcome: { kind: "no_deal", reason: `the last booking is with ${booking.businessName}, not a ${about}` } } });
       return;
     }
     const { amountUsd, when } = booking.outcome;

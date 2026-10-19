@@ -106,7 +106,7 @@ Rules 1 to 4 and 8 are enforced in the call reducer and tested in [`test/call-se
 | 5. Dialing an unknown business needs approval | A business found by web search gets a "Call them?" approval. A number the user gives is dialed directly. |
 | 6. Call limits | At most 3 calls to one number and 20 calls in total per 24 hours, on real lines, counting calls still in progress. |
 | 7. One booking when calling around | The errand books at most one quote: the cheapest under the limit, or the cheapest after the owner says yes. Every other quote is released, and the business hears "Thanks so much for the quote. Maya is going with another option this time." A pick within the limit never writes an owner note, so the transcript never claims the owner approved it. |
-| 8. "Don't call us" is final | A business line such as "take us off your list" or "don't call us with an AI" ends the call with no booking. Ambient remembers it and never dials that number again. |
+| 8. "Don't call us" is final | A business line such as "take us off your list" or "don't call us with an AI" ends the call with no booking. Ambient remembers it in its call memory, which is on by default, and never dials that number again. A line such as "take me off speaker" or "never call before nine" is not an opt-out. |
 
 Rule 2 in detail:
 
@@ -116,7 +116,7 @@ Rule 2 in detail:
 - Each retry is worded differently, so a late playback report cannot arm the wrong one.
 - After three unanswered read-backs, or five in all, the call ends unconfirmed. A dropped line is always unconfirmed.
 - A labelled corpus of 192 replies pins the reply check. A seeded test plays 4,000 generated calls and checks that every booking followed a clean yes to a read-back of that exact amount.
-- In Spanish, the reply books only if it is a clean yes ("sí", "correcto", "así es", "de acuerdo") with courtesy words and nothing else. Any number, qualifier or question returns to the conversation. The read-back needs a plain Spanish day and time, and its price is spoken in Spanish words.
+- In Spanish, the reply books only if it is a clean yes ("sí", "correcto", "así es", "de acuerdo") with courtesy words and nothing else. Any number, qualifier or question returns to the conversation. The read-back needs a plain Spanish day and time that names the same day, date and hour as the English booking it records. Its price is spoken in Spanish words.
 - Each booking keeps its proof: the full read-back the business heard and the reply that booked it, each with its time. The 4,000-call test checks that the proof is exactly that pair. The card quotes both lines, and "Hear them say yes" replays them in the simulator. A live call does not record audio yet.
 
 ![The simulator at the read-back: the business answers "Yes, plus parts." and Ambient asks for the total instead of booking](docs/media/sim-refused.png)
@@ -146,6 +146,7 @@ Three adversarial reviews of the reducer and repeated structural review rounds, 
 - **Echo Show and Fire TV.** The MCP App card leads with the stake ("$180 · Tuesday the 20th at 10 am"). On a screen it carries "Book $180", "Offer $150", and "Decline", which call the `approve` and `delegate` tools through the host. If the business agrees a day but gives no calendar date, the card says "Booked · date still open" with "Only the weekday was given · ask <business> for the date", and Alexa adds "They gave a day but no date, so check which one."
 - **Calling around.** One instruction calls up to three businesses at the same time. The Echo Show shows a tile per business: ringing, on the phone, its quote, then booked or passed. The booked card names the cheapest quote and lists the passed ones.
 - **Fire TV.** When the call needs the owner, the film pauses, the picture dims, and a corner card shows the stake. It plays on once the owner answers from any device.
+- **Moving a booking.** Say "Alexa, move the plumber to Thursday." Ambient calls the business it last booked and asks to move the visit. The price you approved carries over, and the new time still books only through a read-back and a clean yes. A request about another trade, such as "move my dentist appointment", does not move the plumber ([`test/caller.test.ts`](test/caller.test.ts)).
 - **Calling again.** If a call ends without a booking, say "call them again". Ambient redials the same business with the original job. It does not redial a call that booked or one that is still going ([`test/alexa.test.ts`](test/alexa.test.ts)).
 - **Memory.** Each call is stored in SQLite. The next call to the same business starts with what the last one learned ("Remembered from Oct 18 — confirmed, quoted one hundred sixty dollars, Tuesday the 20th at 10 am").
 

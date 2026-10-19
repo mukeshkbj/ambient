@@ -230,10 +230,21 @@ export function agreesTo(reply: string, terms: string, amountUsd: number | undef
 
 export const OPTED_OUT = "They asked not to be called by an AI assistant.";
 
-const OPT_OUT = /\b(?:don'?t|do not|never|stop)\s+(?:call|calling|ring|ringing)\b(?!\s+back)|\b(?:take|remove)\s+(?:us|me|this number)\s+off\b|\bwe\s+don'?t\s+(?:take|accept|talk to)\s+(?:ai|robots?|bots?|automated)|\bno\s+(?:nos|me)\s+(?:llame|llamen|vuelva\s+a\s+llamar|vuelvan\s+a\s+llamar)|\bqu[ií]t[ae]nos\s+de\s+(?:su|la)\s+lista/i;
+const OPT_OUT = [
+  /\b(?:don'?t|do not|never|please stop|stop|quit)\s+(?:ever\s+)?(?:call|calling|contact|contacting|ring|ringing)\s+(?:us|me|here|this number)(?:\s+again)?(?:\s+(?:with|using)\s+(?:an?\s+)?(?:ai|robots?|bots?|machines?))?\s*(?:[.!,]|$)/i,
+  /\b(?:don'?t|do not|never)\s+(?:ever\s+)?call(?:\s+(?:us|me|here))?\s+again\b/i,
+  /\b(?:stop|quit)\s+calling\s*(?:[.!]|$)/i,
+  /\b(?:take|remove|put)\s+(?:us|me|this number)\s+(?:off|from|on)\s+(?:your|the)\s+(?:(?:call(?:ing)?|do[- ]not[- ]call)\s+)?list\b/i,
+  /\bno more calls\b/i,
+  /\bwe\s+don'?t\s+(?:take|accept|want|talk to)\s+(?:ai|robots?|bots?|automated)\b/i,
+  /\bno\s+(?:nos|me)\s+(?:vuelvan?\s+a\s+llamar|llamen?)\b/i,
+  /\bno\s+llamen\s+más/i,
+  /\bqu[ií]t[ae]nos\s+de\s+(?:su|la)\s+lista\b/i
+];
 
 export function optsOut(text: string): boolean {
-  return OPT_OUT.test(text);
+  const plain = text.replace(/[’‘]/g, "'");
+  return OPT_OUT.some(pattern => pattern.test(plain));
 }
 
 export function noteFromCall(fact: string): string | undefined {

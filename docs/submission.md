@@ -27,6 +27,8 @@ Every booking keeps its proof: the full read-back the business heard and the rep
 
 The business gets a receipt too. When a call books, the business's call page shows "Booked for Maya: $160 total, Tuesday the 20th at 10 am.", in the business's language. A business that says "take us off your list" is never called again.
 
+To move a booking, the owner says "Alexa, move the plumber to Thursday." Ambient calls the business it last booked, asks to move the visit, and books the new time through the same read-back. The price the owner approved carries over; a higher price goes back to the owner.
+
 If a call ends without a booking, the owner says "call them again". Ambient redials the same business with the original job, and never redials a call that booked or one that is still going.
 
 You ask Alexa to call a business for the household. An AI agent makes the call. Its first words are an AI disclosure: "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else.
@@ -64,7 +66,7 @@ This table lists only what the code enforces today.
 | A premium-rate number, 1-900 or 1-976 | `blockedNumber` refuses it, and the caller checks it before dialing. The call ends with no deal. The check covers `+1` numbers only. | `src/calls/rules.ts`, `src/runtimes/caller.ts` |
 | More than 3 calls to one number, or more than 20 calls in total, in 24 hours | `checkDialLimits` refuses the call. It applies on real lines and counts calls still in progress. | `src/calls/rules.ts`, `src/runtimes/caller.ts` |
 | An unknown business found by search, without the owner's approval | The caller asks "Call them?" and dials only after the owner answers once. When it calls around, one question names every business: "I found Pete's Pipes, Drain Bros and Rapid Rooter. Call all three and book the best quote under your limit?" A number the owner gives is dialed directly. | `src/runtimes/caller.ts` |
-| A business that asked not to be called | A line such as "take us off your list" or "don't call us with an AI" ends the call with no booking, and Ambient never dials that number again. | `src/calls/rules.ts`, `src/calls/session.ts`, `src/runtimes/caller.ts` |
+| A business that asked not to be called | A line such as "take us off your list" or "don't call us with an AI" ends the call with no booking, and Ambient never dials that number again while its call memory is on, which is the default. | `src/calls/rules.ts`, `src/calls/session.ts`, `src/runtimes/caller.ts` |
 
 Phone trees are not handled yet.
 
@@ -72,8 +74,8 @@ Phone trees are not handled yet.
 
 - It does not navigate phone trees.
 - It does not wait in a hold queue for an agent.
-- It handles one business per call.
-- It speaks English only.
+- It calls at most three businesses at once, and only when the owner asks for quotes.
+- It speaks English and Spanish. The live voice line is not yet set for Spanish speech recognition or a Spanish voice.
 - It cannot use a live phone line without paid telephony.
 - Cost per call is not measured. The AssemblyAI pricing page, as recorded in `docs/plans/2026-10-18-handle-the-call/reference-assemblyai.md` on 2026-10-18, lists the Voice Agent API at $0.075 per minute, billed per second of connected time. Our own LLM cost is on top, and the repo records no price for it. The cost of one call depends on its length, the number of Claude turns, and the Claude token counts. None of these has been measured on a live call.
 

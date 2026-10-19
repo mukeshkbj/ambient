@@ -1,5 +1,5 @@
 import { dollarsInWords, numberInWords } from "../words.js";
-import { agreesInSpanish, lines, plainSpanishTime, spanishPrice } from "./language.js";
+import { agreesInSpanish, lines, plainSpanishTime, sameSpanishTime, spanishPrice } from "./language.js";
 import { agreesTo, chargedIn, HOLD_LINE_MS, holdTrailingDigits, offerIn, OPTED_OUT, optsOut, OWNER_PATIENCE_MS, plainTime, redactDigits, sameTime } from "./rules.js";
 import type { BrainStep, CallBrief, CallEffect, CallInput, CallOutcome, CallPhase, CallTurn, Speaker } from "./types.js";
 
@@ -202,7 +202,7 @@ function confirm(state: CallState, proposed: Confirmed, now: string): Transition
   const owner = brief.ownerName;
   const speech = lines(brief.language);
   const spokenWhen = brief.language === "es" ? outcome.spokenWhen : outcome.when;
-  const plainWhen = outcome.when === undefined || (plainTime(outcome.when) && (brief.language !== "es" || (spokenWhen !== undefined && plainSpanishTime(spokenWhen))));
+  const plainWhen = outcome.when === undefined || (plainTime(outcome.when) && (brief.language !== "es" || (spokenWhen !== undefined && plainSpanishTime(spokenWhen) && sameSpanishTime(spokenWhen, outcome.when))));
   if (!plainWhen) {
     const asks: string[] = speech.askTime;
     const flushed = flushDraft(state, now);

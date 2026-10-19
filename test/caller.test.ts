@@ -324,6 +324,19 @@ describe("CallerClient follow-through", () => {
     close();
   });
 
+  it("does not move a plumber booking when asked about a dentist", async () => {
+    const { engine, close } = setup(JOES_PLUMBING, { memory: true });
+    const first = await engine.ask("Call Joe's Plumbing and book a visit under 150", undefined, true);
+    const waiting = await until(engine, first.id, item => item.status === "waiting_approval");
+    await engine.respondToApproval(waiting.approval!.id, "once");
+    await until(engine, first.id, item => item.status === "completed");
+    const moved = await engine.ask("Move my dentist appointment to Friday", undefined, true);
+    const view = await until(engine, moved.id, item => item.status === "completed");
+    expect(view.outcome).toEqual({ kind: "no_deal", reason: "the last booking is with Joe's Plumbing, not a dentist" });
+    expect(view.steps.some(step => step.startsWith("Calling "))).toBe(false);
+    close();
+  });
+
   it("says so when there is no booking to move", async () => {
     const { engine, close } = setup(JOES_PLUMBING, { memory: true });
     const moved = await engine.ask("Move my plumber booking to Thursday", undefined, true);

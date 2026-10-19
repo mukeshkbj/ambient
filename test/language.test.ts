@@ -8,7 +8,11 @@ describe("Spanish read-back replies", () => {
     "Así es, muchas gracias.",
     "Correcto, nos vemos.",
     "De acuerdo.",
-    "Sí, está bien, gracias."
+    "Sí, está bien, gracias.",
+    "Sí, claro.",
+    "Vale.",
+    "Está bien.",
+    "Si, correcto."
   ])("books on a clean yes: %s", reply => {
     expect(agreesInSpanish(reply)).toBe(true);
   });
@@ -22,7 +26,10 @@ describe("Spanish read-back replies", () => {
     "Creo que sí.",
     "Sí, aparte del material.",
     "Sí, con depósito.",
-    "Bueno, déjeme ver."
+    "Bueno, déjeme ver.",
+    "Si puedo, sí.",
+    "Claro, pero más tarde.",
+    "Vale, ciento sesenta."
   ])("does not book: %s", reply => {
     expect(agreesInSpanish(reply)).toBe(false);
   });
