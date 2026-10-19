@@ -50,6 +50,7 @@ body.booked .check path{animation:draw 600ms 180ms cubic-bezier(0.2,0,0,1) both}
 .over:empty{display:none}
 .flag{font-size:.72em;font-weight:600;color:var(--needs);margin-top:-.4em}
 .flag:empty{display:none}
+.flag.date{font-size:.8em}
 .flag.dim{color:var(--dim);font-weight:500}
 .sub{font-size:.95em;color:var(--dim);text-wrap:pretty;max-width:34em;font-variant-numeric:tabular-nums}
 .actions{display:flex;gap:.5em;flex-wrap:wrap;align-items:center;margin-top:.3em}
@@ -61,13 +62,13 @@ body.booked .check path{animation:draw 600ms 180ms cubic-bezier(0.2,0,0,1) both}
 body[data-state="live"]:not([data-device="tv"]),body[data-state="done"]:not([data-device="tv"]){justify-content:center}
 body[data-state="needs"]:not([data-device="tv"]) .actions{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);align-items:stretch}
 body[data-state="needs"] .actions button{padding-inline:.6em;min-height:max(56px,2.9em);min-width:44px}
-.actions button small{display:block;font-size:.8em;font-weight:500;text-wrap:balance}
+.actions button small{display:block;font-size:max(13px,.8em);font-weight:500;text-wrap:balance}
 .actions button.offer{padding-top:.3em;padding-bottom:.3em}
 .actions button.call{background:var(--fg);color:var(--bg)}
 .actions button:active{transform:scale(.97)}
 .hint{font-size:max(15px,.72em);color:oklch(0.86 0.01 255)}
 .hint:empty{display:none}
-.foot{margin-top:1em;display:grid;grid-template-columns:minmax(0,max-content) 1fr;gap:.45em .8em;align-content:start;border-top:1px solid var(--faint);padding-top:.9em;font-size:.72em;color:var(--dim)}
+.foot{margin-top:1em;display:grid;grid-template-columns:minmax(0,max-content) 1fr;gap:.45em .8em;align-content:start;border-top:1px solid var(--faint);padding-top:.9em;font-size:max(13px,.72em);color:var(--dim)}
 .foot:empty{display:none}
 .line{display:contents}
 .line b{font-weight:600;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -156,19 +157,19 @@ function render(d){
   if(ap.amountUsd>ap.limitUsd&&!offers(ap,said).length){flag.className="flag dim";flag.textContent="You already offered "+usd(ap.limitUsd);}
   const asked=Date.parse(ap.createdAt||"");
   sub.textContent=ap.kind==="dial"?"Place this call?":biz+" is on the line, waiting for you.";
-  const hold=()=>{$("clock").textContent=Number.isFinite(asked)?(Date.now()-asked<1000?"Waiting":"Waiting "+clock(Date.now()-asked)):"";};
+  const hold=()=>{$("clock").textContent=Number.isFinite(asked)?"Waiting "+clock(Date.now()-asked):"";};
   if(ap.kind!=="dial"){hold();tick=setInterval(hold,1000);}
   if(theirs)foot([{who:biz+" said",text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
   const spend=ap.kind!=="dial";
-  buttons([{label:ap.amountUsd!==undefined?"Book "+usd(ap.amountUsd):"Approve",note:spend?"Tells "+biz+" yes":"",kind:"primary",run:()=>act("approve",{decision:"once"})},
+  buttons([{label:ap.amountUsd!==undefined?"Book "+usd(ap.amountUsd):"Approve",note:spend?"Tells them yes":"",kind:"primary",run:()=>act("approve",{decision:"once"})},
    ...offers(ap,said).map(v=>({label:"Offer "+usd(v),note:"Your limit",kind:"offer",run:()=>act("delegate",{task:"offer "+v})})),
    {label:"Decline",note:spend?"Ambient hangs up":"",kind:"quiet",run:()=>act("approve",{decision:"deny"})}]);
   }
  else if(o){const ok=o.kind==="confirmed";chip.className="chip "+(ok?"done":"warn");
   if(ok)document.body.classList.add("booked");
-  chip.textContent=ok?"Booked \\u00b7 confirmed by "+biz:o.kind==="unconfirmed"?"Not booked":o.kind==="declined"?"Declined":"No deal";
+  chip.textContent=ok?(dated(o.when)?"Booked \\u00b7 confirmed by "+biz:"Booked \\u00b7 price and day confirmed"):o.kind==="unconfirmed"?"Not booked":o.kind==="declined"?"Declined":"No deal";
   if(ok){$("what").textContent=what?biz+" \\u00b7 "+what:biz;setStake(o.amountUsd,cap(o.when||biz));
-   if(!dated(o.when))flag.textContent="Day agreed, calendar date not given \\u00b7 check with "+biz;}
+   if(!dated(o.when)){const day=/\\b(?:mon|tues|wednes|thurs|fri|satur|sun)day\\b/i.exec(o.when||"");flag.className="flag date";flag.textContent="No calendar date given \\u00b7 ask "+biz+(day?" which "+day[0]:" for the date");}}
   else{stake.textContent="Nothing was booked.";$("what").textContent=[biz,what,limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");}
   const readBack=said.some(l=>l.who==="Ambient"&&/^(Just to confirm|Let me check once more|One last check|To be sure):/.test(l.text));
   sub.textContent=ok?(theirs?(readBack?"Ambient read back the total and the time. "+biz+" said \\u201c"+theirs.text+"\\u201d":"In their words: \\u201c"+theirs.text+"\\u201d"):"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed.":cap(o.reason)+".";
