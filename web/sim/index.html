@@ -85,7 +85,7 @@ main{flex:1;display:grid;grid-template-columns:minmax(330px,380px) minmax(0,1fr)
 .call{background:var(--surface);border-radius:var(--r-panel);box-shadow:var(--lift);display:flex;flex-direction:column;min-height:0;overflow:hidden;transition:filter 250ms var(--ease)}
 
 .callhead{display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px 20px 14px;text-align:center}
-.sim{font-size:12px;font-weight:600;color:var(--ink-3);background:var(--sunk);padding:2px 10px;border-radius:999px}
+.sim{font-size:13px;font-weight:600;color:var(--ink-2);background:var(--sunk);padding:2px 10px;border-radius:999px}
 .avatar{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);color:var(--ink-2);font-weight:600;font-size:16px;margin-top:6px}
 .biz{font-size:22px;font-weight:650;letter-spacing:-.015em;line-height:1.2}
 .callstate{font-size:14px;color:var(--ink-2)}
@@ -93,9 +93,9 @@ main{flex:1;display:grid;grid-template-columns:minmax(330px,380px) minmax(0,1fr)
 .timer{font-variant-numeric:tabular-nums}
 .proof{display:none;font-size:12px;font-weight:650;color:var(--go-text);background:var(--go-soft);padding:2px 10px;border-radius:999px}
 .proof.show{display:inline-block}
-.transcript{flex:1;overflow-y:auto;padding:24px 16px 24px;mask-image:linear-gradient(180deg,transparent 0,#000 24px);display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);
+.transcript{flex:1;overflow-y:auto;padding:28px 16px 24px;mask-image:linear-gradient(180deg,transparent 0,#000 28px);scroll-snap-type:y proximity;scroll-padding-top:28px;display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);
 }
-.bubble{max-width:86%;padding:8px 12px;border-radius:16px;font-size:14px;line-height:1.45;text-wrap:pretty}
+.bubble{scroll-snap-align:start;max-width:86%;padding:8px 12px;border-radius:16px;font-size:14px;line-height:1.45;text-wrap:pretty}
 .bubble.business{align-self:flex-start;background:var(--sunk);border-bottom-left-radius:4px}
 .bubble.agent{align-self:flex-end;background:var(--call);color:var(--call-ink);border-bottom-right-radius:4px}
 .who{font-size:13px;color:var(--ink-2);margin:8px 4px -4px;font-weight:600}
@@ -354,7 +354,7 @@ function render() {
   if (o || t?.status === "cancelled") {
     const ok = o?.kind === "confirmed";
     out.className = "outcome show " + (ok ? "ok" : "not");
-    $("outcomeLabel").textContent = ok ? `Confirmed by ${biz}` : t.status === "cancelled" ? "Not confirmed" : o.kind === "unconfirmed" ? "Not confirmed" : o.kind === "declined" ? "They declined" : "No deal";
+    $("outcomeLabel").textContent = ok ? `Confirmed by ${biz}` : t.status === "cancelled" ? "Not booked" : o.kind === "unconfirmed" ? "Not booked" : o.kind === "declined" ? "They declined" : "No deal";
     $("outcomeText").textContent = ok ? o.summary : t.status === "cancelled" ? `You ended the call before ${biz} confirmed. Nothing was booked.` : `${sentence(o.reason)}. Nothing was booked.`;
     const line = ok ? `Booked. ${sentence(o.when ?? "")}${o.amountUsd !== undefined ? `, ${usd(o.amountUsd)}` : ""}.` : "Nothing was booked.";
     if (line !== state.lastOutcome) { state.lastOutcome = line; if (ok) chime(); speak(line); }
