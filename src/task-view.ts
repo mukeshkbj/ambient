@@ -34,7 +34,7 @@ button:focus-visible{outline:2px solid var(--call);outline-offset:3px}
 @keyframes breathe{50%{opacity:.35;transform:scale(.8)}}
 .clock{margin-left:auto;font-size:max(15px,.62em);font-weight:600;font-variant-numeric:tabular-nums}
 .clock:empty{display:none}
-.what{font-size:1em;font-weight:600;margin-bottom:-.5em}
+.what{font-size:1em;font-weight:600;margin-bottom:-.5em;text-wrap:balance}
 .what:empty{display:none}
 .sep{color:var(--dim)}
 .check{display:none;width:2.2em;height:2.2em;border-radius:50%;background:var(--done);color:var(--bg);place-items:center}
@@ -56,7 +56,8 @@ body.booked .check path{animation:draw 600ms 180ms cubic-bezier(0.2,0,0,1) both}
 .actions button.offer{background:transparent;box-shadow:inset 0 0 0 1.5px oklch(1 0 0 / .4)}
 .actions button.quiet{background:transparent;color:var(--stop);padding:0 .8em;box-shadow:inset 0 0 0 1.5px oklch(0.68 0.20 25 / .45)}
 body[data-state="live"]:not([data-device="tv"]),body[data-state="done"]:not([data-device="tv"]){justify-content:center}
-body[data-state="needs"] .actions button{min-height:max(56px,2.9em);min-width:44px}
+body[data-state="needs"]:not([data-device="tv"]) .actions{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);align-items:stretch}
+body[data-state="needs"] .actions button{padding-inline:.6em;min-height:max(56px,2.9em);min-width:44px}
 .actions button small{display:block;font-size:.72em;font-weight:500;opacity:.8}
 .actions button.offer{padding-top:.3em;padding-bottom:.3em}
 .actions button.call{background:var(--fg);color:var(--bg)}
@@ -82,6 +83,8 @@ body[data-device="tv"] .tvline{display:block}
  body:not([data-device="tv"]) .actions{flex-direction:column;align-items:stretch;gap:8px}
  body:not([data-device="tv"]) .actions button{min-height:48px;font-size:16px}
  body:not([data-device="tv"]) .hint{font-size:13px}
+ body:not([data-device="tv"]) .foot{grid-template-columns:1fr;font-size:14px;gap:2px}
+ body[data-state="needs"]:not([data-device="tv"]) .actions{grid-auto-flow:row}
 }
 body.arrive{animation:arrive 240ms cubic-bezier(0.2,0,0,1) both}
 @keyframes arrive{0%{transform:scale(.98);opacity:.4}100%{transform:none;opacity:1}}
@@ -151,7 +154,7 @@ function render(d){
   if(theirs)foot([{who:biz+" said",text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
   const spend=ap.kind!=="dial";
   buttons([{label:ap.amountUsd!==undefined?"Book "+usd(ap.amountUsd):"Approve",note:spend?"Tells "+biz+" yes":"",kind:"primary",run:()=>act("approve",{decision:"once"})},
-   ...offers(ap,said).map(v=>({label:"Offer "+usd(v)+" instead",note:"Your limit",kind:"offer",run:()=>act("delegate",{task:"offer "+v})})),
+   ...offers(ap,said).map(v=>({label:"Offer "+usd(v),note:"Your limit",kind:"offer",run:()=>act("delegate",{task:"offer "+v})})),
    {label:"Decline",note:spend?"Ambient hangs up":"",kind:"quiet",run:()=>act("approve",{decision:"deny"})}]);
   }
  else if(o){const ok=o.kind==="confirmed";chip.className="chip "+(ok?"done":"warn");

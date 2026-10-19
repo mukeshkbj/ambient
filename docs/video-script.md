@@ -41,12 +41,12 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 
 - Ambient, to Joe: "One moment, let me check with Maya."
 - Echo Dot: "Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Book it, offer less, or end the call?"
-- Echo Show card: "Fix the kitchen sink", "$180 · Tuesday at ten", "$30 over your $150 limit", with "Approve $180", "Offer $160 instead", and "Decline" (`docs/media/sim-needs-you.png`).
+- Echo Show card: "Fix the kitchen sink", "$180 · Tuesday at ten", "$30 over your $150 limit", with "Book $180 · Tells Joe's Plumbing yes", "Offer $150 · Your limit", and "Decline · Ambient hangs up" (`docs/media/sim-needs-you.png`).
 - Needs: HW for the Echo. The card renders in `/sim` without hardware.
 
 ### 5. The owner steers (1:05 to 1:20)
 
-- Owner: "Alexa, tell Ambient offer one sixty." Or tap "Offer $160 instead".
+- Owner: "Alexa, tell Ambient offer one sixty." Or tap "Offer $150": Joe answers "One fifty is too low for me. I could do one sixty.", and the card asks again with "Book $160" (`docs/media/sim-countered.png`).
 - Alexa: "Okay, offering one hundred sixty dollars."
 - Ambient, to Joe: "Thanks for waiting. Could you do it for one hundred sixty dollars?"
 - Joe: "Hmm, one sixty. Alright, that works if you're my first job that morning."

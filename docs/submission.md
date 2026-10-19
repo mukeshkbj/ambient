@@ -17,7 +17,7 @@ This section describes the design. The demo runs all of it against a simulated b
 
 You ask Alexa to call a business for the household. An AI agent makes the call. Its first words are an AI disclosure: "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else.
 
-The agent negotiates within a spending limit you set. When the business quotes over the limit, the agent puts the call on hold and asks you. The question reaches Echo devices as a spoken announcement and a notification. It also reaches the Echo Show as an MCP App card with "Approve $180", "Offer $160 instead", and "Decline". You can steer the call by voice at any point: "Alexa, tell Ambient offer one sixty."
+The agent negotiates within a spending limit you set. When the business quotes over the limit, the agent puts the call on hold and asks you. The question reaches Echo devices as a spoken announcement and a notification. It also reaches the Echo Show as an MCP App card with "Book $180", "Offer $150" (your limit), and "Decline". If the business counters, the card asks you again before anything is booked. You can steer the call by voice at any point: "Alexa, tell Ambient offer one sixty."
 
 Before the agent books, it reads the total and the time back to the business word for word. The read-back counts only after it has fully played. The agent books only if the reply is made entirely of agreement words and the exact terms it read back. A qualifier such as "plus parts", any other number or day, or any question sends the call back to negotiation. A dropped line is always unconfirmed.
 
