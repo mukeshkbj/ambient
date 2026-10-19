@@ -58,18 +58,21 @@ function speech(value: string): { type: "SSML"; ssml: string } {
   return { type: "SSML", ssml: `<speak>${escapeXml(value)}</speak>` };
 }
 
-function repromptFor(value: string): string {
+function repromptFor(value: string, live: boolean): string {
   const question = value.match(/[^.?!]+\?$/)?.[0]?.trim();
-  return question ?? "What should I call about?";
+  return question ?? (live ? "Say status, offer an amount, or hang up." : "What should I call about?");
 }
 
-function response(value: string, sessionAttributes: Record<string, unknown>, shouldEndSession = false): AlexaSkillResponse {
+const ENDED: RunStatus[] = ["completed", "failed", "cancelled", "unknown"];
+const isLive = (run: RunView) => !ENDED.includes(run.status);
+
+function response(value: string, sessionAttributes: Record<string, unknown>, shouldEndSession = false, live = false): AlexaSkillResponse {
   return {
     version: "1.0",
     sessionAttributes,
     response: {
       outputSpeech: speech(value),
-      ...(shouldEndSession ? {} : { reprompt: { outputSpeech: speech(repromptFor(value)) } }),
+      ...(shouldEndSession ? {} : { reprompt: { outputSpeech: speech(repromptFor(value, live)) } }),
       shouldEndSession
     }
   };
@@ -234,7 +237,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     if (!entry) return response("I could not reach the assistant.", attributes);
     try {
       const run = await entry.engine.ask(task, undefined, true, { waitMs: dependencies.askWaitMs ?? 0 });
-      return response(startedCall(entry, run), runAttributes(attributes, run));
+      return response(startedCall(entry, run), runAttributes(attributes, run), false, isLive(run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
@@ -250,7 +253,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     try {
       const run = await target.entry.engine.steer(target.run.id, message);
       const ctx = { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state };
-      return response(run.subject ? steerReply(run, ctx, message) : "Okay, I'll tell them.", runAttributes(attributes, run));
+      return response(run.subject ? steerReply(run, ctx, message) : "Okay, I'll tell them.", runAttributes(attributes, run), false, isLive(run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
@@ -271,7 +274,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
       const reply = run.status === "completed" || run.status === "waiting_approval"
         ? `${choice === "once" ? "Okay." : "Okay, I'll say no."} ${speak(run, ctx)}`
         : choice === "once" ? `Okay, booking it${amount}. I'll tell you when it's done.` : "Okay, I'll say no. I'll tell you how it ends.";
-      return response(reply, runAttributes(attributes, run));
+      return response(reply, runAttributes(attributes, run), false, isLive(run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
@@ -279,7 +282,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
   if (name === "CallStatusIntent") {
     const target = activeCall(registry, attributes);
     if (!target) return response("There's no call in progress.", attributes);
-    return response(callStatus(target), attributes);
+    return response(callStatus(target), attributes, false, isLive(target.run));
   }
   if (name === "HangUpIntent") {
     const target = activeCall(registry, attributes);

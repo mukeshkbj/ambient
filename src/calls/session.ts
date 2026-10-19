@@ -147,7 +147,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       if (phase.kind !== "waiting_for_owner") return unchanged(state);
       const elapsed = (from: string) => Date.parse(now) - Date.parse(from);
       if (elapsed(phase.since) >= OWNER_PATIENCE_MS) {
-        const line = `I'm sorry, I can't reach ${brief.ownerName} right now. ${brief.ownerName} will call you back. Thank you, goodbye.`;
+        const line = `I'm sorry, I can't reach ${brief.ownerName} right now. I'll tell ${brief.ownerName} you were holding. Thank you, goodbye.`;
         const closed = withTurn(state, "agent", line, now);
         return end(closed, { kind: "unconfirmed", reason: `${brief.ownerName} didn't answer in time, so nothing was agreed` }, [say(line), { kind: "hang_up" }]);
       }
@@ -222,7 +222,7 @@ function price(amount: number): string {
 }
 
 function close(state: CallState, outcome: Exclude<CallOutcome, { kind: "unconfirmed" }>, now: string, line?: string): Transition {
-  const closing = line ?? (outcome.kind === "confirmed" ? (outcome.when ? `Great, ${state.brief.ownerName} will see you ${outcome.when}. Thanks, goodbye.` : "Perfect, thanks so much. Goodbye.") : "Okay, thanks for your time. Goodbye.");
+  const closing = line ?? (outcome.kind === "confirmed" ? (outcome.when ? `Great, ${state.brief.ownerName} will expect you ${outcome.when}. Thanks, goodbye.` : "Perfect, thanks so much. Goodbye.") : "Okay, thanks for your time. Goodbye.");
   return end(withTurn(flushDraft(state, now), "agent", closing, now), outcome, [say(closing), { kind: "hang_up" }]);
 }
 

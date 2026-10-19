@@ -506,6 +506,7 @@ describe("holding", () => {
     const { state, effects } = play([[{ kind: "hold_tick" }, 2000 + OWNER_PATIENCE_MS]], asked.state);
     expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "unconfirmed", reason: "Maya didn't answer in time, so nothing was agreed" } });
     expect(kinds(effects)).toContain("hang_up");
+    expect(spoken(effects).at(-1)).not.toMatch(/call you back/);
   });
 
   it("stays quiet on unparsable clocks", () => {

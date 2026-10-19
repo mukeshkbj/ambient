@@ -8,7 +8,7 @@ export const JOES_PLUMBING: BusinessPersona = {
   opening: "Oh, okay. Joe's Plumbing, this is Joe. How can I help?",
   rules: [
     { when: /^just to confirm\b/i, reply: "Yes, that's right. See you then." },
-    { when: /\b(one (hundred )?sixty|160)\b/i, reply: "Hmm, one sixty. Alright, that works. I'll put you down for Tuesday at ten." },
+    { when: /\b(one (hundred )?sixty|160)\b/i, reply: "Hmm, one sixty. Alright, that works if you're my first job that morning. I'll put you down for Tuesday at ten." },
     { when: /\bany room on the price\b/i, reply: "Best I can do is one eighty, honestly. Parts went up this year." },
     { when: /\b(go ahead|book it|that works)\b/i, reply: "Great, you're booked for Tuesday at ten. That's one eighty." },
     { when: /\b(sink|leak|visit|plumb)/i, reply: "Sure, we can come Tuesday at ten. It'll be one eighty for the call-out and the repair." }
@@ -49,7 +49,7 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
     when: /\b(it'll be|it's) one eighty\b/i,
     reply: (_, state) => (state.brief.maxUsd ?? 0) >= 180
       ? [{ kind: "say", text: "That works. Please go ahead and book Tuesday at ten.", last: true }]
-      : [{ kind: "say", text: "Hmm, that's a bit more than we planned. Is there any room on the price?", last: true }]
+      : [{ kind: "say", text: "Hmm, okay. Is there any room on the price?", last: true }]
   },
   {
     when: /\bbest i can do is one eighty\b/i,

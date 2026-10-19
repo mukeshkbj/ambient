@@ -59,7 +59,7 @@ export function approvalAsk(view: RunView, ctx: SpeakContext): string {
   const approval = view.approval;
   if (business && approval?.kind === "spend" && approval.amountUsd !== undefined && approval.limitUsd !== undefined) {
     const when = approval.when ? ` for ${approval.when}` : "";
-    return `${business} wants ${dollarsInWords(approval.amountUsd)}${when}. Your limit is ${dollarsInWords(approval.limitUsd)}. Book it, or offer less?`;
+    return `${business} wants ${dollarsInWords(approval.amountUsd)}${when}. Your limit is ${dollarsInWords(approval.limitUsd)}. Book it, offer less, or end the call?`;
   }
   const request = view.approval?.description ?? view.approval?.command;
   if (request && view.approval?.amountUsd !== undefined) {
@@ -83,7 +83,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
   if (business) {
     if (view.status === "waiting_approval") {
       const ask = approvalAsk(view, ctx);
-      if (ask.endsWith("Book it, or offer less?")) return ask;
+      if (ask.endsWith("Book it, offer less, or end the call?")) return ask;
       const choices = view.approval?.kind === "dial" ? "Say yes to place the call, or no." : "Say approve, deny, or offer a different amount.";
       return `${ask} ${choices}`;
     }
@@ -133,7 +133,7 @@ export function heldStatus(view: RunView): string | undefined {
   const business = callee(view);
   const amount = view.approval?.amountUsd;
   if (!business || view.status !== "waiting_approval" || view.approval?.kind !== "spend" || amount === undefined) return undefined;
-  return `${business} is still holding for you. Book it at ${dollarsInWords(amount)}, or offer less?`;
+  return `${business} is still holding for you. Book it at ${dollarsInWords(amount)}, offer less, or end the call?`;
 }
 
 export function steerReply(view: RunView, ctx: SpeakContext, said?: string): string {

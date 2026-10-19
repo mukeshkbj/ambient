@@ -33,14 +33,14 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 - Screen: the business answer page on a second phone (`docs/media/call-business-ringing.png`), labelled "AI assistant". In the fallback, the transcript column in `/sim`.
 - Ambient: "Hi, this is an AI assistant calling for Maya. This call is transcribed." Keep it audible.
 - Joe: "Sure, we can come Tuesday at ten. It'll be one eighty for the call-out and the repair."
-- Ambient: "Hmm, that's a bit more than we planned. Is there any room on the price?"
+- Ambient: "Hmm, okay. Is there any room on the price?"
 - Joe: "Best I can do is one eighty, honestly."
 - Needs: KEYS and a second device for the live path. None for the fallback.
 
 ### 4. Over the limit (0:45 to 1:05)
 
 - Ambient, to Joe: "One moment, let me check with Maya."
-- Echo Dot: "Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Book it, or offer less?"
+- Echo Dot: "Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Book it, offer less, or end the call?"
 - Echo Show card: "Fix the kitchen sink", "$180 · Tuesday at ten", "$30 over your $150 limit", with "Approve $180", "Offer $160 instead", and "Decline" (`docs/media/sim-needs-you.png`).
 - Needs: HW for the Echo. The card renders in `/sim` without hardware.
 
@@ -49,7 +49,7 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 - Owner: "Alexa, tell Ambient offer one sixty." Or tap "Offer $160 instead".
 - Alexa: "Okay, offering one hundred sixty dollars."
 - Ambient, to Joe: "Thanks for waiting. Could you do it for one hundred sixty dollars?"
-- Joe: "Hmm, one sixty. Alright, that works."
+- Joe: "Hmm, one sixty. Alright, that works if you're my first job that morning."
 - Needs: HW for voice. None for the card tap.
 
 ### 6. The read-back, then the report (1:20 to 1:40)
