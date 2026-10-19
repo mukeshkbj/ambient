@@ -14,7 +14,7 @@ Three moments from the demo:
 
 ![Call around, simulated: three plumbers ring at once and quote $140, $125 and $120; Ambient books the $120 quote, which a Spanish-speaking plumber gave, in Spanish, and releases the other two](docs/media/around.gif)
 
-**Try it in one minute, with no keys:** run `pnpm install` and `pnpm demo`, then open http://127.0.0.1:3000/sim.
+**Try it in one minute, with no keys:** run `pnpm install` and `pnpm demo`, then open http://127.0.0.1:3000/sim. With no local setup, open the repository in GitHub Codespaces instead. The container installs the project, starts the demo and opens `/sim`. Each Codespace has its own copy, so two judges never see each other's calls.
 
 **Status.** No live call has happened yet. The demo runs against a simulated business and a simulated Alexa+ host. The voice line, the Claude brain and the Alexa skill are built and tested against local fakes, but none has run live. See [What is real and what is simulated](#what-is-real-and-what-is-simulated).
 

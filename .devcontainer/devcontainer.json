@@ -1,0 +1,15 @@
+{
+  "name": "Ambient demo",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "postCreateCommand": "corepack enable && pnpm install --frozen-lockfile",
+  "postAttachCommand": {
+    "demo": "PUBLIC_BASE_URL=\"https://${CODESPACE_NAME}-3000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}\" pnpm demo"
+  },
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "Ambient simulator", "onAutoForward": "openPreview" }
+  },
+  "customizations": {
+    "codespaces": { "openFiles": ["README.md"] }
+  }
+}
