@@ -9,6 +9,7 @@ import { readConfig, type AppConfig } from "./config.js";
 import { OAuthError, OAuthProvider, type Principal } from "./auth.js";
 import { AlexaRequestError, handleAlexaRequest } from "./alexa.js";
 import { assemblyAi } from "./calls/assemblyai.js";
+import { tryToFool } from "./calls/fool.js";
 import { CallRooms } from "./calls/rooms.js";
 import type { ProofOfYes } from "./calls/types.js";
 import { handleCallRoute } from "./call-routes.js";
@@ -355,6 +356,16 @@ export function createAmbientHttpServer(dependencies: AmbientHttpDependencies): 
         } catch {
           writeJson(response, 404, { error: "not_found" });
         }
+        return;
+      }
+      if (url.pathname === "/sim/api/fool" && request.method === "POST") {
+        const input = await jsonBody(request) as { reply?: unknown; language?: unknown } | undefined;
+        const reply = typeof input?.reply === "string" ? input.reply.trim() : "";
+        if (!reply || reply.length > 200) {
+          writeJson(response, 400, { error: "Type a reply of 1 to 200 characters." });
+          return;
+        }
+        writeJson(response, 200, tryToFool(reply, input?.language === "es" ? "es" : "en"));
         return;
       }
       if (url.pathname === "/sim/api/elicit" && request.method === "POST") {

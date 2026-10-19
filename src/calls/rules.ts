@@ -203,29 +203,39 @@ function numberRuns(tokens: string[]): string[][] {
   return runs;
 }
 
-export function agreesTo(reply: string, terms: string, amountUsd: number | undefined, when?: string, line?: string): boolean {
-  if (reply.includes("?")) return false;
-  if (/[^\p{ASCII}]/u.test(reply.normalize("NFKC").replace(/[’‘“”…–—]/g, ""))) return false;
+export type Verdict = { books: true } | { books: false; why: string };
+
+const refuse = (why: string): Verdict => ({ books: false, why });
+
+export function readBackVerdict(reply: string, terms: string, amountUsd: number | undefined, when?: string, line?: string): Verdict {
+  if (reply.includes("?")) return refuse("It is a question.");
+  if (/[^\p{ASCII}]/u.test(reply.normalize("NFKC").replace(/[’‘“”…–—]/g, ""))) return refuse("It has characters that the English check does not read.");
   const echoed = plainWords(reply).replaceAll("|", " ").replace(/\s+/g, " ").trim();
-  if (line && echoed.includes(" ") && plainWords(line).replaceAll("|", " ").replace(/\s+/g, " ").includes(echoed)) return false;
+  if (line && echoed.includes(" ") && plainWords(line).replaceAll("|", " ").replace(/\s+/g, " ").includes(echoed)) return refuse("It only repeats Ambient's own words.");
   const words = plainWords(reply);
   const tokens = words.split(" ").filter(token => token && token !== "|").flatMap(token => token.split("-").filter(Boolean));
-  if (tokens.length > 14) return false;
-  if (!CONFIRMATION.test(words)) return false;
+  if (tokens.length > 14) return refuse("It is too long to be a clean yes.");
+  if (!CONFIRMATION.test(words)) return refuse("It has no word of agreement.");
   CONFIRMATION.lastIndex = 0;
   const numbers = amountUsd !== undefined ? [amountUsd] : [];
-  if (!chargedIn(words.replaceAll("|", " ")).every(charge => charge === amountUsd)) return false;
+  if (!chargedIn(words.replaceAll("|", " ")).every(charge => charge === amountUsd)) return refuse("It names a different price.");
   const runs = numberRuns(words.split(" ").flatMap(token => token.split("-").filter(Boolean)));
   const clocks = clockGroups(when ?? "");
-  if (!runs.every(run => {
+  const stray = runs.find(run => {
     const values = amountsIn(run.join(" "));
-    return (values.length === 1 && numbers.includes(values[0]!)) || clocks.includes(timeKey(run.join(" ")));
-  })) return false;
-  if (/\b(?:is|was) (?:that|it) (?:right|correct|ok|okay)\b/.test(words.replaceAll("|", " "))) return false;
+    return !((values.length === 1 && numbers.includes(values[0]!)) || clocks.includes(timeKey(run.join(" "))));
+  });
+  if (stray) return refuse(`It has a number that was not read back: "${stray.join(" ")}".`);
+  if (/\b(?:is|was) (?:that|it) (?:right|correct|ok|okay)\b/.test(words.replaceAll("|", " "))) return refuse("It asks Ambient to confirm.");
   const clauses = plainWords(terms).split("|").map(clause => clause.split(" ").filter(Boolean));
   const known = new Set(clauses.filter(clause => !clause.some(word => NEGATIVE_WORDS.has(word))).flat());
   const rest = words.replace(CONFIRMATION, " ").replace(COURTESY, " ").split(" ").filter(token => token && token !== "|").flatMap(token => token.split("-").filter(Boolean));
-  return rest.every(token => isNumber(token) || token === "a" || FILLER.has(token) || known.has(token));
+  const extra = rest.filter(token => !(isNumber(token) || token === "a" || FILLER.has(token) || known.has(token)));
+  return extra.length === 0 ? { books: true } : refuse(`It adds words that can change the deal: "${extra.join(" ")}".`);
+}
+
+export function agreesTo(reply: string, terms: string, amountUsd: number | undefined, when?: string, line?: string): boolean {
+  return readBackVerdict(reply, terms, amountUsd, when, line).books;
 }
 
 export const OPTED_OUT = "They asked not to be called by an AI assistant.";

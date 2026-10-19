@@ -151,4 +151,15 @@ describe("Ambient HTTP bridge", () => {
     expect((await call({ authorization: `Bearer ${token}` })).status).toBe(200);
     expect(callTool).toHaveBeenCalledOnce();
   });
+
+  it("answers the try-to-fool panel through the call reducer and refuses an empty or long reply", async () => {
+    const http = build({ allowUnauthenticated: true, sim: {} as unknown as SimHost });
+    const port = await listen(http);
+    const fool = (body: unknown) => fetch(`http://127.0.0.1:${port}/sim/api/fool`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    const plusParts = await fool({ reply: "Yes, plus parts." });
+    expect(await plusParts.json()).toMatchObject({ result: "not_booked", why: "It adds words that can change the deal: \"plus parts\"." });
+    expect(await (await fool({ reply: "Sí, correcto.", language: "es" })).json()).toMatchObject({ result: "booked" });
+    expect((await fool({ reply: "  " })).status).toBe(400);
+    expect((await fool({ reply: "y".repeat(201) })).status).toBe(400);
+  });
 });

@@ -162,7 +162,30 @@ body[data-phase="needs"] .screen .title{opacity:0}
 body[data-phase="needs"] .screen .shade,body[data-phase="needs"] .screen .pausenote{opacity:1}
 body[data-phase="needs"] .screen .paused{opacity:1;transform:translate(-50%,-50%) scale(1)}
 
-.talk{background:var(--surface);border-radius:var(--r-panel);box-shadow:var(--lift);padding:20px;display:flex;flex-direction:column;gap:12px;align-self:start}
+.side{display:flex;flex-direction:column;gap:16px;align-self:start;min-width:0}
+.talk{background:var(--surface);border-radius:var(--r-panel);box-shadow:var(--lift);padding:20px;display:flex;flex-direction:column;gap:12px}
+.fool{background:var(--surface);border-radius:var(--r-panel);box-shadow:var(--lift);padding:20px;display:flex;flex-direction:column;gap:12px}
+.fool h2{font-size:16px;font-weight:650}
+.fool .sub{color:var(--ink-2);margin-top:-8px;font-size:13px}
+.foolhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.lang{display:flex;padding:2px;border-radius:10px;background:var(--sunk)}
+.lang button{min-width:40px;min-height:32px;border:0;border-radius:8px;background:transparent;color:var(--ink-2);font-weight:600;font-size:12px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px oklch(0 0 0 / .06),0 1px 2px oklch(0 0 0 / .08)}
+.fool blockquote{margin:0;padding:10px 12px;border-radius:var(--r-ctl);background:var(--call-soft);color:var(--call-text);font-size:13px;line-height:1.45;text-wrap:pretty}
+.fool label{font-size:12px;font-weight:600;color:var(--ink-2)}
+.foolrow{display:flex;gap:8px;margin-top:4px}
+.foolrow input{flex:1;min-width:0;min-height:44px;padding:0 12px;border-radius:var(--r-ctl);border:1px solid var(--line);background:var(--canvas);color:var(--ink);font:inherit;font-size:16px}
+.foolrow input:focus-visible{outline:2px solid var(--call);outline-offset:1px}
+.foolrow button{min-height:44px;padding:0 14px;border-radius:var(--r-ctl);border:0;background:var(--call);color:var(--call-ink);font-weight:600;cursor:pointer;transition:transform 150ms ease-out}
+.foolrow button:active{transform:scale(.96)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{min-height:32px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:12px;cursor:pointer}
+@media (hover:hover){.chips button:hover{background:var(--sunk)}}
+.verdict:empty{display:none}
+.verdict{padding:10px 12px;border-radius:var(--r-ctl);font-size:13px;line-height:1.45;text-wrap:pretty}
+.verdict b{display:block;font-size:14px;margin-bottom:2px}
+.verdict[data-result="booked"]{background:var(--go-soft);color:var(--go-text)}
+.verdict[data-result="not_booked"],.verdict[data-result="opted_out"]{background:var(--warn-soft);color:var(--warn-text)}
 .talk h2{font-size:16px;font-weight:650}
 .talk .sub{color:var(--ink-2);margin-top:-8px}
 .ghost{min-height:44px;padding:0 14px;border-radius:var(--r-ctl);border:1px solid var(--line);background:transparent;cursor:pointer;font-weight:550;transition:background-color 120ms ease-out,transform 150ms ease-out}
@@ -260,6 +283,7 @@ body[data-phase="needs"] .tv .devlabel{visibility:hidden}
     </div>
   </section>
 
+  <div class="side">
   <section class="talk" aria-label="Talk to Alexa">
     <h2>Talk to Alexa</h2>
     <p class="sub">You're Maya, at home.</p>
@@ -271,6 +295,24 @@ body[data-phase="needs"] .tv .devlabel{visibility:hidden}
     <button class="ghost endedonly" id="again" type="button">Start a new demo call</button>
     <p class="hint liveonly">Or hold to talk: “yes”, “offer one forty”, “no”.</p>
   </section>
+
+  <section class="fool" aria-labelledby="foolTitle">
+    <div class="foolhead">
+      <h2 id="foolTitle">Try to fool it</h2>
+      <div class="lang" role="group" aria-label="Language of the call">
+        <button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="es" aria-pressed="false">ES</button>
+      </div>
+    </div>
+    <p class="sub">You're the business. Ambient just read the deal back:</p>
+    <blockquote id="foolLine" data-en="Okay, so just to confirm, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?" data-es="Muy bien, para confirmar, ciento veinte dólares en total, el martes 20 a las 9 de la mañana. ¿Es correcto?">Okay, so just to confirm, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?</blockquote>
+    <form id="foolForm">
+      <label for="foolReply">Your answer</label>
+      <div class="foolrow"><input id="foolReply" maxlength="200" autocomplete="off" enterkeyhint="send" placeholder="Yes, plus parts." required><button type="submit">Answer</button></div>
+    </form>
+    <div class="chips" id="foolChips"></div>
+    <div class="verdict" id="foolVerdict" role="status" aria-live="polite"></div>
+  </section>
+  </div>
 </main>
 
 <script>
@@ -510,6 +552,42 @@ addEventListener("message", async e => {
   }
   reply({});
 });
+const FOOL = {
+  en: ["Yes, plus parts.", "Sure, one eighty.", "Yes, Wednesday at ten.", "Is that with tax?", "Yes, that's right."],
+  es: ["Sí, más IVA.", "Sí, pero el miércoles.", "¿Con IVA?", "Sí, correcto."]
+};
+const fool = { lang: "en" };
+const FOOL_HEAD = { booked: "Booked.", not_booked: "Not booked.", opted_out: "Call ended. Never called again." };
+function foolChips() {
+  $("foolChips").replaceChildren(...FOOL[fool.lang].map(text => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.textContent = text;
+    chip.onclick = () => { $("foolReply").value = text; answerFool(text); };
+    return chip;
+  }));
+}
+async function answerFool(reply) {
+  const box = $("foolVerdict");
+  const r = await fetch("/sim/api/fool", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ reply, language: fool.lang }) });
+  const result = r.ok ? await r.json() : null;
+  box.dataset.result = result?.result ?? "not_booked";
+  box.innerHTML = "<b></b><span></span>";
+  box.querySelector("b").textContent = result ? FOOL_HEAD[result.result] : "That didn't go through.";
+  box.querySelector("span").textContent = result ? result.why : "Try again.";
+}
+document.querySelectorAll(".lang button").forEach(button => button.onclick = () => {
+  fool.lang = button.dataset.lang;
+  document.querySelectorAll(".lang button").forEach(other => other.setAttribute("aria-pressed", String(other === button)));
+  $("foolLine").textContent = $("foolLine").dataset[fool.lang];
+  $("foolLine").lang = fool.lang;
+  $("foolReply").placeholder = FOOL[fool.lang][0];
+  $("foolVerdict").textContent = "";
+  foolChips();
+});
+$("foolForm").onsubmit = event => { event.preventDefault(); const reply = $("foolReply").value.trim(); if (reply) answerFool(reply); };
+foolChips();
+
 fetch("/sim/api/resource?uri=" + encodeURIComponent("ui://ambient/task")).then(r => r.ok ? r.json() : null).then(r => {
   if (r?.html) for (const f of frames) f.srcdoc = r.html;
 });

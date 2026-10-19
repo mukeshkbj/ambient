@@ -1,3 +1,5 @@
+import type { Verdict } from "./rules.js";
+
 export type Language = "en" | "es";
 
 export type Lines = {
@@ -71,12 +73,18 @@ const plain = (text: string) => text.normalize("NFKC").toLowerCase().replace(/[.
 const YES = /(?:^| )(?:sí|si|así es|correcto|exacto|de acuerdo|eso es|perfecto|claro que sí|claro|vale|está bien)(?= |$)/g;
 const COURTESY = new Set("gracias muchas muy bien está vale nos vemos hasta luego entonces señor señora listo adiós buenas perfecto".split(" "));
 
-export function agreesInSpanish(reply: string): boolean {
-  if (/[?¿]/.test(reply)) return false;
+export function spanishVerdict(reply: string): Verdict {
+  if (/[?¿]/.test(reply)) return { books: false, why: "It is a question." };
   const words = plain(reply);
-  if (words.split(" ").length > 10 || !YES.test(words)) return false;
+  if (words.split(" ").length > 10) return { books: false, why: "It is too long to be a clean yes." };
+  if (!YES.test(words)) return { books: false, why: "It has no word of agreement." };
   YES.lastIndex = 0;
-  return words.replace(YES, " ").split(" ").filter(Boolean).every(word => COURTESY.has(word));
+  const extra = words.replace(YES, " ").split(" ").filter(word => word && !COURTESY.has(word));
+  return extra.length === 0 ? { books: true } : { books: false, why: `It adds words that can change the deal: "${extra.join(" ")}".` };
+}
+
+export function agreesInSpanish(reply: string): boolean {
+  return spanishVerdict(reply).books;
 }
 
 const DAYS = "lunes martes miércoles jueves viernes sábado domingo hoy mañana pasado";

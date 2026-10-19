@@ -12,6 +12,10 @@ Three moments from the demo:
 2. **It asks you before it spends more.** The plumber quotes $180 against your $150 limit. The call holds, and the Echo Show asks: "Book $180", "Offer $150" or "Decline". The plumber counters at $160, so the Show asks you again.
 3. **It calls three plumbers at once, in two languages.** It books the cheapest quote under your limit and thanks the other two businesses. The cheapest plumber speaks Spanish, so Ambient books in Spanish while you read English on the Show.
 
+**Try to fool it yourself.** In the simulator, you can play the business. Type any answer to the read-back, in English or Spanish. The same call reducer that runs every call decides, and the panel says whether Ambient would book and why.
+
+<img src="docs/media/sim-fool.png" width="300" alt="The Try to fool it panel: Ambient's read-back of one hundred sixty dollars total, Tuesday the 20th at 10 am; the answer &quot;Yes, plus parts.&quot; is marked Not booked, because it adds words that can change the deal">
+
 ![Call around, simulated: three plumbers ring at once and quote $140, $125 and $120; Ambient books the $120 quote, which a Spanish-speaking plumber gave, in Spanish, and releases the other two](docs/media/around.gif)
 
 **Try it in one minute, with no keys:** run `pnpm install` and `pnpm demo`, then open http://127.0.0.1:3000/sim. With no local setup, open the repository in GitHub Codespaces instead. The container installs the project, starts the demo and opens `/sim`. Each Codespace has its own copy, so two judges never see each other's calls.
@@ -50,7 +54,7 @@ Three moments from the demo:
 
 ## Run it
 
-**Five-minute judge path:** run `pnpm demo`, open `/sim`, tap "Call Joe's Plumbing", and watch Ambient refuse "Yes, plus parts." Then tap "Start a new demo call" and "Get 3 quotes at once" to watch three calls run together. Then run `pnpm smoke:mcp`, `pnpm smoke:around`, `pnpm call:dry` and `pnpm scenarios`.
+**Five-minute judge path:** run `pnpm demo`, open `/sim`, tap "Call Joe's Plumbing", and watch Ambient refuse "Yes, plus parts." Then type your own answers into "Try to fool it". Then tap "Start a new demo call" and "Get 3 quotes at once" to watch three calls run together. Then run `pnpm smoke:mcp`, `pnpm smoke:around`, `pnpm call:dry` and `pnpm scenarios`.
 
 The demo needs no keys and no accounts. The business is simulated. Every action is a real MCP tool call. Measured on 2026-10-19 (Windows 11, warm pnpm store): `pnpm install` took 20 seconds from a fresh clone, and `pnpm demo` served `/sim` 2.5 seconds after it started. The first install on a cold store took 122 seconds.
 
