@@ -2,7 +2,7 @@
 
 This log lists the problems we hit while building Ambient for the Amazon Alexa "Build, Ship, Shape" hackathon. Every entry was reproduced or re-fetched on 2026-10-18 on one machine: Windows 11 Home 10.0.26300, Node v24.21.0. Each entry has a pasted capture or a verbatim quote with its URL. We deleted entries we could not reproduce.
 
-Time lost figures are estimates. We did not run a timer. The basis for each one is stated in the entry.
+We did not run a timer. Where git shows when a problem started and when it was fixed, the entry gives that span and says it is a span, not working time. Where git shows nothing, the entry says "not measured".
 
 ## Journey coverage
 
@@ -67,13 +67,13 @@ Each entry lists: tool and version, date, severity, steps to reproduce, expected
   ```
 
   Two conditions are both required: `enableJsonResponse: false` and `{ relatedRequestId: extra.requestId }` passed to `elicitInput`. Without the second, the SDK sends the request on a standalone GET stream. Our client never opened one, so the request has no route.
-- **Time lost (estimate):** About 3 hours. Basis: elicitation first landed in `5087aad` (2026-10-11 23:13). The simulator that exposed the hang landed in `c11f9b0` (2026-10-12 04:21). Both fixes needed their own debugging pass, and `fd17fa9` added `test/elicit-http.test.ts` for the second one.
+- **Time lost:** Not measured. Span from git: elicitation first landed in `5087aad` (2026-10-11 23:13), and the simulator that exposed the hang landed in `c11f9b0` (2026-10-12 04:21), about 5 hours later. Both fixes need SSE responses.
 - **Workaround:** `enableJsonResponse: false` (`src/server.ts:442`) and `{ relatedRequestId: requestId }` in `src/mcp.ts` (`fd17fa9`).
 - **Fix we ask for:** Make `elicitInput` throw, or reject its promise, when it has no stream to write to: a JSON-response transport, or no `relatedRequestId` and no standalone GET stream. Better: default `relatedRequestId` from the active request handler, so a call made inside a tool handler uses the tool call's stream.
 
-### 2. pnpm 10.33.0 and 12.14.0 on Windows: `VAR=value command` in a `package.json` script fails
+### 2. pnpm 10.33.0 on Windows: `VAR=value command` in a `package.json` script fails
 
-- **Tool and version:** pnpm 10.33.0 (the repo's `packageManager`) and pnpm 12.14.0 (the global install), Node v24.21.0, Windows 11 Home 10.0.26300.
+- **Tool and version:** pnpm 10.33.0 (the repo's `packageManager`), Node v24.21.0, Windows 11 Home 10.0.26300.
 - **Date:** 2026-10-18, fix `1ffda6a`.
 - **Severity:** Medium. The documented script syntax fails on Windows, and the error names the variable, not the cause.
 - **Steps:** In an empty directory, create this `package.json`, then run `pnpm demo`:
@@ -84,7 +84,7 @@ Each entry lists: tool and version, date, severity, steps to reproduce, expected
   ```
 
 - **Expected:** The script prints `127.0.0.1`, as it does on macOS and Linux.
-- **Actual:** Capture from pnpm 10.33.0 (pnpm 12.14.0 printed the same error):
+- **Actual:** Capture from pnpm 10.33.0:
 
   ```
   > repro@ demo C:\Users\mukes\AppData\Local\Temp\fr-pnpm-ps2
@@ -96,7 +96,7 @@ Each entry lists: tool and version, date, severity, steps to reproduce, expected
   ```
 
   pnpm runs scripts through `cmd.exe` on Windows. The judge path, `pnpm demo`, failed on its first command.
-- **Time lost (estimate):** About 10 minutes for this entry and the entry-point bug in "Our own bugs" together. Basis: `1ffda6a` (21:04) fixed both and followed `38aa26d` (20:59) by 5 minutes.
+- **Time lost:** Not measured. Span from git: `1ffda6a` (21:04) fixed this and the entry-point bug in "Our own bugs" 5 minutes after `38aa26d` (20:59).
 - **Workaround:** Move the variables to the committed file `demo.env` and run `tsx --env-file=demo.env src/server.ts` (`1ffda6a`). Node's `--env-file` works the same on every OS and adds no dependency.
 - **Fix we ask for:** When a script starts with a POSIX `VAR=value` assignment and the shell is `cmd.exe`, print one warning that names the problem and links to `script-shell`. Today the error names `AMBIENT_HOST` as a missing program.
 
@@ -107,7 +107,7 @@ Access date for every quote below: 2026-10-18.
 ### 3. Alexa+ MCP docs: three pages show three MCP protocol versions
 
 - **Tool and version:** Alexa+ MCP toolkit documentation, no version published. Pages accessed 2026-10-18.
-- **Date:** 2026-10-12, when we recorded the entry (`9fc671a`). No code change followed.
+- **Date:** 2026-10-18, when we re-read and quoted the three pages for this log. We first noted the conflict on 2026-10-12 (`9fc671a`).
 - **Severity:** Medium. A client and server can negotiate a version the platform does not support.
 - **Steps:** Open these three pages and search for the protocol version:
   1. https://developer.amazon.com/docs/alexaplus/add-ons/mcp-toolkit-client-lifecycle.html, section "MCP initialize request payload". The sample request contains `"protocolVersion": "2025-03-26",`.
@@ -115,7 +115,7 @@ Access date for every quote below: 2026-10-18.
   3. https://developer.amazon.com/docs/alexaplus/add-ons/mcp-toolkit-local-inspector, "Step 2: Initialize the MCP session". The `curl` example sends `"protocolVersion":"2025-06-18"`.
 - **Expected:** One version, or a statement that Alexa+ accepts the version the server answers with.
 - **Actual:** Three versions on three pages. No page says which version the real Alexa+ client sends. No error text exists, because the problem is in the docs.
-- **Time lost (estimate):** About 20 minutes. Basis: none in git. We read the three pages once and recorded the decision.
+- **Time lost:** Not measured.
 - **Workaround:** No code change. We confirmed that our server answers whatever the client asks for, from the SDK's supported list (`SUPPORTED_PROTOCOL_VERSIONS` in `node_modules/@modelcontextprotocol/sdk/dist/esm/types.js` holds `2025-11-25`, `2025-06-18`, `2025-03-26`, `2024-11-05`, `2024-10-07`). Capture from the script `negotiate.mts` (initialize against `McpServer` 1.30.0):
 
   ```
@@ -128,29 +128,29 @@ Access date for every quote below: 2026-10-18.
 ### 4. Alexa+ authentication page lists `WWW-Authenticate` as unsupported; the MCP specification requires clients to parse it
 
 - **Tool and version:** Alexa+ MCP toolkit documentation (no version published) and MCP specification 2025-11-25. Accessed 2026-10-18.
-- **Date:** 2026-09-16, when `bbe260a` added the OAuth metadata routes we rely on. We recorded the entry on 2026-10-12 (`9fc671a`).
+- **Date:** 2026-10-18, when we re-read and quoted both pages for this log. We first noted the conflict on 2026-10-12 (`9fc671a`).
 - **Severity:** Medium. A spec-compliant server may send a header the platform says it ignores, so auth discovery can fail.
 - **Steps:** Read both pages:
   1. https://developer.amazon.com/docs/alexaplus/add-ons/mcp-toolkit-authentication.html, section "What isn't supported", list item: "`WWW-Authenticate` headers in 401 responses".
   2. https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization, section "Protected Resource Metadata Discovery Requirements": "MCP servers **MUST** implement one of the following discovery mechanisms", then "WWW-Authenticate Header" or "Well-Known URI". The same section says: "MCP clients **MUST** be able to parse `WWW-Authenticate` headers and respond appropriately to `HTTP 401 Unauthorized` responses from the MCP server."
 - **Expected:** An Alexa+ client that follows the MCP specification, or a page that says which discovery method it uses.
 - **Actual:** The Alexa page says the header is unsupported. The specification says clients must parse it. The Alexa page does not say whether Alexa+ reads the well-known URI instead. It also says the client uses a service-level token for `initialize` and `tools/list`. No error text exists, because the problem is in the docs.
-- **Time lost (estimate):** About 30 minutes. Basis: none in git. We had to decide which discovery method to implement.
+- **Time lost:** Not measured.
 - **Workaround:** The server serves both well-known documents, `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server` (`src/server.ts:254` and `:258`, from `bbe260a`). `grep -rin www-authenticate src` finds nothing, so the server does not send the header. An earlier version of this log said it did. That was wrong. We have not tested either path against a live Alexa+ client.
 - **Fix we ask for:** State which discovery method Alexa+ uses for a self-hosted MCP server. Add one sentence to the "What isn't supported" list: what to implement in place of the header.
 
 ### 5. Alexa+ MCP Apps: `resourceUri` belongs in the tool response (Alexa) or the tool definition (MCP Apps specification)
 
 - **Tool and version:** Alexa+ MCP toolkit documentation (no version published) and MCP Apps specification `2026-01-26`. Accessed 2026-10-18.
-- **Date:** 2026-10-11, when `5087aad` first put `_meta.ui.resourceUri` on a tool result.
+- **Date:** 2026-10-18, when we re-read and quoted both documents for this log. The workaround dates from `5087aad` (2026-10-11).
 - **Severity:** Medium. One of the two placements fails silently on one host.
 - **Steps:** Read both pages:
   1. https://developer.amazon.com/docs/alexaplus/add-ons/mcp-toolkit-client-lifecycle.html, section "Resource handling and elicitation": "Alexa+ renders your custom visuals for your MCP App UI as long as you have `resourceUri` defined in the tool response."
   2. https://github.com/modelcontextprotocol/ext-apps/blob/main/specification/2026-01-26/apps.mdx, section "Resource Discovery": "Tools are associated with UI resources through the `_meta.ui` field:", and under Behavior: "If `ui.resourceUri` is present and host supports MCP Apps, host renders tool results using the specified UI resource". The same section deprecates the flat key: "The flat `_meta["ui/resourceUri"]` format is deprecated."
 - **Expected:** One location that both documents name.
 - **Actual:** Alexa documents the tool result. The MCP Apps specification documents the tool definition. We cannot tell which reader Alexa+ uses, and no client was available to test. No error text exists, because the problem is in the docs.
-- **Time lost (estimate):** About 1 hour. Basis: `docs/product-feedback.md` records about 2 hours to a working MCP App including the host side. We attribute half of that to this question.
-- **Workaround:** We emit `_meta.ui.resourceUri` on the tool result (`src/voice.ts:184`, `5087aad`) and register the `ui://ambient/task` resource. Our `/sim` host reads that field. It is our own host, so it does not prove what Alexa+ does.
+- **Time lost:** Not measured.
+- **Workaround:** We emit `_meta.ui.resourceUri` on the tool result (`runResult` in `src/voice.ts`, first in `5087aad`) and register the `ui://ambient/task` resource. Our `/sim` host reads that field. It is our own host, so it does not prove what Alexa+ does.
 - **Fix we ask for:** Publish a complete tools/list entry and tools/call result for one MCP App tool, and say which of them Alexa+ reads.
 
 ### 6. AssemblyAI Voice Agent API: the request sent to a bring-your-own LLM endpoint is not documented
@@ -167,7 +167,7 @@ Access date for every quote below: 2026-10-18.
 
 - **Expected:** The page describes the request AssemblyAI sends to our endpoint: whether the agent's system prompt is in `messages`, how history is shaped, the auth header, `stream` flags, timeouts, and whether `tools` are forwarded.
 - **Actual:** The page states only this about the call: "`base_url` | string | Yes | HTTPS base URL of the OpenAI-compatible endpoint. Must be `https` and a public host. The agent calls `POST {base_url}/chat/completions`." Its "Requirements & behavior" list adds: "The endpoint must accept `POST /chat/completions` in the OpenAI schema." and "Realtime voice needs token streaming, so the model must support streamed chat completions." Every `Authorization` header on the page belongs to a call to AssemblyAI. The page does not show the header AssemblyAI sends to us. The page also does not show the field that holds the new agent id in the create response.
-- **Time lost (estimate):** About 45 minutes. Basis: `reference-assemblyai.md` section 4 lists eight undocumented points. The defensive endpoint arrived in the same commit as the line (`41fb071`, 2026-10-18 21:55).
+- **Time lost:** Not measured. The defensive endpoint arrived in the same commit as the line (`41fb071`).
 - **Workaround:** The endpoint (`src/calls/assemblyai.ts`, `41fb071`) reads every `user` message, accepts string or part-array content, reads `agent_id` and then `id` from the create response, and streams OpenAI-shaped chunks. We have not logged a real request, because the line has not run against the live API.
 - **Fix we ask for:** Publish one recorded request and response for the bring-your-own LLM call, with headers and with `tools` present and absent.
 
@@ -204,8 +204,8 @@ Access date for every quote below: 2026-10-18.
   ```
 
   `events-reference.md` shows `reply.started` with `reply_id` and `item_id`. `message-sequence.md` shows `{ "type": "reply.started" }` with no fields. The example repository's `src/index.ts` line 35 reads `const AAI_AGENT_URL = process.env.AAI_AGENT_URL || "wss://agents.assemblyai.com/v1/realtime";`. The docs use `wss://agents.assemblyai.com/v1/ws`. We opened both paths with an unauthenticated WebSocket upgrade. Both answered `HTTP/1.1 101 Switching Protocols`, then the same frame: `{"code":"unauthorized","message":"Authentication failed","session_id":null,"param":null,"type":"session.error",...}`. So `/v1/realtime` is not retired. No page says whether it is an alias.
-- **Time lost (estimate):** About 20 minutes. Basis: none in git. We wrote the page code to accept both shapes.
-- **Workaround:** The business page reads `event.text ?? event.delta ?? ""` (`web/call/index.html:217`) and connects to `/v1/ws` (`web/call/index.html:186`), both in `41fb071`.
+- **Time lost:** Not measured.
+- **Workaround:** The business page reads `event.text ?? event.delta ?? ""` (the `transcript.user` handler in `web/call/index.html`) and connects to `wss://agents.assemblyai.com/v1/ws` (the answer handler in the same file), both since `41fb071`.
 - **Fix we ask for:** Generate both pages and the example repository from the AsyncAPI specification. State whether `/v1/realtime` is an alias of `/v1/ws`.
 
 ### 8. AssemblyAI Voice Agent API: a per-call greeting needs a new stored agent per call
@@ -219,7 +219,7 @@ Access date for every quote below: 2026-10-18.
   3. `events-reference.md`, row `session.agent_id`: "Bind a stored agent by ID. First `session.update` only, and mutually exclusive with the inline fields below."
 - **Expected:** We can bind a stored agent that has our `llm` and still set a per-call `greeting`. Every call must open with an exact disclosure that names the household member.
 - **Actual:** A session bound by `agent_id` cannot carry an inline `greeting`. The disclosure differs per call, so each call needs its own stored agent. The error code for a violation is `agent_id_not_first`, defined in `events-reference.md` as "`agent_id` was sent after the first `session.update`, or alongside inline fields in the same message". We did not trigger it, because we read the rule before coding.
-- **Time lost (estimate):** About 20 minutes. Basis: none in git. The cost that remains is one extra REST call before every call, plus a cleanup of the agent afterwards (`de30e8d`).
+- **Time lost:** Not measured. The cost that remains is one extra REST call before every call, plus a cleanup of the agent afterwards (`de30e8d`).
 - **Workaround:** One stored agent per call (`src/calls/rooms.ts`, `41fb071`). Retire it when the line ends (`de30e8d`).
 - **Fix we ask for:** Accept `greeting` and `system_prompt` in the same `session.update` as `agent_id`.
 
