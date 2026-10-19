@@ -1,6 +1,6 @@
 # Video script: Ambient, "Alexa, handle the call"
 
-Target: 2:21 by the per-beat budget below. The hard cap is 2:25, well under the 3:00 limit. English, public YouTube. No third-party music or trademarks. The final URL goes into `docs/submission.md` at [VIDEO URL].
+Target: 2:51 by the per-beat budget below. The hard cap is 2:55, under the 3:00 limit. English, public YouTube. No third-party music or trademarks. The final URL goes into `docs/submission.md` at [VIDEO URL].
 
 There is no phone dial-out in this version, so no real phone rings. The business answers on a web link that a phone browser opens like an incoming call.
 
@@ -28,8 +28,9 @@ The read time is an estimate: 3 spoken words per second, plus 0.3 seconds betwee
 | 6. The read-back and a refusal | 1:20 to 1:36 | 16 | 32 | 11.6 s, plus the uncut hold on the refusal |
 | 7. Read again, then the report | 1:36 to 1:55 | 19 | 52 of 64 | 18.5 s |
 | 8. The honest failure | 1:55 to 2:04 | 9 | 11 | 4.0 s, plus the second call and the card |
-| 9. How it works | 2:04 to 2:14 | 10 | 22 | 7.3 s |
-| 10. End card | 2:14 to 2:21 | 7 | 0 | 0 |
+| 9. Call around, one call in Spanish | 2:04 to 2:34 | 30 | 41 | 15.0 s, plus the board and the proof card |
+| 10. How it works | 2:34 to 2:44 | 10 | 22 | 7.3 s |
+| 11. End card | 2:44 to 2:51 | 7 | 0 | 0 |
 
 Beat 3 now has about 3.8 s of slack, because Joe's "Sure, we can come" line is cut by default. Beat 7 has the least slack. If a take runs long, cut Joe's "Fair enough" line in beat 7. If a take has room, restore Joe's "Sure, we can come" line in beat 3, which adds about 3.3 s and returns the estimate to 23.5 s.
 
@@ -65,6 +66,7 @@ Beat 3 now has about 3.8 s of slack, because Joe's "Sure, we can come" line is c
 - Ambient, to Joe: "One moment, let me check with Maya."
 - Echo Dot: "Joe's Plumbing wants one hundred eighty dollars for Tuesday the 20th at 10 am. Your limit is one hundred fifty dollars. Say yes to book it, offer a price like one fifty, or say no."
 - Echo Show card: "Fix the kitchen sink", "$180 · Tuesday the 20th at 10 am", "$30 over your $150 limit", with "Book $180 · Tells them yes", "Offer $150 · Your limit", and "Decline · Ambient hangs up" (`docs/media/sim-card-hero.png`). Show the card while the Echo Dot speaks.
+- Fire TV: the film pauses and dims, "Film paused · the call needs you", with "Over your limit $180" in the corner (`docs/media/sim-needs-you.png`).
 - Needs: HW for the Echo. The card renders in `/sim` without hardware.
 
 ### 5. The owner counters, and Joe counters back (0:55 to 1:20)
@@ -97,7 +99,7 @@ Beat 3 now has about 3.8 s of slack, because Joe's "Sure, we can come" line is c
 - Joe: "Yes, that's right. See you then."
 - Ambient: "Great, that's set for Tuesday the 20th at 10 am. Thanks so much, bye." **CUT**
 - Alexa: "Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars."
-- Echo Show: the check draws itself; the card reads "Booked · confirmed by Joe's Plumbing" and says Ambient read back the total and the time (`docs/media/sim-confirmed.png`).
+- Echo Show: the check draws itself; the card reads "Booked · confirmed by Joe's Plumbing" and quotes the read-back and Joe's "Yes, that's right. See you then." with their times (`docs/media/sim-confirmed.png`). Tap "Hear them say yes" to replay both lines; in the simulator it replays the transcript, not a recording.
 
 ### 8. The honest failure (1:55 to 2:04)
 
@@ -106,14 +108,26 @@ Beat 3 now has about 3.8 s of slack, because Joe's "Sure, we can come" line is c
 - Echo Show: "Not booked" and "Nothing was booked.", with Joe's last words quoted under "Last from Joe's Plumbing" (`docs/media/sim-unconfirmed.png`).
 - Needs: none on the sim path.
 
-### 9. How it works (2:04 to 2:14)
+### 9. Call around, one call in Spanish (2:04 to 2:34)
+
+- Owner: "Alexa, get quotes from plumbers to fix the kitchen sink, under 150." Or tap "Get 3 quotes at once".
+- Echo Show: "Call all three at once?" Tap "Call all three" (`docs/media/around-ask.png`).
+- Echo Show: three tiles ring, then go to "On the phone"; quotes land as $140, $125 and $120 (`docs/media/around-quotes.png`). Hold on the board for about 3 s.
+- Ambient, to Plomería Ruiz: "Muy bien, para confirmar, ciento veinte dólares en total, el martes 20 a las 9 de la mañana. ¿Es correcto?" Caption: **"The cheapest plumber speaks Spanish. Ambient discloses, reads back and books in Spanish."**
+- Plomería Ruiz: "Sí, correcto."
+- Ambient, to Pete's Pipes: "Thanks so much for the quote. Maya is going with another option this time. Bye." **CUT**
+- Alexa: "Plomería Ruiz confirmed Tuesday the 20th at 9 am for one hundred twenty dollars."
+- Echo Show: "Cheapest of 3 quotes ($140 passed, $125 passed), within your $150 limit." with the Spanish read-back and its English line (`docs/media/around-booked.png`, `docs/media/around.gif`).
+- Needs: none on the sim path (`pnpm smoke:around` checks it). A live run would need three business links answered at once.
+
+### 10. How it works (2:34 to 2:44)
 
 - Screen: `docs/media/architecture.png`.
 - Voiceover (22 words): "One pure function decides every word Ambient says on the call. Alexa reaches it through MCP. AssemblyAI carries the voice. Claude thinks."
 - On-screen caption for the whole beat: **"This demo run is simulated. The live voice line and the Claude brain are built but not yet run live."** The voiceover describes the design. In the demo run, neither AssemblyAI nor Claude executes.
 - Needs: none.
 
-### 10. End card (2:14 to 2:21)
+### 11. End card (2:44 to 2:51)
 
 - Screen: "Ambient. Alexa, handle the call." and the repo URL [PUBLIC REPO URL].
 - Needs: none.
