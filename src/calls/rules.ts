@@ -126,12 +126,21 @@ export function plainTime(when: string): boolean {
 const CLOCK_LEAD = new Set("at around about by from to between and until after before past".split(" "));
 const CLOCK_TAIL = new Set(["am", "pm"]);
 
+const DATE_JOIN = new Set(["and", "to", "through"]);
+
+function beforeMonth(tokens: string[], at: number): boolean {
+  let next = at + 1;
+  while (next < tokens.length && (/^\d+$/.test(tokens[next]!) || DATE_JOIN.has(tokens[next]!))) next += 1;
+  return MONTHS.has(tokens[next] ?? "");
+}
+
 function clockGroups(when: string): string[] {
-  const tokens = timeKey(when).split(" ");
+  const tokens = timeKey(when.replace(/\b(\d{1,2}):(\d{2})\b/g, "at $1 $2")).split(" ");
   const groups: string[][] = [[]];
   tokens.forEach((token, at) => {
     const group = groups.at(-1)!;
-    const clock = /^\d+$/.test(token) && (group.length > 0 || CLOCK_LEAD.has(tokens[at - 1] ?? "") || CLOCK_TAIL.has(tokens[at + 1] ?? ""));
+    const marked = group.length > 0 || CLOCK_LEAD.has(tokens[at - 1] ?? "") || CLOCK_TAIL.has(tokens[at + 1] ?? "");
+    const clock = /^\d+$/.test(token) && marked && !MONTHS.has(tokens[at - 1] ?? "") && !beforeMonth(tokens, at);
     if (clock) group.push(token);
     else if (group.length > 0) groups.push([]);
   });

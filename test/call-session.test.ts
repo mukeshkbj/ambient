@@ -898,3 +898,26 @@ describe("round 17 review findings", () => {
     }
   );
 });
+
+describe("round 18 review findings", () => {
+  it.each(["from 20 October at 10 AM", "from 20 October to 22 October", "until 20 October at 10", "by 20 October 3 PM", "after 20 October at 10", "before 20 Oct at 10", "between 20 and 22 October at 10 AM"])(
+    "does not book a date number that a time word leads: Yes, twenty for %s",
+    when => {
+      expect(agreesTo("Yes, twenty.", `one hundred fifty dollars total, ${when}`, 150, when)).toBe(false);
+    }
+  );
+
+  it.each([["Yes, ten thirty.", "Tuesday 10:30 AM", true], ["Yes, thirty.", "Tuesday 10:30 AM", false], ["Yes, ten thirty.", "10:30 AM Tuesday", true], ["Yes, ten thirty.", "October 20 10:30", true], ["Yes, twenty.", "October 20 10:30", false]] as const)(
+    "reads a clock with minutes as one time: %s for %s is %s",
+    (reply, when, books) => {
+      expect(agreesTo(reply, `one hundred fifty dollars total, ${when}`, 150, when)).toBe(books);
+    }
+  );
+});
+
+describe("time display", () => {
+  it("writes a.m. as am in the read-back and the report", () => {
+    const { state } = play([answered, heard("It's 100"), confirm(100, "ok", "Tuesday at 10 a.m."), ...yes], undefined, { ...brief, maxUsd: 300 });
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", when: "Tuesday at 10 am", summary: "Joe's Plumbing confirmed Tuesday at 10 am for one hundred dollars." } });
+  });
+});

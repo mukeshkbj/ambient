@@ -182,7 +182,7 @@ function brainStep(state: CallState, brain: BrainStep, now: string): Transition 
 }
 
 function confirm(state: CallState, proposed: Confirmed, now: string): Transition {
-  const outcome = proposed.when ? { ...proposed, when: proposed.when.replace(/\.+$/, "") } : proposed;
+  const outcome = proposed.when ? { ...proposed, when: proposed.when.replace(/\b([ap])\.m\b\.?/gi, "$1m").replace(/\.+$/, "") } : proposed;
   const { brief } = state;
   const owner = brief.ownerName;
   if (outcome.when !== undefined && !plainTime(outcome.when)) {
