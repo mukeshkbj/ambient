@@ -176,9 +176,11 @@ body[data-phase="needs"] .tv .devlabel{visibility:hidden}
 
 @media (max-width:1180px){
   main{grid-template-columns:minmax(0,1fr) 280px}
-  .kitchen{grid-column:1 / -1;order:3;min-height:auto}
-  body[data-phase="needs"] .kitchen,body[data-phase="ended"] .kitchen{order:-1}
+  .kitchen{grid-column:1 / -1;order:-1;min-height:auto}
   .call{min-height:560px}
+}
+@media (min-width:761px) and (max-width:1180px){
+  .show8{align-self:center;width:auto;height:min(60vh,560px);max-width:100%}
 }
 @media (max-width:760px){
   header{flex-wrap:wrap}
@@ -189,9 +191,16 @@ body[data-phase="needs"] .tv .devlabel{visibility:hidden}
   .room{grid-template-columns:1fr}
   .show8{min-height:560px;aspect-ratio:auto}
   body[data-phase="ended"] .show8{min-height:460px}
+  body[data-ending="booked"] .show8{min-height:360px}
   .kitchen{min-height:auto}
-  body[data-phase="needs"] .kitchen,body[data-phase="ended"] .kitchen{order:-1}
-  body[data-phase="needs"] .dot{display:none}
+}
+@media (max-width:480px){
+  .outcome.show{display:none}
+  body[data-ending="not"] .said{display:none}
+}
+@media (max-width:340px){
+  .callhead{padding-inline:8px}
+  .sim{white-space:nowrap;font-size:11px}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none !important;transition:none !important;scroll-behavior:auto !important}
@@ -350,6 +359,7 @@ function render() {
   const phase = !t ? "idle" : ap ? "needs" : TERMINAL.has(t.status) ? "ended" : "live";
   document.body.dataset.phase = phase;
   document.body.dataset.connected = String(connected);
+  document.body.dataset.ending = o?.kind === "confirmed" ? "booked" : o || t?.status === "cancelled" ? "not" : "";
   $("biz").textContent = biz;
   $("avatar").textContent = initials(biz);
   $("callstate").innerHTML = !t ? "Not called yet" : phase === "needs" ? "<b>On hold for Maya</b>" : phase === "ended" ? (t.status === "cancelled" ? "You ended the call" : "Call ended") : connected ? "On the phone" : "Ringing…";

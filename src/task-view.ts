@@ -88,7 +88,11 @@ body[data-device="tv"] .tvline{display:block}
 @media (max-width:480px){
  body:not([data-device="tv"]){font-size:15px;padding:24px 20px 32px;gap:12px;overflow:auto;justify-content:flex-start}
  body:not([data-device="tv"]) .stake{font-size:2.1em}
- body:not([data-device="tv"]) .stake.long{font-size:1.6em}
+ body:not([data-device="tv"]) .stake.long{font-size:2.2em}
+ body:not([data-device="tv"]) .stake:has(.sep){font-size:3em}
+ body:not([data-device="tv"]) .stake:has(.sep) .when{font-size:20px;font-weight:600;margin-top:.15em}
+ body.booked:not([data-device="tv"]) .chip{font-size:12px;letter-spacing:.02em}
+ body.booked:not([data-device="tv"]) .check{width:1.4em;height:1.4em}
  body:not([data-device="tv"]) .over{margin-top:-.2em}
  body:not([data-device="tv"]) .flag{font-size:13px;margin-top:-.2em}
  body:not([data-device="tv"]) .actions{flex-direction:column;align-items:stretch;gap:8px}
@@ -96,10 +100,9 @@ body[data-device="tv"] .tvline{display:block}
  body:not([data-device="tv"]) .hint{font-size:13px}
  body:not([data-device="tv"]) .foot{grid-template-columns:1fr;font-size:14px;gap:2px}
  body[data-state="needs"]:not([data-device="tv"]) .actions{grid-auto-flow:row}
- body[data-state="done"]:not([data-device="tv"]){justify-content:flex-start}
+ body[data-state="done"]:not([data-device="tv"]){justify-content:safe center}
 }
-@media (max-width:340px){
- body:not([data-device="tv"]) .stake.long{font-size:1.2em}
+@media (max-width:300px){
  body:not([data-device="tv"]) .actions button:not(.quiet) small{display:none}
  body:not([data-device="tv"]) .actions button.quiet small{font-size:12px}
 }
@@ -148,6 +151,7 @@ function ownerSaid(line,biz){if(!line)return "";const decided=/^(Approved|Declin
  const offer=/^offer\\s+\\$?(\\d+)/i.exec(line.text);return offer?"You offered "+usd(offer[1])+". Waiting for "+biz+".":"You told them: \\u201c"+cap(line.text)+"\\u201d";}
 function setStake(amount,when){const el=$("stake");el.classList.toggle("long",String(when||"").length>16);
  el.innerHTML=amount===undefined?'<span class="when">'+esc(when)+'</span>':esc(usd(amount))+'<span class="sep"> \\u00b7 </span><span class="when">'+esc(when)+'</span>';}
+const plain=s=>{$("stake").textContent=s;$("stake").classList.toggle("long",s.length>16);};
 let shown="";
 function render(d){
  clearInterval(tick);
@@ -185,7 +189,7 @@ function render(d){
   chip.textContent=ok?(dated(o.when)?"Booked \\u00b7 confirmed by "+biz:"Booked \\u00b7 date still open"):"Not booked";
   if(ok){$("what").textContent=what?biz+" \\u00b7 "+what:biz;setStake(o.amountUsd,cap(o.when||biz));
    if(!dated(o.when)){flag.className="flag date";flag.textContent=(/\\b(?:mon|tues|wednes|thurs|fri|satur|sun)day\\b/i.test(o.when||"")?"Only the weekday was given":"No date was given")+" \\u00b7 ask "+biz+" for the date";}}
-  else{stake.textContent="Nothing was booked.";$("what").textContent=[biz,what,limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");}
+  else{plain("Nothing was booked.");$("what").textContent=[biz,what,limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");}
   const readBack=said.some(l=>l.who==="Ambient"&&/\\bIs that right\\?$/.test(l.text));
   sub.textContent=ok?(theirs?(readBack?"Ambient read back the total and the time. "+biz+" said \\u201c"+theirs.text+"\\u201d":"In their words: \\u201c"+theirs.text+"\\u201d"):"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed.":cap(o.reason).replace(/\\.+$/,"")+".";
   const mine=said.filter(l=>l.who!=="Ambient"&&l.who!==biz);
@@ -195,7 +199,7 @@ function render(d){
  else if(live){chip.className="chip";
   const offered=owner?/^offer\\s+\\$?(\\d+)/i.exec(owner.text):null;
   $("what").textContent=[what,offered&&limitOf(t.instruction)!=="limit "+usd(offered[1])?limitOf(t.instruction)+" \\u00b7 you offered "+usd(offered[1]):limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");
-  stake.textContent=biz;
+  plain(biz);
   const ai=said.findLastIndex(l=>l.who==="Ambient"&&/dollars|total/.test(l.text)),asked=said[ai],bi=said.findLastIndex(l=>l.who===biz);
   const again=asked&&bi>=0&&ai>bi&&ai>said.findLastIndex(l=>l.who!=="Ambient"&&l.who!==biz);
   chip.textContent=connected?again&&/total/.test(asked.text)?"On the phone \\u00b7 checking the total":"On the phone":"Calling";
@@ -203,7 +207,7 @@ function render(d){
   const began=Date.parse(t.createdAt||"");
   const tickCall=()=>{$("clock").textContent=connected&&Number.isFinite(began)?clock(Date.now()-began):"";};
   tickCall();tick=setInterval(tickCall,1000);}
- else{chip.className="chip idle";chip.textContent="Ready";stake.textContent="Nobody wants to make this call.";
+ else{chip.className="chip idle";chip.textContent="Ready";plain("Nobody wants to make this call.");
   sub.textContent="Ambient makes it for you. It says it is an AI, and it asks you before it spends over your limit.";
   $("what").textContent="Fix the kitchen sink \\u00b7 limit $150";
   buttons([{label:"Call Joe's Plumbing",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);
