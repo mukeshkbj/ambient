@@ -84,7 +84,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       if (phase.kind === "waiting_for_owner") {
         if (phase.lastHoldLine !== phase.since && !(Date.parse(now) - Date.parse(phase.lastHoldLine) >= HOLD_LINE_MS)) return { state: heard, effects: [] };
         const line = holdLine(state);
-        return { state: { ...withTurn(heard, "agent", line, now), phase: { ...phase, lastHoldLine: now } }, effects: [say(line)] };
+        return { state: { ...withTurn(heard, "agent", line, now), phase: { ...phase, lastHoldLine: now }, disclosed: true }, effects: [say(line)] };
       }
       if (!state.disclosed) return think(heard, now);
       if (state.readBack && !state.readBack.armed) {
@@ -123,6 +123,11 @@ function transition(state: CallState, input: CallInput, now: string): Transition
     }
     case "brain":
       if (phase.kind !== "talking" || input.turn !== state.turn) return unchanged(state);
+      if (!state.disclosed) {
+        const line = disclosure(brief.ownerName);
+        const next = brainStep({ ...withTurn(flushDraft(state, now), "agent", line, now), disclosed: true }, input.step, now);
+        return { state: next.state, effects: [say(line), ...next.effects] };
+      }
       return brainStep(state, input.step, now);
     case "owner_said": {
       const offer = offerIn(input.text);
@@ -153,7 +158,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       }
       if (!(elapsed(phase.lastHoldLine) >= HOLD_LINE_MS)) return unchanged(state);
       const line = holdLine(state);
-      return { state: { ...withTurn(state, "agent", line, now), phase: { ...phase, lastHoldLine: now } }, effects: [say(line)] };
+      return { state: { ...withTurn(state, "agent", line, now), phase: { ...phase, lastHoldLine: now }, disclosed: true }, effects: [say(line)] };
     }
   }
 }
@@ -206,7 +211,8 @@ function confirm(state: CallState, outcome: Confirmed, now: string): Transition 
   const when = outcome.when ? `, ${outcome.when}` : "";
   const terms = charge !== undefined ? `${price(charge)} total${when}` : `no price is set${when}`;
   const line = `${READ_BACK_OPENERS[state.readBacksSpoken % READ_BACK_OPENERS.length]} ${terms}. Is that right?`;
-  const summary = chargedIn(outcome.summary).every(amount => amount === charge) ? outcome.summary : `${brief.business.name} confirmed ${terms}.`;
+  const agreed = [outcome.when, charge !== undefined ? `for ${price(charge)}` : outcome.when ? "with no price set" : "with no price or time set"].filter(Boolean).join(" ");
+  const summary = `${brief.business.name} confirmed ${agreed}.`;
   const settled = { ...outcome, summary, ...(charge !== undefined ? { amountUsd: charge } : {}) };
   return { state: { ...withTurn(flushed, "agent", line, now), readBack: { outcome: settled, line, terms, armed: false, earlyYes: false }, readBacks: state.readBacks + 1, readBacksSpoken: state.readBacksSpoken + 1 }, effects: [say(line)] };
 }
@@ -263,6 +269,7 @@ function end(state: CallState, outcome: CallOutcome, effects: CallEffect[]): Tra
 
 function holdLine(state: CallState): string {
   const owner = state.brief.ownerName;
+  if (!state.disclosed) return disclosure(owner);
   const lines = [`Still checking with ${owner}, thanks for holding.`, `Thanks for holding, ${owner} hasn't answered yet.`];
   return lines[state.turns.filter(turn => turn.speaker === "agent" && lines.includes(turn.text)).length % lines.length]!;
 }

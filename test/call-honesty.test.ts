@@ -32,6 +32,7 @@ const OWNER: ReadonlyArray<(n: number) => [string, number | undefined]> = [
   n => [`offer $${n}`, n], n => [`tell them ${n} works`, n], n => [`go to ${n} dollars`, n], n => [`${n}`, undefined],
   n => [`don't pay ${n}`, undefined], n => [`is ${n} okay?`, undefined], n => [`okay ${n}`, undefined], () => ["wait a moment", undefined]
 ];
+const SUMMARIES = ["Booked", "Booked for 500", "Booked for five hundred", "Booked Wednesday at noon for $100", "Booked Tuesday at ten, 500 total"] as const;
 const AGENT = ["Okay. The address is 12 Elm Street.", "Could you do it for less?", "What time works?"] as const;
 
 type Reply = { text: string; clean: boolean };
@@ -55,17 +56,31 @@ function playCall(seed: number) {
   let clock = 0;
   const replies: Reply[] = [];
   const approved: Array<{ amount: number | undefined; when: string | undefined }> = [];
+  const undisclosed: string[] = [];
+  let played = false;
+  let owed = false;
   const run = (input: CallInput) => {
     clock += 1000;
+    const before = state.turns.length;
     const resolved = input.kind === "brain" ? { ...input, turn: state.turn } : input;
     state = step(state, resolved, new Date(Date.UTC(2026, 9, 20, 17) + clock).toISOString()).state;
+    const spoken = state.turns.slice(before).find(turn => turn.speaker === "agent");
+    if (owed && spoken) {
+      if (spoken.text !== disclosure("Maya")) undisclosed.push(spoken.text);
+      owed = false;
+    }
+    if (input.kind === "interrupted" && !played) owed = true;
+    if (input.kind === "played" && input.text.includes(disclosure("Maya"))) played = true;
   };
+  const cut = () => run({ kind: "interrupted", spokenSoFar: pick(["Hi,", "Hi, this", "Just to"]) });
   run({ kind: "answered" });
-  const cut = next() < 0.2;
-  if (cut) run({ kind: "interrupted", spokenSoFar: "Hi," });
+  if (next() < 0.5) run({ kind: "played", text: disclosure("Maya") });
+  if (next() < 0.2) cut();
   run({ kind: "heard", text: pick(QUOTES)(quoted) });
   for (let round = 0; round < 6 && state.phase.kind !== "ended"; round += 1) {
+    if (next() < 0.1) cut();
     if (state.phase.kind === "waiting_for_owner") {
+      if (next() < 0.3) run({ kind: "heard", text: "Hello? Are you still there?" });
       const approve = next() < 0.5;
       if (approve) approved.push({ amount: state.phase.amountUsd, when: state.phase.when });
       run({ kind: "owner_decided", requestId: state.phase.requestId, decision: approve ? "once" : "deny" });
@@ -97,9 +112,9 @@ function playCall(seed: number) {
     if (next() < 0.4) run({ kind: "heard", text: pick(NOT_YES) });
     const claim = pick([undefined, quoted, Math.max(1, quoted - 60), 12, quoted + 40]);
     const when = pick([undefined, "Tuesday at ten thirty", "Tuesday at ten forty-five", "Wednesday at six"]);
-    run({ kind: "brain", turn: 0, step: { kind: "end_call", outcome: { kind: "confirmed", summary: "Booked", ...(claim !== undefined ? { amountUsd: claim } : {}), ...(when ? { when } : {}) } } });
+    run({ kind: "brain", turn: 0, step: { kind: "end_call", outcome: { kind: "confirmed", summary: pick(SUMMARIES), ...(claim !== undefined ? { amountUsd: claim } : {}), ...(when ? { when } : {}) } } });
   }
-  return { state, limit, replies, approved, cut };
+  return { state, limit, replies, approved, undisclosed };
 }
 
 describe("honesty over generated calls", () => {
@@ -107,10 +122,8 @@ describe("honesty over generated calls", () => {
     const failures: string[] = [];
     let booked = 0;
     for (let seed = 1; seed <= 4000; seed += 1) {
-      const { state, limit, replies, approved, cut } = playCall(seed);
-      const firstFull = state.turns.findIndex((turn, at) => turn.speaker === "agent" && (!cut || at > 0));
-      const first = state.turns[firstFull];
-      if (first && first.text !== disclosure("Maya")) failures.push(`seed ${seed}: the agent spoke before a full disclosure`);
+      const { state, limit, replies, approved, undisclosed } = playCall(seed);
+      if (undisclosed.length > 0) failures.push(`seed ${seed}: after a cut disclosure the agent said "${undisclosed[0]}" first`);
       if (state.phase.kind !== "ended" || state.phase.outcome.kind !== "confirmed") continue;
       booked += 1;
       const amount = state.phase.outcome.amountUsd;
@@ -126,6 +139,7 @@ describe("honesty over generated calls", () => {
       if (reply?.speaker !== "business") fail("the booking did not follow a business reply");
       if (!readBack) fail("no read-back before the booking");
       else if (amount !== undefined && !amountsIn(readBack.text.split(" total")[0] ?? "").includes(amount)) fail(`booked ${amount}, which the read-back did not say`);
+      if (readBack && amountsIn(state.phase.outcome.summary).some(value => !amountsIn(readBack.text).includes(value))) fail(`reported "${state.phase.outcome.summary}", which the read-back did not say`);
       if (replies.at(-1)?.clean !== true || reply?.text !== replies.at(-1)?.text) fail("booked without a clean yes");
       const when = state.phase.outcome.when;
       const allowed = approved.some(grant => grant.amount === amount && (grant.when === undefined || grant.when === when));

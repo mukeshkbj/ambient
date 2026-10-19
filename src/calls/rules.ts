@@ -168,9 +168,10 @@ export function agreesTo(reply: string, terms: string, amountUsd: number | undef
   const numbers = [...amountsIn(when ?? ""), ...(amountUsd !== undefined ? [amountUsd] : [])];
   if (!chargedIn(words.replaceAll("|", " ")).every(charge => charge === amountUsd)) return false;
   const runs = numberRuns(words.split(" ").flatMap(token => token.split("-").filter(Boolean)));
+  const clocks = timeKey(when ?? "").split(/\s*[a-z'][a-z']*\s*/).map(group => group.trim()).filter(Boolean);
   if (!runs.every(run => {
     const values = amountsIn(run.join(" "));
-    return values.length === 1 && numbers.includes(values[0]!);
+    return (values.length === 1 && numbers.includes(values[0]!)) || clocks.includes(timeKey(run.join(" ")));
   })) return false;
   if (/\b(?:is|was) (?:that|it) (?:right|correct|ok|okay)\b/.test(words.replaceAll("|", " "))) return false;
   const clauses = plainWords(terms).split("|").map(clause => clause.split(" ").filter(Boolean));

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { startCall, step, type CallState } from "../src/calls/session.js";
 import {
+  agreesTo,
   amountsIn,
   chargedIn,
   checkDialLimits,
@@ -757,5 +758,45 @@ describe("round 12 review findings", () => {
   it("does not repeat a disclosure that finished playing", () => {
     const { effects } = play([answered, { kind: "played", text: disclosure("Maya") }, heard("Hello?"), say("I'd like to book", false), { kind: "interrupted", spokenSoFar: "I'd like" }, heard("Sorry, who?")]);
     expect(spoken(effects)).not.toContain(disclosure("Maya"));
+  });
+});
+
+describe("round 13 review findings", () => {
+  const approve = (state: CallState) => play([{ kind: "owner_decided", requestId: requestOf(state), decision: "once" }], state);
+  const outcomeOf = (state: CallState) => (state.phase.kind === "ended" ? state.phase.outcome : undefined);
+
+  it.each(["Booked for 500", "Booked for five hundred", "Booked Tuesday at ten, 500 total", "Booked for 100 plus 400 in parts", "Booked Wednesday at noon for $100"])(
+    "reports the read-back terms, not the brain's summary \"%s\"",
+    summary => {
+      const { state } = play([answered, heard("It's 100"), confirm(100, summary, "Tuesday at ten"), ...yes]);
+      expect(outcomeOf(state)).toMatchObject({ kind: "confirmed", amountUsd: 100, when: "Tuesday at ten", summary: "Joe's Plumbing confirmed Tuesday at ten for one hundred dollars." });
+    }
+  );
+
+  it("reports no price when the owner approved a deal with no price", () => {
+    const asked = play([answered, heard("Tuesday works"), confirm(undefined, "Booked Tuesday for 500", "Tuesday at ten")]);
+    const { state } = play([...yes], play([confirm(undefined, "Booked Tuesday for 500", "Tuesday at ten")], approve(asked.state).state).state);
+    expect(outcomeOf(state)).toMatchObject({ kind: "confirmed", summary: "Joe's Plumbing confirmed Tuesday at ten with no price set." });
+  });
+
+  it("repeats a cut disclosure before a hold line", () => {
+    const asked = play([answered, heard("It's 300"), confirm(300)]);
+    const { state, effects } = play([{ kind: "interrupted", spokenSoFar: "Hi, this" }, heard("Hello? Are you there?")], asked.state);
+    expect(spoken(effects)).toEqual([disclosure("Maya")]);
+    expect(state.disclosed).toBe(true);
+  });
+
+  it("repeats a cut disclosure before a timed hold line", () => {
+    const asked = play([answered, [heard("It's 300"), 1000], [confirm(300), 2000]]);
+    const cut = play([[{ kind: "interrupted", spokenSoFar: "Hi, this" }, 3000]], asked.state);
+    expect(spoken(play([[{ kind: "hold_tick" }, 2000 + HOLD_LINE_MS]], cut.state).effects)).toEqual([disclosure("Maya")]);
+  });
+
+  it.each(["Yes, Tuesday at ten thirty.", "Yes, ten thirty.", "Yes, 10:30."])("accepts an echo of a spoken clock time: %s", reply => {
+    expect(agreesTo(reply, "one hundred dollars total, Tuesday at ten thirty", 100, "Tuesday at ten thirty")).toBe(true);
+  });
+
+  it.each(["Yes, thirty.", "Yes, ten forty-five.", "Yes, eleven thirty."])("does not accept part of a clock time or another time: %s", reply => {
+    expect(agreesTo(reply, "one hundred dollars total, Tuesday at ten thirty", 100, "Tuesday at ten thirty")).toBe(false);
   });
 });
