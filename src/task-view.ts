@@ -36,7 +36,8 @@ button:focus-visible{outline:2px solid var(--call);outline-offset:3px}
 .clock:empty{display:none}
 .what{font-size:1em;font-weight:600;margin-bottom:-.5em;text-wrap:balance}
 .what:empty{display:none}
-.sep{color:var(--dim)}
+.sep{display:none}
+.when{display:block}
 .check{display:none;width:2.2em;height:2.2em;border-radius:50%;background:var(--done);color:var(--bg);place-items:center}
 .check svg{width:62%;height:62%;fill:none;stroke:currentColor;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:24;stroke-dashoffset:0}
 body.booked .chip::before{display:none}
@@ -63,6 +64,8 @@ body.booked .check path{animation:draw 600ms 180ms cubic-bezier(0.2,0,0,1) both}
 .actions button.offer{background:transparent;box-shadow:inset 0 0 0 1.5px oklch(1 0 0 / .4)}
 .actions button.quiet{background:transparent;color:var(--stop);padding:0 .8em;box-shadow:inset 0 0 0 1.5px oklch(0.68 0.20 25 / .45)}
 body[data-state="live"]:not([data-device="tv"]),body[data-state="done"]:not([data-device="tv"]){justify-content:center}
+body[data-state="needs"]:not([data-device="tv"]){justify-content:flex-start}
+@media (min-width:481px){body[data-state="needs"]:not([data-device="tv"]){padding-top:4.5vw;gap:1.5vw}}
 body[data-state="needs"]:not([data-device="tv"]) .actions{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);align-items:stretch}
 body[data-state="needs"] .actions button{padding-inline:.6em;min-height:max(56px,2.9em);min-width:44px}
 .actions button small{display:block;font-size:max(13px,.8em);font-weight:500;text-wrap:balance}
@@ -71,7 +74,7 @@ body[data-state="needs"] .actions button{padding-inline:.6em;min-height:max(56px
 .actions button:active{transform:scale(.97)}
 .hint{font-size:max(15px,.72em);color:oklch(0.86 0.01 255)}
 .hint:empty{display:none}
-.foot{margin-top:1em;display:grid;grid-template-columns:minmax(0,max-content) 1fr;gap:.45em .8em;align-content:start;border-top:1px solid var(--faint);padding-top:.9em;font-size:max(13px,.72em);color:var(--dim)}
+.foot{margin-top:1em;margin-bottom:1.2em;display:grid;grid-template-columns:minmax(0,max-content) 1fr;gap:.45em .8em;align-content:start;border-top:1px solid var(--faint);padding-top:.9em;font-size:max(13px,.72em);color:var(--dim)}
 .foot:empty{display:none}
 .line{display:contents}
 .line b{font-weight:600;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -79,13 +82,13 @@ body[data-state="needs"] .actions button{padding-inline:.6em;min-height:max(56px
 body[data-device="tv"]{font-size:clamp(12px,6vw,40px);padding:0 7vw;gap:0;justify-content:center}
 body[data-device="tv"] .top,body[data-device="tv"] .what,body[data-device="tv"] .over,body[data-device="tv"] .flag,body[data-device="tv"] .foot,body[data-device="tv"] .sub,body[data-device="tv"] .hint,body[data-device="tv"] .actions{display:none}
 body[data-device="tv"] .stake{font-size:1.15em;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body[data-device="tv"] .when,body[data-device="tv"] .sep{display:none}
 body[data-device="tv"] .tvline{display:block}
 .tvline{display:none;font-size:max(15px,.7em);font-weight:650;color:var(--needs);letter-spacing:.02em}
 @media (max-width:480px){
- body:not([data-device="tv"]){font-size:15px;padding:24px 20px;gap:12px;overflow:auto;justify-content:flex-start}
+ body:not([data-device="tv"]){font-size:15px;padding:24px 20px 32px;gap:12px;overflow:auto;justify-content:flex-start}
  body:not([data-device="tv"]) .stake{font-size:2.1em}
- body:not([data-device="tv"]) .sep{display:none}
- body:not([data-device="tv"]) .when{display:block}
+ body:not([data-device="tv"]) .stake.long{font-size:1.6em}
  body:not([data-device="tv"]) .over{margin-top:-.2em}
  body:not([data-device="tv"]) .flag{font-size:13px;margin-top:-.2em}
  body:not([data-device="tv"]) .actions{flex-direction:column;align-items:stretch;gap:8px}

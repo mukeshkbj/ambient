@@ -368,7 +368,7 @@ function render() {
 
   const ring = !t ? "idle" : ap ? "needs" : o?.kind === "confirmed" ? "done" : live() ? "working" : "idle";
   $("speaker").dataset.ring = ring;
-  $("ringstate").textContent = { idle: "idle", working: connected ? "Ambient is on the phone" : "Ambient is calling", needs: "the call needs you", done: "booked" }[ring];
+  $("ringstate").textContent = { idle: out.classList.contains("show") ? "call ended" : "idle", working: connected ? "Ambient is on the phone" : "Ambient is calling", needs: "the call needs you", done: "booked" }[ring];
 
   if (connected && phase === "live" && !state.pickedUp) { state.pickedUp = true; speak(`${biz} picked up. I'm on the call.`); }
   if (ap) {
