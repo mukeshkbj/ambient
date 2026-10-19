@@ -29,7 +29,7 @@ h1{font-size:34px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
 .why{max-width:320px;color:var(--ink-2);font-size:15px}
 .about{margin:6px 0 0;font-size:18px;color:oklch(0.86 0.01 255);text-align:center;text-wrap:balance}
 .about:empty{display:none}
-.avatar{margin:40px 0 0;width:112px;height:112px;border-radius:50%;display:grid;place-items:center;background:oklch(0.22 0.015 250);box-shadow:0 0 0 2px oklch(0.80 0.11 225 / .4);position:relative}
+.avatar{margin:clamp(72px,16vh,140px) 0 0;width:112px;height:112px;border-radius:50%;display:grid;place-items:center;background:oklch(0.22 0.015 250);box-shadow:0 0 0 2px oklch(0.80 0.11 225 / .4);position:relative}
 .avatar::before{content:"";width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 50% 45%,oklch(0.22 0.015 250) 0 42%,transparent 44%),conic-gradient(from 200deg,oklch(0.80 0.11 225),oklch(0.72 0.12 210),oklch(0.80 0.11 225))}
 .avatar::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:2px solid oklch(0.80 0.11 225 / .8);opacity:0}
 body[data-state="ringing"] .avatar::after,body[data-state="speaking"] .avatar::after{animation:ring 1.8s cubic-bezier(0.2,0,0,1) infinite}
@@ -48,7 +48,7 @@ body[data-state="ringing"] .avatar::after,body[data-state="speaking"] .avatar::a
 .end{background:var(--end)}
 .end svg{transform:rotate(135deg)}
 .hidden{display:none !important}
-.note{margin-top:20px;font-size:13px;color:var(--ink-3);max-width:320px}
+.note{margin-top:20px;font-size:14px;color:var(--ink-3);max-width:320px}
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 </style>
 </head>

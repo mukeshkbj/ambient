@@ -154,9 +154,10 @@ function render(d){
   $("what").textContent=what;
   setStake(ap.amountUsd,ap.when?cap(ap.when):biz);
   if(ap.amountUsd!==undefined&&ap.limitUsd!==undefined)over.textContent=usd(ap.amountUsd-ap.limitUsd)+" over your "+usd(ap.limitUsd)+" limit";
-  if(ap.amountUsd>ap.limitUsd&&!offers(ap,said).length){flag.className="flag dim";flag.textContent="You already offered "+usd(ap.limitUsd);}
+  const offered=ap.amountUsd>ap.limitUsd&&!offers(ap,said).length;
+  if(offered){flag.className="flag dim";flag.textContent="You already offered "+usd(ap.limitUsd);}
   const asked=Date.parse(ap.createdAt||"");
-  sub.textContent=ap.kind==="dial"?"Place this call?":biz+" is on the line, waiting for you.";
+  sub.textContent=ap.kind==="dial"?"Place this call?":offered?"":biz+" is on the line, waiting for you.";
   const hold=()=>{$("clock").textContent=Number.isFinite(asked)?"Waiting "+clock(Date.now()-asked):"";};
   if(ap.kind!=="dial"){hold();tick=setInterval(hold,1000);}
   if(theirs)foot([{who:biz+" said",text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
@@ -167,9 +168,9 @@ function render(d){
   }
  else if(o){const ok=o.kind==="confirmed";chip.className="chip "+(ok?"done":"warn");
   if(ok)document.body.classList.add("booked");
-  chip.textContent=ok?(dated(o.when)?"Booked \\u00b7 confirmed by "+biz:"Booked \\u00b7 price and day confirmed"):o.kind==="unconfirmed"?"Not booked":o.kind==="declined"?"Declined":"No deal";
+  chip.textContent=ok?(dated(o.when)?"Booked \\u00b7 confirmed by "+biz:"Booked \\u00b7 price confirmed"):o.kind==="unconfirmed"?"Not booked":o.kind==="declined"?"Declined":"No deal";
   if(ok){$("what").textContent=what?biz+" \\u00b7 "+what:biz;setStake(o.amountUsd,cap(o.when||biz));
-   if(!dated(o.when)){const day=/\\b(?:mon|tues|wednes|thurs|fri|satur|sun)day\\b/i.exec(o.when||"");flag.className="flag date";flag.textContent="No calendar date given \\u00b7 ask "+biz+(day?" which "+day[0]:" for the date");}}
+   if(!dated(o.when)){flag.className="flag date";flag.textContent=(/\\b(?:mon|tues|wednes|thurs|fri|satur|sun)day\\b/i.test(o.when||"")?"Only the weekday was given":"No date was given")+" \\u00b7 ask "+biz+" for the date";}}
   else{stake.textContent="Nothing was booked.";$("what").textContent=[biz,what,limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");}
   const readBack=said.some(l=>l.who==="Ambient"&&/^(Just to confirm|Let me check once more|One last check|To be sure):/.test(l.text));
   sub.textContent=ok?(theirs?(readBack?"Ambient read back the total and the time. "+biz+" said \\u201c"+theirs.text+"\\u201d":"In their words: \\u201c"+theirs.text+"\\u201d"):"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed.":cap(o.reason)+".";
@@ -177,12 +178,14 @@ function render(d){
   if(ok)hint.textContent=mine.some(l=>/^Approved: /.test(l.text))?"You approved this price from home.":mine.some(l=>/^offer\\b/i.test(l.text))?"You offered this price from home.":limitOf(t.instruction)?"Within your "+limitOf(t.instruction).slice(6)+" limit.":"";
   if(!ok){if(theirs)foot([{who:"Last from "+biz,text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
    buttons([{label:"Call "+biz+" again",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);}}
- else if(live){chip.className="chip";chip.textContent=connected?"On the phone":"Calling";
+ else if(live){chip.className="chip";
   const offered=owner?/^offer\\s+\\$?(\\d+)/i.exec(owner.text):null;
   $("what").textContent=[what,offered?limitOf(t.instruction)+" \\u00b7 you offered "+usd(offered[1]):limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");
   stake.textContent=biz;
-  const asked=said.filter(l=>l.who==="Ambient"&&/dollars/.test(l.text)).at(-1);
-  sub.textContent=offered&&asked?"Ambient asked: \\u201c"+asked.text+"\\u201d":owner?ownerSaid(owner,biz):theirs?"\\u201c"+cap(theirs.text)+"\\u201d":connected?biz+" answered. Ambient said it is an AI.":"Ringing\\u2026 Ambient will say it is an AI first.";
+  const ai=said.findLastIndex(l=>l.who==="Ambient"&&/dollars|total/.test(l.text)),asked=said[ai],bi=said.findLastIndex(l=>l.who===biz);
+  const again=asked&&bi>=0&&ai>bi&&ai>said.findLastIndex(l=>l.who!=="Ambient"&&l.who!==biz);
+  chip.textContent=connected?again&&/total/.test(asked.text)?"On the phone \\u00b7 checking the total":"On the phone":"Calling";
+  sub.textContent=again?"Ambient asked: \\u201c"+asked.text+"\\u201d":owner?ownerSaid(owner,biz):theirs?"\\u201c"+cap(theirs.text)+"\\u201d":connected?biz+" answered. Ambient said it is an AI.":"Ringing\\u2026 Ambient will say it is an AI first.";
   const began=Date.parse(t.createdAt||"");
   const tickCall=()=>{$("clock").textContent=connected&&Number.isFinite(began)?clock(Date.now()-began):"";};
   tickCall();tick=setInterval(tickCall,1000);}
