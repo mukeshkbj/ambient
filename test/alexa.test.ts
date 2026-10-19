@@ -48,6 +48,22 @@ async function startCall(deps: AlexaSkillDependencies, task = "a plumber for tom
 }
 
 describe("Alexa call intents", () => {
+  it("reprompts with the open question when the reply ends in one", async () => {
+    const { deps, close } = setup();
+    const result = await handleAlexaRequest(request("OfferAmountIntent"), deps);
+    expect(speechOf(result)).toContain("How much should I offer?");
+    expect(result.response.reprompt?.outputSpeech.ssml).toBe("<speak>How much should I offer?</speak>");
+    close();
+  });
+
+  it("says the call keeps going when the owner stops talking to Alexa mid-call", async () => {
+    const { deps, close } = setup();
+    const started = await startCall(deps);
+    const result = await handleAlexaRequest(request("AMAZON.StopIntent", {}, started.sessionAttributes), deps);
+    expect(speechOf(result)).toContain("The call is still going.");
+    close();
+  });
+
   it("StartCallIntent starts a run on the caller runtime", async () => {
     const { deps, entry, fake, close } = setup();
     const result = await startCall(deps);
@@ -56,7 +72,8 @@ describe("Alexa call intents", () => {
     expect(runs[0]).toMatchObject({ runtimeId: "caller", instruction: "a plumber for tomorrow" });
     expect(fake.client.createSession).toHaveBeenCalled();
     expect(speechOf(result)).toContain("Calling");
-    expect(speechOf(result)).toContain("tell you if they need you");
+    expect(speechOf(result)).toContain("Ask me how it&apos;s going any time.");
+    expect(result.response.reprompt?.outputSpeech.ssml).toContain("What should I call about?");
     close();
   });
 

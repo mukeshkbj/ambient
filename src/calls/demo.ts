@@ -1,4 +1,4 @@
-import { dollarsInWords, numberInWords } from "../words.js";
+import { dollarsInWords } from "../words.js";
 import type { ScriptedTurn } from "./brain.js";
 import type { BusinessPersona } from "./line.js";
 import { amountsIn } from "./rules.js";
@@ -8,8 +8,8 @@ export const JOES_PLUMBING: BusinessPersona = {
   opening: "Oh, okay. Joe's Plumbing, this is Joe. How can I help?",
   rules: [
     { when: /^just to confirm\b/i, reply: "Yes, that's right. See you then." },
-    { when: /\b(one (hundred )?sixty|160)\b/i, reply: "Alright, one sixty works. I'll put you down for Tuesday at ten." },
-    { when: /\bone fifty\b/i, reply: "Best I can do is one eighty, honestly. Parts went up this year." },
+    { when: /\b(one (hundred )?sixty|160)\b/i, reply: "Hmm, one sixty. Alright, that works. I'll put you down for Tuesday at ten." },
+    { when: /\bany room on the price\b/i, reply: "Best I can do is one eighty, honestly. Parts went up this year." },
     { when: /\b(go ahead|book it|that works)\b/i, reply: "Great, you're booked for Tuesday at ten. That's one eighty." },
     { when: /\b(sink|leak|visit|plumb)/i, reply: "Sure, we can come Tuesday at ten. It'll be one eighty for the call-out and the repair." }
   ]
@@ -19,12 +19,6 @@ export const JOES_PLUMBING_HANGS_UP: BusinessPersona = {
   ...JOES_PLUMBING,
   rules: [{ when: /\b(sink|leak|visit|plumb)/i, reply: "It's one eighty, take it or leave it. I've got another call.", hangUp: true }]
 };
-
-function spokenLimit(amount: number): string {
-  const hundreds = Math.floor(amount / 100);
-  const rest = amount % 100;
-  return hundreds > 0 && hundreds < 10 && rest >= 10 ? `${numberInWords(hundreds)} ${numberInWords(rest)}` : numberInWords(amount);
-}
 
 export const DEMO_SCRIPT: ScriptedTurn[] = [
   {
@@ -55,7 +49,7 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
     when: /\b(it'll be|it's) one eighty\b/i,
     reply: (_, state) => (state.brief.maxUsd ?? 0) >= 180
       ? [{ kind: "say", text: "That works. Please go ahead and book Tuesday at ten.", last: true }]
-      : [{ kind: "say", text: `Hmm. ${state.brief.ownerName} was hoping to stay under ${spokenLimit(state.brief.maxUsd ?? 0)}. Could you do ${spokenLimit(state.brief.maxUsd ?? 0)}?`, last: true }]
+      : [{ kind: "say", text: "Hmm, that's a bit more than we planned. Is there any room on the price?", last: true }]
   },
   {
     when: /\bbest i can do is one eighty\b/i,

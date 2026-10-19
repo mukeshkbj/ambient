@@ -129,6 +129,13 @@ export function speak(view: RunView, ctx: SpeakContext): string {
   }
 }
 
+export function heldStatus(view: RunView): string | undefined {
+  const business = callee(view);
+  const amount = view.approval?.amountUsd;
+  if (!business || view.status !== "waiting_approval" || view.approval?.kind !== "spend" || amount === undefined) return undefined;
+  return `${business} is still holding for you. Book it at ${dollarsInWords(amount)}, or offer less?`;
+}
+
 export function steerReply(view: RunView, ctx: SpeakContext, said?: string): string {
   const business = callee(view);
   const offer = said === undefined ? undefined : offerIn(said);

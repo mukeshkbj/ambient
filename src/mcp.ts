@@ -6,7 +6,7 @@ import { z } from "zod";
 import { TASK_HTML } from "./task-view.js";
 import type { PendingApproval, RuntimeEntry, RuntimeRegistry } from "./runtimes/registry.js";
 import type { RunStatus, RunView } from "./types.js";
-import { approvalAsk, runResult, say, steerReply, TASK_RESOURCE_URI } from "./voice.js";
+import { approvalAsk, heldStatus, runResult, say, steerReply, TASK_RESOURCE_URI } from "./voice.js";
 
 export type McpDependencies = {
   registry: RuntimeRegistry;
@@ -108,11 +108,13 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
     }
   };
 
-  const settleApproval = async (entry: RuntimeEntry, view: RunView, requestId: RequestId): Promise<ReturnType<typeof runResult>> => {
+  const settleApproval = async (entry: RuntimeEntry, view: RunView, requestId: RequestId, again = false): Promise<ReturnType<typeof runResult>> => {
     if (await elicitApproval(entry, view, requestId)) {
       view = await entry.engine.waitForRun(view.id, askWaitMs);
     }
-    return runResult(view, { label: entry.descriptor.label, state: entry.engine.runtime().state });
+    const ctx = { label: entry.descriptor.label, state: entry.engine.runtime().state };
+    const held = again ? heldStatus(view) : undefined;
+    return held ? runResult(view, ctx, held) : runResult(view, ctx);
   };
 
   server.registerTool("delegate", {
@@ -254,7 +256,7 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
         return say(about ? `I can't find any work about ${about}.` : "Nothing is running yet — delegate something to get started.", { status: "idle" });
       }
       const entry = registry.entry(view.runtimeId)!;
-      return await settleApproval(entry, view, extra.requestId);
+      return await settleApproval(entry, view, extra.requestId, true);
     } catch (error) {
       return failure(error);
     }

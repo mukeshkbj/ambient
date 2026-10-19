@@ -2,7 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import type { OAuthProvider } from "./auth.js";
 import type { RuntimeEntry, RuntimeRegistry } from "./runtimes/registry.js";
 import type { RunStatus, RunView } from "./types.js";
-import { speak, steerReply } from "./voice.js";
+import { heldStatus, speak, steerReply } from "./voice.js";
 import { dollarsInWords } from "./words.js";
 
 type AlexaEnvelope = Record<string, unknown>;
@@ -59,7 +59,7 @@ function speech(value: string): { type: "SSML"; ssml: string } {
 }
 
 function repromptFor(value: string): string {
-  const question = value.match(/[^.?!]+?$/)?.[0]?.trim();
+  const question = value.match(/[^.?!]+\?$/)?.[0]?.trim();
   return question ?? "What should I call about?";
 }
 
@@ -202,15 +202,15 @@ function startedCall(entry: RuntimeEntry, run: RunView): string {
   if (ACTIVE_STATUSES.has(run.status) && run.status !== "waiting_approval") {
     const business = run.subject ?? /^calling\s+(.+?)\.?$/i.exec(run.progress ?? "")?.[1];
     return business
-      ? `Calling ${business} now. I'll tell you if they need you.`
-      : "Calling now. I'll tell you if they need you.";
+      ? `Calling ${business} now. Ask me how it's going any time.`
+      : "Calling now. Ask me how it's going any time.";
   }
   return speak(run, { label: entry.descriptor.label, state: entry.engine.runtime().state });
 }
 
 function callStatus(target: ActiveCall): string {
   const ctx = { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state };
-  return speak(target.run, ctx);
+  return heldStatus(target.run) ?? speak(target.run, ctx);
 }
 
 async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, unknown>, dependencies: AlexaSkillDependencies): Promise<AlexaSkillResponse> {
@@ -221,7 +221,8 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     return response("Say call, followed by what you need, and I'll phone them. During the call you can ask how it's going, tell them something, offer an amount, approve or deny, or say hang up.", attributes);
   }
   if (name === "AMAZON.StopIntent" || name === "AMAZON.CancelIntent") {
-    return response("Goodbye.", attributes, true);
+    const live = activeCall(registry, attributes);
+    return response(live ? "Goodbye. The call is still going. Ask me how it went when you're back." : "Goodbye.", attributes, true);
   }
   if (name === "AMAZON.FallbackIntent") {
     return response("I did not understand that. Say call, followed by what you need, or say help.", attributes);

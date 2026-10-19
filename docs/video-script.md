@@ -33,7 +33,7 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 - Screen: the business answer page on a second phone (`docs/media/call-business-ringing.png`), labelled "AI assistant". In the fallback, the transcript column in `/sim`.
 - Ambient: "Hi, this is an AI assistant calling for Maya. This call is transcribed." Keep it audible.
 - Joe: "Sure, we can come Tuesday at ten. It'll be one eighty for the call-out and the repair."
-- Ambient: "Hmm. Maya was hoping to stay under one fifty. Could you do one fifty?"
+- Ambient: "Hmm, that's a bit more than we planned. Is there any room on the price?"
 - Joe: "Best I can do is one eighty, honestly."
 - Needs: KEYS and a second device for the live path. None for the fallback.
 
@@ -49,7 +49,7 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 - Owner: "Alexa, tell Ambient offer one sixty." Or tap "Offer $160 instead".
 - Alexa: "Okay, offering one hundred sixty dollars."
 - Ambient, to Joe: "Thanks for waiting. Could you do it for one hundred sixty dollars?"
-- Joe: "Alright, one sixty works."
+- Joe: "Hmm, one sixty. Alright, that works."
 - Needs: HW for voice. None for the card tap.
 
 ### 6. The read-back, then the report (1:20 to 1:40)

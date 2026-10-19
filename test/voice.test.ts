@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { approvalAsk, runResult, speak, steerReply, titleFor } from "../src/voice.js";
+import { approvalAsk, heldStatus, runResult, speak, steerReply, titleFor } from "../src/voice.js";
 import type { RunView } from "../src/types.js";
 
 // UUIDs, runtime-namespaced ids ("planner:ap-91f2"), and opaque request ids.
@@ -122,6 +122,14 @@ describe("speak", () => {
       expect(speak(call({ status: "waiting_approval", approval: overLimit }), { label: "Ambient" })).toBe(
         "Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Book it, or offer less?"
       );
+    });
+
+    it("asks a shorter question when the owner checks status on a call that is waiting", () => {
+      const overLimit = { ...approval, limitUsd: 150, when: "Tuesday at ten" };
+      expect(heldStatus(call({ status: "waiting_approval", approval: overLimit }))).toBe(
+        "Joe's Plumbing is still holding for you. Book it at one hundred eighty dollars, or offer less?"
+      );
+      expect(heldStatus(call({ status: "running" }))).toBeUndefined();
     });
 
     it("echoes the amount when the owner offers one", () => {

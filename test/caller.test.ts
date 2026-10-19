@@ -56,7 +56,7 @@ describe("CallerClient through the engine", () => {
     expect(view).toMatchObject({ status: "completed", outcome: { kind: "confirmed", amountUsd: 160 } });
     expect(view.approval).toBeUndefined();
     expect(store.listApprovals?.("caller") ?? []).toEqual([]);
-    expect(view.steps.some(line => /Joe's Plumbing: .*one sixty works/i.test(line))).toBe(true);
+    expect(view.steps.some(line => /Joe's Plumbing: .*one sixty\. Alright, that works/i.test(line))).toBe(true);
     expect(view.steps).toContain("Maya: offer 160");
     close();
   });

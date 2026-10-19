@@ -213,7 +213,7 @@ function price(amount: number): string {
 }
 
 function close(state: CallState, outcome: Exclude<CallOutcome, { kind: "unconfirmed" }>, now: string, line?: string): Transition {
-  const closing = line ?? (outcome.kind === "confirmed" ? (outcome.when ? `Perfect, see you ${outcome.when}. Thanks, goodbye.` : "Perfect, thanks so much. Goodbye.") : "Okay, thanks for your time. Goodbye.");
+  const closing = line ?? (outcome.kind === "confirmed" ? (outcome.when ? `Great, ${state.brief.ownerName} will see you ${outcome.when}. Thanks, goodbye.` : "Perfect, thanks so much. Goodbye.") : "Okay, thanks for your time. Goodbye.");
   return end(withTurn(flushDraft(state, now), "agent", closing, now), outcome, [say(closing), { kind: "hang_up" }]);
 }
 
