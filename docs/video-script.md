@@ -44,15 +44,18 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 - Echo Show card: "Fix the kitchen sink", "$180 · Tuesday at ten", "$30 over your $150 limit", with "Book $180 · Tells Joe's Plumbing yes", "Offer $150 · Your limit", and "Decline · Ambient hangs up" (`docs/media/sim-needs-you.png`).
 - Needs: HW for the Echo. The card renders in `/sim` without hardware.
 
-### 5. The owner steers (1:05 to 1:20)
+### 5. The owner counters, and Joe counters back (1:05 to 1:25)
 
-- Owner: "Alexa, tell Ambient offer one sixty." Or tap "Offer $150": Joe answers "One fifty is too low for me. I could do one sixty.", and the card asks again with "Book $160" (`docs/media/sim-countered.png`).
-- Alexa: "Okay, offering one hundred sixty dollars."
-- Ambient, to Joe: "Thanks for waiting. Could you do it for one hundred sixty dollars?"
-- Joe: "Hmm, one sixty. Alright, that works if you're my first job that morning."
-- Needs: HW for voice. None for the card tap.
+- Owner: "Alexa, tell Ambient offer one fifty." Or tap "Offer $150 · Your limit".
+- Alexa: "Okay, offering one hundred fifty dollars."
+- Ambient, to Joe: "Thanks for waiting. Could you do it for one hundred fifty dollars?"
+- Joe: "One fifty is too low for me. I could do one sixty."
+- Echo Show: the card asks again, "Book $160 · Tells Joe's Plumbing yes" (`docs/media/sim-countered.png`). Alexa: "Joe's Plumbing is still holding for you. Book it at one hundred sixty dollars, offer less, or end the call?"
+- Owner: "Alexa, approve." Or tap "Book $160". The owner approves a price over the limit on purpose; nothing above the limit books without this step.
+- Ambient, to Joe: "Thanks for waiting. Maya says one hundred sixty dollars is fine. Please go ahead and book Tuesday at ten."
+- Needs: HW for voice. None for the card taps.
 
-### 6. The read-back, then the report (1:20 to 1:40)
+### 6. The read-back, then the report (1:25 to 1:40)
 
 - Ambient: "Just to confirm: one hundred sixty dollars total, Tuesday at ten. Is that right?"
 - Joe: "Yes, that's right."

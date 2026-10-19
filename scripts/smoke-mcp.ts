@@ -39,12 +39,22 @@ try {
   await call("delegate", { task: "Call Joe's Plumbing and book a visit to fix the kitchen sink, keep it under 150", newConversation: true });
   const waiting = await waitFor(["waiting_approval"]);
   if (!/one hundred eighty dollars/.test(speech(waiting))) throw new Error("The approval did not lead with the stake in words");
-  await call("delegate", { task: "offer 160" });
+  await call("delegate", { task: "offer 150" });
+  const deadline = Date.now() + 20_000;
+  let countered: Result | undefined;
+  while (!countered && Date.now() < deadline) {
+    const result = await client.callTool({ name: "status", arguments: {} }) as Result;
+    if (status(result) === "waiting_approval" && /one hundred sixty/.test(speech(result))) countered = result;
+    else await new Promise(resolve => setTimeout(resolve, 150));
+  }
+  if (!countered) throw new Error("The business never countered at one sixty");
+  console.log(`> status\n  Alexa: ${speech(countered)}`);
+  await call("approve", { decision: "once" });
   const done = await waitFor(["completed", "failed", "cancelled", "unknown"]);
   if (status(done) !== "completed" || !/one hundred sixty/i.test(speech(done))) throw new Error(`Expected a confirmed booking at 160, got ${status(done)}: ${speech(done)}`);
   console.log("\nThe call itself (Ambient and the simulated business, with the owner's notes):");
   for (const line of done.structuredContent?.task?.steps ?? []) if (line.includes(": ")) console.log(`  ${line}`);
-  console.log("smoke: ok, the simulated call ended confirmed at the steered price");
+  console.log("smoke: ok, the business countered the owner's offer and the call booked at the approved counter");
 } finally {
   await client.close();
 }

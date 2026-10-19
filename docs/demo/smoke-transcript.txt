@@ -3,8 +3,12 @@ tools: delegate, delegate_task, status, approve, stop, agents, briefing
   Alexa: Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Book it, offer less, or end the call?
 > status
   Alexa: Joe's Plumbing is still holding for you. Book it at one hundred eighty dollars, offer less, or end the call?
-> delegate {"task":"offer 160"}
-  Alexa: Okay, offering one hundred sixty dollars.
+> delegate {"task":"offer 150"}
+  Alexa: Okay, offering one hundred fifty dollars.
+> status
+  Alexa: Joe's Plumbing is still holding for you. Book it at one hundred sixty dollars, offer less, or end the call?
+> approve {"decision":"once"}
+  Alexa: Joe's Plumbing confirmed Tuesday at ten for one hundred sixty dollars.
 > status
   Alexa: Joe's Plumbing confirmed Tuesday at ten for one hundred sixty dollars.
 
@@ -16,10 +20,14 @@ The call itself (Ambient and the simulated business, with the owner's notes):
   Ambient: Hmm, okay. Is there any room on the price?
   Joe's Plumbing: Best I can do is one eighty, honestly. Parts went up this year.
   Ambient: One moment, let me check with Maya.
-  Maya: offer 160
-  Ambient: Thanks for waiting. Could you do it for one hundred sixty dollars?
+  Maya: offer 150
+  Ambient: Thanks for waiting. Could you do it for one hundred fifty dollars?
+  Joe's Plumbing: One fifty is too low for me. I could do one sixty.
+  Ambient: One moment, let me check with Maya.
+  Maya: Maya approved: Joe's Plumbing came down to one hundred sixty dollars for Tuesday at ten, still over your limit of one hundred fifty dollars. Should I book it?
+  Ambient: Thanks for waiting. Maya says one hundred sixty dollars is fine. Please go ahead and book Tuesday at ten.
   Joe's Plumbing: Hmm, one sixty. Alright, that works if you're my first job that morning. I'll put you down for Tuesday at ten.
   Ambient: Just to confirm: one hundred sixty dollars total, Tuesday at ten. Is that right?
   Joe's Plumbing: Yes, that's right. See you then.
   Ambient: Great, Maya will expect you Tuesday at ten. Thanks, goodbye.
-smoke: ok, the simulated call ended confirmed at the steered price
+smoke: ok, the business countered the owner's offer and the call booked at the approved counter
