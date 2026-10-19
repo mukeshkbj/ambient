@@ -217,6 +217,10 @@ pnpm brain:latency        # time to first word on Claude (needs ANTHROPIC_API_KE
 | Claude brain (`claudeBrain` in `src/calls/brain.ts`) | Built but not yet run live | Tests against a stubbed stream (`test/brain.test.ts`); `pnpm brain:latency` has not run |
 | AssemblyAI voice line and chat-completions shim (`src/calls/rooms.ts`) | Built but not yet run live | `pnpm call:dry` runs a full call over real sockets against a local fake of AssemblyAI (`scripts/fake-assemblyai.ts`), using the request shape we assume from the docs; `test/assemblyai-line.test.ts` and `test/call-routes.test.ts`; no live API call yet ([friction log](docs/friction-log.md)) |
 | Business answer page (`web/call`) | Built but not yet run live | Rendered screenshot `docs/media/call-business-ringing.png` |
+| "Try to fool it" panel on `/sim` | Real | Each answer runs through the call reducer (`src/calls/fool.ts`, `test/fool.test.ts`) |
+| Spanish voice line (voice `lola`, Spanish speech recognition, Spanish call page) | Built but not yet run live | `test/recording.test.ts`; screenshot `docs/media/call-business-ringing-es.png` |
+| Recorded proof of yes (`hear_proof`) | Built but not yet run live | `pnpm call:dry` plays the path against the local fake; `test/recording.test.ts` |
+| Live-call preflight (`pnpm call:preflight`) | Built but not yet run with real keys | `test/preflight.test.ts` |
 | Alexa custom skill on `/alexa` | Built but not yet run live | `test/alexa.test.ts`; needs a public HTTPS deploy and an Echo Dot |
 | Spoken cue and notification (`src/cue.ts`) | Built but not yet run live | `test/cue.test.ts`; needs a Voice Monkey token and Echo hardware |
 | Business discovery by web search (`src/calls/discover.ts`) | Built but not yet run live | `test/discover.test.ts`; a real search needs `ANTHROPIC_API_KEY` |
