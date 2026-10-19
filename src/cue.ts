@@ -25,7 +25,7 @@ export function voiceMonkeyCue(options: { token: string; device: string; fetch?:
         body: JSON.stringify({
           token: options.token,
           device: options.device,
-          speech: `${question} To answer, say: Alexa, tell Ambient approve.`
+          speech: `${question.replace(/\s*Say [^.?!]*[.?!]$/, "")} To answer, say: Alexa, tell Ambient approve.`
         })
       });
       if (!result.ok) throw new Error(`Voice Monkey announce failed (${result.status})`);

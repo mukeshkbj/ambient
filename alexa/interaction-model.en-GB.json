@@ -33,6 +33,8 @@
           ],
           "samples": [
             "offer {amount}",
+            "{amount}",
+            "{amount} dollars",
             "offer {amount} dollars",
             "say {amount} dollars"
           ]

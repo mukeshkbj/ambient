@@ -33,13 +33,13 @@ pnpm demo
 
 ```text
 > delegate {"task":"Call Joe's Plumbing and book a visit to fix the kitchen sink, keep it under 150","newConversation":true}
-  Alexa: Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Say approve to book it, offer an amount, or hang up.
+  Alexa: Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Say approve to book it, offer a price like one fifty, or hang up.
 > status
-  Alexa: Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer an amount, or hang up.
+  Alexa: Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer a price like one fifty, or hang up.
 > delegate {"task":"offer 150"}
   Alexa: Okay, offering one hundred fifty dollars. Say status to hear their answer.
 > status
-  Alexa: Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer an amount, or hang up.
+  Alexa: Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer a price like one fifty, or hang up.
 > approve {"decision":"once"}
   Alexa: Joe's Plumbing confirmed Tuesday at ten for one hundred sixty dollars.
 > status
@@ -51,7 +51,7 @@ The end of the same run, from the call transcript:
 ```text
   Ambient: Just to confirm: one hundred sixty dollars total, Tuesday at ten. Is that right?
   Joe's Plumbing: Yes, plus parts.
-  Ambient: I need one total price. What is the total with parts?
+  Ambient: Sorry, I need one total price. What is the total with parts?
   Joe's Plumbing: Fair enough. A sink like that needs no parts, so that's all in.
   Ambient: Let me check once more: one hundred sixty dollars total, Tuesday at ten. Is that right?
   Joe's Plumbing: Yes, that's right. See you then.

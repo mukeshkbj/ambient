@@ -122,6 +122,16 @@ describe("Alexa call intents", () => {
     close();
   });
 
+  it("answers \"how did it go\" after the call has ended", async () => {
+    const { deps, entry, close } = setup();
+    const started = await startCall(deps);
+    const run = entry.engine.listRuns(1)[0]!;
+    await entry.engine.cancel(run.id);
+    const result = await handleAlexaRequest(request("CallStatusIntent", {}, started.sessionAttributes), deps);
+    expect(speechOf(result)).not.toContain("no call");
+    close();
+  });
+
   it("hears \"book it\" as approval", async () => {
     const { deps, fake, close } = setup();
     await startCall(deps);
@@ -136,7 +146,7 @@ describe("Alexa call intents", () => {
     await startCall(deps);
     expect(speechOf(await handleAlexaRequest(request("AMAZON.FallbackIntent"), deps))).toBe("<speak>Sorry, I didn&apos;t catch that. Say status, or hang up.</speak>");
     fake.emit({ type: "approval.request", sessionId: "runtime-1", payload: { requestId: "req-1", command: "book at one hundred eighty dollars", amountUsd: 180, kind: "spend" } });
-    expect(speechOf(await handleAlexaRequest(request("AMAZON.FallbackIntent"), deps))).toBe("<speak>Sorry, I didn&apos;t catch that. Say approve, offer an amount, or hang up.</speak>");
+    expect(speechOf(await handleAlexaRequest(request("AMAZON.FallbackIntent"), deps))).toBe("<speak>Sorry, I didn&apos;t catch that. Say approve, offer a price, or hang up.</speak>");
     close();
   });
 
@@ -148,7 +158,7 @@ describe("Alexa call intents", () => {
     const approve = language.types.find((type: { name: string }) => type.name === "Decision").values.find((value: { name: { value: string } }) => value.name.value === "approve").name;
     expect(samples("CallStatusIntent")).toEqual(expect.arrayContaining(["status", "what's the status", "how it went", "how it's going"]));
     expect(samples("HangUpIntent")).toContain("hang up");
-    expect(samples("OfferAmountIntent")).toContain("offer {amount}");
+    expect(samples("OfferAmountIntent")).toEqual(expect.arrayContaining(["offer {amount}", "{amount}"]));
     expect([approve.value, ...approve.synonyms]).toEqual(expect.arrayContaining(["approve", "book"]));
   });
 

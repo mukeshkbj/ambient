@@ -1,5 +1,5 @@
 import type { Approval, RuntimeState, RunView } from "./types.js";
-import { dollarsInWords } from "./words.js";
+import { dollarsInWords, priceInWords } from "./words.js";
 import { offerIn } from "./calls/rules.js";
 
 // Words that open an instruction but don't identify it.
@@ -53,7 +53,7 @@ function lastLineFrom(view: RunView, speaker: string): string | undefined {
   return view.steps.findLast(step => step.startsWith(prefix))?.slice(prefix.length);
 }
 
-const OWNER_CHOICES = "Say approve to book it, offer an amount, or hang up.";
+const ownerChoices = (limit: number) => `Say approve to book it, offer a price like ${priceInWords(limit)}, or hang up.`;
 
 /** The approval ask on its own — used as the elicitation message. */
 export function approvalAsk(view: RunView, ctx: SpeakContext): string {
@@ -61,7 +61,7 @@ export function approvalAsk(view: RunView, ctx: SpeakContext): string {
   const approval = view.approval;
   if (business && approval?.kind === "spend" && approval.amountUsd !== undefined && approval.limitUsd !== undefined) {
     const when = approval.when ? ` for ${approval.when}` : "";
-    return `${business} wants ${dollarsInWords(approval.amountUsd)}${when}. Your limit is ${dollarsInWords(approval.limitUsd)}. Say approve to book it, offer an amount, or hang up.`;
+    return `${business} wants ${dollarsInWords(approval.amountUsd)}${when}. Your limit is ${dollarsInWords(approval.limitUsd)}. ${ownerChoices(approval.limitUsd)}`;
   }
   const request = view.approval?.description ?? view.approval?.command;
   if (request && view.approval?.amountUsd !== undefined) {
@@ -85,7 +85,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
   if (business) {
     if (view.status === "waiting_approval") {
       const ask = approvalAsk(view, ctx);
-      if (ask.endsWith(OWNER_CHOICES)) return ask;
+      if (ask.endsWith(", or hang up.")) return ask;
       const choices = view.approval?.kind === "dial" ? "Say yes to place the call, or no." : view.approval?.amountUsd === undefined ? "Say approve or deny." : "Say approve, deny, or offer a different amount.";
       return `${ask} ${choices}`;
     }
@@ -136,8 +136,8 @@ export function heldStatus(view: RunView): string | undefined {
   const amount = view.approval?.amountUsd;
   const limit = view.approval?.limitUsd;
   if (!business || view.status !== "waiting_approval" || view.approval?.kind !== "spend" || amount === undefined) return undefined;
-  const over = limit !== undefined ? `, over your limit of ${dollarsInWords(limit)}` : "";
-  return `${business} is holding at ${dollarsInWords(amount)}${over}. ${OWNER_CHOICES}`;
+  if (limit === undefined) return `${business} is holding at ${dollarsInWords(amount)}. Say approve or hang up.`;
+  return `${business} is holding at ${dollarsInWords(amount)}, over your limit of ${dollarsInWords(limit)}. ${ownerChoices(limit)}`;
 }
 
 export function steerReply(view: RunView, ctx: SpeakContext, said?: string): string {

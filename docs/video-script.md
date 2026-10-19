@@ -44,7 +44,7 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 ### 4. Over the limit (0:40 to 1:00)
 
 - Ambient, to Joe: "One moment, let me check with Maya."
-- Echo Dot: "Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Say approve to book it, offer an amount, or hang up."
+- Echo Dot: "Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Say approve to book it, offer a price like one fifty, or hang up."
 - Echo Show card: "Fix the kitchen sink", "$180 · Tuesday at ten", "$30 over your $150 limit", with "Book $180 · Tells them yes", "Offer $150 · Your limit", and "Decline · Ambient hangs up" (`docs/media/sim-card-hero.png`).
 - Needs: HW for the Echo. The card renders in `/sim` without hardware.
 
@@ -54,7 +54,7 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 - Alexa: "Okay, offering one hundred fifty dollars. Say status to hear their answer."
 - Ambient, to Joe: "Thanks for waiting. Could you do one fifty?"
 - Joe: "One fifty is too low for me. I could do one sixty."
-- Echo Show: the card asks again, "Book $160 · Tells them yes" (`docs/media/sim-countered.png`). Alexa: "Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer an amount, or hang up."
+- Echo Show: the card asks again, "Book $160 · Tells them yes" (`docs/media/sim-countered.png`). Alexa: "Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer a price like one fifty, or hang up."
 - Owner: "Alexa, tell Ambient approve." Or tap "Book $160". The owner approves a price over the limit on purpose; nothing above the limit books without this step.
 - Ambient, to Joe: "Thanks for waiting. Maya says one sixty is fine. Please go ahead and book Tuesday at ten."
 - Joe: "Hmm, one sixty. Alright, that works if you're my first job that morning. I'll put you down for Tuesday at ten."
@@ -64,7 +64,7 @@ The lines below are the exact words the zero-key demo produces today (`docs/demo
 
 - Ambient: "Just to confirm: one hundred sixty dollars total, Tuesday at ten. Is that right?"
 - Joe: "Yes, plus parts."
-- Ambient: "I need one total price. What is the total with parts?"
+- Ambient: "Sorry, I need one total price. What is the total with parts?"
 - Screen: the transcript at the refusal (`docs/media/sim-refused.png`). Nothing is booked.
 - Show this beat uncut. A refusal on screen is the strongest honesty evidence.
 - Needs: none on the sim path.

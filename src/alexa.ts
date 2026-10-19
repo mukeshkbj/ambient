@@ -202,6 +202,12 @@ function activeCall(registry: RuntimeRegistry, attributes: Record<string, unknow
   return run ? { entry, run } : undefined;
 }
 
+function lastCall(registry: RuntimeRegistry, attributes: Record<string, unknown>): ActiveCall | undefined {
+  const entry = defaultEntry(registry);
+  const run = entry && (hintedRun(entry, attributes) ?? entry.engine.listRuns(1)[0]);
+  return entry && run ? { entry, run } : undefined;
+}
+
 function startedCall(entry: RuntimeEntry, run: RunView): string {
   if (ACTIVE_STATUSES.has(run.status) && run.status !== "waiting_approval") {
     const business = run.subject ?? /^calling\s+(.+?)\.?$/i.exec(run.progress ?? "")?.[1];
@@ -233,13 +239,13 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
   }
   if (name === "AMAZON.FallbackIntent") {
     const live = activeCall(registry, attributes);
-    if (live?.run.approval) return response("Sorry, I didn't catch that. Say approve, offer an amount, or hang up.", attributes, false, true);
+    if (live?.run.approval) return response("Sorry, I didn't catch that. Say approve, offer a price, or hang up.", attributes, false, true);
     if (live) return response("Sorry, I didn't catch that. Say status, or hang up.", attributes, false, true);
     return response("I did not understand that. Say call, followed by what you need, or say help.", attributes);
   }
   if (name === "StartCallIntent") {
     const task = slotValue(intent, "task", "request");
-    if (!task) return response("What should I call about?", attributes);
+    if (!task) return response("What should I call about? Say, for example, call Joe's Plumbing.", attributes);
     const entry = defaultEntry(registry);
     if (!entry) return response("I could not reach the assistant.", attributes);
     try {
@@ -280,15 +286,15 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
       const amount = approval.amountUsd !== undefined ? ` at ${dollarsInWords(approval.amountUsd)}` : "";
       const reply = run.status === "completed" || run.status === "waiting_approval"
         ? `${choice === "once" ? "Okay." : "Okay, I'll say no."} ${speak(run, ctx)}`
-        : choice === "once" ? `Okay, telling them yes${amount}. Ask me how it went.` : "Okay, I'll say no. Ask me how it ends.";
+        : choice === "once" ? `Okay, telling them yes${amount}. Ask me how it went.` : "Okay, I'll say no. Ask me how it went.";
       return response(reply, runAttributes(attributes, run), false, isLive(run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
   }
   if (name === "CallStatusIntent") {
-    const target = activeCall(registry, attributes);
-    if (!target) return response("There's no call in progress.", attributes);
+    const target = activeCall(registry, attributes) ?? lastCall(registry, attributes);
+    if (!target) return response("There's no call yet. Say call, followed by what you need.", attributes);
     return response(callStatus(target), attributes, false, isLive(target.run));
   }
   if (name === "HangUpIntent") {

@@ -23,6 +23,11 @@ export function numberInWords(value: number): string {
   return rest > 0 ? `${belowThousand(thousands)} thousand ${belowThousand(rest)}` : `${belowThousand(thousands)} thousand`;
 }
 
+export function priceInWords(value: number): string {
+  const whole = Math.round(value);
+  return whole === value && whole >= 100 && whole < 1000 && whole % 100 >= 10 ? `${numberInWords(Math.floor(whole / 100))} ${numberInWords(whole % 100)}` : dollarsInWords(value);
+}
+
 export function dollarsInWords(value: number): string {
   return `${numberInWords(value)} dollars`;
 }
