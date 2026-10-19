@@ -85,14 +85,19 @@ export function amountsIn(text: string): number[] {
   return found;
 }
 
-const NEGATION = /\b(not|never|no|nope|nah|don'?t|won'?t|can'?t|cannot|refuse|over|above|under|more|less|max(imum)?|at most|limit|too|without|instead|last time|paid|only if|unless|if|maybe|ridiculous|rip-?off|insane|crazy|outrageous|out|reject|decline|deny|pass|forget|drop|skip|cancel|steep|expensive|no way)\b|n't\b/i;
-const OFFER_CUE = /\b(offer|counter|tell (him|her|them)|say|make it|how about|go (up )?to|go with|try|accept|agree( to)?|approve|pay|okay|ok|sure|yes|yeah|fine|works|deal)\b/i;
 const AMOUNT_ONLY = /^(?:[\s$.,!?-]|\d|\b(?:a|and|dollars|bucks|hundred|thousand|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)\b)+$/i;
 
+const OFFER_LEAD = /^(?:(?:actually|well|fine|alright|all right|okay|ok|yes|yeah|sure|then)[\s,]+)*/;
+const OFFER_VERB = /^(?:(?:offer|counter(?: at)?|try|go (?:up )?to|go with|make it|pay|approve|agree to|tell (?:him|her|them))[\s,]+)?/;
+const OFFER_TAIL = /(?:[\s,]+(?:works|is fine|is ok|is okay))?$/;
+
 export function offerIn(text: string): number | undefined {
-  const amounts = amountsIn(text);
-  if (amounts.length !== 1 || NEGATION.test(text) || text.includes("?")) return undefined;
-  return OFFER_CUE.test(text) || AMOUNT_ONLY.test(text) ? amounts[0] : undefined;
+  const plain = text.normalize("NFKC").replace(/[’‘]/g, "'").toLowerCase().trim().replace(/[.!]+$/, "");
+  if (plain.includes("?")) return undefined;
+  const core = plain.replace(OFFER_LEAD, "").replace(OFFER_VERB, "").replace(OFFER_TAIL, "").trim();
+  if (!core || !AMOUNT_ONLY.test(core)) return undefined;
+  const amounts = amountsIn(core);
+  return amounts.length === 1 ? amounts[0] : undefined;
 }
 
 const phrases = (list: string[]) => new RegExp(`(?:^|\\s)(?:${[...list].sort((a, b) => b.length - a.length).join("|")})(?=\\s|$)`, "g");

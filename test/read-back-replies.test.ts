@@ -187,6 +187,11 @@ describe("read-back replies", () => {
     expect(asked.readBack).toBeUndefined();
   });
 
+  it.each(["Don’t pay 250", "Tell them 250 is a joke", "Okay, I declined 250"])("asks the owner instead of booking over the limit after: %s", note => {
+    const asked = run([{ kind: "answered" }, { kind: "heard", text: "It's $250 for Tuesday at three." }, { kind: "owner_said", text: note }, book(250, "Tuesday at three")]);
+    expect(asked.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 250 });
+  });
+
   it("does not arm on a played report for a different line", () => {
     let state = readBackState();
     state = { ...state, readBack: state.readBack && { ...state.readBack, armed: false } };
@@ -226,4 +231,20 @@ describe("round 9 review findings", () => {
     expect(agreesTo("Yes, fifty.", terms, 149.5, "Tuesday at ten")).toBe(false);
     expect(agreesTo("Yes, 149.50.", terms, 149.5, "Tuesday at ten")).toBe(true);
   });
+});
+
+describe("round 10 review findings", () => {
+  it.each([
+    "Okay, I rejected 250", "I declined 250", "denied 250", "refused 250", "cancelled 250", "Tell them 250 is a joke", "250 is too high", "250 is unacceptable",
+    "that 250 is a scam", "hold off on 250", "I'm unwilling to pay 250", "Don’t pay 250", "I won’t pay 250", "I can’t do 250", "pass the message along, 250"
+  ])("reads only an explicit offer as an offer: %s", text => {
+    expect(offerIn(text)).toBeUndefined();
+  });
+
+  it.each([["offer 250", 250], ["actually okay, go to 250", 250], ["yes, 250", 250], ["two fifty", 250], ["$250", 250], ["tell them 250 works", 250]] as const)(
+    "still reads an explicit offer: %s",
+    (text, amount) => {
+      expect(offerIn(text)).toBe(amount);
+    }
+  );
 });
