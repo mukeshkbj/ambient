@@ -374,7 +374,7 @@ function render() {
 
   if (connected && phase === "live" && !state.pickedUp) { state.pickedUp = true; speak(`${biz} picked up. I'm on the call.`); }
   if (ap) {
-    const cue = `${biz} wants ${ap.amountUsd !== undefined ? usd(ap.amountUsd) : "your OK"}. Approve, or offer less?`;
+    const cue = `${biz} wants ${ap.amountUsd !== undefined ? usd(ap.amountUsd) : "your OK"}. Say approve, or offer an amount.`;
     if (cue !== state.lastCue) { state.lastCue = cue; speak(cue); }
   }
 
