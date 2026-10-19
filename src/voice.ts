@@ -62,8 +62,9 @@ const ownerChoices = (limit: number) => `Say yes to book it, offer a price${limi
 
 export function ownerRefused(view: RunView): string | undefined {
   if (view.outcome?.kind !== "no_deal") return undefined;
-  const decision = view.steps.findLast(step => /: (?:Approved|Declined): /.test(step));
-  return decision && /: Declined: (.+)$/.exec(decision)?.[1];
+  const at = view.steps.findLastIndex(step => /: (?:Approved|Declined): /.test(step));
+  if (at < 0 || view.steps.slice(at + 1).some(step => /^[^:]+: /.test(step) && !step.startsWith("Ambient: "))) return undefined;
+  return /: Declined: (.+)$/.exec(view.steps[at]!)?.[1];
 }
 
 /** The approval ask on its own — used as the elicitation message. */
@@ -117,6 +118,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
       if (outcome?.kind === "unconfirmed") {
         const business = callee(view);
         const reason = stripEnd(outcome.reason);
+        if (reason === "you didn't answer in time") return `I hung up on ${business ?? "the business"} because you didn't answer in time. Nothing is booked. ${RETRY}`;
         const unreached = UNREACHED.has(reason);
         return unreached
           ? `${business ?? "The business"} wasn't reached: ${reason}, so nothing is booked. ${RETRY}`
@@ -125,7 +127,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
       const refused = ownerRefused(view);
       if (refused) return `You said no to ${refused}, so I ended the call. Nothing is booked.`;
       if (outcome?.kind === "declined") return `${callee(view) ?? "The business"} turned it down, so nothing is booked.`;
-      if (outcome) return clampSentences(`${stripEnd(outcome.reason)}.`);
+      if (outcome) return `${clampSentences(`${stripEnd(outcome.reason)}.`, 1)} Nothing is booked.`;
       return clampSentences(view.answer ?? `${label} finished ${title}.`);
     }
     case "failed": {

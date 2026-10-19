@@ -283,7 +283,7 @@ function end(state: CallState, outcome: CallOutcome, effects: CallEffect[]): Tra
 function holdLine(state: CallState): string {
   const owner = state.brief.ownerName;
   if (!state.disclosed) return disclosure(owner);
-  const lines = [`Still checking with ${owner}, thanks for holding.`, `Thanks for holding, ${owner} hasn't answered yet.`];
+  const lines = [`Still checking with ${owner}, thanks for holding.`, `Still here. ${owner} hasn't answered yet.`, `Sorry, one more moment with ${owner}.`];
   return lines[state.turns.filter(turn => turn.speaker === "agent" && lines.includes(turn.text)).length % lines.length]!;
 }
 

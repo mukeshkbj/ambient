@@ -155,6 +155,13 @@ describe("speak", () => {
       expect(speak(ended, { label: "Ambient" })).toBe("You said no to one hundred eighty dollars for Tuesday the 20th at 10 am, so I ended the call. Nothing is booked.");
       const laterYes = call({ status: "completed", steps: [...steps, "Maya Patel: Approved: one hundred sixty dollars"], outcome: { kind: "no_deal", reason: "They hung up." } });
       expect(speak(laterYes, { label: "Ambient" })).not.toContain("You said no");
+      const businessEnded = call({ status: "completed", steps: [...steps, "Maya Patel: offer 150", "Joe's Plumbing: Sorry, I can't go that low."], outcome: { kind: "no_deal", reason: "Joe would not go below one sixty" } });
+      expect(speak(businessEnded, { label: "Ambient" })).toBe("Joe would not go below one sixty. Nothing is booked.");
+    });
+
+    it("says Ambient hung up when the owner did not answer in time", () => {
+      const timedOut = call({ status: "completed", outcome: { kind: "unconfirmed", reason: "you didn't answer in time" } });
+      expect(speak(timedOut, { label: "Ambient" })).toBe("I hung up on Joe's Plumbing because you didn't answer in time. Nothing is booked. To try again, say: call them again.");
     });
 
     it("never says the owner refused when the business turned the job down", () => {

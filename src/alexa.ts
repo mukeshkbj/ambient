@@ -2,7 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import type { OAuthProvider } from "./auth.js";
 import type { RuntimeEntry, RuntimeRegistry } from "./runtimes/registry.js";
 import type { RunStatus, RunView } from "./types.js";
-import { heldStatus, speak, steerReply } from "./voice.js";
+import { heldStatus, ownerRefused, speak, steerReply } from "./voice.js";
 import { dollarsInWords, priceInWords } from "./words.js";
 
 type AlexaEnvelope = Record<string, unknown>;
@@ -306,7 +306,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
       const ctx = { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state };
       const amount = approval.amountUsd !== undefined ? ` at ${dollarsInWords(approval.amountUsd)}` : "";
       const reply = run.status === "completed" || run.status === "waiting_approval"
-        ? `Okay. ${speak(run, ctx)}`
+        ? run.status === "completed" && ownerRefused(run) ? "Okay, I ended the call. Nothing is booked." : `Okay. ${speak(run, ctx)}`
         : choice === "once" ? `Okay, telling them yes${amount}. To hear the result, ask how it went.` : "Okay, telling them no. To hear the result, ask how it went.";
       return response(reply, runAttributes(attributes, run), false, isLive(run));
     } catch (error) {

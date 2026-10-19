@@ -528,8 +528,8 @@ describe("holding", () => {
     expect(spoken(due.effects)).toEqual(["Still checking with Maya, thanks for holding."]);
     expect(play([[{ kind: "hold_tick" }, 2000 + HOLD_LINE_MS + 1000]], due.state).effects).toEqual([]);
     const again = play([[{ kind: "hold_tick" }, 2000 + 2 * HOLD_LINE_MS]], due.state);
-    expect(spoken(again.effects)).toEqual(["Thanks for holding, Maya hasn't answered yet."]);
-    expect(spoken(play([[{ kind: "hold_tick" }, 2000 + 3 * HOLD_LINE_MS]], again.state).effects)).toEqual(["Still checking with Maya, thanks for holding."]);
+    expect(spoken(again.effects)).toEqual(["Still here. Maya hasn't answered yet."]);
+    expect(spoken(play([[{ kind: "hold_tick" }, 2000 + 3 * HOLD_LINE_MS]], again.state).effects)).toEqual(["Sorry, one more moment with Maya."]);
   });
 
   it("answers the business while still waiting on the owner, without thinking", () => {
