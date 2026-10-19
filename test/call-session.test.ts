@@ -942,3 +942,16 @@ describe("owner notes", () => {
     expect(approved.state.turns.at(-1)).toMatchObject({ speaker: "owner", text: "Approved: one hundred eighty dollars for Tuesday at ten" });
   });
 });
+
+describe("round 20 review findings", () => {
+  it.each([["Yes, 22.", "Tuesday the 20 to 22 at 10 AM"], ["Yes, 5.", "Monday 4 to 5 at 10"], ["Yes, 22.", "3/20 to 22 at 10"], ["Yes, 21.", "Tuesday 20 and 21 at 10 AM"], ["Yes, 22.", "between the 20 and 22 at 10"]] as const)(
+    "does not book a date number from a range with no month: %s for %s",
+    (reply, when) => {
+      expect(agreesTo(reply, `one hundred dollars total, ${when}`, 100, when)).toBe(false);
+    }
+  );
+
+  it.each([["Yes, ten.", "Monday 4 to 5 at 10"], ["Yes, 10 AM.", "Tuesday 20 and 21 at 10 AM"], ["Yes, five.", "Tuesday at 3 to 5 pm"]] as const)("still books the clock time: %s for %s", (reply, when) => {
+    expect(agreesTo(reply, `one hundred dollars total, ${when}`, 100, when)).toBe(true);
+  });
+});

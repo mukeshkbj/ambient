@@ -123,7 +123,7 @@ export function plainTime(when: string): boolean {
   });
 }
 
-const CLOCK_LEAD = new Set("at around about by from to between and until after before past".split(" "));
+const CLOCK_LEAD = new Set(["at", "around", "about", "past"]);
 const CLOCK_TAIL = new Set(["am", "pm"]);
 
 const DATE_JOIN = new Set(["and", "to", "through"]);
