@@ -88,29 +88,32 @@ export function amountsIn(text: string): number[] {
 const AMOUNT_ONLY = /^(?:[\s$.,!?-]|\d|\b(?:a|and|dollars|bucks|hundred|thousand|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)\b)+$/i;
 
 const OFFER_LEAD = /^(?:(?:actually|well|fine|alright|all right|okay|ok|yes|yeah|sure|then)[\s,]+)*/;
-const OFFER_VERB = /^(?:(?:offer|counter(?: at)?|try|go (?:up )?to|go with|make it|pay|approve|agree to|tell (?:him|her|them))[\s,]+)?/;
+const OFFER_VERB = /^(?:(?:offer|counter(?: at)?|go (?:up )?to|pay|approve|agree to|tell (?:him|her|them))[\s,]+)?/;
+const WEAK_VERB = /^(?:(?:try|go with|make it)[\s,]+)?/;
 const OFFER_TAIL = /(?:[\s,]+(?:works|is fine|is ok|is okay))?$/;
 
 export function offerIn(text: string): number | undefined {
   const plain = text.normalize("NFKC").replace(/[’‘]/g, "'").toLowerCase().trim().replace(/[.!]+$/, "");
   if (plain.includes("?")) return undefined;
   const lead = plain.replace(OFFER_LEAD, "");
-  const verb = lead.replace(OFFER_VERB, "");
+  const verb = lead.replace(OFFER_VERB, "").replace(WEAK_VERB, "");
   const core = verb.replace(OFFER_TAIL, "").trim();
   if (!core || !AMOUNT_ONLY.test(core) || /(?:^|\D)\.\d|\d,(?!\d{3}(?!\d))/.test(core)) return undefined;
-  const marked = verb !== lead || core !== verb.trim() || /\$|\b(?:dollars|bucks)\b/.test(core);
+  const marked = lead.replace(OFFER_VERB, "") !== lead || core !== verb.trim() || /\$|\b(?:dollars|bucks)\b/.test(core);
   const amounts = amountsIn(core);
   return marked && amounts.length === 1 && amounts[0]! > 0 ? amounts[0] : undefined;
 }
 
 function timeKey(when: string): string {
-  const plain = when.normalize("NFKC").toLowerCase().replace(/(\d+):00\b/g, "$1");
-  const words = (plain.match(/[a-z']+/g) ?? []).filter(word => !NUMBER_WORDS.has(word) && word !== "o'clock");
-  return `${words.join(" ")}|${amountsIn(plain).join(" ")}`;
+  const tokens = when.normalize("NFKC").toLowerCase().replace(/:00\b/g, "").match(/[a-z']+|\d+/g) ?? [];
+  return tokens
+    .filter(token => token !== "o'clock")
+    .map(token => String(ONES[token] ?? TEENS[token] ?? TENS[token] ?? (/^\d+$/.test(token) ? Number(token) : token)))
+    .join(" ");
 }
 
-export function sameTime(a: string | undefined, b: string | undefined): boolean {
-  return a === undefined || b === undefined || timeKey(a) === timeKey(b);
+export function sameTime(a: string, b: string): boolean {
+  return timeKey(a) === timeKey(b);
 }
 
 const phrases = (list: string[]) => new RegExp(`(?:^|\\s)(?:${[...list].sort((a, b) => b.length - a.length).join("|")})(?=\\s|$)`, "g");

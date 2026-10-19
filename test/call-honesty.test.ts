@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { amountsIn } from "../src/calls/rules.js";
+import { amountsIn, disclosure } from "../src/calls/rules.js";
 import { startCall, step, type CallState } from "../src/calls/session.js";
 import { parsePhoneNumber, type CallBrief, type CallInput } from "../src/calls/types.js";
 
@@ -54,18 +54,20 @@ function playCall(seed: number) {
   let state: CallState = startCall(brief, `call-${seed}`).state;
   let clock = 0;
   const replies: Reply[] = [];
-  const approved: (number | undefined)[] = [];
+  const approved: Array<{ amount: number | undefined; when: string | undefined }> = [];
   const run = (input: CallInput) => {
     clock += 1000;
     const resolved = input.kind === "brain" ? { ...input, turn: state.turn } : input;
     state = step(state, resolved, new Date(Date.UTC(2026, 9, 20, 17) + clock).toISOString()).state;
   };
   run({ kind: "answered" });
+  const cut = next() < 0.2;
+  if (cut) run({ kind: "interrupted", spokenSoFar: "Hi," });
   run({ kind: "heard", text: pick(QUOTES)(quoted) });
   for (let round = 0; round < 6 && state.phase.kind !== "ended"; round += 1) {
     if (state.phase.kind === "waiting_for_owner") {
       const approve = next() < 0.5;
-      if (approve) approved.push(state.phase.amountUsd);
+      if (approve) approved.push({ amount: state.phase.amountUsd, when: state.phase.when });
       run({ kind: "owner_decided", requestId: state.phase.requestId, decision: approve ? "once" : "deny" });
       continue;
     }
@@ -88,15 +90,16 @@ function playCall(seed: number) {
     }
     if (next() < 0.2) {
       const [text, offer] = pick(OWNER)(pick([quoted, quoted + 40]));
-      if (offer !== undefined) approved.push(offer);
+      if (offer !== undefined) approved.push({ amount: offer, when: undefined });
       run({ kind: "owner_said", text });
     }
     if (next() < 0.4) run({ kind: "brain", turn: 0, step: { kind: "say", text: pick(AGENT), last: true } });
     if (next() < 0.4) run({ kind: "heard", text: pick(NOT_YES) });
     const claim = pick([undefined, quoted, Math.max(1, quoted - 60), 12, quoted + 40]);
-    run({ kind: "brain", turn: 0, step: { kind: "end_call", outcome: { kind: "confirmed", summary: "Booked Tuesday", ...(claim !== undefined ? { amountUsd: claim } : {}) } } });
+    const when = pick([undefined, "Tuesday at ten thirty", "Tuesday at ten forty-five", "Wednesday at six"]);
+    run({ kind: "brain", turn: 0, step: { kind: "end_call", outcome: { kind: "confirmed", summary: "Booked", ...(claim !== undefined ? { amountUsd: claim } : {}), ...(when ? { when } : {}) } } });
   }
-  return { state, limit, replies, approved };
+  return { state, limit, replies, approved, cut };
 }
 
 describe("honesty over generated calls", () => {
@@ -104,7 +107,10 @@ describe("honesty over generated calls", () => {
     const failures: string[] = [];
     let booked = 0;
     for (let seed = 1; seed <= 4000; seed += 1) {
-      const { state, limit, replies, approved } = playCall(seed);
+      const { state, limit, replies, approved, cut } = playCall(seed);
+      const firstFull = state.turns.findIndex((turn, at) => turn.speaker === "agent" && (!cut || at > 0));
+      const first = state.turns[firstFull];
+      if (first && first.text !== disclosure("Maya")) failures.push(`seed ${seed}: the agent spoke before a full disclosure`);
       if (state.phase.kind !== "ended" || state.phase.outcome.kind !== "confirmed") continue;
       booked += 1;
       const amount = state.phase.outcome.amountUsd;
@@ -121,7 +127,9 @@ describe("honesty over generated calls", () => {
       if (!readBack) fail("no read-back before the booking");
       else if (amount !== undefined && !amountsIn(readBack.text.split(" total")[0] ?? "").includes(amount)) fail(`booked ${amount}, which the read-back did not say`);
       if (replies.at(-1)?.clean !== true || reply?.text !== replies.at(-1)?.text) fail("booked without a clean yes");
-      if (amount === undefined ? !approved.includes(undefined) : amount > (limit ?? 0) && !approved.includes(amount)) fail(`booked ${amount} without the owner`);
+      const when = state.phase.outcome.when;
+      const allowed = approved.some(grant => grant.amount === amount && (grant.when === undefined || grant.when === when));
+      if ((amount === undefined || amount > (limit ?? 0)) && !allowed) fail(`booked ${amount} for ${when} without the owner`);
     }
     expect(failures.slice(0, 5)).toEqual([]);
     expect(booked).toBeGreaterThan(100);

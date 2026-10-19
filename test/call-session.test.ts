@@ -9,7 +9,8 @@ import {
   offerIn,
   noteFromCall,
   OWNER_PATIENCE_MS,
-  redactDigits
+  redactDigits,
+  sameTime
 } from "../src/calls/rules.js";
 import { parsePhoneNumber, type BrainStep, type CallBrief, type CallEffect, type CallInput } from "../src/calls/types.js";
 
@@ -168,7 +169,7 @@ describe("rule 2: confirmed only through the brain, on the line's evidence", () 
   });
 
   it("drops the rest of a stream after the business interrupts it", () => {
-    const streaming = play([answered, heard("When can you come?"), say("We could do Tuesday ", false)]);
+    const streaming = play([answered, { kind: "played", text: disclosure("Maya") }, heard("When can you come?"), say("We could do Tuesday ", false)]);
     const { state, effects } = play([{ kind: "interrupted", spokenSoFar: "We could" }, { kind: "brain", turn: streaming.state.turn, step: { kind: "say", text: "at ten.", last: true } }], streaming.state);
     expect(state.turns.at(-1)).toMatchObject({ speaker: "agent", text: "We could" });
     expect(spoken(effects)).toEqual([]);
@@ -314,7 +315,7 @@ describe("round 2 review findings", () => {
     expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 8 });
   });
 
-  it.each([["okay $160", 160], ["sure, 160 dollars", 160], ["yes 160 is fine", 160], ["160 works", 160], ["go with 160", 160], ["approve 160", 160], ["okay, offer one hundred and sixty", 160], ["offer 1,600", 1600], ["offer $12.50", 12.5]] as const)(
+  it.each([["okay $160", 160], ["sure, 160 dollars", 160], ["yes 160 is fine", 160], ["160 works", 160], ["go with $160", 160], ["approve 160", 160], ["okay, offer one hundred and sixty", 160], ["offer 1,600", 1600], ["offer $12.50", 12.5]] as const)(
     "treats \"%s\" as authorizing %i",
     (text, amount) => {
       expect(offerIn(text)).toBe(amount);
@@ -691,5 +692,70 @@ describe("rule 6: dial limits", () => {
   it("does not count calls older than a day", () => {
     const history = Array.from({ length: 3 }, () => call("4155550134", "2026-10-19T18:00:00.000Z"));
     expect(checkDialLimits(history, number, day)).toEqual({ ok: true });
+  });
+});
+
+describe("round 12 review findings", () => {
+  const approve = (state: CallState) => play([{ kind: "owner_decided", requestId: requestOf(state), decision: "once" }], state);
+
+  it.each([
+    ["Tuesday at ten thirty", "Tuesday at ten forty-five", false],
+    ["Tuesday at ten fifteen", "Tuesday at ten forty five", false],
+    ["Tuesday at ten", "tuesday at 10", true],
+    ["Tuesday at 10:30", "Tuesday at ten thirty", true],
+    ["Tuesday at ten", "Tuesday at ten:00", true],
+    ["Tuesday at 3 pm", "Tuesday at 3 am", false]
+  ] as const)("compares %s with %s as the same time: %s", (a, b, same) => {
+    expect(sameTime(a, b)).toBe(same);
+  });
+
+  it("asks again when an approved price moves between spoken clock times", () => {
+    const asked = play([answered, heard("It'll be 180"), confirm(180, "Tuesday at ten thirty", "Tuesday at ten thirty")]);
+    const moved = play([confirm(180, "Tuesday at ten forty-five", "Tuesday at ten forty-five")], approve(asked.state).state);
+    expect(moved.state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 180 });
+  });
+
+  it("binds an approval of a deal with no price to its time", () => {
+    const asked = play([answered, heard("We can do Tuesday at ten"), confirm(undefined, "Booked Tuesday at ten", "Tuesday at ten")]);
+    expect(asked.state.phase).toMatchObject({ kind: "waiting_for_owner" });
+    const moved = play([confirm(undefined, "Booked Wednesday at six", "Wednesday at six")], approve(asked.state).state);
+    expect(moved.state.phase).toMatchObject({ kind: "waiting_for_owner" });
+  });
+
+  it("binds an owner's typed approval to the time the owner was asked about", () => {
+    const asked = play([answered, heard("It'll be 180"), confirm(180, "Tuesday at ten", "Tuesday at ten")]);
+    const typed = play([owner("$180 works")], asked.state);
+    const moved = play([confirm(180, "Wednesday at six", "Wednesday at six")], typed.state);
+    expect(moved.state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 180 });
+  });
+
+  it("does not let a booking without a time use an approval given for a time", () => {
+    const asked = play([answered, heard("It'll be 180"), confirm(180, "Tuesday at ten", "Tuesday at ten")]);
+    const untimed = play([confirm(180, "Booked")], approve(asked.state).state);
+    expect(untimed.state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 180 });
+  });
+
+  it.each(["make it ten", "try 10", "go with 10", "make it eleven thirty"])("does not read the clock-like \"%s\" as an offer", text => {
+    expect(offerIn(text)).toBeUndefined();
+  });
+
+  it.each([["make it $10", 10], ["try 10 dollars", 10], ["go with $160", 160], ["go to 160", 160]] as const)("still reads \"%s\" as an offer of %i", (text, amount) => {
+    expect(offerIn(text)).toBe(amount);
+  });
+
+  it("reports the read-back price when the brain's summary names another", () => {
+    const { state } = play([answered, heard("It's 80"), confirm(80, "Booked for $60", "Tuesday at ten"), ...yes], undefined, { ...brief, maxUsd: 100 });
+    expect(state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 80 } });
+    if (state.phase.kind === "ended" && state.phase.outcome.kind === "confirmed") expect(state.phase.outcome.summary).not.toMatch(/60/);
+  });
+
+  it("repeats the disclosure when the cut came while a later line was still drafting", () => {
+    const { effects } = play([answered, heard("Hello?"), say("I'd like to book", false), { kind: "interrupted", spokenSoFar: "Hi, this is" }, heard("Sorry, who?")]);
+    expect(spoken(effects)).toContain(disclosure("Maya"));
+  });
+
+  it("does not repeat a disclosure that finished playing", () => {
+    const { effects } = play([answered, { kind: "played", text: disclosure("Maya") }, heard("Hello?"), say("I'd like to book", false), { kind: "interrupted", spokenSoFar: "I'd like" }, heard("Sorry, who?")]);
+    expect(spoken(effects)).not.toContain(disclosure("Maya"));
   });
 });
