@@ -133,7 +133,7 @@ export function createMcpServer({ registry, askWaitMs = 0 }: McpDependencies): M
           throw new Error(`${entry.descriptor.label} is still working on "${active.title}" and can't be steered. Wait for it to finish, or say stop first.`);
         }
         const view = await entry.engine.steer(active.id, task);
-        return runResult(view, { label: entry.descriptor.label }, steerReply(view, { label: entry.descriptor.label }));
+        return runResult(view, { label: entry.descriptor.label }, steerReply(view, { label: entry.descriptor.label }, task));
       }
       const view = await entry.engine.ask(task, conversationId, newConversation ?? false, { waitMs: askWaitMs });
       return await settleApproval(entry, view, extra.requestId);

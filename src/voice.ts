@@ -1,5 +1,6 @@
 import type { Approval, RuntimeState, RunView } from "./types.js";
 import { dollarsInWords } from "./words.js";
+import { offerIn } from "./calls/rules.js";
 
 // Words that open an instruction but don't identify it.
 const FILLER = new Set(["please", "can", "could", "you", "hey", "ok", "okay", "just", "um"]);
@@ -54,6 +55,12 @@ function lastLineFrom(view: RunView, speaker: string): string | undefined {
 
 /** The approval ask on its own — used as the elicitation message. */
 export function approvalAsk(view: RunView, ctx: SpeakContext): string {
+  const business = callee(view);
+  const approval = view.approval;
+  if (business && approval?.kind === "spend" && approval.amountUsd !== undefined && approval.limitUsd !== undefined) {
+    const when = approval.when ? ` for ${approval.when}` : "";
+    return `${business} wants ${dollarsInWords(approval.amountUsd)}${when}. Your limit is ${dollarsInWords(approval.limitUsd)}. Book it, or offer less?`;
+  }
   const request = view.approval?.description ?? view.approval?.command;
   if (request && view.approval?.amountUsd !== undefined) {
     const amount = dollarsInWords(view.approval.amountUsd);
@@ -75,8 +82,10 @@ export function speak(view: RunView, ctx: SpeakContext): string {
   const business = callee(view);
   if (business) {
     if (view.status === "waiting_approval") {
+      const ask = approvalAsk(view, ctx);
+      if (ask.endsWith("Book it, or offer less?")) return ask;
       const choices = view.approval?.kind === "dial" ? "Say yes to place the call, or no." : "Say approve, deny, or offer a different amount.";
-      return `${approvalAsk(view, ctx)} ${choices}`;
+      return `${ask} ${choices}`;
     }
     if (view.status === "cancelled") return `You ended the call before ${business} confirmed. Nothing was booked.`;
     if (view.status === "running" || view.status === "accepted" || view.status === "queued") {
@@ -90,6 +99,8 @@ export function speak(view: RunView, ctx: SpeakContext): string {
       const outcome = view.outcome;
       if (outcome?.kind === "confirmed") return clampSentences(outcome.summary);
       if (outcome?.kind === "unconfirmed") return "The call ended before they confirmed, so I won't assume it's booked.";
+      const declined = outcome && /^\S+ declined (.+)$/.exec(outcome.reason);
+      if (declined) return `You said no to ${stripEnd(declined[1]!)}, so I ended the call. Nothing is booked.`;
       if (outcome) return clampSentences(`${stripEnd(outcome.reason)}.`);
       return clampSentences(view.answer ?? `${label} finished ${title}.`);
     }
@@ -118,8 +129,10 @@ export function speak(view: RunView, ctx: SpeakContext): string {
   }
 }
 
-export function steerReply(view: RunView, ctx: SpeakContext): string {
+export function steerReply(view: RunView, ctx: SpeakContext, said?: string): string {
   const business = callee(view);
+  const offer = said === undefined ? undefined : offerIn(said);
+  if (business && offer !== undefined) return `Okay, offering ${dollarsInWords(offer)}.`;
   return business ? `Okay, I'll tell ${business}.` : `Noted — passed that to ${ctx.label} while it works on "${view.title}".`;
 }
 

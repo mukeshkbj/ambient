@@ -2,7 +2,8 @@ import { timingSafeEqual } from "node:crypto";
 import type { OAuthProvider } from "./auth.js";
 import type { RuntimeEntry, RuntimeRegistry } from "./runtimes/registry.js";
 import type { RunStatus, RunView } from "./types.js";
-import { speak } from "./voice.js";
+import { speak, steerReply } from "./voice.js";
+import { dollarsInWords } from "./words.js";
 
 type AlexaEnvelope = Record<string, unknown>;
 
@@ -57,13 +58,18 @@ function speech(value: string): { type: "SSML"; ssml: string } {
   return { type: "SSML", ssml: `<speak>${escapeXml(value)}</speak>` };
 }
 
+function repromptFor(value: string): string {
+  const question = value.match(/[^.?!]+?$/)?.[0]?.trim();
+  return question ?? "What should I call about?";
+}
+
 function response(value: string, sessionAttributes: Record<string, unknown>, shouldEndSession = false): AlexaSkillResponse {
   return {
     version: "1.0",
     sessionAttributes,
     response: {
       outputSpeech: speech(value),
-      ...(shouldEndSession ? {} : { reprompt: { outputSpeech: speech("What would you like your assistants to do?") } }),
+      ...(shouldEndSession ? {} : { reprompt: { outputSpeech: speech(repromptFor(value)) } }),
       shouldEndSession
     }
   };
@@ -242,7 +248,8 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     if (!target) return response("There's no call in progress.", attributes);
     try {
       const run = await target.entry.engine.steer(target.run.id, message);
-      return response(run.subject ? `Okay, I'll tell ${run.subject}.` : "Okay, I'll tell them.", runAttributes(attributes, run));
+      const ctx = { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state };
+      return response(run.subject ? steerReply(run, ctx, message) : "Okay, I'll tell them.", runAttributes(attributes, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
@@ -258,9 +265,12 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     try {
       let run = await target.entry.engine.respondToApproval(approval.id, choice);
       if (dependencies.askWaitMs) run = await target.entry.engine.waitForRun(run.id, dependencies.askWaitMs);
-      const prefix = choice === "once" ? "Okay, I'll tell them yes. " : "Okay, I'll say no. ";
       const ctx = { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state };
-      return response(prefix + speak(run, ctx), runAttributes(attributes, run));
+      const amount = approval.amountUsd !== undefined ? ` at ${dollarsInWords(approval.amountUsd)}` : "";
+      const reply = run.status === "completed" || run.status === "waiting_approval"
+        ? `${choice === "once" ? "Okay." : "Okay, I'll say no."} ${speak(run, ctx)}`
+        : choice === "once" ? `Okay, booking it${amount}. I'll tell you when it's done.` : "Okay, I'll say no. I'll tell you how it ends.";
+      return response(reply, runAttributes(attributes, run));
     } catch (error) {
       return response(errorText(error), attributes);
     }

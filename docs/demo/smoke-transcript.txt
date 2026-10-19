@@ -1,10 +1,25 @@
 tools: delegate, delegate_task, status, approve, stop, agents, briefing
 > delegate {"task":"Call Joe's Plumbing and book a visit to fix the kitchen sink, keep it under 150","newConversation":true}
-  Alexa: Joe's Plumbing can come Tuesday at ten for one hundred eighty dollars, over your limit of one hundred fifty dollars. Should I book it? Say approve, deny, or offer a different amount.
+  Alexa: Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Book it, or offer less?
 > status
-  Alexa: Joe's Plumbing can come Tuesday at ten for one hundred eighty dollars, over your limit of one hundred fifty dollars. Should I book it? Say approve, deny, or offer a different amount.
+  Alexa: Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Book it, or offer less?
 > delegate {"task":"offer 160"}
-  Alexa: Okay, I'll tell Joe's Plumbing.
+  Alexa: Okay, offering one hundred sixty dollars.
 > status
   Alexa: Joe's Plumbing confirmed Tuesday at ten for one hundred sixty dollars.
+
+The call itself (Ambient and the simulated business, with the owner's notes):
+  Ambient: Hi, this is an AI assistant calling for Maya. This call is transcribed.
+  Joe's Plumbing: Oh, okay. Joe's Plumbing, this is Joe. How can I help?
+  Ambient: Hi Joe. I'd like to book a visit to fix a leaking kitchen sink. The address is 12 Elm Street. When could you come, and what would it cost?
+  Joe's Plumbing: Sure, we can come Tuesday at ten. It'll be one eighty for the call-out and the repair.
+  Ambient: Hmm. Maya was hoping to stay under one fifty. Could you do one fifty?
+  Joe's Plumbing: Best I can do is one eighty, honestly. Parts went up this year.
+  Ambient: One moment, let me check with Maya.
+  Maya: offer 160
+  Ambient: Thanks for waiting. Could you do it for one hundred sixty dollars?
+  Joe's Plumbing: Alright, one sixty works. I'll put you down for Tuesday at ten.
+  Ambient: Just to confirm: one hundred sixty dollars total, Tuesday at ten. Is that right?
+  Joe's Plumbing: Yes, that's right. See you then.
+  Ambient: Perfect, see you Tuesday at ten. Thanks, goodbye.
 smoke: ok, the simulated call ended confirmed at the steered price

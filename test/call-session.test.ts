@@ -528,7 +528,7 @@ describe("the rest of the table", () => {
   it("emits the closing line's transcript before the run completes", () => {
     const { effects } = play([answered, heard("Tuesday for 140 works"), confirm(140), ...yes]);
     const order = effects.flatMap(effect => (effect.kind === "emit" ? [effect.event.type === "message.complete" ? "complete" : String("text" in effect.event.payload ? effect.event.payload.text : "")] : []));
-    expect(order.slice(-2)).toEqual(["Ambient: Great, thank you so much. Goodbye.", "complete"]);
+    expect(order.slice(-2)).toEqual(["Ambient: Perfect, thanks so much. Goodbye.", "complete"]);
   });
 
   it("assembles a streamed agent turn into one transcript line", () => {

@@ -8,7 +8,7 @@ const transport = new StreamableHTTPClientTransport(new URL(endpoint), token ? {
 } : undefined);
 const client = new Client({ name: "ambient-smoke", version: "0.1.0" });
 
-type Result = { structuredContent?: { speech?: string; status?: string }; content?: Array<{ type: string; text?: string }> };
+type Result = { structuredContent?: { speech?: string; status?: string; task?: { steps?: string[] } }; content?: Array<{ type: string; text?: string }> };
 
 const speech = (result: Result) => result.structuredContent?.speech ?? result.content?.find(item => item.type === "text")?.text ?? "";
 const status = (result: Result) => result.structuredContent?.status ?? "";
@@ -42,6 +42,8 @@ try {
   await call("delegate", { task: "offer 160" });
   const done = await waitFor(["completed", "failed", "cancelled", "unknown"]);
   if (status(done) !== "completed" || !/one hundred sixty/i.test(speech(done))) throw new Error(`Expected a confirmed booking at 160, got ${status(done)}: ${speech(done)}`);
+  console.log("\nThe call itself (Ambient and the simulated business, with the owner's notes):");
+  for (const line of done.structuredContent?.task?.steps ?? []) if (line.includes(": ")) console.log(`  ${line}`);
   console.log("smoke: ok, the simulated call ended confirmed at the steered price");
 } finally {
   await client.close();

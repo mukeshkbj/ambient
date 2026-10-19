@@ -117,6 +117,22 @@ describe("speak", () => {
       expect(speak(call({ status: "waiting_approval", approval }), { label: "Ambient" })).toBe(`${question} Say approve, deny, or offer a different amount.`);
     });
 
+    it("asks one short question when the price is over the limit", () => {
+      const overLimit = { ...approval, limitUsd: 150, when: "Tuesday at ten" };
+      expect(speak(call({ status: "waiting_approval", approval: overLimit }), { label: "Ambient" })).toBe(
+        "Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Book it, or offer less?"
+      );
+    });
+
+    it("echoes the amount when the owner offers one", () => {
+      expect(steerReply(call({ status: "running" }), { label: "Ambient" }, "offer 160")).toBe("Okay, offering one hundred sixty dollars.");
+    });
+
+    it("tells the owner in their own terms that they declined", () => {
+      const ended = call({ status: "completed", outcome: { kind: "no_deal", reason: "Maya declined one hundred eighty dollars" } });
+      expect(speak(ended, { label: "Ambient" })).toBe("You said no to one hundred eighty dollars, so I ended the call. Nothing is booked.");
+    });
+
     it("names the business from the run's subject even after early steps scroll away", () => {
       const view0 = view({ title: "Find a plumber", subject: "Pete's Pipes", status: "running", steps: ["Pete's Pipes: Hello?"] });
       expect(speak(view0, { label: "Ambient" })).toBe("Ambient is on the phone with Pete's Pipes. They just said: Hello?");

@@ -88,7 +88,7 @@ describe("Alexa call intents", () => {
     });
     const result = await handleAlexaRequest(request("AMAZON.YesIntent"), deps);
     expect(fake.client.respondToApproval).toHaveBeenCalledWith("runtime-1", "req-1", "once");
-    expect(speechOf(result)).toContain("tell them yes");
+    expect(speechOf(result)).toContain("booking it at one hundred eighty dollars");
     close();
   });
 
