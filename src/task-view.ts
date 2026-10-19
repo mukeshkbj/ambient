@@ -41,6 +41,8 @@ button:focus-visible{outline:2px solid var(--call);outline-offset:3px}
 .check svg{width:62%;height:62%;fill:none;stroke:currentColor;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:24;stroke-dashoffset:0}
 body.booked .chip::before{display:none}
 body.booked{background:radial-gradient(circle at 8% 22%,oklch(0.72 0.17 150 / .16),transparent 55%) var(--bg)}
+body.booked.open{background:radial-gradient(circle at 8% 22%,oklch(0.78 0.17 62 / .16),transparent 55%) var(--bg)}
+body.booked.open .check{background:var(--needs)}
 body.booked .check{display:grid;animation:land 420ms cubic-bezier(0.2,0,0,1) both}
 body.booked .check path{animation:draw 600ms 180ms cubic-bezier(0.2,0,0,1) both}
 @keyframes land{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
@@ -146,7 +148,7 @@ function render(d){
  const said=speakers(steps,biz),owner=said.filter(l=>l.who!=="Ambient"&&l.who!==biz).at(-1),what=errand(t.instruction);
  const theirs=said.filter(l=>l.who===biz).at(-1);
  const kind=ap?"needs":o?"done":live?"live":"idle";
- document.body.classList.remove("booked","arrive");
+ document.body.classList.remove("booked","open","arrive");
  if(kind==="needs"&&shown!=="needs"){void document.body.offsetWidth;document.body.classList.add("arrive");}
  shown=kind;document.body.dataset.state=kind;
  over.textContent="";flag.textContent="";flag.className="flag";hint.textContent="";tv.textContent="";$("what").textContent="";$("clock").textContent="";buttons([]);foot([]);
@@ -167,9 +169,10 @@ function render(d){
    ...offers(ap,said).map(v=>({label:"Offer "+usd(v),note:"Your limit",kind:"offer",run:()=>act("delegate",{task:"offer "+v})})),
    {label:"Decline",note:spend?"Ambient hangs up":"",kind:"quiet",run:()=>act("approve",{decision:"deny"})}]);
   }
- else if(o){const ok=o.kind==="confirmed";chip.className="chip "+(ok?"done":"warn");
+ else if(o){const ok=o.kind==="confirmed";chip.className="chip "+(ok?(dated(o.when)?"done":"needs"):"warn");
   if(ok)document.body.classList.add("booked");
-  chip.textContent=ok?(dated(o.when)?"Booked \\u00b7 confirmed by "+biz:"Booked \\u00b7 price confirmed"):o.kind==="unconfirmed"?"Not booked":o.kind==="declined"?"Declined":"No deal";
+  if(ok&&!dated(o.when))document.body.classList.add("open");
+  chip.textContent=ok?(dated(o.when)?"Booked \\u00b7 confirmed by "+biz:"Booked \\u00b7 date still open"):o.kind==="unconfirmed"?"Not booked":o.kind==="declined"?"Declined":"No deal";
   if(ok){$("what").textContent=what?biz+" \\u00b7 "+what:biz;setStake(o.amountUsd,cap(o.when||biz));
    if(!dated(o.when)){flag.className="flag date";flag.textContent=(/\\b(?:mon|tues|wednes|thurs|fri|satur|sun)day\\b/i.test(o.when||"")?"Only the weekday was given":"No date was given")+" \\u00b7 ask "+biz+" for the date";}}
   else{stake.textContent="Nothing was booked.";$("what").textContent=[biz,what,limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");}
