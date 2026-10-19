@@ -3,7 +3,7 @@ import type { OAuthProvider } from "./auth.js";
 import type { RuntimeEntry, RuntimeRegistry } from "./runtimes/registry.js";
 import type { RunStatus, RunView } from "./types.js";
 import { heldStatus, speak, steerReply } from "./voice.js";
-import { dollarsInWords } from "./words.js";
+import { dollarsInWords, priceInWords } from "./words.js";
 
 type AlexaEnvelope = Record<string, unknown>;
 
@@ -61,7 +61,7 @@ function speech(value: string): { type: "SSML"; ssml: string } {
 function repromptFor(value: string, live: boolean): string {
   const question = value.match(/[^.?!]+\?$/)?.[0]?.trim();
   const choices = value.match(/Say approve[^.?!]*\.$/)?.[0];
-  return question ?? choices ?? (live ? "Say status, or hang up." : "What should I call about?");
+  return question ?? choices ?? (live ? "Say status, or hang up." : "Who should I call?");
 }
 
 const ENDED: RunStatus[] = ["completed", "failed", "cancelled", "unknown"];
@@ -160,11 +160,11 @@ function decision(value: string | undefined): "once" | "deny" | undefined {
 function errorText(error: unknown): string {
   const message = error instanceof Error ? error.message.toLowerCase() : "";
   if (message.includes("not found")) return "I could not find that item.";
-  if (message.includes("already has active")) return "A call is already in progress.";
+  if (message.includes("already has active")) return "A call is already in progress. Say status, or hang up.";
   if (message.includes("already finished")) return "That call is already finished.";
   if (message.includes("unknown")) return "The assistant needs to reconnect before I can do that.";
   if (message.includes("approval")) return "I could not pass that decision on.";
-  return "I could not complete that request.";
+  return "I could not do that. Say status, or try again.";
 }
 
 function runAttributes(attributes: Record<string, unknown>, run: RunView): Record<string, unknown> {
@@ -239,13 +239,14 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
   }
   if (name === "AMAZON.FallbackIntent") {
     const live = activeCall(registry, attributes);
-    if (live?.run.approval) return response("Sorry, I didn't catch that. Say approve, offer a price, or hang up.", attributes, false, true);
+    const limit = live?.run.approval?.limitUsd;
+    if (live?.run.approval) return response(`Sorry, I didn't catch that. Say approve, offer a price${limit !== undefined ? ` like ${priceInWords(limit)}` : ""}, or hang up.`, attributes, false, true);
     if (live) return response("Sorry, I didn't catch that. Say status, or hang up.", attributes, false, true);
     return response("I did not understand that. Say call, followed by what you need, or say help.", attributes);
   }
   if (name === "StartCallIntent") {
     const task = slotValue(intent, "task", "request");
-    if (!task) return response("What should I call about? Say, for example, call Joe's Plumbing.", attributes);
+    if (!task) return response("Who should I call? Say, for example, call Joe's Plumbing.", attributes);
     const entry = defaultEntry(registry);
     if (!entry) return response("I could not reach the assistant.", attributes);
     try {
@@ -262,7 +263,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
       : slotValue(intent, "message", "instruction");
     if (!message) return response(name === "OfferAmountIntent" ? "How much should I offer?" : "What should I tell them?", attributes);
     const target = activeCall(registry, attributes);
-    if (!target) return response("There's no call in progress.", attributes);
+    if (!target) return response("There's no call in progress. Say call, followed by who to call.", attributes);
     try {
       const run = await target.entry.engine.steer(target.run.id, message);
       const ctx = { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state };
@@ -278,7 +279,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     if (!choice) return response("Say approve or deny.", attributes);
     const target = activeCall(registry, attributes);
     const approval = target?.run.approval;
-    if (!target || !approval) return response("There's nothing waiting on your decision.", attributes);
+    if (!target || !approval) return response("Nothing is waiting on you. Say status to hear where the call stands.", attributes);
     try {
       let run = await target.entry.engine.respondToApproval(approval.id, choice);
       if (dependencies.askWaitMs) run = await target.entry.engine.waitForRun(run.id, dependencies.askWaitMs);
@@ -299,7 +300,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
   }
   if (name === "HangUpIntent") {
     const target = activeCall(registry, attributes);
-    if (!target) return response("There's no call in progress.", attributes);
+    if (!target) return response("There's no call in progress. Say call, followed by who to call.", attributes);
     try {
       const run = await target.entry.engine.cancel(target.run.id);
       return response(speak(run, { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state }), runAttributes(attributes, run));

@@ -21,7 +21,7 @@ describe("voiceMonkeyCue", () => {
       body: JSON.stringify({
         token: "vm-token",
         device: "echo-dot",
-        speech: "The plumber wants one hundred eighty dollars. To answer, say: Alexa, tell Ambient approve."
+        speech: "The plumber wants one hundred eighty dollars. To answer, say: Alexa, open Ambient."
       })
     });
   });
@@ -31,7 +31,7 @@ describe("voiceMonkeyCue", () => {
     const cue = voiceMonkeyCue({ token: "vm-token", device: "echo-dot", fetch: send });
     await cue.needsYou("The plumber wants one hundred eighty dollars. Say approve to book it, offer a price like one fifty, or hang up.");
     const body = JSON.parse(String(send.mock.calls[0]?.[1]?.body)) as { speech: string };
-    expect(body.speech).toBe("The plumber wants one hundred eighty dollars. To answer, say: Alexa, tell Ambient approve.");
+    expect(body.speech).toBe("The plumber wants one hundred eighty dollars. To answer, say: Alexa, open Ambient.");
   });
 });
 

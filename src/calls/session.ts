@@ -25,7 +25,7 @@ type Confirmed = Extract<CallOutcome, { kind: "confirmed" }>;
 type Grant = { amountUsd?: number; when?: string };
 type ReadBack = { outcome: Confirmed; line: string; terms: string; armed: boolean; earlyYes: boolean };
 
-const READ_BACK_OPENERS = ["Just to confirm:", "Let me check once more:", "One last check:", "To be sure:"];
+const READ_BACK_OPENERS = ["Just to confirm:", "Let me check once more:", "Once more:", "To be sure:"];
 const talkedOver = (terms: string) => `Sorry, I talked over you. Was that a yes to ${terms}?`;
 
 export type Transition = { state: CallState; effects: CallEffect[] };

@@ -132,6 +132,15 @@ describe("Alexa call intents", () => {
     close();
   });
 
+  it("names a next step when there is no call or nothing to decide", async () => {
+    const { deps, close } = setup();
+    expect(speechOf(await handleAlexaRequest(request("HangUpIntent"), deps))).toContain("Say call, followed by who to call.");
+    expect(speechOf(await handleAlexaRequest(request("SteerCallIntent", { message: "hello" }), deps))).toContain("Say call, followed by who to call.");
+    await startCall(deps);
+    expect(speechOf(await handleAlexaRequest(request("RespondApprovalIntent", { decision: "approve" }), deps))).toBe("<speak>Nothing is waiting on you. Say status to hear where the call stands.</speak>");
+    close();
+  });
+
   it("hears \"book it\" as approval", async () => {
     const { deps, fake, close } = setup();
     await startCall(deps);

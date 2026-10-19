@@ -37,7 +37,7 @@ const AGENT = ["Okay. The address is 12 Elm Street.", "Could you do it for less?
 
 type Reply = { text: string; clean: boolean };
 
-const READ_BACK = /^(Just to confirm:|Let me check once more:|One last check:|To be sure:) /;
+const READ_BACK = /^(Just to confirm:|Let me check once more:|Once more:|To be sure:) /;
 const TALKED_OVER = /^Sorry, I talked over you\. Was that a yes to .+\?$/;
 
 function playCall(seed: number) {
