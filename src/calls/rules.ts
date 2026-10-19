@@ -165,7 +165,7 @@ export function agreesTo(reply: string, terms: string, amountUsd: number | undef
   if (tokens.length > 14) return false;
   if (!CONFIRMATION.test(words)) return false;
   CONFIRMATION.lastIndex = 0;
-  const numbers = [...amountsIn(when ?? ""), ...(amountUsd !== undefined ? [amountUsd] : [])];
+  const numbers = amountUsd !== undefined ? [amountUsd] : [];
   if (!chargedIn(words.replaceAll("|", " ")).every(charge => charge === amountUsd)) return false;
   const runs = numberRuns(words.split(" ").flatMap(token => token.split("-").filter(Boolean)));
   const clocks = timeKey(when ?? "").split(/\s*[a-z'][a-z']*\s*/).map(group => group.trim()).filter(Boolean);

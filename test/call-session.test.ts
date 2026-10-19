@@ -800,3 +800,33 @@ describe("round 13 review findings", () => {
     expect(agreesTo(reply, "one hundred dollars total, Tuesday at ten thirty", 100, "Tuesday at ten thirty")).toBe(false);
   });
 });
+
+describe("round 14 review findings", () => {
+  it("asks for one total instead of reading back a time that carries a price", () => {
+    const { state, effects } = play([answered, heard("It's 80, plus a deposit"), confirm(80, "ok", "Friday at 3, plus a $400 deposit")], undefined, { ...brief, maxUsd: 100 });
+    expect(state.readBack).toBeUndefined();
+    expect(state.phase).toMatchObject({ kind: "talking" });
+    expect(spoken(effects).at(-1)).toBe("Sorry, I need one total price, including any deposit. What is the total?");
+  });
+
+  it.each(["Yes, ten.", "Yes, 10.", "Yes, thirty.", "Yes, 30.", "Yes, ten o'clock."])("does not book part of the read-back time: %s", reply => {
+    expect(agreesTo(reply, "eighty dollars total, Friday at 10:30 am", 80, "Friday at 10:30 am")).toBe(false);
+  });
+
+  it.each(["Yes, ten thirty am.", "Yes, 10:30 am.", "Yes, Friday."])("still books a whole echo of the read-back time: %s", reply => {
+    expect(agreesTo(reply, "eighty dollars total, Friday at 10:30 am", 80, "Friday at 10:30 am")).toBe(true);
+  });
+
+  it("discloses before the goodbye when the owner never answers after a cut", () => {
+    const asked = play([answered, [heard("It's 300"), 1000], [confirm(300), 2000]]);
+    const cut = play([[{ kind: "interrupted", spokenSoFar: "One moment" }, 3000]], asked.state);
+    const { effects } = play([[{ kind: "hold_tick" }, 2000 + OWNER_PATIENCE_MS]], cut.state);
+    expect(spoken(effects)[0]?.startsWith(disclosure("Maya"))).toBe(true);
+  });
+
+  it("redacts a card number that the brain put in the time", () => {
+    const { state, effects } = play([answered, heard("Friday works"), confirm(80, "ok", "Friday at 3, card 4111 1111 1111 1111")], undefined, { ...brief, maxUsd: 100 });
+    expect(spoken(effects).join(" ")).not.toMatch(/1111/);
+    expect(state.readBack?.line).not.toMatch(/1111/);
+  });
+});

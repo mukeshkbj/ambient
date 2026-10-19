@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { amountsIn, disclosure } from "../src/calls/rules.js";
+import { amountsIn, chargedIn, disclosure } from "../src/calls/rules.js";
 import { startCall, step, type CallState } from "../src/calls/session.js";
 import { parsePhoneNumber, type CallBrief, type CallInput } from "../src/calls/types.js";
 
@@ -26,7 +26,7 @@ const QUOTES = [
 const CLEAN_YES = ["Yes, that's right.", "Yep, sorry, that's right.", "Yes, no problem.", "That'll work.", "Of course.", "Mm-hmm."] as const;
 const NOT_YES = [
   "No, it's more than that.", "Yeah, no, that's too low.", "Absolutely not.", "Okay, let me check with my manager.", "Are you sure?", "Yes, plus parts.",
-  "Yes, that's per hour.", "Sure, unless it's a bigger leak.", "Okay, 150.", "Yes. We're at 4500 Main Street.", "Sorry, we're booked.", "Hmm."
+  "Yes, that's per hour.", "Sure, unless it's a bigger leak.", "Okay, 150.", "Yes. We're at 4500 Main Street.", "Sorry, we're booked.", "Hmm.", "Yes, ten.", "Yes, thirty."
 ] as const;
 const OWNER: ReadonlyArray<(n: number) => [string, number | undefined]> = [
   n => [`offer $${n}`, n], n => [`tell them ${n} works`, n], n => [`go to ${n} dollars`, n], n => [`${n}`, undefined],
@@ -111,7 +111,7 @@ function playCall(seed: number) {
     if (next() < 0.4) run({ kind: "brain", turn: 0, step: { kind: "say", text: pick(AGENT), last: true } });
     if (next() < 0.4) run({ kind: "heard", text: pick(NOT_YES) });
     const claim = pick([undefined, quoted, Math.max(1, quoted - 60), 12, quoted + 40]);
-    const when = pick([undefined, "Tuesday at ten thirty", "Tuesday at ten forty-five", "Wednesday at six"]);
+    const when = pick([undefined, "Tuesday at ten thirty", "Tuesday at ten forty-five", "Wednesday at six", "Wednesday at six, plus a $400 deposit", "Tuesday at ten thirty, card 4111 1111 1111 1111"]);
     run({ kind: "brain", turn: 0, step: { kind: "end_call", outcome: { kind: "confirmed", summary: pick(SUMMARIES), ...(claim !== undefined ? { amountUsd: claim } : {}), ...(when ? { when } : {}) } } });
   }
   return { state, limit, replies, approved, undisclosed };
@@ -124,6 +124,8 @@ describe("honesty over generated calls", () => {
     for (let seed = 1; seed <= 4000; seed += 1) {
       const { state, limit, replies, approved, undisclosed } = playCall(seed);
       if (undisclosed.length > 0) failures.push(`seed ${seed}: after a cut disclosure the agent said "${undisclosed[0]}" first`);
+      const leaked = state.turns.find(turn => turn.speaker === "agent" && /(?:\d[\s-]?){12,}/.test(turn.text));
+      if (leaked) failures.push(`seed ${seed}: the agent said a card-length digit run: ${leaked.text}`);
       if (state.phase.kind !== "ended" || state.phase.outcome.kind !== "confirmed") continue;
       booked += 1;
       const amount = state.phase.outcome.amountUsd;
@@ -139,6 +141,7 @@ describe("honesty over generated calls", () => {
       if (reply?.speaker !== "business") fail("the booking did not follow a business reply");
       if (!readBack) fail("no read-back before the booking");
       else if (amount !== undefined && !amountsIn(readBack.text.split(" total")[0] ?? "").includes(amount)) fail(`booked ${amount}, which the read-back did not say`);
+      if (readBack && chargedIn(readBack.text).some(value => value !== amount)) fail(`booked ${amount} after a read-back that named another price`);
       if (readBack && amountsIn(state.phase.outcome.summary).some(value => !amountsIn(readBack.text).includes(value))) fail(`reported "${state.phase.outcome.summary}", which the read-back did not say`);
       if (replies.at(-1)?.clean !== true || reply?.text !== replies.at(-1)?.text) fail("booked without a clean yes");
       const when = state.phase.outcome.when;

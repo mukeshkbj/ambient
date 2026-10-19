@@ -152,7 +152,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       if (phase.kind !== "waiting_for_owner") return unchanged(state);
       const elapsed = (from: string) => Date.parse(now) - Date.parse(from);
       if (elapsed(phase.since) >= OWNER_PATIENCE_MS) {
-        const line = `I'm sorry, I can't reach ${brief.ownerName} right now. I'll tell ${brief.ownerName} you were holding. Thank you, goodbye.`;
+        const line = `${state.disclosed ? "" : `${disclosure(brief.ownerName)} `}I'm sorry, I can't reach ${brief.ownerName} right now. I'll tell ${brief.ownerName} you were holding. Thank you, goodbye.`;
         const closed = withTurn(state, "agent", line, now);
         return end(closed, { kind: "unconfirmed", reason: `${brief.ownerName} didn't answer in time, so nothing was agreed` }, [say(line), { kind: "hang_up" }]);
       }
@@ -181,9 +181,14 @@ function brainStep(state: CallState, brain: BrainStep, now: string): Transition 
   }
 }
 
-function confirm(state: CallState, outcome: Confirmed, now: string): Transition {
+function confirm(state: CallState, proposed: Confirmed, now: string): Transition {
   const { brief } = state;
   const owner = brief.ownerName;
+  if (chargedIn(proposed.when ?? "").length > 0) {
+    const line = "Sorry, I need one total price, including any deposit. What is the total?";
+    return { state: { ...withTurn(flushDraft(state, now), "agent", line, now), readBack: undefined }, effects: [say(line)] };
+  }
+  const outcome = proposed.when ? { ...proposed, when: redactDigits(proposed.when) } : proposed;
   const claimed = [...(outcome.amountUsd !== undefined ? [outcome.amountUsd] : []), ...chargedIn(outcome.summary)].filter(amount => Number.isFinite(amount) && amount > 0);
   const charge = claimed.length > 0 ? Math.max(...claimed) : undefined;
   const limit = brief.maxUsd ?? 0;
