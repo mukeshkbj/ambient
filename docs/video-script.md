@@ -4,6 +4,10 @@ Target: 2:40 by the per-beat budget below. The hard cap is 2:55, under the 3:00 
 
 There is no phone dial-out in this version, so no real phone rings. The business answers on a web link that a phone browser opens like an incoming call.
 
+## Draft cut
+
+`python scripts/render-video.py` renders a draft of this video from the simulator into `.ambient/video/ambient-draft.mp4`. It starts three fresh zero-key demo servers at half the demo speed, records the single call, the call-around and the "Try to fool it" panel, and cuts them by event marks with ffmpeg. It adds the captions, the title cards, the montage stills and the "simulated" label. The draft runs about 2:04 and has no voice, because the simulator's speech is not recorded. Use it as the fallback video, or as a cut guide for the take with a voiceover. Each frame of the draft was checked by eye on 2026-10-19.
+
 ## What each beat needs
 
 - **HW**: the owner's Echo Dot or Echo Show, the custom skill deployed to a public HTTPS host, and a Voice Monkey token for the spoken cue. None of this has run yet.
