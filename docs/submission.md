@@ -9,7 +9,7 @@ Public repo: [PUBLIC REPO URL]
 
 ## Inspiration
 
-Every household has calls nobody wants to make. The plumber. The dentist. The insurance company. Assistants can act through services that have an API, but most small businesses still answer a phone. We wanted Alexa to make that call, and to report honestly what happened on it.
+Every household has calls nobody wants to make. The plumber. The dentist. The insurance company. Assistants can act through services that have an API, but many local errands still end in a phone call to a business. We wanted Alexa to make that call, and to report honestly what happened on it.
 
 ## What it does
 
@@ -45,7 +45,7 @@ No pilot has run, so we have no results. The numbers below are targets. We chose
 
 People who put off calls. In a 2023 US survey for weBoost, 47% of Gen Z said they feel anxious when they see someone is calling them ([report, PDF](https://assets.wilsonelectronics.com/m/3788b144e055bd3f/original/weBoost-Good-Call-Survey-Full-Report-Presentation.pdf)). The errand still has to happen: a plumber, a vet, a repair shop.
 
-Small businesses are hard to reach by phone. Invoca analyzed 70 million tracked inbound calls and classified 44% as missed, meaning they never reached a person ([Invoca Lead Conversion Benchmarks Report 2026, as summarized by JustCall](https://justcall.io/blog/missed-call-statistics.html)). The data comes from businesses that pay for call tracking, so JustCall notes the true rate is probably higher. An agent that calls a business must expect to wait, retry, and end the call unconfirmed.
+Small businesses are hard to reach by phone. Invoca analyzed 70 million tracked inbound calls and classified 44% as missed, meaning they never reached a person ([Invoca Lead Conversion Benchmarks Report 2026, as summarized by JustCall](https://justcall.io/blog/missed-call-statistics.html)). The data comes from businesses that pay for call tracking, so JustCall notes the true rate is probably higher. The call code plans for that. While the owner decides, the agent speaks a hold line every 15 seconds. After 90 seconds without an answer from the owner, it ends the call unconfirmed. After three unanswered read-backs, or five in all, it also ends unconfirmed. The code has no automatic redial or retry.
 
 Ambient is also for anyone who cannot easily make a call: a parent holding a baby, a person with a speech or hearing difficulty, an older adult who finds phone menus hard. In a 2024 US survey of adults with hearing loss, 54% said they had difficulty communicating over the phone because of it ([Statista Research Department](https://www.statista.com/statistics/1550270/hearing-loss-barriers-us-adults), page fetched on 2026-10-19). The CDC reports that 26.8% of US adults aged 65 and over had some difficulty hearing in 2019, even with a hearing aid ([NCHS Data Brief 414](https://www.cdc.gov/nchs/products/databriefs/db414.htm)).
 
@@ -53,7 +53,7 @@ A home service is the first call a household would hand to Alexa. The call is sh
 
 The household keeps the decision. Ambient never agrees to more than the owner allowed without asking first.
 
-The same reducer works for any business that answers a phone. A real launch would start with one category, home repair, where a call usually ends in a time and a price.
+This document describes one call: a plumber who quotes a time and a price. We claim only what the demo calls show. A real launch would start with one category, home repair, where a call usually ends in a time and a price.
 
 ## Consent and the law
 
@@ -89,7 +89,7 @@ A gated toolkit. The Alexa+ MCP toolkit and simulator were gated as of 2026-10-1
 
 ## Accomplishments
 
-The honesty rules live in a pure reducer, not in a prompt. Five test files enforce them: `test/call-session.test.ts`, `test/call-honesty.test.ts`, `test/read-back-replies.test.ts`, `test/call.test.ts`, and `test/caller.test.ts`. `pnpm exec vitest list` shows 509 tests in those files on 2026-10-19. They include the 4,000-call property test and the 192-reply corpus. The whole suite lists 673 tests. The other 164 cover the rest, including voice, Alexa, and security.
+The honesty rules live in a pure reducer, not in a prompt. Five test files enforce them: `test/call-session.test.ts`, `test/call-honesty.test.ts`, `test/read-back-replies.test.ts`, `test/call.test.ts`, and `test/caller.test.ts`. On 2026-10-19, `pnpm exec vitest list` on those files listed 550 tests. They include the 4,000-call property test and the 192-reply corpus. The whole suite listed 718 tests. The other 168 cover the rest, including voice, Alexa, and security. Run `pnpm exec vitest list` for the current count.
 
 Three adversarial reviews of the reducer and repeated structural review rounds, all by AI reviewers, tried to break the rules and the voice line. Each round is logged in the [progress log](../progress.md). Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
 
@@ -101,7 +101,7 @@ Honesty belongs in a state machine. Prompt-level instructions leaked under revie
 
 MCP elicitation has sharp edges. Inside a tool call, it reaches the client only on an SSE response tied to that request, and otherwise hangs with no error. The reproduction is in `docs/friction-log.md`.
 
-The approval card should lead with the stake. "$180, Joe's Plumbing" told the owner more than any sentence we wrote.
+The approval card should lead with the stake. "$180 · Tuesday the 20th at 10 am" told the owner more than any sentence we wrote.
 
 ## What's next
 

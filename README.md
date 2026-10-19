@@ -2,7 +2,7 @@
 
 **Alexa, handle the call.**
 
-Ambient is an agent that negotiates under your limit, asks you again when the business counters, and refuses an unclear yes. You ask Alexa to call the plumber. An AI agent makes the call and says first that it is an AI. If the price goes over your limit, Alexa asks you in the kitchen. You say "offer one fifty". The agent says it on the call, and if the business counters, Alexa asks you again. The agent books only after a clear yes to a read-back of the exact price and time. At the end, Alexa reports only what the business confirmed. If the business agreed a day but gave no calendar date, the card says "Booked · price confirmed" with "Only the weekday was given · ask <biz> for the date", and Alexa adds "They gave a day but no date, so check which one."
+Ambient negotiates under your limit, asks you again when the business counters, and refuses an unclear yes. You ask Alexa to call the plumber, and an AI agent makes the call and says first that it is an AI. The agent books only after a clear yes to a read-back of the exact price and time, and Alexa reports only what the business confirmed.
 
 **Status today.** No live call has happened. The demo runs this whole flow against a simulated business and a simulated Alexa+ host. The voice line, the Claude brain, and the Alexa skill are built but have not run live. See [What is real and what is simulated](#what-is-real-and-what-is-simulated) and [Limits](#limits-stated-plainly).
 
@@ -16,7 +16,7 @@ Ambient is an agent that negotiates under your limit, asks you again when the bu
 
 The cells come from the pages fetched on 2026-10-18 and recorded in the [reference bar](docs/plans/2026-10-18-handle-the-call/reference-bar.md). "Not described" means those pages do not say.
 
-![The Echo Show card: Joe's Plumbing quotes $180 for Tuesday the twentieth at ten, $30 over the $150 limit, with the buttons Book $180, Offer $150, and Decline](docs/media/sim-card-hero.png)
+![The Echo Show card: Joe's Plumbing quotes $180 for Tuesday the 20th at 10 am, $30 over the $150 limit, with the buttons Book $180, Offer $150, and Decline](docs/media/sim-card-hero.png)
 
 | | |
 |---|---|
@@ -41,29 +41,29 @@ pnpm demo
 
 ```text
 > delegate {"task":"Call Joe's Plumbing and book a visit to fix the kitchen sink, keep it under 150","newConversation":true}
-  Alexa: Joe's Plumbing wants one hundred eighty dollars for Tuesday the twentieth at ten. Your limit is one hundred fifty dollars. Say approve to book it, offer a price like one fifty, or hang up.
+  Alexa: Joe's Plumbing wants one hundred eighty dollars for Tuesday the 20th at 10 am. Your limit is one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up.
 > status
-  Alexa: Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer a price like one fifty, or hang up.
+  Alexa: Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up.
 > delegate {"task":"offer 150"}
   Alexa: Okay, offering one hundred fifty dollars. Say status to hear their answer.
 > status
-  Alexa: Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer a price like one fifty, or hang up.
+  Alexa: Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer followed by a price like one fifty, or hang up.
 > approve {"decision":"once"}
-  Alexa: Joe's Plumbing confirmed Tuesday the twentieth at ten for one hundred sixty dollars.
+  Alexa: Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.
 > status
-  Alexa: Joe's Plumbing confirmed Tuesday the twentieth at ten for one hundred sixty dollars.
+  Alexa: Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars.
 ```
 
 The end of the same run, from the call transcript:
 
 ```text
-  Ambient: Just to confirm: one hundred sixty dollars total, Tuesday the twentieth at ten. Is that right?
+  Ambient: Just to confirm: one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?
   Joe's Plumbing: Yes, plus parts.
   Ambient: Sorry, I need one total price. What is the total with parts?
   Joe's Plumbing: Fair enough. A sink like that needs no parts, so that's all in.
-  Ambient: Let me check once more: one hundred sixty dollars total, Tuesday the twentieth at ten. Is that right?
+  Ambient: Let me check once more: one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?
   Joe's Plumbing: Yes, that's right. See you then.
-  Ambient: Great, Maya will expect you Tuesday the twentieth at ten. Thanks, goodbye.
+  Ambient: Great, Maya will expect you Tuesday the 20th at 10 am. Thanks, goodbye.
 smoke: ok, the business countered, "yes, plus parts" did not book, and the call booked at the approved counter
 ```
 
@@ -89,7 +89,7 @@ Rules 1 to 4 are enforced in the reducer and tested in [`test/call-session.test.
 | Rule | What the code does |
 |---|---|
 | 1. The first words are an AI disclosure | The line speaks "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else. |
-| 2. "Confirmed" means the business confirmed | Only the brain's `end_call` can start a booking. The reducer then reads the terms back word for word ("Just to confirm: one hundred sixty dollars total, Tuesday the twentieth at ten. Is that right?"). The read-back counts only after it has fully played; the voice page reports playback, and speech during playback that is not agreement cancels it. It books only if the business's reply is short, contains a confirmation word ("yes", "that's right", "sounds good"), and otherwise holds only courtesy words and the exact amount and time from the read-back. Any other word or number, a negation, or a question returns to the conversation. Each retry is worded differently, so a late playback report cannot arm the wrong one. A labelled corpus of 192 replies pins this. After three unanswered read-backs, or five in all, the call ends unconfirmed. A dropped line is always unconfirmed. A seeded test plays 4,000 generated calls and checks that every booking followed a clean yes to a read-back of that exact amount. |
+| 2. "Confirmed" means the business confirmed | Only the brain's `end_call` can start a booking. The reducer then reads the terms back word for word ("Just to confirm: one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?"). The read-back counts only after it has fully played; the voice page reports playback, and speech during playback that is not agreement cancels it. It books only if the business's reply is short, contains a confirmation word ("yes", "that's right", "sounds good"), and otherwise holds only courtesy words and the exact amount and time from the read-back. Any other word or number, a negation, or a question returns to the conversation. Each retry is worded differently, so a late playback report cannot arm the wrong one. A labelled corpus of 192 replies pins this. After three unanswered read-backs, or five in all, the call ends unconfirmed. A dropped line is always unconfirmed. A seeded test plays 4,000 generated calls and checks that every booking followed a clean yes to a read-back of that exact amount. |
 | 3. A price above the limit needs the owner | The reducer turns an over-limit confirmation into a question for the owner. Only a clear offer ("offer 160", "one sixty") counts as approval. "Don't pay 180" does not. A declined price ends the call with no deal. A deal with no price also needs the owner. |
 | 4. No card numbers | Runs of 12 or more digits, spoken or written, become "that number". The check holds digits back across stream chunks, so a number split over several chunks is still caught. |
 | 5. Dialing an unknown business needs approval | A business found by web search gets a "Call them?" approval. A number the user gives is dialed directly. |
@@ -117,8 +117,8 @@ Three adversarial reviews of the reducer and repeated structural review rounds, 
 ## The house
 
 - **Echo Dot.** The custom skill ([`src/alexa.ts`](src/alexa.ts), [`alexa/interaction-model.en-US.json`](alexa/interaction-model.en-US.json)) starts, steers, approves, and ends calls in one sentence each. When a call needs the owner, a Voice Monkey announcement speaks the question and Proactive Events adds a notification ([`src/cue.ts`](src/cue.ts)).
-- **Echo Show and Fire TV.** The MCP App card leads with the stake ("$180 · Joe's Plumbing"). On a screen it carries "Approve $180" and "Decline", which call the `approve` tool through the host.
-- **Memory.** Each call is stored in SQLite. The next call to the same business starts with what the last one learned ("Remembered from Oct 18 — confirmed, quoted one hundred sixty dollars").
+- **Echo Show and Fire TV.** The MCP App card leads with the stake ("$180 · Tuesday the 20th at 10 am"). On a screen it carries "Book $180", "Offer $150", and "Decline", which call the `approve` and `delegate` tools through the host. If the business agrees a day but gives no calendar date, the card says "Booked · date still open" with "Only the weekday was given · ask <business> for the date", and Alexa adds "They gave a day but no date, so check which one."
+- **Memory.** Each call is stored in SQLite. The next call to the same business starts with what the last one learned ("Remembered from Oct 18 — confirmed, quoted one hundred sixty dollars, Tuesday the 20th at 10 am").
 
 ## Real calls
 
@@ -141,7 +141,7 @@ pnpm call
 pnpm scan    # typecheck, eslint, knip, and the full test suite
 pnpm build
 pnpm smoke:mcp            # a full simulated call through /mcp
-pnpm call:dry             # the same call over the AssemblyAI voice-line code, against a local fake of AssemblyAI (no keys)
+pnpm call:dry             # the same call over the AssemblyAI voice-line code, against a local fake of AssemblyAI (no keys); the first line it prints is "brain: scripted … AssemblyAI: a local fake"
 python scripts/shots-sim.py   # every call state, light and dark, into docs/media/ (start pnpm demo with AMBIENT_DATA_DIR set to an empty directory first)
 pnpm brain:latency        # time to first word on Claude (needs ANTHROPIC_API_KEY)
 ```
