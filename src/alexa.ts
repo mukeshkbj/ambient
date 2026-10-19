@@ -61,7 +61,7 @@ function speech(value: string): { type: "SSML"; ssml: string } {
 function repromptFor(value: string, live: boolean): string {
   const question = value.match(/[^.?!]+\?$/)?.[0]?.trim();
   const choices = value.match(/Say (?:approve|yes)[^.?!]*\.$/)?.[0];
-  return question ?? choices ?? (live ? "Say status, or hang up." : "Who should I call?");
+  return question ?? choices ?? (live ? "Ask how it's going, or say hang up." : "Who should I call?");
 }
 
 const ENDED: RunStatus[] = ["completed", "failed", "cancelled", "unknown"];
@@ -160,11 +160,11 @@ function decision(value: string | undefined): "once" | "deny" | undefined {
 function errorText(error: unknown): string {
   const message = error instanceof Error ? error.message.toLowerCase() : "";
   if (message.includes("not found")) return "I could not find that item.";
-  if (message.includes("already has active")) return "A call is already in progress. Say status, or hang up.";
+  if (message.includes("already has active")) return "A call is already in progress. Ask how it's going, or say hang up.";
   if (message.includes("already finished")) return "That call is already finished.";
   if (message.includes("unknown")) return "The assistant needs to reconnect before I can do that.";
   if (message.includes("approval")) return "I could not pass that decision on.";
-  return "I could not do that. Say status, or try again.";
+  return "I could not do that. Ask how it's going, or try again.";
 }
 
 function runAttributes(attributes: Record<string, unknown>, run: RunView): Record<string, unknown> {
@@ -214,8 +214,8 @@ function startedCall(entry: RuntimeEntry, run: RunView): string {
   if (ACTIVE_STATUSES.has(run.status) && run.status !== "waiting_approval") {
     const business = run.subject ?? /^calling\s+(.+?)\.?$/i.exec(run.progress ?? "")?.[1];
     return business
-      ? `I'm calling ${business} now. Say status any time.`
-      : "I'm calling now. Say status any time.";
+      ? `I'm calling ${business} now. Ask how it's going any time.`
+      : "I'm calling now. Ask how it's going any time.";
   }
   return speak(run, { label: entry.descriptor.label, state: entry.engine.runtime().state });
 }
@@ -259,7 +259,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     const live = activeCall(registry, attributes);
     const limit = live?.run.approval?.limitUsd;
     if (live?.run.approval) return response(`Sorry, I didn't catch that. Say yes, offer a price${limit !== undefined ? ` like ${priceInWords(limit)}` : ""}, or say no.`, attributes, false, true);
-    if (live) return response("Sorry, I didn't catch that. Say status, or hang up.", attributes, false, true);
+    if (live) return response("Sorry, I didn't catch that. Ask how it's going, or say hang up.", attributes, false, true);
     return response("I did not understand that. Say call, followed by what you need, or say help.", attributes);
   }
   if (name === "StartCallIntent") {
@@ -287,7 +287,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     try {
       const run = await target.entry.engine.steer(target.run.id, message);
       const ctx = { label: target.entry.descriptor.label, state: target.entry.engine.runtime().state };
-      return response(run.subject ? steerReply(run, ctx, message) : "Okay, I'll tell them. Say status to hear their answer.", runAttributes(attributes, run), false, isLive(run));
+      return response(run.subject ? steerReply(run, ctx, message) : "Okay, I'll tell them. To hear their answer, ask how it's going.", runAttributes(attributes, run), false, isLive(run));
     } catch (error) {
       return response(errorText(error), attributes);
     }
@@ -299,7 +299,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     if (!choice) return response("Say yes or no.", attributes);
     const target = activeCall(registry, attributes);
     const approval = target?.run.approval;
-    if (!target || !approval) return response("Nothing is waiting on you. Say status to hear where the call stands.", attributes);
+    if (!target || !approval) return response("Nothing is waiting on you. To hear where the call stands, ask how it's going.", attributes);
     try {
       let run = await target.entry.engine.respondToApproval(approval.id, choice);
       if (dependencies.askWaitMs) run = await target.entry.engine.waitForRun(run.id, dependencies.askWaitMs);
@@ -307,7 +307,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
       const amount = approval.amountUsd !== undefined ? ` at ${dollarsInWords(approval.amountUsd)}` : "";
       const reply = run.status === "completed" || run.status === "waiting_approval"
         ? `Okay. ${speak(run, ctx)}`
-        : choice === "once" ? `Okay, telling them yes${amount}. Say status to hear how it went.` : "Okay, telling them no. Say status to hear how it went.";
+        : choice === "once" ? `Okay, telling them yes${amount}. To hear the result, ask how it went.` : "Okay, telling them no. To hear the result, ask how it went.";
       return response(reply, runAttributes(attributes, run), false, isLive(run));
     } catch (error) {
       return response(errorText(error), attributes);

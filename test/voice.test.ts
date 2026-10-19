@@ -71,7 +71,7 @@ describe("speak", () => {
 
   it("tells the user what to say next while work is running", () => {
     const text = speak(view({ status: "running", progress: "Comparing three laptops" }), ctx);
-    expect(text).toBe('My Agent is working on "Book a table for four" — Comparing three laptops. Say status any time.');
+    expect(text).toBe(`My Agent is working on "Book a table for four" — Comparing three laptops. Ask how it's going any time.`);
   });
 
   it("is honest about unknown outcomes", () => {
@@ -146,7 +146,7 @@ describe("speak", () => {
     });
 
     it("echoes the amount when the owner offers one", () => {
-      expect(steerReply(call({ status: "running" }), { label: "Ambient" }, "offer 160")).toBe("Okay, offering one hundred sixty dollars. Say status to hear their answer.");
+      expect(steerReply(call({ status: "running" }), { label: "Ambient" }, "offer 160")).toBe("Okay, offering one hundred sixty dollars. To hear their answer, ask how it's going.");
     });
 
     it("tells the owner in their own terms that they declined", () => {
@@ -171,7 +171,7 @@ describe("speak", () => {
 
     it("names the business from the run's subject even after early steps scroll away", () => {
       const view0 = view({ title: "Find a plumber", subject: "Pete's Pipes", status: "running", steps: ["Pete's Pipes: Hello?"] });
-      expect(speak(view0, { label: "Ambient" })).toBe("I'm on the phone with Pete's Pipes. They just said: Hello? Say status for the latest, or hang up.");
+      expect(speak(view0, { label: "Ambient" })).toBe("I'm on the phone with Pete's Pipes. They just said: Hello? Ask how it's going, or say hang up.");
     });
 
     it("says who it is calling before they answer", () => {
@@ -180,7 +180,7 @@ describe("speak", () => {
 
     it("says what the business last said once connected", () => {
       const steps = ["Calling Joe's Plumbing", "Connected to Joe's Plumbing", "Ambient: Hi, this is an AI assistant calling for Maya.", "Joe's Plumbing: We can come Tuesday at ten."];
-      expect(speak(call({ status: "running", steps }), { label: "Ambient" })).toBe("I'm on the phone with Joe's Plumbing. They just said: We can come Tuesday at ten. Say status for the latest, or hang up.");
+      expect(speak(call({ status: "running", steps }), { label: "Ambient" })).toBe("I'm on the phone with Joe's Plumbing. They just said: We can come Tuesday at ten. Ask how it's going, or say hang up.");
     });
 
     it("says the owner ended the call and nothing was booked", () => {
@@ -188,7 +188,7 @@ describe("speak", () => {
     });
 
     it("confirms a steer by naming who will hear it", () => {
-      expect(steerReply(call({ status: "running" }), { label: "Ambient" })).toBe("Okay, I'll tell Joe's Plumbing. Say status to hear their answer.");
+      expect(steerReply(call({ status: "running" }), { label: "Ambient" })).toBe("Okay, I'll tell Joe's Plumbing. To hear their answer, ask how it's going.");
       expect(steerReply(view({ status: "running" }), { label: "My Agent" })).toBe('Noted — passed that to My Agent while it works on "Book a table for four".');
     });
   });

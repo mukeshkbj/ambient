@@ -70,7 +70,7 @@ Beat 3 now has about 3.8 s of slack, because Joe's "Sure, we can come" line is c
 ### 5. The owner counters, and Joe counters back (0:55 to 1:20)
 
 - Owner: "Alexa, tell Ambient offer one fifty." Or tap "Offer $150 · Your limit".
-- Alexa: "Okay, offering one hundred fifty dollars. Say status to hear their answer."
+- Alexa: "Okay, offering one hundred fifty dollars. To hear their answer, ask how it's going."
 - Ambient, to Joe: "Okay, thanks for waiting. Could you do one fifty?"
 - Joe: "One fifty is too low for me. I could do one sixty."
 - Echo Show: the card asks again, "Book $160 · Tells them yes" (`docs/media/sim-countered.png`). Hold it for about 3 s.

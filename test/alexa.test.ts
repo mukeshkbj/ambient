@@ -72,8 +72,8 @@ describe("Alexa call intents", () => {
     expect(runs[0]).toMatchObject({ runtimeId: "caller", instruction: "a plumber for tomorrow" });
     expect(fake.client.createSession).toHaveBeenCalled();
     expect(speechOf(result)).toContain("I&apos;m calling");
-    expect(speechOf(result)).toContain("Say status any time.");
-    expect(result.response.reprompt?.outputSpeech.ssml).toBe("<speak>Say status, or hang up.</speak>");
+    expect(speechOf(result)).toContain("Ask how it&apos;s going any time.");
+    expect(result.response.reprompt?.outputSpeech.ssml).toBe("<speak>Ask how it&apos;s going, or say hang up.</speak>");
     close();
   });
 
@@ -137,7 +137,7 @@ describe("Alexa call intents", () => {
     expect(speechOf(await handleAlexaRequest(request("HangUpIntent"), deps))).toContain("no call in progress.</speak>");
     expect(speechOf(await handleAlexaRequest(request("SteerCallIntent", { message: "hello" }), deps))).toContain("no call in progress. To start one, say call");
     await startCall(deps);
-    expect(speechOf(await handleAlexaRequest(request("RespondApprovalIntent", { decision: "approve" }), deps))).toBe("<speak>Nothing is waiting on you. Say status to hear where the call stands.</speak>");
+    expect(speechOf(await handleAlexaRequest(request("RespondApprovalIntent", { decision: "approve" }), deps))).toBe("<speak>Nothing is waiting on you. To hear where the call stands, ask how it&apos;s going.</speak>");
     close();
   });
 
@@ -214,7 +214,7 @@ describe("Alexa call intents", () => {
   it("answers an unclear request during a call with the choices that fit the moment", async () => {
     const { deps, fake, close } = setup();
     await startCall(deps);
-    expect(speechOf(await handleAlexaRequest(request("AMAZON.FallbackIntent"), deps))).toBe("<speak>Sorry, I didn&apos;t catch that. Say status, or hang up.</speak>");
+    expect(speechOf(await handleAlexaRequest(request("AMAZON.FallbackIntent"), deps))).toBe("<speak>Sorry, I didn&apos;t catch that. Ask how it&apos;s going, or say hang up.</speak>");
     fake.emit({ type: "approval.request", sessionId: "runtime-1", payload: { requestId: "req-1", command: "book at one hundred eighty dollars", amountUsd: 180, kind: "spend" } });
     expect(speechOf(await handleAlexaRequest(request("AMAZON.FallbackIntent"), deps))).toBe("<speak>Sorry, I didn&apos;t catch that. Say yes, offer a price, or say no.</speak>");
     close();

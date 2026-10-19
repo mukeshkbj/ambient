@@ -103,7 +103,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
     if (view.status === "cancelled") return `You ended the call before ${business} confirmed. Nothing was booked.`;
     if (view.status === "running" || view.status === "accepted" || view.status === "queued") {
       const heard = lastLineFrom(view, business);
-      if (heard) return `I'm on the phone with ${business}. They just said: ${clampSentences(heard, 1)} Say status for the latest, or hang up.`;
+      if (heard) return `I'm on the phone with ${business}. They just said: ${clampSentences(heard, 1)} Ask how it's going, or say hang up.`;
       return view.steps.some(step => step.startsWith("Connected to")) ? `I'm on the phone with ${business}.` : `I'm calling ${business} now.`;
     }
   }
@@ -152,7 +152,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
       const working = view.progress
         ? `${label} is working on ${title} — ${stripEnd(clampSentences(view.progress, 1))}.`
         : `${label} is working on ${title}.`;
-      return `${working} Say status any time.`;
+      return `${working} Ask how it's going any time.`;
     }
   }
 }
@@ -171,8 +171,8 @@ export function heldStatus(view: RunView): string | undefined {
 export function steerReply(view: RunView, ctx: SpeakContext, said?: string): string {
   const business = callee(view);
   const offer = said === undefined ? undefined : offerIn(said);
-  if (business && offer !== undefined) return `Okay, offering ${dollarsInWords(offer)}. Say status to hear their answer.`;
-  return business ? `Okay, I'll tell ${business}. Say status to hear their answer.` : `Noted — passed that to ${ctx.label} while it works on "${view.title}".`;
+  if (business && offer !== undefined) return `Okay, offering ${dollarsInWords(offer)}. To hear their answer, ask how it's going.`;
+  return business ? `Okay, I'll tell ${business}. To hear their answer, ask how it's going.` : `Noted — passed that to ${ctx.label} while it works on "${view.title}".`;
 }
 
 export type VoiceResult = {
