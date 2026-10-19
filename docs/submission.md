@@ -21,7 +21,7 @@ Start with a call that does not book. At the read-back, the plumber answers "Yes
 
 The plumber call then succeeds. After the plumber answers "Yes, that's right. See you then." to a second read-back, Alexa reports "Joe's Plumbing confirmed Tuesday the 20th at 10 am for one hundred sixty dollars."
 
-Ambient can also call around. "Get quotes from plumbers to fix the kitchen sink, under 150" asks once, then calls three businesses at the same time. Each quote appears on the Echo Show as it arrives. Ambient books the cheapest quote under the limit through that call's read-back and thanks the other two businesses. A pick within the limit is never recorded as the owner's approval.
+Ambient can also call around. "Get quotes from plumbers to fix the kitchen sink, under 150" asks once, then calls three businesses at the same time. Each quote appears on the Echo Show as it arrives. In the demo the cheapest plumber speaks Spanish. Ambient discloses that it is an AI in Spanish, reads the price and time back in Spanish, and books on "Sí, correcto." The owner reads the English on the Show. Ambient books the cheapest quote under the limit through that call's read-back and thanks the other two businesses. A pick within the limit is never recorded as the owner's approval.
 
 Every booking keeps its proof: the full read-back the business heard and the reply that booked it, each with its time. The booked card quotes both lines. In the simulator, "Hear them say yes" replays them. A live call does not record audio yet.
 

@@ -47,8 +47,21 @@ function quoting(name: string, phone: string, why: string, quote: string): { can
 export const AROUND = [
   quoting("Pete's Pipes", "4155550199", "Rated for same-week visits.", "We can do Tuesday the 20th at 9 am for one forty"),
   quoting("Drain Bros", "4155550142", "Family-run, on your street.", "We can do Tuesday the 20th at 11 am for one twenty-five"),
-  quoting("Rapid Rooter", "4155550177", "Open early.", "We can do Wednesday the 21st at 8 am for one sixty")
+  {
+    candidate: { name: "Plomería Ruiz", phone: parsePhoneNumber("4155550177"), why: "Family-run, speaks Spanish.", language: "es" as const },
+    persona: {
+      name: "Plomería Ruiz",
+      opening: "Plomería Ruiz, ¿en qué le puedo ayudar?",
+      rules: [
+        { when: /cuánto sería el total\?$/i, reply: "Podemos ir el martes 20 a las 9 de la mañana por ciento veinte, todo incluido." },
+        { when: /\bpor favor reserve\b/i, reply: "Listo, queda reservado." },
+        { when: /¿es correcto\?$/i, reply: "Sí, correcto." }
+      ]
+    }
+  }
 ];
+
+const SPANISH_QUOTE = { amountUsd: 120, when: "Tuesday the 20th at 9 am" };
 
 const approvedTerms = (state: CallState) => {
   const note = state.turns.findLast(turn => turn.speaker === "owner" && turn.text.startsWith("Approved: "))?.text ?? "";
@@ -56,7 +69,31 @@ const approvedTerms = (state: CallState) => {
   return { amountUsd: amountsIn(match?.[1] ?? "").at(-1), when: match?.[2] };
 };
 
+const spokenQuote = (state: CallState) => /podemos ir (.+?) por /i.exec(state.turns.findLast(turn => turn.speaker === "business" && /podemos ir/i.test(turn.text))?.text ?? "")?.[1];
+
 const AROUND_SCRIPT: ScriptedTurn[] = [
+  {
+    when: /en qué le puedo ayudar\?$/i,
+    reply: (_, state) => [{
+      kind: "say",
+      text: ["Hola. Necesito un plomero para arreglar una fuga en el fregadero de la cocina.", state.brief.facts[0] && `La dirección es ${state.brief.facts[0].replace(/^The address is /i, "")}.`, "¿Cuándo es lo más pronto que pueden venir, y cuánto sería el total?"].filter(Boolean).join(" "),
+      last: true
+    }]
+  },
+  {
+    when: /\bpodemos ir (.+?) por ciento veinte, todo incluido\b/i,
+    reply: (match, state) => [{
+      kind: "end_call",
+      outcome: { kind: "confirmed", summary: `${state.brief.business.name} can do ${SPANISH_QUOTE.when} for ${dollarsInWords(SPANISH_QUOTE.amountUsd)}.`, ...SPANISH_QUOTE, spokenWhen: match[1]! }
+    }]
+  },
+  {
+    when: /^listo, queda reservado\.$/i,
+    reply: (_, state) => {
+      const spoken = spokenQuote(state);
+      return [{ kind: "end_call", outcome: { kind: "confirmed", summary: `${state.brief.business.name} confirmed ${SPANISH_QUOTE.when} for ${dollarsInWords(SPANISH_QUOTE.amountUsd)}.`, ...SPANISH_QUOTE, ...(spoken ? { spokenWhen: spoken } : {}) } }];
+    }
+  },
   {
     when: /\bwhat do you need\?$/i,
     reply: (_, state) => [{
@@ -151,6 +188,7 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
   {
     when: /approved:/i,
     reply: (match, state) => {
+      if (state.brief.compare && state.brief.language === "es") return [{ kind: "say", text: `Perfecto, por favor reserve ${spokenQuote(state) ?? "esa hora"}.`, last: true }];
       if (state.brief.compare) return [{ kind: "say", text: `Great, please go ahead and book ${approvedTerms(state).when ?? "that"}.`, last: true }];
       const amount = Math.max(...amountsIn(match.input ?? ""));
       return [{ kind: "say", text: `Okay, ${state.brief.ownerName} says ${priceInWords(amount)} is fine. Please go ahead and book Tuesday at ten.`, last: true }];

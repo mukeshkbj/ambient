@@ -230,7 +230,7 @@ export function agreesTo(reply: string, terms: string, amountUsd: number | undef
 
 export const OPTED_OUT = "They asked not to be called by an AI assistant.";
 
-const OPT_OUT = /\b(?:don'?t|do not|never|stop)\s+(?:call|calling|ring|ringing)\b(?!\s+back)|\b(?:take|remove)\s+(?:us|me|this number)\s+off\b|\bwe\s+don'?t\s+(?:take|accept|talk to)\s+(?:ai|robots?|bots?|automated)/i;
+const OPT_OUT = /\b(?:don'?t|do not|never|stop)\s+(?:call|calling|ring|ringing)\b(?!\s+back)|\b(?:take|remove)\s+(?:us|me|this number)\s+off\b|\bwe\s+don'?t\s+(?:take|accept|talk to)\s+(?:ai|robots?|bots?|automated)|\bno\s+(?:nos|me)\s+(?:llame|llamen|vuelva\s+a\s+llamar|vuelvan\s+a\s+llamar)|\bqu[ií]t[ae]nos\s+de\s+(?:su|la)\s+lista/i;
 
 export function optsOut(text: string): boolean {
   return OPT_OUT.test(text);

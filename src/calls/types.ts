@@ -1,4 +1,5 @@
 import type { AssistantEvent } from "../runtimes/types.js";
+import type { Language } from "./language.js";
 
 export type PhoneNumber = string & { readonly brand: "E164" };
 
@@ -8,16 +9,17 @@ export type CallBrief = {
   ownerName: string;
   maxUsd?: number;
   compare?: true;
+  language?: Language;
   facts: string[];
 };
 
-type ProofOfYes = { readBack: string; readBackAt: string; yes: string; yesAt: string };
+type ProofOfYes = { readBack: string; readBackAt: string; yes: string; yesAt: string; language?: Language; inEnglish?: string };
 
 export type Speaker = "agent" | "business" | "owner";
 export type CallTurn = { speaker: Speaker; text: string; at: string };
 
 export type CallOutcome =
-  | { kind: "confirmed"; summary: string; amountUsd?: number; when?: string; proof?: ProofOfYes }
+  | { kind: "confirmed"; summary: string; amountUsd?: number; when?: string; spokenWhen?: string; proof?: ProofOfYes }
   | { kind: "declined"; reason: string }
   | { kind: "no_deal"; reason: string }
   | { kind: "unconfirmed"; reason: string };

@@ -1,36 +1,36 @@
 > delegate {"task":"Get quotes from plumbers to fix the kitchen sink, under 150"}
-  Ambient reply: Ambient is asking: I found Pete's Pipes, Drain Bros and Rapid Rooter. Call all three and book the best quote under your limit? Say yes to allow it once, or say no.
+  Ambient reply: Ambient is asking: I found Pete's Pipes, Drain Bros and Plomería Ruiz. Call all three and book the best quote under your limit? Say yes to allow it once, or say no.
 > status
-  Ambient reply: Ambient is asking: I found Pete's Pipes, Drain Bros and Rapid Rooter. Call all three and book the best quote under your limit? Say yes to allow it once, or say no.
+  Ambient reply: Ambient is asking: I found Pete's Pipes, Drain Bros and Plomería Ruiz. Call all three and book the best quote under your limit? Say yes to allow it once, or say no.
 > approve {"decision":"once"}
-  Ambient reply: Drain Bros confirmed Tuesday the 20th at 11 am for one hundred twenty-five dollars.
+  Ambient reply: Plomería Ruiz confirmed Tuesday the 20th at 9 am for one hundred twenty dollars.
 > status
-  Ambient reply: Drain Bros confirmed Tuesday the 20th at 11 am for one hundred twenty-five dollars.
+  Ambient reply: Plomería Ruiz confirmed Tuesday the 20th at 9 am for one hundred twenty dollars.
 
 The board:
   Pete's Pipes: released, $140, Tuesday the 20th at 9 am
-  Drain Bros: booked, $125, Tuesday the 20th at 11 am
-  Rapid Rooter: released, $160, Wednesday the 21st at 8 am
+  Drain Bros: released, $125, Tuesday the 20th at 11 am
+  Plomería Ruiz: booked, $120, Tuesday the 20th at 9 am
 
 The calls, as they happened:
   Ambient to Pete's Pipes: Hi, this is an AI assistant calling for Maya. This call is transcribed.
   Ambient to Drain Bros: Hi, this is an AI assistant calling for Maya. This call is transcribed.
-  Ambient to Rapid Rooter: Hi, this is an AI assistant calling for Maya. This call is transcribed.
+  Ambient to Plomería Ruiz: Hola, le habla un asistente de inteligencia artificial que llama de parte de Maya. Esta llamada se transcribe.
   Pete's Pipes: Pete's Pipes, what do you need?
   Ambient to Pete's Pipes: Hi. I'd like a plumber to fix a leaking kitchen sink. The address is 12 Elm Street. What's your earliest time, and what would the total be?
   Drain Bros: Drain Bros, what do you need?
   Ambient to Drain Bros: Hi. I'd like a plumber to fix a leaking kitchen sink. The address is 12 Elm Street. What's your earliest time, and what would the total be?
-  Rapid Rooter: Rapid Rooter, what do you need?
-  Ambient to Rapid Rooter: Hi. I'd like a plumber to fix a leaking kitchen sink. The address is 12 Elm Street. What's your earliest time, and what would the total be?
+  Plomería Ruiz: Plomería Ruiz, ¿en qué le puedo ayudar?
+  Ambient to Plomería Ruiz: Hola. Necesito un plomero para arreglar una fuga en el fregadero de la cocina. La dirección es 12 Elm Street. ¿Cuándo es lo más pronto que pueden venir, y cuánto sería el total?
   Pete's Pipes: We can do Tuesday the 20th at 9 am for one forty, all in.
   Ambient to Pete's Pipes: One moment, let me check with Maya.
   Drain Bros: We can do Tuesday the 20th at 11 am for one twenty-five, all in.
   Ambient to Drain Bros: One moment, let me check with Maya.
-  Rapid Rooter: We can do Wednesday the 21st at 8 am for one sixty, all in.
+  Plomería Ruiz: Podemos ir el martes 20 a las 9 de la mañana por ciento veinte, todo incluido.
   Ambient to Pete's Pipes: Thanks so much for the quote. Maya is going with another option this time. Bye.
-  Ambient to Rapid Rooter: One moment, let me check with Maya.
-  Ambient to Rapid Rooter: Thanks so much for the quote. Maya is going with another option this time. Bye.
-  Ambient to Drain Bros: Okay, so just to confirm, one hundred twenty-five dollars total, Tuesday the 20th at 11 am. Is that right?
-  Drain Bros: Yes, that's right.
-  Ambient to Drain Bros: Great, that's set for Tuesday the 20th at 11 am. Thanks so much, bye.
-smoke:around: ok, three businesses quoted at once, the cheapest under the limit booked, and the other two were released
+  Ambient to Drain Bros: Thanks so much for the quote. Maya is going with another option this time. Bye.
+  Ambient to Plomería Ruiz: Un momento, lo consulto con Maya.
+  Ambient to Plomería Ruiz: Muy bien, para confirmar, ciento veinte dólares en total, el martes 20 a las 9 de la mañana. ¿Es correcto?
+  Plomería Ruiz: Sí, correcto.
+  Ambient to Plomería Ruiz: Perfecto, queda para el martes 20 a las 9 de la mañana. Muchas gracias, adiós.
+smoke:around: ok, three businesses quoted at once, the cheapest under the limit booked in Spanish through its read-back, and the other two were released

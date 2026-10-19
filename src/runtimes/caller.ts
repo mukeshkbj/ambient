@@ -10,6 +10,7 @@ import { householdFacts, type Household } from "../household.js";
 import { dollarsInWords, numberInWords } from "../words.js";
 import { errandStep, startErrand, type ErrandEffect, type ErrandInput, type ErrandState } from "../calls/errand.js";
 import type { BoardCall } from "../types.js";
+import type { Language } from "../calls/language.js";
 import {
   AssistantEvented,
   type ApprovalPayload,
@@ -43,7 +44,7 @@ export type CallerOptions = {
   quoteWindowMs?: number;
 };
 
-type Business = { name: string; phone: PhoneNumber };
+type Business = { name: string; phone: PhoneNumber; language?: Language };
 
 type Errand = {
   state: ErrandState;
@@ -256,7 +257,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
     if (AROUND_WORDS.test(instruction) && candidates.length > 1) {
       const chosen = candidates.slice(0, 3);
       const decision = await this.askToDial(sessionId, `${sessionId}:dial-all`, `I found ${names(chosen)}. Call ${chosen.length === 2 ? "both" : `all ${numberInWords(chosen.length)}`} and book the best quote under your limit?`);
-      if (decision === "once") this.callAround(sessionId, chosen.map(candidate => ({ name: candidate.name, phone: candidate.phone })), instruction, maxUsd);
+      if (decision === "once") this.callAround(sessionId, chosen.map(candidate => ({ name: candidate.name, phone: candidate.phone, ...(candidate.language ? { language: candidate.language } : {}) })), instruction, maxUsd);
       if (decision !== "deny") return;
       candidates.length = 0;
     }
@@ -436,6 +437,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
       ownerName: household.ownerName,
       ...(maxUsd !== undefined ? { maxUsd } : {}),
       ...(compare ? { compare: true as const } : {}),
+      ...(business.language ? { language: business.language } : {}),
       facts: [...householdFacts(household), ...(memory?.facts(business.phone) ?? []).map(fact => `${EARLIER_CALL} ${fact}`), ...this.pastCalls(business.phone)]
     };
     emit({ type: "status.update", payload: { text: `Calling ${business.name}`, ...(compare ? {} : { subject: business.name }) } });

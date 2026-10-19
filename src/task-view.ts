@@ -76,7 +76,9 @@ body.booked .check path{animation:draw 600ms 180ms cubic-bezier(0.2,0,0,1) both}
 body.multi[data-state="done"] .board{display:none}
 body.proof:not([data-device="tv"]){justify-content:flex-start}
 body.proof .foot{margin-top:.4em;margin-bottom:0}
-body.proof .line span{-webkit-line-clamp:3}
+body.proof .line span{-webkit-line-clamp:5}
+@media (min-width:481px){body.proof:not([data-device="tv"]){gap:1.4vw;padding-top:5vw}body.proof .stake{font-size:2em}body.proof .check{width:1.7em;height:1.7em}}
+.gloss{display:block;font-size:.88em;color:oklch(0.66 0.01 255);margin-top:.2em}
 .tile[data-state="released"] .price{text-decoration:line-through;text-decoration-thickness:2px}
 .tile[data-state="released"] .state,.tile[data-state="ended"] .state{color:var(--dim)}
 .actions{display:flex;gap:.5em;flex-wrap:wrap;align-items:center;margin-top:.3em}
@@ -240,7 +242,8 @@ function render(d){
   const mine=said.filter(l=>l.who!=="Ambient"&&l.who!==biz);
   if(ok)hint.textContent=mine.some(l=>/^Approved: /.test(l.text))?"You approved this price from home.":mine.some(l=>/^offer\\b/i.test(l.text))?"You offered this price from home.":list?"Cheapest of "+list.filter(b=>b.amountUsd!==undefined).length+" quotes"+(list.some(b=>b.state==="released")?" ("+list.filter(b=>b.state==="released"&&b.amountUsd!==undefined).map(b=>usd(b.amountUsd)+" passed").join(", ")+")":"")+(limitOf(t.instruction)?", within your "+limitOf(t.instruction).slice(6)+" limit.":"."):limitOf(t.instruction)?"Within your "+limitOf(t.instruction).slice(6)+" limit.":"";
   if(ok&&o.proof){sub.textContent="";document.body.classList.add("proof");
-   foot([{who:"Ambient \u00b7 "+stamp(o.proof.readBackAt),text:"\u201c"+esc(o.proof.readBack)+"\u201d"},{who:biz+" \u00b7 "+stamp(o.proof.yesAt),text:"\u201c"+esc(o.proof.yes)+"\u201d"}]);
+   const spanish=o.proof.language==="es"?" \u00b7 in Spanish":"";
+   foot([{who:"Ambient \u00b7 "+stamp(o.proof.readBackAt)+spanish,text:"\u201c"+esc(o.proof.readBack)+"\u201d"+(o.proof.inEnglish?'<small class="gloss">In English: \u201c'+esc(o.proof.inEnglish)+'\u201d</small>':"")},{who:biz+" \u00b7 "+stamp(o.proof.yesAt),text:"\u201c"+esc(o.proof.yes)+"\u201d"}]);
    buttons([{label:"Hear them say yes",note:"Replays the read-back and their answer",kind:"offer",keep:true,run:()=>replay(o.proof)}]);}
   if(!ok){if(theirs)foot([{who:"Last from "+biz,text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
    buttons([{label:"Call "+biz+" again",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);}}

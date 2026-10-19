@@ -1053,7 +1053,9 @@ describe("a business that asks not to be called", () => {
     "Please don't call us with an AI.",
     "Take us off your list.",
     "Stop calling this number.",
-    "We don't talk to robots, don't call here again."
+    "We don't talk to robots, don't call here again.",
+    "No nos vuelva a llamar, por favor.",
+    "Quítenos de su lista."
   ])("ends politely, books nothing, and remembers it: %s", said => {
     const { state, effects } = play([answered, [heard(said), 1000]]);
     expect(state.phase).toEqual({ kind: "ended", outcome: { kind: "declined", reason: "they asked not to be called by an AI" } });
@@ -1064,5 +1066,33 @@ describe("a business that asks not to be called", () => {
   it("keeps calling a business that only says it is busy", () => {
     const { state } = play([answered, [heard("Sorry, we're slammed today, can you call back tomorrow?"), 1000]]);
     expect(state.phase.kind).not.toBe("ended");
+  });
+});
+
+describe("a call in Spanish", () => {
+  const spanish: CallBrief = { ...brief, language: "es" };
+  const quote = (spokenWhen?: string): Input => ({
+    kind: "brain",
+    step: { kind: "end_call", outcome: { kind: "confirmed", summary: "booked", amountUsd: 120, when: "Tuesday the 20th at 9 am", ...(spokenWhen ? { spokenWhen } : {}) } }
+  });
+
+  it("discloses first in Spanish", () => {
+    expect(play([answered], undefined, spanish).state.turns[0]?.text).toBe("Hola, le habla un asistente de inteligencia artificial que llama de parte de Maya. Esta llamada se transcribe.");
+  });
+
+  it("reads back the same price and time in Spanish, refuses a qualified yes, and books on a clean one", () => {
+    const asked = play([answered, [heard("Ciento veinte, todo incluido."), 1000], [quote("el martes 20 a las 9 de la mañana"), 2000]], undefined, spanish);
+    expect(asked.state.readBack?.line).toBe("Muy bien, para confirmar, ciento veinte dólares en total, el martes 20 a las 9 de la mañana. ¿Es correcto?");
+    const qualified = play([[{ kind: "played", text: "" }, 3000], [heard("Sí, más las piezas."), 4000]], asked.state, spanish);
+    expect(qualified.state.phase.kind).not.toBe("ended");
+    const booked = play([[{ kind: "played", text: "" }, 3000], [heard("Sí, correcto."), 4000]], asked.state, spanish);
+    expect(booked.state.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 120, when: "Tuesday the 20th at 9 am", proof: { yes: "Sí, correcto." } } });
+    expect(spoken(booked.effects).at(-1)).toBe("Perfecto, queda para el martes 20 a las 9 de la mañana. Muchas gracias, adiós.");
+  });
+
+  it("asks again in Spanish when it has no Spanish time to read back", () => {
+    const { state, effects } = play([answered, [heard("Ciento veinte."), 1000], [quote(), 2000]], undefined, spanish);
+    expect(state.readBack).toBeUndefined();
+    expect(spoken(effects).at(-1)).toBe("Perdón, ¿me puede dar solo el día y la hora?");
   });
 });

@@ -1,5 +1,6 @@
 import { dollarsInWords, numberInWords } from "../words.js";
-import { agreesTo, chargedIn, disclosure, HOLD_LINE_MS, holdTrailingDigits, offerIn, OPTED_OUT, optsOut, OWNER_PATIENCE_MS, plainTime, redactDigits, sameTime } from "./rules.js";
+import { agreesInSpanish, lines, plainSpanishTime, spanishPrice } from "./language.js";
+import { agreesTo, chargedIn, HOLD_LINE_MS, holdTrailingDigits, offerIn, OPTED_OUT, optsOut, OWNER_PATIENCE_MS, plainTime, redactDigits, sameTime } from "./rules.js";
 import type { BrainStep, CallBrief, CallEffect, CallInput, CallOutcome, CallPhase, CallTurn, Speaker } from "./types.js";
 
 export type CallState = {
@@ -25,8 +26,6 @@ type Confirmed = Extract<CallOutcome, { kind: "confirmed" }>;
 type Grant = { amountUsd?: number; when?: string };
 type ReadBack = { outcome: Confirmed; line: string; terms: string; armed: boolean; earlyYes: boolean };
 
-const READ_BACK_OPENERS = ["Okay, so just to confirm,", "Let me say it back,", "One more time,", "Just so I'm sure,"];
-const talkedOver = (terms: string) => `Sorry, I talked over you. Was that a yes to ${terms}?`;
 
 export type Transition = { state: CallState; effects: CallEffect[] };
 
@@ -71,7 +70,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
     case "answered":
       if (phase.kind !== "dialing") return unchanged(state);
       return {
-        state: { ...withTurn(state, "agent", disclosure(brief.ownerName), now), phase: { kind: "talking" }, disclosed: true },
+        state: { ...withTurn(state, "agent", lines(brief.language).disclosure(brief.ownerName), now), phase: { kind: "talking" }, disclosed: true },
         effects: [status(`Connected to ${brief.business.name}`)]
       };
     case "heard": {
@@ -82,7 +81,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       }
       const heard = withTurn(flushDraft(state, now), "business", input.text, now);
       if (optsOut(input.text)) {
-        const line = "Understood, I won't call again. Sorry to bother you, goodbye.";
+        const line = lines(brief.language).optOut;
         return end(withTurn(heard, "agent", line, now), { kind: "declined", reason: "they asked not to be called by an AI" }, [{ kind: "remember", fact: OPTED_OUT }, say(line), { kind: "hang_up" }]);
       }
       if (phase.kind === "waiting_for_owner") {
@@ -92,7 +91,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       }
       if (!state.disclosed) return think(heard, now);
       if (state.readBack && !state.readBack.armed) {
-        if (agreesTo(input.text, state.readBack.terms, state.readBack.outcome.amountUsd, state.readBack.outcome.when, state.readBack.line)) return { state: { ...heard, readBack: { ...state.readBack, earlyYes: true } }, effects: [] };
+        if (agrees(state, state.readBack, input.text)) return { state: { ...heard, readBack: { ...state.readBack, earlyYes: true } }, effects: [] };
         return think({ ...heard, readBack: undefined, readBacks: state.readBacks - 1 }, now);
       }
       if (state.readBack) {
@@ -106,16 +105,16 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       const last = state.turns.findLast(turn => turn.speaker === "agent");
       const said = state.draft || state.held ? state.draft + state.held : last?.text ?? "";
       const heardText = sharedWords(said, input.spokenSoFar);
-      const cutDisclosure = !state.disclosurePlayed && !input.spokenSoFar.includes(disclosure(brief.ownerName));
+      const cutDisclosure = !state.disclosurePlayed && !input.spokenSoFar.includes(lines(brief.language).disclosure(brief.ownerName));
       const unheard = state.readBack && !state.readBack.armed ? { readBack: undefined, readBacks: state.readBacks - 1 } : { readBack: undefined };
       return { state: { ...truncateAgent(state, heardText, now), ...unheard, turn: state.turn + 1, ...(cutDisclosure ? { disclosed: false } : {}) }, effects: [] };
     }
     case "played": {
-      if (!state.disclosurePlayed && state.disclosed && input.text.includes(disclosure(brief.ownerName))) return transition({ ...state, disclosurePlayed: true }, input, now);
+      if (!state.disclosurePlayed && state.disclosed && input.text.includes(lines(brief.language).disclosure(brief.ownerName))) return transition({ ...state, disclosurePlayed: true }, input, now);
       const readBack = state.readBack;
       if (!readBack || readBack.armed || !endsWithLine(input.text, readBack.line)) return unchanged(state);
       if (readBack.earlyYes) {
-        const line = talkedOver(readBack.terms);
+        const line = lines(brief.language).talkedOver(readBack.terms);
         const asked = { ...withTurn(state, "agent", line, now), readBack: { ...readBack, line, earlyYes: false } };
         return { state: asked, effects: [say(line)] };
       }
@@ -128,7 +127,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
     case "brain":
       if (phase.kind !== "talking" || input.turn !== state.turn) return unchanged(state);
       if (!state.disclosed) {
-        const line = disclosure(brief.ownerName);
+        const line = lines(brief.language).disclosure(brief.ownerName);
         const next = brainStep({ ...withTurn(flushDraft(state, now), "agent", line, now), disclosed: true }, input.step, now);
         return { state: next.state, effects: [say(line), ...next.effects] };
       }
@@ -161,14 +160,14 @@ function transition(state: CallState, input: CallInput, now: string): Transition
     }
     case "released": {
       if (phase.kind !== "waiting_for_owner" || phase.requestId !== input.requestId) return unchanged(state);
-      const line = `Thanks so much for the quote. ${brief.ownerName} is going with another option this time. Bye.`;
+      const line = lines(brief.language).released(brief.ownerName);
       return end(withTurn(state, "agent", line, now), { kind: "no_deal", reason: `${brief.ownerName} went with another quote` }, [say(line), { kind: "hang_up" }]);
     }
     case "hold_tick": {
       if (phase.kind !== "waiting_for_owner") return unchanged(state);
       const elapsed = (from: string) => Date.parse(now) - Date.parse(from);
       if (elapsed(phase.since) >= OWNER_PATIENCE_MS) {
-        const line = `${state.disclosed ? "" : `${disclosure(brief.ownerName)} `}I'm sorry, I can't reach ${brief.ownerName} right now. I'll tell ${brief.ownerName} you were holding. Thank you, goodbye.`;
+        const line = lines(brief.language).unreachable(brief.ownerName, state.disclosed);
         const closed = withTurn(state, "agent", line, now);
         return end(closed, { kind: "unconfirmed", reason: "you didn't answer in time" }, [say(line), { kind: "hang_up" }]);
       }
@@ -201,13 +200,16 @@ function confirm(state: CallState, proposed: Confirmed, now: string): Transition
   const outcome = proposed.when ? { ...proposed, when: proposed.when.replace(/\b([ap])\.m\b\.?/gi, "$1m").replace(/\.+$/, "") } : proposed;
   const { brief } = state;
   const owner = brief.ownerName;
-  if (outcome.when !== undefined && !plainTime(outcome.when)) {
-    const asks = ["Sorry, could you give me just the day and time?", "Sorry, I missed that. What day and time?"];
+  const speech = lines(brief.language);
+  const spokenWhen = brief.language === "es" ? outcome.spokenWhen : outcome.when;
+  const plainWhen = outcome.when === undefined || (plainTime(outcome.when) && (brief.language !== "es" || (spokenWhen !== undefined && plainSpanishTime(spokenWhen))));
+  if (!plainWhen) {
+    const asks: string[] = speech.askTime;
     const flushed = flushDraft(state, now);
     const asked = flushed.turns.filter(turn => turn.speaker === "agent" && asks.includes(turn.text)).length;
     const ask = asks[Math.min(asked, asks.length - 1)]!;
     if (asked >= 2) {
-      const line = `I'll let ${brief.ownerName} know. Thanks for your time, goodbye.`;
+      const line = speech.letKnow(owner);
       return end(withTurn(flushed, "agent", line, now), { kind: "unconfirmed", reason: "they never gave a clear day and time" }, [say(line), { kind: "hang_up" }]);
     }
     return { state: { ...withTurn(flushed, "agent", ask, now), readBack: undefined }, effects: [say(ask)] };
@@ -217,7 +219,7 @@ function confirm(state: CallState, proposed: Confirmed, now: string): Transition
   const limit = brief.maxUsd ?? 0;
   if (charge !== undefined && state.deniedUsd.includes(charge)) {
     return close(state, { kind: "no_deal", reason: `${owner} declined ${dollarsInWords(charge)}` }, now,
-      `Okay, no problem. ${owner} will pass at that price. Thanks for your time, bye.`);
+      speech.passPrice(owner));
   }
   if (charge !== undefined && (charge > limit || brief.compare) && !granted(state, charge, outcome.when)) {
     const question = charge <= limit
@@ -227,7 +229,7 @@ function confirm(state: CallState, proposed: Confirmed, now: string): Transition
   }
   if (charge === undefined && state.deniedUnpriced) {
     return close(state, { kind: "no_deal", reason: `${owner} declined a deal with no price` }, now,
-      `Okay, no problem. ${owner} won't book it without a price. Thanks for your time, bye.`);
+      speech.passUnpriced(owner));
   }
   if (charge === undefined && !granted(state, undefined, outcome.when)) {
     const when = outcome.when ? ` for ${outcome.when}` : "";
@@ -235,12 +237,11 @@ function confirm(state: CallState, proposed: Confirmed, now: string): Transition
   }
   const flushed = flushDraft(state, now);
   if (state.readBacks >= 3 || state.readBacksSpoken >= 5) {
-    const line = `I'll let ${owner} know. Thanks for your time, goodbye.`;
+    const line = speech.letKnow(owner);
     return end(withTurn(flushed, "agent", line, now), { kind: "unconfirmed", reason: "they never clearly confirmed it" }, [say(line), { kind: "hang_up" }]);
   }
-  const when = outcome.when ? `, ${outcome.when}` : "";
-  const terms = charge !== undefined ? `${price(charge)} total${when}` : `no price is set${when}`;
-  const line = `${READ_BACK_OPENERS[state.readBacksSpoken % READ_BACK_OPENERS.length]} ${terms}. Is that right?`;
+  const terms = speech.terms(charge === undefined ? undefined : brief.language === "es" ? spanishPrice(charge) : price(charge), spokenWhen ?? "");
+  const line = `${speech.openers[state.readBacksSpoken % speech.openers.length]} ${terms}. ${speech.question}`;
   const agreed = [outcome.when, charge !== undefined ? `for ${price(charge)}` : outcome.when ? "with no price set" : "with no price or time set"].filter(Boolean).join(" ");
   const summary = `${brief.business.name} confirmed ${agreed}.`;
   const settled = { ...outcome, summary, ...(charge !== undefined ? { amountUsd: charge } : {}) };
@@ -254,10 +255,18 @@ function granted(state: CallState, amountUsd: number | undefined, when: string |
 function answerReadBack(state: CallState, readBack: ReadBack, reply: string, now: string): Transition | undefined {
   const lastAgent = state.turns.findLast(turn => turn.speaker === "agent");
   if (lastAgent?.text !== readBack.line) return undefined;
-  if (!agreesTo(reply, readBack.terms, readBack.outcome.amountUsd, readBack.outcome.when, readBack.line)) return undefined;
-  const full = state.turns.findLast(turn => turn.speaker === "agent" && turn.text.endsWith(`${readBack.terms}. Is that right?`)) ?? lastAgent;
-  const proof = { readBack: full.text, readBackAt: full.at, yes: reply, yesAt: now };
+  if (!agrees(state, readBack, reply)) return undefined;
+  const full = state.turns.findLast(turn => turn.speaker === "agent" && turn.text.endsWith(`${readBack.terms}. ${lines(state.brief.language).question}`)) ?? lastAgent;
+  const english = lines("en");
+  const translation = state.brief.language === "es"
+    ? { language: "es" as const, inEnglish: `${english.openers[0]} ${english.terms(readBack.outcome.amountUsd === undefined ? undefined : price(readBack.outcome.amountUsd), readBack.outcome.when ?? "")}. ${english.question}` }
+    : {};
+  const proof = { readBack: full.text, readBackAt: full.at, yes: reply, yesAt: now, ...translation };
   return close({ ...state, readBack: undefined }, { ...readBack.outcome, proof }, now);
+}
+
+function agrees(state: CallState, readBack: ReadBack, reply: string): boolean {
+  return state.brief.language === "es" ? agreesInSpanish(reply) : agreesTo(reply, readBack.terms, readBack.outcome.amountUsd, readBack.outcome.when, readBack.line);
 }
 
 function price(amount: number): string {
@@ -266,14 +275,15 @@ function price(amount: number): string {
 }
 
 function close(state: CallState, outcome: Exclude<CallOutcome, { kind: "unconfirmed" }>, now: string, line?: string): Transition {
-  const closing = line ?? (outcome.kind === "confirmed" ? (outcome.when ? `Great, that's set for ${outcome.when}. Thanks so much, bye.` : "Perfect, thanks so much. Bye.") : "Okay, no worries. Thanks for your time, bye.");
+  const speech = lines(state.brief.language);
+  const closing = line ?? (outcome.kind === "confirmed" ? speech.booked(state.brief.language === "es" ? outcome.spokenWhen : outcome.when) : speech.noDeal);
   return end(withTurn(flushDraft(state, now), "agent", closing, now), outcome, [say(closing), { kind: "hang_up" }]);
 }
 
 function askOwner(state: CallState, question: string, amountUsd: number | undefined, now: string, unpriced = false, when?: string): Transition {
   const asks = state.asks + 1;
   const requestId = `${state.callId}:ask-${asks}`;
-  const line = asks > 1 ? `Sorry, one more moment, let me check with ${state.brief.ownerName}.` : `One moment, let me check with ${state.brief.ownerName}.`;
+  const line = lines(state.brief.language).checking(state.brief.ownerName, asks > 1);
   const amount = amountUsd !== undefined ? { amountUsd } : {};
   const limit = state.brief.maxUsd !== undefined ? { limitUsd: state.brief.maxUsd } : {};
   const waiting = { ...withTurn(flushDraft(state, now), "agent", line, now), readBack: undefined };
@@ -302,16 +312,17 @@ function end(state: CallState, outcome: CallOutcome, effects: CallEffect[]): Tra
 
 function holdLine(state: CallState): string {
   const owner = state.brief.ownerName;
-  if (!state.disclosed) return disclosure(owner);
-  const lines = [`Still checking with ${owner}, thanks for holding.`, `Still here. ${owner} hasn't answered yet.`, `Sorry, one more moment with ${owner}.`];
-  return lines[state.turns.filter(turn => turn.speaker === "agent" && lines.includes(turn.text)).length % lines.length]!;
+  const speech = lines(state.brief.language);
+  if (!state.disclosed) return speech.disclosure(owner);
+  const holding = speech.holding(owner);
+  return holding[state.turns.filter(turn => turn.speaker === "agent" && holding.includes(turn.text)).length % holding.length]!;
 }
 
 function think(state: CallState, now: string): Transition {
   const turn = state.turn + 1;
   const thinking = { ...state, turn, draft: "", held: "" };
   if (state.disclosed) return { state: thinking, effects: [{ kind: "think", turn }] };
-  const line = disclosure(state.brief.ownerName);
+  const line = lines(state.brief.language).disclosure(state.brief.ownerName);
   return { state: { ...withTurn(thinking, "agent", line, now), disclosed: true }, effects: [say(line), { kind: "think", turn }] };
 }
 

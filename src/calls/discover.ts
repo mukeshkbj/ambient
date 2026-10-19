@@ -1,9 +1,10 @@
+import type { Language } from "./language.js";
 import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import type { Household } from "../household.js";
 import { parsePhoneNumber, type PhoneNumber } from "./types.js";
 
-export type Candidate = { name: string; phone: PhoneNumber; why: string };
+export type Candidate = { name: string; phone: PhoneNumber; why: string; language?: Language };
 
 export type CreateMessage = (params: Anthropic.MessageCreateParamsNonStreaming) => PromiseLike<Anthropic.Message>;
 

@@ -270,7 +270,7 @@ describe("CallerClient calling around", () => {
     const run = await engine.ask("Get quotes from plumbers to fix the kitchen sink, under 150", undefined, true);
     const ask = await until(engine, run.id, item => item.status === "waiting_approval");
     expect(ask.approval).toMatchObject({ kind: "dial" });
-    expect(ask.approval?.command).toBe("I found Pete's Pipes, Drain Bros and Rapid Rooter. Call all three and book the best quote under your limit?");
+    expect(ask.approval?.command).toBe("I found Pete's Pipes, Drain Bros and Plomería Ruiz. Call all three and book the best quote under your limit?");
     close();
   });
 
@@ -280,15 +280,16 @@ describe("CallerClient calling around", () => {
     const ask = await until(engine, run.id, item => item.status === "waiting_approval");
     await engine.respondToApproval(ask.approval!.id, "once");
     const view = await until(engine, run.id, item => item.status === "completed");
-    expect(view.outcome).toMatchObject({ kind: "confirmed", amountUsd: 125 });
+    expect(view.outcome).toMatchObject({ kind: "confirmed", amountUsd: 120, when: "Tuesday the 20th at 9 am", proof: { yes: "Sí, correcto.", language: "es", inEnglish: "Okay, so just to confirm, one hundred twenty dollars total, Tuesday the 20th at 9 am. Is that right?" } });
     expect(view.board).toEqual([
       { business: "Pete's Pipes", state: "released", amountUsd: 140, when: "Tuesday the 20th at 9 am" },
-      { business: "Drain Bros", state: "booked", amountUsd: 125, when: "Tuesday the 20th at 11 am" },
-      { business: "Rapid Rooter", state: "released", amountUsd: 160, when: "Wednesday the 21st at 8 am" }
+      { business: "Drain Bros", state: "released", amountUsd: 125, when: "Tuesday the 20th at 11 am" },
+      { business: "Plomería Ruiz", state: "booked", amountUsd: 120, when: "Tuesday the 20th at 9 am" }
     ]);
+    expect(view.steps).toContain("Ambient to Plomería Ruiz: Hola, le habla un asistente de inteligencia artificial que llama de parte de Maya. Esta llamada se transcribe.");
     expect(view.steps).toContain("Ambient to Pete's Pipes: Thanks so much for the quote. Maya is going with another option this time. Bye.");
     expect(view.steps.some(step => step.startsWith("Maya: "))).toBe(false);
-    expect(view.steps.some(step => /^Ambient to Drain Bros: .*one hundred twenty-five dollars total, Tuesday the 20th at 11 am\. Is that right\?$/.test(step))).toBe(true);
+    expect(view.steps).toContain("Ambient to Plomería Ruiz: Muy bien, para confirmar, ciento veinte dólares en total, el martes 20 a las 9 de la mañana. ¿Es correcto?");
     close();
   });
 
@@ -298,11 +299,11 @@ describe("CallerClient calling around", () => {
     const dial = await until(engine, run.id, item => item.status === "waiting_approval");
     await engine.respondToApproval(dial.approval!.id, "once");
     const best = await until(engine, run.id, item => item.approval?.kind === "spend");
-    expect(best.approval?.command).toBe("Drain Bros has the best quote: one hundred twenty-five dollars for Tuesday the 20th at 11 am, over your limit of one hundred dollars. Should I book it?");
-    expect(best.board?.map(item => item.state)).toEqual(["released", "quoted", "released"]);
+    expect(best.approval?.command).toBe("Plomería Ruiz has the best quote: one hundred twenty dollars for Tuesday the 20th at 9 am, over your limit of one hundred dollars. Should I book it?");
+    expect(best.board?.map(item => item.state)).toEqual(["released", "released", "quoted"]);
     await engine.respondToApproval(best.approval!.id, "once");
     const view = await until(engine, run.id, item => item.status === "completed");
-    expect(view.outcome).toMatchObject({ kind: "confirmed", amountUsd: 125 });
+    expect(view.outcome).toMatchObject({ kind: "confirmed", amountUsd: 120 });
     close();
   });
 });

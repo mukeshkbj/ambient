@@ -6,9 +6,9 @@
 
 Ambient negotiates under your limit, asks you again when the business counters, and refuses an unclear yes. You ask Alexa to call the plumber, and an AI agent makes the call and says first that it is an AI. The agent books only after a clear yes to a read-back of the exact price and time, and Alexa reports only what the business confirmed.
 
-**Call around.** Say "Get quotes from plumbers to fix the kitchen sink, under 150." Ambient asks once, calls three businesses at the same time, and puts each quote on the Echo Show as it arrives. It books the cheapest quote under your limit through that call's read-back, thanks the other two, and keeps the read-back and the business's yes as proof.
+**Call around.** Say "Get quotes from plumbers to fix the kitchen sink, under 150." Ambient asks once, calls three businesses at the same time, and puts each quote on the Echo Show as it arrives. The cheapest plumber answers in Spanish, so Ambient discloses, reads back and books in Spanish while the owner reads English on the Show. It books the cheapest quote under your limit through that call's read-back, thanks the other two, and keeps the read-back and the business's yes as proof.
 
-![Call around, simulated: three plumbers ring at once, quote $140, $125 and $160, and Ambient books the $125 quote under the $150 limit and releases the other two](docs/media/around.gif)
+![Call around, simulated: three plumbers ring at once and quote $140, $125 and $120; Ambient books the $120 quote, which a Spanish-speaking plumber gave, in Spanish, and releases the other two](docs/media/around.gif)
 
 **Status today.** No live call has happened. The demo runs this whole flow against a simulated business and a simulated Alexa+ host. The voice line, the Claude brain, and the Alexa skill are built but have not run live. See [What is real and what is simulated](#what-is-real-and-what-is-simulated) and [Limits](#limits-stated-plainly).
 
@@ -99,7 +99,7 @@ Rules 1 to 4 and 8 are enforced in the call reducer and tested in [`test/call-se
 
 | Rule | What the code does |
 |---|---|
-| 1. The first words are an AI disclosure | The line speaks "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else. |
+| 1. The first words are an AI disclosure | The line speaks "Hi, this is an AI assistant calling for Maya. This call is transcribed." If the business cuts it off, the agent says it again before anything else. A business that speaks Spanish hears the disclosure, the read-back and every fixed line in Spanish, from one table in `src/calls/language.ts`. |
 | 2. "Confirmed" means the business confirmed | The call books only on a short, clean yes to a fully played read-back of the exact total and time ("Okay, so just to confirm, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?"). The details are under this table. |
 | 3. A price above the limit needs the owner | The reducer turns an over-limit confirmation into a question for the owner. Only a clear offer ("offer 160", "one sixty") counts as approval. "Don't pay 180" does not. A declined price ends the call with no deal. A deal with no price also needs the owner. |
 | 4. No card numbers | Runs of 12 or more digits, spoken or written, become "that number". The check holds digits back across stream chunks, so a number split over several chunks is still caught. |
@@ -116,6 +116,7 @@ Rule 2 in detail:
 - Each retry is worded differently, so a late playback report cannot arm the wrong one.
 - After three unanswered read-backs, or five in all, the call ends unconfirmed. A dropped line is always unconfirmed.
 - A labelled corpus of 192 replies pins the reply check. A seeded test plays 4,000 generated calls and checks that every booking followed a clean yes to a read-back of that exact amount.
+- In Spanish, the reply books only if it is a clean yes ("sí", "correcto", "así es", "de acuerdo") with courtesy words and nothing else. Any number, qualifier or question returns to the conversation. The read-back needs a plain Spanish day and time, and its price is spoken in Spanish words.
 - Each booking keeps its proof: the full read-back the business heard and the reply that booked it, each with its time. The 4,000-call test checks that the proof is exactly that pair. The card quotes both lines, and "Hear them say yes" replays them in the simulator. A live call does not record audio yet.
 
 ![The simulator at the read-back: the business answers "Yes, plus parts." and Ambient asks for the total instead of booking](docs/media/sim-refused.png)

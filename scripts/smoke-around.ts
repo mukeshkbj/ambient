@@ -38,13 +38,15 @@ try {
   const done = await waitFor(["completed", "failed", "cancelled", "unknown"]);
   const board = done.structuredContent?.task?.board ?? [];
   const booked = board.filter(item => item.state === "booked");
-  if (status(done) !== "completed" || booked.length !== 1 || booked[0]!.business !== "Drain Bros") throw new Error(`Expected one booking with Drain Bros, got ${JSON.stringify(board)}`);
+  if (status(done) !== "completed" || booked.length !== 1 || booked[0]!.business !== "Plomería Ruiz") throw new Error(`Expected one booking with Plomería Ruiz, got ${JSON.stringify(board)}`);
   if (board.filter(item => item.state === "released").length !== 2) throw new Error(`Expected two released quotes, got ${JSON.stringify(board)}`);
   console.log("\nThe board:");
   for (const item of board) console.log(`  ${item.business}: ${item.state}${item.amountUsd !== undefined ? `, $${item.amountUsd}` : ""}${item.when ? `, ${item.when}` : ""}`);
   console.log("\nThe calls, as they happened:");
   for (const line of done.structuredContent?.task?.steps ?? []) if (line.includes(": ")) console.log(`  ${line}`);
-  console.log("smoke:around: ok, three businesses quoted at once, the cheapest under the limit booked, and the other two were released");
+  const steps = done.structuredContent?.task?.steps ?? [];
+  if (!steps.includes("Ambient to Plomería Ruiz: Muy bien, para confirmar, ciento veinte dólares en total, el martes 20 a las 9 de la mañana. ¿Es correcto?")) throw new Error("The Spanish call was not read back in Spanish");
+  console.log("smoke:around: ok, three businesses quoted at once, the cheapest under the limit booked in Spanish through its read-back, and the other two were released");
 } finally {
   await client.close();
 }
