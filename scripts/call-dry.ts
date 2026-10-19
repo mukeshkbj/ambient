@@ -115,6 +115,7 @@ export async function runCallDry(options: { log?: (line: string) => void } = {})
   registry.startAll();
   const client = new Client({ name: "ambient-call-dry", version: "0.1.0" });
   try {
+    log("call:dry: brain: scripted (the demo script in src/calls/demo.ts, not Claude); AssemblyAI: a local fake");
     log(`call:dry: ${REQUEST_SHAPE}`);
     await client.connect(new StreamableHTTPClientTransport(new URL(`${publicBaseUrl}/mcp`)) as Parameters<typeof client.connect>[0]);
     const waitFor = async (wanted: string[], timeoutMs = 20_000): Promise<Result> => {

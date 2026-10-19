@@ -123,14 +123,18 @@ export function plainTime(when: string): boolean {
   });
 }
 
+const CLOCK_LEAD = new Set("at around about by from to between and until after before past".split(" "));
+const CLOCK_TAIL = new Set(["am", "pm"]);
+
 function clockGroups(when: string): string[] {
+  const tokens = timeKey(when).split(" ");
   const groups: string[][] = [[]];
-  let previous = "";
-  for (const token of timeKey(when).split(" ")) {
-    if (/^\d+$/.test(token) && !MONTHS.has(previous)) groups.at(-1)!.push(token);
-    else groups.push([]);
-    previous = token;
-  }
+  tokens.forEach((token, at) => {
+    const group = groups.at(-1)!;
+    const clock = /^\d+$/.test(token) && (group.length > 0 || CLOCK_LEAD.has(tokens[at - 1] ?? "") || CLOCK_TAIL.has(tokens[at + 1] ?? ""));
+    if (clock) group.push(token);
+    else if (group.length > 0) groups.push([]);
+  });
   return groups.filter(group => group.length > 0).map(group => group.join(" "));
 }
 

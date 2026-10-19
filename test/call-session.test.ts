@@ -882,3 +882,19 @@ describe("round 16 review findings", () => {
     expect(state.readBack).toBeDefined();
   });
 });
+
+describe("round 17 review findings", () => {
+  it.each([["Yes, twenty.", "20 October at 10 AM"], ["Yes, five.", "5 June at 3"], ["Yes, twenty.", "Tuesday 20 at 10 AM"], ["Yes, twenty.", "the 20 of October at 10"], ["Yes, 20.", "20 October at 10"]] as const)(
+    "does not book a day-first date number heard alone: %s for %s",
+    (reply, when) => {
+      expect(agreesTo(reply, `one hundred fifty dollars total, ${when}`, 150, when)).toBe(false);
+    }
+  );
+
+  it.each([["Yes, ten.", "20 October at 10 AM"], ["Yes, ten thirty.", "Tuesday at ten thirty"], ["Yes, at ten.", "Tuesday 20 at 10 AM"], ["Yes, two.", "tomorrow at half past two"]] as const)(
+    "still books a whole clock echo: %s for %s",
+    (reply, when) => {
+      expect(agreesTo(reply, `one hundred fifty dollars total, ${when}`, 150, when)).toBe(true);
+    }
+  );
+});
