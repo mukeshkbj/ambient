@@ -7,8 +7,8 @@ One section per tool we used to build Ambient. Each section follows the hackatho
 - **Used it for:** the voice-first MCP tool surface in `src/mcp.ts` (`delegate`, `status`, `approve`, `stop`, `agents`, `briefing`). We wrote each tool description in the guide's "when and what" style. The device-class handling in the `/sim` host follows the guide's device list.
 - **What worked:** the voice guidance turned into rules we can test. Speech leads with the outcome, uses at most two sentences, asks one question, and never reads an internal id. `test/voice.test.ts` enforces these rules on every reply.
 - **What needs work:** the Alexa+ MCP toolkit, CLI, and web simulator were gated for hackathon entrants while we built. Three pages show three different MCP protocol versions (friction entry 3). The authentication page lists `WWW-Authenticate` as unsupported, but the MCP specification requires clients to parse it (friction entry 4). We built the `/sim` host as a stand-in. It is our own MCP client, so it cannot prove what Alexa+ renders.
-- **Onboarding:** not measured. We read the public docs and applied them. The end-to-end path was not reachable, because the toolkit was gated.
-- **Would we build with it again?** Yes. Elicitation and approvals are the right shape for an agent that needs a person's consent. We would want the toolkit open before the build starts.
+- **Onboarding:** not measured. We read the public docs and applied them. The end-to-end path was not reachable, because the toolkit was gated as of 2026-10-18. For comparison, the onboarding we did measure is our own: a fresh clone of Ambient took 20 seconds to install with a warm pnpm store, and 2.5 seconds for `pnpm demo` to serve `/sim` (Windows 11, 2026-10-19). The first install on a cold store took 122 seconds.
+- **Would we build with it again?** Yes, if the toolkit opens before the build starts. Elicitation and approvals are the right shape for an agent that needs a person's consent.
 
 ## Alexa Skills Kit custom skill and request verification
 
@@ -32,7 +32,7 @@ One section per tool we used to build Ambient. Each section follows the hackatho
 - **What worked:** the SDK tracks the 2025-11-25 specification closely. Capability negotiation, `ui://` resources, and `Mcp-Session-Id` sessions worked as specified. Elicitation with form schemas worked once we used an SSE response tied to the request (friction entry 1). In-memory transports made elicitation round trips testable without a network.
 - **What needs work:** `elicitInput` inside a tool call reaches the client only on an SSE response tied to that request. In the other modes the call hangs with no error and no log (friction entry 1, severity High). Because nothing failed loudly, the hang stayed in our code for seven days, from `5087aad` to `fd17fa9`.
 - **Onboarding:** not measured.
-- **Would we build with it again?** Yes. It is the official TypeScript SDK, and it tracked the specification version we targeted.
+- **Would we build with it again?** Yes, if `elicitInput` throws when it has no stream. It is the official TypeScript SDK, and it tracked the specification version we targeted.
 
 ## MCP Apps (`ui://` task card)
 
@@ -56,7 +56,7 @@ One section per tool we used to build Ambient. Each section follows the hackatho
 - **What worked:** bring-your-own-LLM lets our reducer decide every word the agent says. The greeting is spoken verbatim, which guarantees the disclosure comes first.
 - **What needs work:** the request AssemblyAI sends to a bring-your-own LLM endpoint is not documented (friction entry 6, severity High). Two docs pages disagree on event field names (friction entry 7). A per-call greeting needs a new stored agent per call (friction entry 8). There is no documented delete, so we clear the agent's LLM settings when a call ends. AssemblyAI cannot dial out, so the business answers on a web link. The line is tested against recorded frames only; it has not run against the live API.
 - **Onboarding:** not measured. Most of the effort went into working out the undocumented request shape.
-- **Would we build with it again?** Yes. The bring-your-own-LLM design is the right one for agents that must control what they say. A real phone call would also need outbound calling.
+- **Would we build with it again?** Yes, if the bring-your-own-LLM request is documented. The design is the right one for agents that must control what they say. A real phone call would also need outbound calling.
 
 ## AWS CDK, EC2, and Secrets Manager
 

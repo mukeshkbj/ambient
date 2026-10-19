@@ -2,7 +2,9 @@
 
 **Alexa, handle the call.**
 
-Assistants can act through services that have an API. Ambient handles the ones that only answer a phone. You ask Alexa to call the plumber. An AI agent makes the call, says first that it is an AI, and talks to the business. If the price goes over your limit, Alexa asks you in the kitchen. You say "offer one sixty". The agent says it on the call. At the end, Alexa reports only what the business confirmed.
+Assistants can act through services that have an API. Ambient handles the ones that only answer a phone. You ask Alexa to call the plumber. An AI agent makes the call, says first that it is an AI, and talks to the business. If the price goes over your limit, Alexa asks you in the kitchen. You say "offer one fifty". The agent says it on the call, and if the business counters, Alexa asks you again. At the end, Alexa reports only what the business confirmed.
+
+Google Duplex books in one hop. Pixel's Hold for Me and Call Screen wait on a call or screen one. None of them negotiates under the owner's limit and asks the owner again when the business counters. Ambient does.
 
 ![The call needs you: the Echo Show asks to approve $180 while the business is on hold](docs/media/sim-needs-you.png)
 
@@ -14,9 +16,9 @@ Assistants can act through services that have an API. Ambient handles the ones t
 | **Voice line** | AssemblyAI Voice Agent API, with our own endpoint as its LLM |
 | **Entry point** | `src/server.ts` |
 
-## Run it in 60 seconds
+## Run it
 
-The demo needs no keys and no accounts. The business is simulated. Every action is a real MCP tool call.
+The demo needs no keys and no accounts. The business is simulated. Every action is a real MCP tool call. Measured on 2026-10-19 (Windows 11, warm pnpm store): `pnpm install` took 20 seconds from a fresh clone, and `pnpm demo` served `/sim` 2.5 seconds after it started. The first install on a cold store took 122 seconds.
 
 ```sh
 corepack enable
@@ -25,17 +27,21 @@ pnpm demo
 # open http://127.0.0.1:3000/sim and tap "Call Joe's Plumbing"
 ```
 
-`pnpm smoke:mcp` drives the same call through `/mcp` from the command line. It fails unless the call ends confirmed at the price the owner offered:
+`pnpm smoke:mcp` drives the same call through `/mcp` from the command line. It fails unless the call ends confirmed at the counter the owner approved. Joe counters the owner's offer, so the owner is asked a second time:
 
 ```text
-> delegate {"task":"Call Joe's Plumbing and book a visit to fix the kitchen sink, keep it under 150"}
-  Alexa: Joe's Plumbing can come Tuesday at ten for one hundred eighty dollars, over your limit of one hundred fifty dollars. Should I book it? Say approve, deny, or offer a different amount.
-> delegate {"task":"offer 160"}
-  Alexa: Okay, I'll tell Joe's Plumbing.
+> delegate {"task":"Call Joe's Plumbing and book a visit to fix the kitchen sink, keep it under 150","newConversation":true}
+  Alexa: Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Say approve to book it, offer an amount, or hang up.
+> delegate {"task":"offer 150"}
+  Alexa: Okay, offering one hundred fifty dollars.
 > status
+  Alexa: Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer an amount, or hang up.
+> approve {"decision":"once"}
   Alexa: Joe's Plumbing confirmed Tuesday at ten for one hundred sixty dollars.
-smoke: ok, the simulated call ended confirmed at the steered price
+smoke: ok, the business countered the owner's offer and the call booked at the approved counter
 ```
+
+The full run, with the call transcript, is in [`docs/demo/smoke-transcript.txt`](docs/demo/smoke-transcript.txt).
 
 ## How a call works
 
@@ -63,7 +69,7 @@ Rules 1 to 4 are enforced in the reducer and tested in [`test/call-session.test.
 | 5. Dialing an unknown business needs approval | A business found by web search gets a "Call them?" approval. A number the user gives is dialed directly. |
 | 6. Call limits | At most 3 calls to one number and 20 calls in total per 24 hours, on real lines, counting calls still in progress. |
 
-Four adversarial reviews tried to break these rules and the voice line. Each defect they reproduced is now a regression test.
+Two independent reducer reviews and eleven structural review rounds tried to break these rules and the voice line ([progress log](progress.md)). Each defect they reproduced is now a regression test.
 
 ## The house
 
@@ -89,7 +95,7 @@ pnpm call
 ## Verification
 
 ```sh
-pnpm scan    # typecheck, eslint, knip, and 595 tests
+pnpm scan    # typecheck, eslint, knip, and 618 tests
 pnpm build
 pnpm smoke:mcp            # a full simulated call through /mcp
 python scripts/shots-sim.py   # every call state, light and dark, into docs/media/
@@ -108,7 +114,7 @@ pnpm brain:latency        # time to first word on Claude (needs ANTHROPIC_API_KE
 | Piece | Status | Evidence |
 |---|---|---|
 | MCP server on `/mcp` (spec 2025-11-25, Streamable HTTP) | Real | `pnpm smoke:mcp` runs a full call through it; `test/mcp.test.ts` |
-| Simulator on `/sim` | Real | A real MCP client over loopback, standing in for the gated Alexa+ host |
+| Simulator on `/sim` | Real | A real MCP client over loopback, standing in for the Alexa+ host, which was gated as of 2026-10-18 |
 | MCP App card `ui://ambient/task` | Real | Rendered by the `/sim` host; not yet rendered by an Alexa+ host |
 | Call reducer honesty rules (`src/calls/session.ts`) | Real | Table tests (`test/call-session.test.ts`), a 192-reply corpus (`test/read-back-replies.test.ts`), and a seeded property test over 4,000 generated calls (`test/call-honesty.test.ts`) |
 | Scripted brain and the demo business | Simulated | `simulatedLine` plays Joe's Plumbing in `pnpm demo`; every action is a real MCP tool call |

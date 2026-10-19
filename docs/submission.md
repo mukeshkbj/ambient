@@ -5,7 +5,7 @@ Track: Alexa+
 Demo video: [VIDEO URL]
 Public repo: [PUBLIC REPO URL]
 
-**What you can run today, and what is not live yet.** The whole call runs end to end with zero keys: `pnpm demo` in a browser, and `pnpm smoke:mcp` through the MCP server. In that demo the business is simulated, and so is the Alexa+ host, because the Alexa+ MCP toolkit was gated for entrants. The voice line, the Claude brain, the Alexa skill, the spoken cue, and the AWS stack are built and tested against recorded traffic, but none has run live yet. No real phone call has been placed. The [README table](../README.md#what-is-real-and-what-is-simulated) lists each piece with its evidence.
+**What you can run today, and what is not live yet.** The whole call runs end to end with zero keys: `pnpm demo` in a browser, and `pnpm smoke:mcp` through the MCP server. In that demo the business is simulated, and so is the Alexa+ host, because the Alexa+ MCP toolkit was gated for entrants as of 2026-10-18. The voice line, the Claude brain, the Alexa skill, the spoken cue, and the AWS stack are built and tested against recorded traffic, but none has run live yet. No real phone call has been placed. The [README table](../README.md#what-is-real-and-what-is-simulated) lists each piece with its evidence.
 
 ## Inspiration
 
@@ -25,7 +25,15 @@ After the call, Alexa reports only what the business confirmed. Each call is sto
 
 ## Who this is for
 
-People who put off calls. In a 2023 US survey for weBoost, 47% of Gen Z said they feel anxious when they see someone is calling them ([report, PDF](https://assets.wilsonelectronics.com/m/3788b144e055bd3f/original/weBoost-Good-Call-Survey-Full-Report-Presentation.pdf)). The errand still has to happen: a plumber, a vet, a repair shop. Ambient is also for anyone who cannot easily make a call: a parent holding a baby, a person with a speech or hearing difficulty, an older adult who finds phone menus hard. The household keeps the decision. Ambient never agrees to more than the owner allowed without asking first.
+People who put off calls. In a 2023 US survey for weBoost, 47% of Gen Z said they feel anxious when they see someone is calling them ([report, PDF](https://assets.wilsonelectronics.com/m/3788b144e055bd3f/original/weBoost-Good-Call-Survey-Full-Report-Presentation.pdf)). The errand still has to happen: a plumber, a vet, a repair shop.
+
+Small businesses are hard to reach by phone. Invoca analyzed 70 million tracked inbound calls and classified 44% as missed, meaning they never reached a person ([Invoca Lead Conversion Benchmarks Report 2026, as summarized by JustCall](https://justcall.io/blog/missed-call-statistics.html)). The data comes from businesses that pay for call tracking, so JustCall notes the true rate is probably higher. An agent that calls a business must expect to wait, retry, and end the call unconfirmed.
+
+Ambient is also for anyone who cannot easily make a call: a parent holding a baby, a person with a speech or hearing difficulty, an older adult who finds phone menus hard. In a 2024 US survey of adults with hearing loss, 54% said they had difficulty communicating over the phone because of it ([Statista Research Department](https://www.statista.com/statistics/1550270/hearing-loss-barriers-us-adults)). The CDC reports that 26.8% of US adults aged 65 and over had some difficulty hearing in 2019, even with a hearing aid ([NCHS Data Brief 414](https://www.cdc.gov/nchs/products/databriefs/db414.htm)).
+
+A home service is the first call a household would hand to Alexa. The call is short and has two outcomes, a time and a price. The agent can read both back to the business word for word, and the owner can set a limit on the price.
+
+The household keeps the decision. Ambient never agrees to more than the owner allowed without asking first.
 
 The same reducer works for any business that answers a phone. A real launch would start with one category, home repair, where a call usually ends in a time and a price.
 
@@ -59,13 +67,13 @@ An honest "confirmed". Free-text price parsing leaked: an agent's own offer once
 
 Alexa cannot speak free text unprompted. Proactive Events speaks a fixed template only after the user asks. Voice Monkey is the only spoken cue, so the cue is a Voice Monkey announcement plus a notification.
 
-A gated toolkit. The Alexa+ MCP toolkit and simulator were gated during the build. We built our own MCP host on `/sim` to verify the contract end to end.
+A gated toolkit. The Alexa+ MCP toolkit and simulator were gated as of 2026-10-18. We built our own MCP host on `/sim` to verify the contract end to end.
 
 ## Accomplishments
 
-The honesty rules live in a pure reducer, not in a prompt. 595 tests enforce them, including the 4,000-call property test and the 192-reply corpus.
+The honesty rules live in a pure reducer, not in a prompt. 618 tests enforce them, including the 4,000-call property test and the 192-reply corpus.
 
-Two reducer reviews and ten structural review rounds tried to break the rules and the voice line ([progress log](../progress.md)). Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
+Two independent reducer reviews and eleven structural review rounds tried to break the rules and the voice line ([progress log](../progress.md)). Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
 
 The demo needs no keys and no accounts. `pnpm install && pnpm demo` runs a full call in the browser, and `pnpm smoke:mcp` drives the same call through `/mcp`.
 
