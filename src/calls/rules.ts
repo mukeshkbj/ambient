@@ -231,7 +231,9 @@ export function readBackVerdict(reply: string, terms: string, amountUsd: number 
   const known = new Set(clauses.filter(clause => !clause.some(word => NEGATIVE_WORDS.has(word))).flat());
   const rest = words.replace(CONFIRMATION, " ").replace(COURTESY, " ").split(" ").filter(token => token && token !== "|").flatMap(token => token.split("-").filter(Boolean));
   const extra = rest.filter(token => !(isNumber(token) || token === "a" || FILLER.has(token) || known.has(token)));
-  return extra.length === 0 ? { books: true } : refuse(`It adds words that can change the deal: "${extra.join(" ")}".`);
+  if (extra.length === 0) return { books: true };
+  const day = extra.find(token => WEEKDAYS.has(token) || (MONTHS.has(token) && token !== "may"));
+  return refuse(day ? `It names a day that was not read back: "${day}".` : `It adds words that can change the deal: "${extra.join(" ")}".`);
 }
 
 export function agreesTo(reply: string, terms: string, amountUsd: number | undefined, when?: string, line?: string): boolean {

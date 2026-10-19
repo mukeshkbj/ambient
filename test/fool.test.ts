@@ -16,6 +16,8 @@ describe("try to fool the read-back", () => {
     ["Yes, plus parts.", "not_booked", "It adds words that can change the deal: \"plus parts\"."],
     ["Sure, one eighty.", "not_booked", "It has a number that was not read back: \"one eighty\"."],
     ["Is that with tax?", "not_booked", "It is a question."],
+    ["Yes, Wednesday at ten.", "not_booked", "It names a day that was not read back: \"wednesday\"."],
+    ["Yes, we may.", "not_booked", "It adds words that can change the deal: \"we may\"."],
     ["Probably.", "not_booked", "It has no word of agreement."],
     ["Take us off your list.", "opted_out", "The business asked not to be called. Ambient ends the call and never calls this number again."]
   ] as const)("answers %j as the call reducer would: %s", (reply, result, why) => {
