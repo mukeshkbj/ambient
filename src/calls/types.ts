@@ -11,7 +11,7 @@ export type CallBrief = {
   facts: string[];
 };
 
-export type ProofOfYes = { readBack: string; readBackAt: string; yes: string; yesAt: string };
+type ProofOfYes = { readBack: string; readBackAt: string; yes: string; yesAt: string };
 
 export type Speaker = "agent" | "business" | "owner";
 export type CallTurn = { speaker: Speaker; text: string; at: string };
