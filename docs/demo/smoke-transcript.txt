@@ -1,12 +1,12 @@
 tools: delegate, delegate_task, status, approve, stop, agents, briefing
 > delegate {"task":"Call Joe's Plumbing and book a visit to fix the kitchen sink, keep it under 150","newConversation":true}
-  Alexa: Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Book it, offer less, or end the call?
+  Alexa: Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Say approve to book it, offer an amount, or hang up.
 > status
-  Alexa: Joe's Plumbing is still holding for you. Book it at one hundred eighty dollars, offer less, or end the call?
+  Alexa: Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer an amount, or hang up.
 > delegate {"task":"offer 150"}
   Alexa: Okay, offering one hundred fifty dollars.
 > status
-  Alexa: Joe's Plumbing is still holding for you. Book it at one hundred sixty dollars, offer less, or end the call?
+  Alexa: Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer an amount, or hang up.
 > approve {"decision":"once"}
   Alexa: Joe's Plumbing confirmed Tuesday at ten for one hundred sixty dollars.
 > status
@@ -21,11 +21,11 @@ The call itself (Ambient and the simulated business, with the owner's notes):
   Joe's Plumbing: Best I can do is one eighty, honestly. Parts went up this year.
   Ambient: One moment, let me check with Maya.
   Maya: offer 150
-  Ambient: Thanks for waiting. Could you do it for one hundred fifty dollars?
+  Ambient: Thanks for waiting. Could you do one fifty?
   Joe's Plumbing: One fifty is too low for me. I could do one sixty.
   Ambient: One moment, let me check with Maya.
   Maya: Approved: Joe's Plumbing came down to one hundred sixty dollars for Tuesday at ten, still over your limit of one hundred fifty dollars. Should I book it?
-  Ambient: Thanks for waiting. Maya says one hundred sixty dollars is fine. Please go ahead and book Tuesday at ten.
+  Ambient: Thanks for waiting. Maya says one sixty is fine. Please go ahead and book Tuesday at ten.
   Joe's Plumbing: Hmm, one sixty. Alright, that works if you're my first job that morning. I'll put you down for Tuesday at ten.
   Ambient: Just to confirm: one hundred sixty dollars total, Tuesday at ten. Is that right?
   Joe's Plumbing: Yes, that's right. See you then.

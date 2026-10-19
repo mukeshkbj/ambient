@@ -102,7 +102,7 @@ describe("read-back replies", () => {
       { kind: "brain", turn: 1, step: { kind: "end_call", outcome: { kind: "confirmed", summary: "Tuesday at three for $160", amountUsd: 160, when: "Tuesday at three" } } },
       { kind: "heard", text: "Mm-hmm." },
       { kind: "played", text: READ_BACK },
-      { kind: "played", text: "Sorry, I talked over you. Was that a yes?" },
+      { kind: "played", text: "Sorry, I talked over you. Was that a yes to one hundred sixty dollars total, Tuesday at three?" },
       { kind: "heard", text: "Yes, that's right." }
     ];
     inputs.forEach((input, index) => {
@@ -139,8 +139,8 @@ describe("read-back replies", () => {
   it("asks once more when the yes came while the read-back was still playing", () => {
     const asked = run([{ kind: "answered" }, { kind: "heard", text: "It's $160 for Tuesday at three." }, book(160, "Tuesday at three"), { kind: "heard", text: "Yes." }]);
     const replayed = run([{ kind: "played", text: asked.readBack!.line }], asked);
-    expect(replayed.turns.at(-1)).toMatchObject({ speaker: "agent", text: "Sorry, I talked over you. Was that a yes?" });
-    const done = run([{ kind: "played", text: "Sorry, I talked over you. Was that a yes?" }, { kind: "heard", text: "Yes." }], replayed);
+    expect(replayed.turns.at(-1)).toMatchObject({ speaker: "agent", text: "Sorry, I talked over you. Was that a yes to one hundred sixty dollars total, Tuesday at three?" });
+    const done = run([{ kind: "played", text: replayed.readBack!.line }, { kind: "heard", text: "Yes." }], replayed);
     expect(done.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 160 } });
   });
 

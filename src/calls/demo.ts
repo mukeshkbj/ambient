@@ -1,4 +1,4 @@
-import { dollarsInWords } from "../words.js";
+import { dollarsInWords, numberInWords } from "../words.js";
 import type { ScriptedTurn } from "./brain.js";
 import type { BusinessPersona } from "./line.js";
 import { amountsIn } from "./rules.js";
@@ -20,6 +20,9 @@ export const JOES_PLUMBING_HANGS_UP: BusinessPersona = {
   ...JOES_PLUMBING,
   rules: [{ when: /\b(sink|leak|visit|plumb)/i, reply: "It's one eighty, take it or leave it. I've got another call.", hangUp: true }]
 };
+
+const spoken = (amount: number) =>
+  Number.isInteger(amount) && amount >= 100 && amount < 1000 && amount % 100 >= 10 ? `${numberInWords(Math.floor(amount / 100))} ${numberInWords(amount % 100)}` : dollarsInWords(amount);
 
 export const DEMO_SCRIPT: ScriptedTurn[] = [
   {
@@ -65,7 +68,7 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
     when: /approved:/i,
     reply: (match, state) => {
       const amount = Math.max(...amountsIn(match.input ?? ""));
-      return [{ kind: "say", text: `Thanks for waiting. ${state.brief.ownerName} says ${dollarsInWords(amount)} is fine. Please go ahead and book Tuesday at ten.`, last: true }];
+      return [{ kind: "say", text: `Thanks for waiting. ${state.brief.ownerName} says ${spoken(amount)} is fine. Please go ahead and book Tuesday at ten.`, last: true }];
     }
   },
   {
@@ -86,7 +89,7 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
     reply: match => {
       const amount = amountsIn(match.input ?? "")[0];
       if (amount === undefined) return [{ kind: "say", text: "Sorry about the wait, thanks for holding.", last: true }];
-      return [{ kind: "say", text: `Thanks for waiting. Could you do it for ${dollarsInWords(amount)}?`, last: true }];
+      return [{ kind: "say", text: `Thanks for waiting. Could you do ${spoken(amount)}?`, last: true }];
     }
   }
 ];

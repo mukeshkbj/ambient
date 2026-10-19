@@ -25,7 +25,7 @@ type Confirmed = Extract<CallOutcome, { kind: "confirmed" }>;
 type ReadBack = { outcome: Confirmed; line: string; terms: string; armed: boolean; earlyYes: boolean };
 
 const READ_BACK_OPENERS = ["Just to confirm:", "Let me check once more:", "One last check:", "To be sure:"];
-const TALKED_OVER = "Sorry, I talked over you. Was that a yes?";
+const talkedOver = (terms: string) => `Sorry, I talked over you. Was that a yes to ${terms}?`;
 
 export type Transition = { state: CallState; effects: CallEffect[] };
 
@@ -109,8 +109,9 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       const readBack = state.readBack;
       if (!readBack || readBack.armed || !endsWithLine(input.text, readBack.line)) return unchanged(state);
       if (readBack.earlyYes) {
-        const asked = { ...withTurn(state, "agent", TALKED_OVER, now), readBack: { ...readBack, line: TALKED_OVER, earlyYes: false } };
-        return { state: asked, effects: [say(TALKED_OVER)] };
+        const line = talkedOver(readBack.terms);
+        const asked = { ...withTurn(state, "agent", line, now), readBack: { ...readBack, line, earlyYes: false } };
+        return { state: asked, effects: [say(line)] };
       }
       return { state: { ...state, readBack: { ...readBack, armed: true } }, effects: [] };
     }
@@ -147,7 +148,8 @@ function transition(state: CallState, input: CallInput, now: string): Transition
         return end(closed, { kind: "unconfirmed", reason: `${brief.ownerName} didn't answer in time, so nothing was agreed` }, [say(line), { kind: "hang_up" }]);
       }
       if (!(elapsed(phase.lastHoldLine) >= HOLD_LINE_MS)) return unchanged(state);
-      const line = `Still checking with ${brief.ownerName}, thanks for holding.`;
+      const holds = [`Still checking with ${brief.ownerName}, thanks for holding.`, `Thanks for holding, ${brief.ownerName} hasn't answered yet.`];
+      const line = holds[state.turns.filter(turn => turn.speaker === "agent" && holds.includes(turn.text)).length % holds.length]!;
       return { state: { ...withTurn(state, "agent", line, now), phase: { ...phase, lastHoldLine: now } }, effects: [say(line)] };
     }
   }

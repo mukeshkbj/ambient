@@ -120,14 +120,14 @@ describe("speak", () => {
     it("asks one short question when the price is over the limit", () => {
       const overLimit = { ...approval, limitUsd: 150, when: "Tuesday at ten" };
       expect(speak(call({ status: "waiting_approval", approval: overLimit }), { label: "Ambient" })).toBe(
-        "Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Book it, offer less, or end the call?"
+        "Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Say approve to book it, offer an amount, or hang up."
       );
     });
 
     it("asks a shorter question when the owner checks status on a call that is waiting", () => {
       const overLimit = { ...approval, limitUsd: 150, when: "Tuesday at ten" };
       expect(heldStatus(call({ status: "waiting_approval", approval: overLimit }))).toBe(
-        "Joe's Plumbing is still holding for you. Book it at one hundred eighty dollars, offer less, or end the call?"
+        "Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer an amount, or hang up."
       );
       expect(heldStatus(call({ status: "running" }))).toBeUndefined();
     });

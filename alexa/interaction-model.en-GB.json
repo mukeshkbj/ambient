@@ -44,6 +44,9 @@
           "name": "CallStatusIntent",
           "samples": [
             "how's the call going",
+            "status",
+            "what's the status",
+            "any update",
             "what's happening",
             "what did they say",
             "what's up"
@@ -77,7 +80,7 @@
         {
           "name": "Decision",
           "values": [
-            { "name": { "value": "approve", "synonyms": ["allow", "yes", "once", "approve once"] } },
+            { "name": { "value": "approve", "synonyms": ["allow", "yes", "once", "approve once", "book"] } },
             { "name": { "value": "deny", "synonyms": ["decline", "reject", "no", "refuse"] } }
           ]
         }

@@ -53,13 +53,15 @@ function lastLineFrom(view: RunView, speaker: string): string | undefined {
   return view.steps.findLast(step => step.startsWith(prefix))?.slice(prefix.length);
 }
 
+const OWNER_CHOICES = "Say approve to book it, offer an amount, or hang up.";
+
 /** The approval ask on its own — used as the elicitation message. */
 export function approvalAsk(view: RunView, ctx: SpeakContext): string {
   const business = callee(view);
   const approval = view.approval;
   if (business && approval?.kind === "spend" && approval.amountUsd !== undefined && approval.limitUsd !== undefined) {
     const when = approval.when ? ` for ${approval.when}` : "";
-    return `${business} wants ${dollarsInWords(approval.amountUsd)}${when}. Your limit is ${dollarsInWords(approval.limitUsd)}. Book it, offer less, or end the call?`;
+    return `${business} wants ${dollarsInWords(approval.amountUsd)}${when}. Your limit is ${dollarsInWords(approval.limitUsd)}. Say approve to book it, offer an amount, or hang up.`;
   }
   const request = view.approval?.description ?? view.approval?.command;
   if (request && view.approval?.amountUsd !== undefined) {
@@ -83,7 +85,7 @@ export function speak(view: RunView, ctx: SpeakContext): string {
   if (business) {
     if (view.status === "waiting_approval") {
       const ask = approvalAsk(view, ctx);
-      if (ask.endsWith("Book it, offer less, or end the call?")) return ask;
+      if (ask.endsWith(OWNER_CHOICES)) return ask;
       const choices = view.approval?.kind === "dial" ? "Say yes to place the call, or no." : "Say approve, deny, or offer a different amount.";
       return `${ask} ${choices}`;
     }
@@ -132,8 +134,10 @@ export function speak(view: RunView, ctx: SpeakContext): string {
 export function heldStatus(view: RunView): string | undefined {
   const business = callee(view);
   const amount = view.approval?.amountUsd;
+  const limit = view.approval?.limitUsd;
   if (!business || view.status !== "waiting_approval" || view.approval?.kind !== "spend" || amount === undefined) return undefined;
-  return `${business} is still holding for you. Book it at ${dollarsInWords(amount)}, offer less, or end the call?`;
+  const over = limit !== undefined ? `, over your limit of ${dollarsInWords(limit)}` : "";
+  return `${business} is holding at ${dollarsInWords(amount)}${over}. ${OWNER_CHOICES}`;
 }
 
 export function steerReply(view: RunView, ctx: SpeakContext, said?: string): string {

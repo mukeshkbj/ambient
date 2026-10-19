@@ -60,7 +60,7 @@ function speech(value: string): { type: "SSML"; ssml: string } {
 
 function repromptFor(value: string, live: boolean): string {
   const question = value.match(/[^.?!]+\?$/)?.[0]?.trim();
-  return question ?? (live ? "Say status, offer an amount, or hang up." : "What should I call about?");
+  return question ?? (live ? "Say status, or hang up." : "What should I call about?");
 }
 
 const ENDED: RunStatus[] = ["completed", "failed", "cancelled", "unknown"];
@@ -151,7 +151,7 @@ async function authorize(envelope: AlexaEnvelope, dependencies: AlexaSkillDepend
 function decision(value: string | undefined): "once" | "deny" | undefined {
   const normalized = value?.trim().toLowerCase();
   if (!normalized) return undefined;
-  if (["once", "approve", "approved", "allow", "yes", "y"].includes(normalized)) return "once";
+  if (["once", "approve", "approved", "allow", "yes", "y", "book"].includes(normalized)) return "once";
   if (["deny", "denied", "decline", "declined", "reject", "no", "n"].includes(normalized)) return "deny";
   return undefined;
 }
@@ -228,6 +228,9 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     return response(live ? "Goodbye. The call is still going. Ask me how it went when you're back." : "Goodbye.", attributes, true);
   }
   if (name === "AMAZON.FallbackIntent") {
+    const live = activeCall(registry, attributes);
+    if (live?.run.approval) return response("Sorry, I didn't catch that. Say approve, offer an amount, or hang up.", attributes, false, true);
+    if (live) return response("Sorry, I didn't catch that. Say status, or hang up.", attributes, false, true);
     return response("I did not understand that. Say call, followed by what you need, or say help.", attributes);
   }
   if (name === "StartCallIntent") {
@@ -273,7 +276,7 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
       const amount = approval.amountUsd !== undefined ? ` at ${dollarsInWords(approval.amountUsd)}` : "";
       const reply = run.status === "completed" || run.status === "waiting_approval"
         ? `${choice === "once" ? "Okay." : "Okay, I'll say no."} ${speak(run, ctx)}`
-        : choice === "once" ? `Okay, booking it${amount}. I'll tell you when it's done.` : "Okay, I'll say no. I'll tell you how it ends.";
+        : choice === "once" ? `Okay, telling them yes${amount}. Ask me how it went.` : "Okay, I'll say no. Ask me how it ends.";
       return response(reply, runAttributes(attributes, run), false, isLive(run));
     } catch (error) {
       return response(errorText(error), attributes);

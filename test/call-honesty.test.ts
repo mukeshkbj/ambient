@@ -37,7 +37,7 @@ const AGENT = ["Okay. The address is 12 Elm Street.", "Could you do it for less?
 type Reply = { text: string; clean: boolean };
 
 const READ_BACK = /^(Just to confirm:|Let me check once more:|One last check:|To be sure:) /;
-const TALKED_OVER = "Sorry, I talked over you. Was that a yes?";
+const TALKED_OVER = /^Sorry, I talked over you\. Was that a yes to .+\?$/;
 
 function playCall(seed: number) {
   const next = random(seed);
@@ -116,7 +116,7 @@ describe("honesty over generated calls", () => {
       const reply = after.at(-1);
       const transcript = turns.map(turn => `${turn.speaker}: ${turn.text}`).join(" | ");
       const fail = (why: string) => failures.push(`seed ${seed}: ${why}: ${transcript}`);
-      if (after.some(turn => !(CLEAN_YES as readonly string[]).includes(turn.text) && turn.text !== TALKED_OVER)) fail("something other than a clean yes followed the read-back");
+      if (after.some(turn => !(CLEAN_YES as readonly string[]).includes(turn.text) && !TALKED_OVER.test(turn.text))) fail("something other than a clean yes followed the read-back");
       if (reply?.speaker !== "business") fail("the booking did not follow a business reply");
       if (!readBack) fail("no read-back before the booking");
       else if (amount !== undefined && !amountsIn(readBack.text.split(" total")[0] ?? "").includes(amount)) fail(`booked ${amount}, which the read-back did not say`);

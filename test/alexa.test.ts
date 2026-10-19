@@ -73,7 +73,7 @@ describe("Alexa call intents", () => {
     expect(fake.client.createSession).toHaveBeenCalled();
     expect(speechOf(result)).toContain("Calling");
     expect(speechOf(result)).toContain("Ask me how it&apos;s going any time.");
-    expect(result.response.reprompt?.outputSpeech.ssml).toBe("<speak>Say status, offer an amount, or hang up.</speak>");
+    expect(result.response.reprompt?.outputSpeech.ssml).toBe("<speak>Say status, or hang up.</speak>");
     close();
   });
 
@@ -105,8 +105,38 @@ describe("Alexa call intents", () => {
     });
     const result = await handleAlexaRequest(request("AMAZON.YesIntent"), deps);
     expect(fake.client.respondToApproval).toHaveBeenCalledWith("runtime-1", "req-1", "once");
-    expect(speechOf(result)).toContain("booking it at one hundred eighty dollars");
+    expect(speechOf(result)).toContain("telling them yes at one hundred eighty dollars");
     close();
+  });
+
+  it("hears \"book it\" as approval", async () => {
+    const { deps, fake, close } = setup();
+    await startCall(deps);
+    fake.emit({ type: "approval.request", sessionId: "runtime-1", payload: { requestId: "req-1", command: "book at one hundred eighty dollars", amountUsd: 180, kind: "spend" } });
+    await handleAlexaRequest(request("RespondApprovalIntent", { decision: "book" }), deps);
+    expect(fake.client.respondToApproval).toHaveBeenCalledWith("runtime-1", "req-1", "once");
+    close();
+  });
+
+  it("answers an unclear request during a call with the choices that fit the moment", async () => {
+    const { deps, fake, close } = setup();
+    await startCall(deps);
+    expect(speechOf(await handleAlexaRequest(request("AMAZON.FallbackIntent"), deps))).toBe("<speak>Sorry, I didn&apos;t catch that. Say status, or hang up.</speak>");
+    fake.emit({ type: "approval.request", sessionId: "runtime-1", payload: { requestId: "req-1", command: "book at one hundred eighty dollars", amountUsd: 180, kind: "spend" } });
+    expect(speechOf(await handleAlexaRequest(request("AMAZON.FallbackIntent"), deps))).toBe("<speak>Sorry, I didn&apos;t catch that. Say approve, offer an amount, or hang up.</speak>");
+    close();
+  });
+
+  it.each(["en-US", "en-GB"])("the %s model hears every phrase the skill tells the owner to say", async locale => {
+    const { readFile } = await import("node:fs/promises");
+    const model = JSON.parse(await readFile(new URL(`../alexa/interaction-model.${locale}.json`, import.meta.url), "utf8"));
+    const language = model.interactionModel.languageModel;
+    const samples = (name: string): string[] => language.intents.find((intent: { name: string }) => intent.name === name)?.samples ?? [];
+    const approve = language.types.find((type: { name: string }) => type.name === "Decision").values.find((value: { name: { value: string } }) => value.name.value === "approve").name;
+    expect(samples("CallStatusIntent")).toEqual(expect.arrayContaining(["status", "what's the status"]));
+    expect(samples("HangUpIntent")).toContain("hang up");
+    expect(samples("OfferAmountIntent")).toContain("offer {amount}");
+    expect([approve.value, ...approve.synonyms]).toEqual(expect.arrayContaining(["approve", "book"]));
   });
 
   it("AMAZON.NoIntent in a fresh session denies the newest open approval of the active call", async () => {
