@@ -15,13 +15,13 @@ You ask Alexa to call a business for the household. An AI agent makes the call. 
 
 The agent negotiates within a spending limit you set. When the business quotes over the limit, the agent puts the call on hold and asks you. The question reaches Echo devices as a spoken announcement and a notification. It also reaches the Echo Show as an MCP App card with "Approve $180" and "Decline" buttons. You can steer the call by voice at any point: "Alexa, tell Ambient offer one sixty."
 
-Before the agent books, it reads the total and the time back to the business word for word. It books only on a clean yes. A qualifier such as "plus parts", any other number, or any question sends the call back to negotiation. A dropped line is always unconfirmed.
+Before the agent books, it reads the total and the time back to the business word for word. The read-back counts only after it has fully played. The agent books only if the reply is made entirely of agreement words and the exact terms it read back. A qualifier such as "plus parts", any other number or day, or any question sends the call back to negotiation. A dropped line is always unconfirmed.
 
 After the call, Alexa reports only what the business confirmed. Each call is stored in SQLite. The next call to the same business starts with what the last one learned.
 
 ## How we built it
 
-One pure function owns the call: `step(state, input, now)` in `src/calls/session.ts`. It has no clock, no network, and no model inside it. Every honesty rule is a table test against it. A seeded property test plays 4,000 generated calls and checks that every booking followed a clean yes to a read-back of that exact amount.
+One pure function owns the call: `step(state, input, now)` in `src/calls/session.ts`. It has no clock, no network, and no model inside it. Every honesty rule is a table test against it. A seeded property test plays 4,000 generated calls with mixed event orders and checks that every booking followed a clean yes to a fully played read-back of that exact amount. A labelled corpus of 158 business replies pins what counts as a yes.
 
 The surfaces are an MCP server on `/mcp` (spec 2025-11-25, Streamable HTTP), a custom Alexa skill on `/alexa`, an MCP App card `ui://ambient/task`, and a browser simulator on `/sim` that is a real MCP client over loopback.
 
@@ -47,9 +47,9 @@ A gated toolkit. The Alexa+ MCP toolkit and simulator were gated during the buil
 
 ## Accomplishments
 
-The honesty rules live in a pure reducer, not in a prompt. 344 tests enforce them, including the 4,000-call property test.
+The honesty rules live in a pure reducer, not in a prompt. 532 tests enforce them, including the 4,000-call property test and the 158-reply corpus.
 
-Four adversarial review rounds tried to break the rules and the voice line. Every defect they reproduced is now a regression test.
+Two reducer reviews and six structural review rounds tried to break the rules and the voice line. Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
 
 The demo needs no keys and no accounts. `pnpm install && pnpm demo` runs a full call in the browser, and `pnpm smoke:mcp` drives the same call through `/mcp`.
 
@@ -57,7 +57,7 @@ The demo needs no keys and no accounts. `pnpm install && pnpm demo` runs a full 
 
 Honesty belongs in a state machine. Prompt-level instructions leaked under review. A pure reducer with property tests did not.
 
-MCP elicitation has sharp edges. It silently requires SSE responses, and concurrent in-call elicitations are not multiplexed. Both entries are in `docs/friction-log.md`.
+MCP elicitation has sharp edges. Inside a tool call, it reaches the client only on an SSE response tied to that request, and otherwise hangs with no error. The reproduction is in `docs/friction-log.md`.
 
 The approval card should lead with the stake. "$180, Joe's Plumbing" told the owner more than any sentence we wrote.
 
@@ -73,4 +73,4 @@ A funded Twilio account would restore the moment when a real phone rings.
 
 ## Built with
 
-Alexa Skills Kit (custom skill, en-US and en-GB interaction models, request signature verification). ASK Proactive Events. Voice Monkey. MCP TypeScript SDK 1.30, spec 2025-11-25, Streamable HTTP. MCP Apps (`ui://ambient/task`). AssemblyAI Voice Agent API. Claude `claude-opus-5-5` through the Anthropic API. Node 22 and TypeScript. node:sqlite. Vitest. AWS CDK (stack synthesized, not deployed). pnpm.
+Alexa Skills Kit (custom skill, en-US and en-GB interaction models, request signature verification). ASK Proactive Events. Voice Monkey. MCP TypeScript SDK 1.30, spec 2025-11-25, Streamable HTTP. MCP Apps (`ui://ambient/task`). AssemblyAI Voice Agent API. Claude `claude-opus-5-5` through the Anthropic API. Node 22.13 or later, and TypeScript. node:sqlite. Vitest. AWS CDK (stack synthesized, not deployed). pnpm.

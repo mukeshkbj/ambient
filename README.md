@@ -110,17 +110,17 @@ pnpm brain:latency        # time to first word on Claude (needs ANTHROPIC_API_KE
 | MCP server on `/mcp` (spec 2025-11-25, Streamable HTTP) | Real | `pnpm smoke:mcp` runs a full call through it; `test/mcp.test.ts` |
 | Simulator on `/sim` | Real | A real MCP client over loopback, standing in for the gated Alexa+ host |
 | MCP App card `ui://ambient/task` | Real | Rendered by the `/sim` host; not yet rendered by an Alexa+ host |
-| Call reducer honesty rules (`src/calls/session.ts`) | Real | 344 tests, including a seeded property test over 4,000 generated calls (`test/call-session.test.ts`) |
+| Call reducer honesty rules (`src/calls/session.ts`) | Real | Table tests (`test/call-session.test.ts`), a 158-reply corpus (`test/read-back-replies.test.ts`), and a seeded property test over 4,000 generated calls (`test/call-honesty.test.ts`) |
 | Scripted brain and the demo business | Simulated | `simulatedLine` plays Joe's Plumbing in `pnpm demo`; every action is a real MCP tool call |
-| Claude brain (`claudeBrain` in `src/calls/brain.ts`) | Built but not yet run live | 20 tests against a stubbed stream (`test/brain.test.ts`); `pnpm brain:latency` has not run |
-| AssemblyAI voice line and chat-completions shim (`src/calls/rooms.ts`) | Built but not yet run live | 15 tests (`test/assemblyai-line.test.ts`); no live API call yet ([friction log](docs/friction-log.md)) |
+| Claude brain (`claudeBrain` in `src/calls/brain.ts`) | Built but not yet run live | Tests against a stubbed stream (`test/brain.test.ts`); `pnpm brain:latency` has not run |
+| AssemblyAI voice line and chat-completions shim (`src/calls/rooms.ts`) | Built but not yet run live | `test/assemblyai-line.test.ts` and `test/call-routes.test.ts`; no live API call yet ([friction log](docs/friction-log.md)) |
 | Business answer page (`web/call`) | Built but not yet run live | Rendered screenshot `docs/media/call-business-ringing.png` |
 | Alexa custom skill on `/alexa` | Built but not yet run live | `test/alexa.test.ts`; needs a public HTTPS deploy and an Echo Dot |
 | Spoken cue and notification (`src/cue.ts`) | Built but not yet run live | `test/cue.test.ts`; needs a Voice Monkey token and Echo hardware |
 | Business discovery by web search (`src/calls/discover.ts`) | Built but not yet run live | `test/discover.test.ts`; a real search needs `ANTHROPIC_API_KEY` |
 | Call memory in SQLite (`src/store.ts`) | Real | The next call brief carries a "Remembered from" line (`test/caller.test.ts`) |
 | AWS deployment (`infra/`) | Built but not yet run live | `pnpm infra:synth` synthesizes the CDK stack; nothing is deployed |
-| An outbound PSTN call, a real phone ringing | Simulated | No dial-out exists; the business answers on a web link, and the demo business is simulated |
+| An outbound phone call, a real phone ringing | Not built | No dial-out exists without paid Twilio; the business answers on a web link instead |
 
 ## Docs
 
