@@ -2,11 +2,11 @@
 
 **Alexa, handle the call.**
 
-Assistants can act through services that have an API. Ambient handles the ones that only answer a phone. You ask Alexa to call the plumber. An AI agent makes the call, says first that it is an AI, and talks to the business. If the price goes over your limit, Alexa asks you in the kitchen. You say "offer one fifty". The agent says it on the call, and if the business counters, Alexa asks you again. At the end, Alexa reports only what the business confirmed.
+Assistants can act through services that have an API. Ambient handles the ones that only answer a phone. You ask Alexa to call the plumber. An AI agent makes the call, says first that it is an AI, and talks to the business. If the price goes over your limit, Alexa asks you in the kitchen. You say "offer one fifty". The agent says it on the call, and if the business counters, Alexa asks you again. At the end, Alexa reports only what the business confirmed. If the business agreed a day but gave no calendar date, the card says so.
 
-Google Duplex books in one hop. Pixel's Hold for Me and Call Screen wait on a call or screen one. None of them negotiates under the owner's limit and asks the owner again when the business counters. Ambient does.
+The [reference bar](docs/plans/2026-10-18-handle-the-call/reference-bar.md) covers Google Duplex, Pixel Hold for Me and Call Screen, and Apple Call Screening and Hold Assist. Duplex books in closed domains. Hold for Me and Hold Assist tell you when a person returns to a held call. Call Screen and Call Screening answer calls made to you. The pages we fetched for that file on 2026-10-18 describe none of these products negotiating under the owner's limit or asking the owner again when the business counters. Ambient does.
 
-![The call needs you: the Echo Show asks to approve $180 while the business is on hold](docs/media/sim-needs-you.png)
+![The Echo Show card: Joe's Plumbing quotes $180 for Tuesday at ten, $30 over the $150 limit, with the buttons Book $180, Offer $150, and Decline](docs/media/sim-card-hero.png)
 
 | | |
 |---|---|
@@ -27,18 +27,34 @@ pnpm demo
 # open http://127.0.0.1:3000/sim and tap "Call Joe's Plumbing"
 ```
 
-`pnpm smoke:mcp` drives the same call through `/mcp` from the command line. It fails unless the call ends confirmed at the counter the owner approved. Joe counters the owner's offer, so the owner is asked a second time:
+`pnpm smoke:mcp` drives the same call through `/mcp` from the command line. It fails unless the call ends confirmed at the counter the owner approved. Joe counters the owner's offer, so the owner is asked a second time. At the read-back, Joe answers "Yes, plus parts." Ambient does not book. It asks for the total and reads back again:
 
 ```text
 > delegate {"task":"Call Joe's Plumbing and book a visit to fix the kitchen sink, keep it under 150","newConversation":true}
   Alexa: Joe's Plumbing wants one hundred eighty dollars for Tuesday at ten. Your limit is one hundred fifty dollars. Say approve to book it, offer an amount, or hang up.
+> status
+  Alexa: Joe's Plumbing is holding at one hundred eighty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer an amount, or hang up.
 > delegate {"task":"offer 150"}
   Alexa: Okay, offering one hundred fifty dollars.
 > status
   Alexa: Joe's Plumbing is holding at one hundred sixty dollars, over your limit of one hundred fifty dollars. Say approve to book it, offer an amount, or hang up.
 > approve {"decision":"once"}
   Alexa: Joe's Plumbing confirmed Tuesday at ten for one hundred sixty dollars.
-smoke: ok, the business countered the owner's offer and the call booked at the approved counter
+> status
+  Alexa: Joe's Plumbing confirmed Tuesday at ten for one hundred sixty dollars.
+```
+
+The end of the same run, from the call transcript:
+
+```text
+  Ambient: Just to confirm: one hundred sixty dollars total, Tuesday at ten. Is that right?
+  Joe's Plumbing: Yes, plus parts.
+  Ambient: Sorry, I can only book a total price. With parts, what's the total?
+  Joe's Plumbing: Fair enough. A sink like that needs no parts, so that's all in.
+  Ambient: Let me check once more: one hundred sixty dollars total, Tuesday at ten. Is that right?
+  Joe's Plumbing: Yes, that's right. See you then.
+  Ambient: Great, Maya will expect you Tuesday at ten. Thanks, goodbye.
+smoke: ok, the business countered, "yes, plus parts" did not book, and the call booked at the approved counter
 ```
 
 The full run, with the call transcript, is in [`docs/demo/smoke-transcript.txt`](docs/demo/smoke-transcript.txt).
@@ -69,7 +85,24 @@ Rules 1 to 4 are enforced in the reducer and tested in [`test/call-session.test.
 | 5. Dialing an unknown business needs approval | A business found by web search gets a "Call them?" approval. A number the user gives is dialed directly. |
 | 6. Call limits | At most 3 calls to one number and 20 calls in total per 24 hours, on real lines, counting calls still in progress. |
 
-Two independent reducer reviews and eleven structural review rounds tried to break these rules and the voice line ([progress log](progress.md)). Each defect they reproduced is now a regression test.
+![The simulator at the read-back: the business answers "Yes, plus parts." and Ambient asks for the total instead of booking](docs/media/sim-refused.png)
+
+Joe says "Yes, plus parts." and Ambient does not book.
+
+Each rule maps to tests. The names below are the exact `it(...)` names.
+
+| Rule | Test file | Tests |
+|---|---|---|
+| 1. AI disclosure first | [`test/call-session.test.ts`](test/call-session.test.ts) | "records the disclosure as the first turn when the business answers"<br>"repeats the disclosure before anything else when the business cut it off" |
+| 2. "Confirmed" means the business confirmed | [`test/call-honesty.test.ts`](test/call-honesty.test.ts)<br>[`test/call.test.ts`](test/call.test.ts) | "books only on a clean yes to a read-back of that exact amount, within the limit or with the owner's approval"<br>"does not book on \"yes, plus parts\" and reads the total back again" |
+| 3. A price above the limit needs the owner | [`test/call-session.test.ts`](test/call-session.test.ts) | "turns an over-limit confirmation into a question for the owner"<br>"ends without a deal instead of asking again after the owner declines that price" |
+| 4. No card numbers | [`test/call-session.test.ts`](test/call-session.test.ts) | "never speaks a card number, even split across stream deltas"<br>"keeps redacting digits that keep streaming after a card number" |
+| 5. Dialing an unknown business needs approval | [`test/caller.test.ts`](test/caller.test.ts) | "asks to dial the first candidate and moves to the next on deny"<br>"dials a number given in the instruction with no dial approval" |
+| 6. Call limits | [`test/caller.test.ts`](test/caller.test.ts) | "ends no_deal at the per-number daily limit without dialing"<br>"counts calls still in progress against the daily limit" |
+
+[`test/read-back-replies.test.ts`](test/read-back-replies.test.ts) adds the 192-reply corpus for rule 2.
+
+Three adversarial reviews of the reducer and twelve structural review rounds, all by AI reviewers, tried to break these rules and the voice line ([progress log](progress.md)). Each defect they reproduced is now a regression test.
 
 ## The house
 
@@ -95,10 +128,10 @@ pnpm call
 ## Verification
 
 ```sh
-pnpm scan    # typecheck, eslint, knip, and 618 tests
+pnpm scan    # typecheck, eslint, knip, and 641 tests
 pnpm build
 pnpm smoke:mcp            # a full simulated call through /mcp
-python scripts/shots-sim.py   # every call state, light and dark, into docs/media/
+python scripts/shots-sim.py   # every call state, light and dark, into docs/media/ (start pnpm demo with AMBIENT_DATA_DIR set to an empty directory first)
 pnpm brain:latency        # time to first word on Claude (needs ANTHROPIC_API_KEY)
 ```
 

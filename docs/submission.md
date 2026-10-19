@@ -5,7 +5,7 @@ Track: Alexa+
 Demo video: [VIDEO URL]
 Public repo: [PUBLIC REPO URL]
 
-**What you can run today, and what is not live yet.** The whole call runs end to end with zero keys: `pnpm demo` in a browser, and `pnpm smoke:mcp` through the MCP server. In that demo the business is simulated, and so is the Alexa+ host, because the Alexa+ MCP toolkit was gated for entrants as of 2026-10-18. The voice line, the Claude brain, the Alexa skill, the spoken cue, and the AWS stack are built and tested against recorded traffic, but none has run live yet. No real phone call has been placed. The [README table](../README.md#what-is-real-and-what-is-simulated) lists each piece with its evidence.
+**What you can run today, and what is not live yet.** The whole call runs end to end with zero keys: `pnpm demo` in a browser, and `pnpm smoke:mcp` through the MCP server. In that demo the business is simulated, and so is the Alexa+ host, because the Alexa+ MCP toolkit was gated for entrants as of 2026-10-18. The voice line, the Claude brain, the Alexa skill, the spoken cue, and the AWS stack are built and tested against fixtures written from the docs, but none has run live yet. No real phone call has been placed. The [README table](../README.md#what-is-real-and-what-is-simulated) lists each piece with its evidence.
 
 ## Inspiration
 
@@ -21,7 +21,24 @@ The agent negotiates within a spending limit you set. When the business quotes o
 
 Before the agent books, it reads the total and the time back to the business word for word. The read-back counts only after it has fully played. The agent books only if the reply is made entirely of agreement words and the exact terms it read back. A qualifier such as "plus parts", any other number or day, or any question sends the call back to negotiation. A dropped line is always unconfirmed.
 
-After the call, Alexa reports only what the business confirmed. Each call is stored in SQLite. The next call to the same business starts with what the last one learned.
+After the call, Alexa reports only what the business confirmed. If the business agreed a day but gave no calendar date, the card says so. Each call is stored in SQLite. The next call to the same business starts with what the last one learned.
+
+## What a pilot measures
+
+No pilot has run, so we have no results. A pilot would set targets for four measures:
+
+- Calls placed per household per week.
+- The share of calls that end confirmed.
+- The share of calls where the owner was asked.
+- The share of read-backs the reducer refused.
+
+## What it does not do
+
+- It does not navigate phone trees.
+- It does not wait in a hold queue for an agent.
+- It handles one business per call.
+- It speaks English only.
+- It cannot use a live phone line without paid telephony.
 
 ## Who this is for
 
@@ -71,9 +88,9 @@ A gated toolkit. The Alexa+ MCP toolkit and simulator were gated as of 2026-10-1
 
 ## Accomplishments
 
-The honesty rules live in a pure reducer, not in a prompt. 618 tests enforce them, including the 4,000-call property test and the 192-reply corpus.
+The honesty rules live in a pure reducer, not in a prompt. 641 tests enforce them, including the 4,000-call property test and the 192-reply corpus.
 
-Two independent reducer reviews and eleven structural review rounds tried to break the rules and the voice line ([progress log](../progress.md)). Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
+Three adversarial reviews of the reducer and twelve structural review rounds, all by AI reviewers, tried to break the rules and the voice line ([progress log](../progress.md)). Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
 
 The demo needs no keys and no accounts. `pnpm install && pnpm demo` runs a full call in the browser, and `pnpm smoke:mcp` drives the same call through `/mcp`.
 

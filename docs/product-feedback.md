@@ -14,14 +14,14 @@ One section per tool we used to build Ambient. Each section follows the hackatho
 
 - **Used it for:** the `/alexa` endpoint (`src/alexa.ts`) with call intents (start a call, steer it, offer an amount, approve or deny, status, hang up), the en-US and en-GB interaction models in `alexa/`, and request verification in `src/alexa-verify.ts` (certificate URL pinning, the `echo-api.amazon.com` SAN, the chain and signature checks over the raw body, and a 150-second timestamp window).
 - **What worked:** the interaction model format is clear. The signature-verification contract is precise enough to implement and test offline with generated certificate chains (`test/security.test.ts`).
-- **What needs work:** we have not registered the skill. Skill registration and an Echo Dot test need the owner's developer account and hardware. The endpoint is tested against recorded request shapes only.
+- **What needs work:** we have not registered the skill. Skill registration and an Echo Dot test need the owner's developer account and hardware. The endpoint is tested against fixtures written from the docs only.
 - **Onboarding:** not measured. The console step has not run.
 - **Would we build with it again?** Yes. A custom skill is the path we used to hold a multi-turn voice decision on an Echo Dot.
 
 ## ASK Proactive Events and Voice Monkey (the "needs you" cue)
 
 - **Used it for:** `src/cue.ts`. When a call needs the owner, Ambient sends a Voice Monkey announcement (spoken on the Echo Dot) and a Proactive Events notification (the yellow ring), at most once per approval.
-- **What worked:** both APIs are small. Voice Monkey takes one POST; Proactive Events takes a Login with Amazon token POST and then an event POST (`src/cue.ts`). Both are unit tested with recorded responses (`test/cue.test.ts`).
+- **What worked:** both APIs are small. Voice Monkey takes one POST; Proactive Events takes a Login with Amazon token POST and then an event POST (`src/cue.ts`). Both are unit tested with fixtures written from the docs (`test/cue.test.ts`).
 - **What needs work:** We did not find a first-party API that lets a skill speak to the household unprompted. Proactive Events shows a notification from a fixed schema, so the spoken cue depends on Voice Monkey, a third-party service. We could not confirm from the docs whether the console accepts an HTTPS `events.endpoint` for a non-Lambda skill; `reference-alexa.md` marks it UNVERIFIED. Neither API has run live, because both need the owner's tokens and an Echo device.
 - **Onboarding:** not measured. Live setup has not run.
 - **Would we build with it again?** Yes. The notification fits the moment; we would replace Voice Monkey with a first-party "announce to this household" API if Amazon offered one.
@@ -54,7 +54,7 @@ One section per tool we used to build Ambient. Each section follows the hackatho
 
 - **Used it for:** the voice line in `src/calls/rooms.ts` and `web/call/index.html`. Each call creates a stored agent whose greeting is the AI disclosure and whose LLM is our own `/call/<id>/v1/chat/completions` endpoint. The business's browser connects with a single-use token.
 - **What worked:** bring-your-own-LLM lets our reducer decide every word the agent says. The greeting is spoken verbatim, which guarantees the disclosure comes first.
-- **What needs work:** the request AssemblyAI sends to a bring-your-own LLM endpoint is not documented (friction entry 6, severity High). Two docs pages disagree on event field names (friction entry 7). A per-call greeting needs a new stored agent per call (friction entry 8). There is no documented delete, so we clear the agent's LLM settings when a call ends. AssemblyAI cannot dial out, so the business answers on a web link. The line is tested against recorded frames only; it has not run against the live API.
+- **What needs work:** the request AssemblyAI sends to a bring-your-own LLM endpoint is not documented (friction entry 6, severity High). Two docs pages disagree on event field names (friction entry 7). A per-call greeting needs a new stored agent per call (friction entry 8). There is no documented delete, so we clear the agent's LLM settings when a call ends. AssemblyAI cannot dial out, so the business answers on a web link. The line is tested against fixtures written from the docs only; it has not run against the live API.
 - **Onboarding:** not measured. Most of the effort went into working out the undocumented request shape.
 - **Would we build with it again?** Yes, if the bring-your-own-LLM request is documented. The design is the right one for agents that must control what they say. A real phone call would also need outbound calling.
 
