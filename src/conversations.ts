@@ -398,6 +398,7 @@ export class ConversationEngine {
         ...(run.status === "queued" || run.status === "accepted" ? { status: "running" as const } : {}),
         ...(progress ? { progress } : {}),
         ...(event.type === "status.update" && value(event.payload.subject) ? { subject: value(event.payload.subject)! } : {}),
+        ...(event.type === "status.update" && event.payload.board ? { board: event.payload.board } : {}),
         updatedAt: timestamp
       });
     }

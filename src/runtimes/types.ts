@@ -1,5 +1,5 @@
 import type { CallOutcome } from "../calls/types.js";
-import type { RuntimeState } from "../types.js";
+import type { BoardCall, RuntimeState } from "../types.js";
 
 /** Canonical approval payload — adapters map their wire fields into this. */
 export type ApprovalPayload = {
@@ -23,7 +23,7 @@ export type AssistantEvent =
   | Event<"message.delta" | "message.interim", { text?: string }>
   | Event<"message.complete", { text?: string; status?: string; error?: string; outcome?: CallOutcome }>
   | Event<"tool.start" | "tool.complete", { name?: string }>
-  | Event<"status.update", { text?: string; name?: string; summary?: string; message?: string; subject?: string }>
+  | Event<"status.update", { text?: string; name?: string; summary?: string; message?: string; subject?: string; board?: BoardCall[] }>
   | Event<"approval.request", ApprovalPayload>;
 
 export type SubmitResult = { state: "accepted" | "streaming" };

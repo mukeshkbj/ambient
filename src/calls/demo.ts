@@ -2,6 +2,9 @@ import { dollarsInWords, priceInWords } from "../words.js";
 import type { ScriptedTurn } from "./brain.js";
 import type { BusinessPersona } from "./line.js";
 import { amountsIn } from "./rules.js";
+import type { Candidate } from "./discover.js";
+import type { CallState } from "./session.js";
+import { parsePhoneNumber } from "./types.js";
 
 export const JOES_PLUMBING: BusinessPersona = {
   name: "Joe's Plumbing",
@@ -26,7 +29,67 @@ export const JOES_PLUMBING_HANGS_UP: BusinessPersona = {
 
 const WHEN = "Tuesday the 20th at 10 am";
 
+function quoting(name: string, phone: string, why: string, quote: string): { candidate: Candidate; persona: BusinessPersona } {
+  return {
+    candidate: { name, phone: parsePhoneNumber(phone), why },
+    persona: {
+      name,
+      opening: `${name}, what do you need?`,
+      rules: [
+        { when: /\bwhat would the total be\?$/i, reply: `${quote}, all in.` },
+        { when: /\bgo ahead and book\b/i, reply: "Done, that's booked." },
+        { when: /\bis that right\?$/i, reply: "Yes, that's right." }
+      ]
+    }
+  };
+}
+
+export const AROUND = [
+  quoting("Pete's Pipes", "4155550199", "Rated for same-week visits.", "We can do Tuesday the 20th at 9 am for one forty"),
+  quoting("Drain Bros", "4155550142", "Family-run, on your street.", "We can do Tuesday the 20th at 11 am for one twenty-five"),
+  quoting("Rapid Rooter", "4155550177", "Open early.", "We can do Wednesday the 21st at 8 am for one sixty")
+];
+
+const approvedTerms = (state: CallState) => {
+  const note = state.turns.findLast(turn => turn.speaker === "owner" && turn.text.startsWith("Approved: "))?.text ?? "";
+  const match = /^Approved: (.+?)(?: for (.+))?$/.exec(note);
+  return { amountUsd: amountsIn(match?.[1] ?? "").at(-1), when: match?.[2] };
+};
+
+const AROUND_SCRIPT: ScriptedTurn[] = [
+  {
+    when: /\bwhat do you need\?$/i,
+    reply: (_, state) => [{
+      kind: "say",
+      text: ["Hi. I'd like a plumber to fix a leaking kitchen sink.", state.brief.facts[0] && `${state.brief.facts[0]}.`, "What's your earliest time, and what would the total be?"].filter(Boolean).join(" "),
+      last: true
+    }]
+  },
+  {
+    when: /\bwe can do (.+?) for (.+?), all in\b/i,
+    reply: (match, state) => {
+      const amount = amountsIn(match[2] ?? "")[0];
+      const when = match[1]!;
+      return [{
+        kind: "end_call",
+        outcome: { kind: "confirmed", summary: `${state.brief.business.name} can do ${when}${amount !== undefined ? ` for ${dollarsInWords(amount)}` : ""}.`, ...(amount !== undefined ? { amountUsd: amount } : {}), when }
+      }];
+    }
+  },
+  {
+    when: /^done, that's booked\.$/i,
+    reply: (_, state) => {
+      const { amountUsd, when } = approvedTerms(state);
+      return [{
+        kind: "end_call",
+        outcome: { kind: "confirmed", summary: `${state.brief.business.name} confirmed ${when ?? "the visit"}${amountUsd !== undefined ? ` for ${dollarsInWords(amountUsd)}` : ""}.`, ...(amountUsd !== undefined ? { amountUsd } : {}), ...(when ? { when } : {}) }
+      }];
+    }
+  }
+];
+
 export const DEMO_SCRIPT: ScriptedTurn[] = [
+  ...AROUND_SCRIPT,
   {
     when: /how can i help/i,
     reply: (_, state) => [{
@@ -88,6 +151,7 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
   {
     when: /approved:/i,
     reply: (match, state) => {
+      if (state.brief.compare) return [{ kind: "say", text: `Great, please go ahead and book ${approvedTerms(state).when ?? "that"}.`, last: true }];
       const amount = Math.max(...amountsIn(match.input ?? ""));
       return [{ kind: "say", text: `Okay, ${state.brief.ownerName} says ${priceInWords(amount)} is fine. Please go ahead and book Tuesday at ten.`, last: true }];
     }

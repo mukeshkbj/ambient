@@ -7,10 +7,13 @@ import { EARLIER_CALL } from "../calls/prompt.js";
 import { amountsIn, blockedNumber, checkDialLimits, noteFromCall, type PlacedCall } from "../calls/rules.js";
 import { parsePhoneNumber, type CallBrief, type CallOutcome, type CallRecord, type PhoneNumber } from "../calls/types.js";
 import { householdFacts, type Household } from "../household.js";
-import { dollarsInWords } from "../words.js";
+import { dollarsInWords, numberInWords } from "../words.js";
+import { errandStep, startErrand, type ErrandEffect, type ErrandInput, type ErrandState } from "../calls/errand.js";
+import type { BoardCall } from "../types.js";
 import {
   AssistantEvented,
   type ApprovalPayload,
+  type AssistantEvent,
   type ApprovalResponse,
   type AssistantClient,
   type AssistantSession,
@@ -31,13 +34,33 @@ type CallerMemory = {
 export type CallerOptions = {
   household: Household;
   business: { name: string; phone: PhoneNumber };
-  line: () => Line;
+  line: (business: Business) => Line;
   brain: Brain;
   discover?: (goal: string, household: Household) => Promise<Candidate[]>;
   memory?: CallerMemory;
   limitDials?: boolean;
   tickMs?: number;
+  quoteWindowMs?: number;
 };
+
+type Business = { name: string; phone: PhoneNumber };
+
+type Errand = {
+  state: ErrandState;
+  calls: Map<string, CallHandle>;
+  board: BoardCall[];
+  maxUsd?: number;
+  ask?: { requestId: string; question: string; amountUsd?: number; when?: string };
+  timer?: NodeJS.Timeout;
+  feed(input: ErrandInput): void;
+};
+
+const AROUND_WORDS = /\b(?:call around|shop around|compare|cheapest|quotes?)\b/i;
+
+function names(businesses: Business[]): string {
+  const list = businesses.map(business => business.name);
+  return list.length > 1 ? `${list.slice(0, -1).join(", ")} and ${list.at(-1)}` : list[0] ?? "";
+}
 
 export function spendingLimit(instruction: string): number | undefined {
   const match = /\b(?:under|below|less than|no more than|not more than|at most|up to|max(?:imum)?(?: of)?)\s+\$?([^.,;]+)/i.exec(instruction);
@@ -101,6 +124,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
   private readonly pendingDials = new Map<string, PendingDial>();
   private readonly inFlight = new Map<string, PlacedCall>();
   private readonly cancelled = new Set<string>();
+  private readonly errands = new Map<string, Errand>();
   private closed = false;
 
   constructor(private readonly options: CallerOptions) {
@@ -136,6 +160,12 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
   }
 
   respondToApproval(sessionId: string, requestId: string, choice: string): Promise<ApprovalResponse> {
+    const errand = this.errands.get(sessionId);
+    if (errand?.ask?.requestId === requestId) {
+      delete errand.ask;
+      errand.feed({ kind: "owner_decided", decision: choice === "deny" ? "deny" : "once" });
+      return Promise.resolve({ resolved: 1 });
+    }
     const pending = this.pendingDials.get(sessionId);
     if (pending?.requestId === requestId) {
       this.pendingDials.delete(sessionId);
@@ -147,6 +177,18 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
   }
 
   listPendingApprovals(sessionId: string): Promise<ApprovalPayload[]> {
+    const ask = this.errands.get(sessionId)?.ask;
+    if (ask) {
+      return Promise.resolve([{
+        requestId: ask.requestId,
+        command: ask.question,
+        description: ask.question,
+        choices: ["once", "deny"],
+        kind: ask.amountUsd !== undefined ? "spend" : "other",
+        ...(ask.amountUsd !== undefined ? { amountUsd: ask.amountUsd } : {}),
+        ...(ask.when ? { when: ask.when } : {})
+      }]);
+    }
     const pending = this.pendingDials.get(sessionId);
     if (pending) {
       return Promise.resolve([{
@@ -171,6 +213,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
   }
 
   interrupt(sessionId: string): Promise<InterruptResult> {
+    for (const errandCall of this.errands.get(sessionId)?.calls.values() ?? []) errandCall.hangUp();
     const call = this.calls.get(sessionId);
     if (call) call.hangUp();
     else this.cancelled.add(sessionId);
@@ -187,6 +230,10 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
     for (const pending of this.pendingDials.values()) pending.decide("cancel");
     this.pendingDials.clear();
     for (const call of this.calls.values()) call.hangUp();
+    for (const errand of this.errands.values()) {
+      clearTimeout(errand.timer);
+      for (const call of errand.calls.values()) call.hangUp();
+    }
   }
 
   private async begin(sessionId: string, instruction: string): Promise<void> {
@@ -206,6 +253,13 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
     const found = await this.options.discover(instruction, household);
     if (this.cancelled.has(sessionId)) return;
     const candidates = this.ranked(found);
+    if (AROUND_WORDS.test(instruction) && candidates.length > 1) {
+      const chosen = candidates.slice(0, 3);
+      const decision = await this.askToDial(sessionId, `${sessionId}:dial-all`, `I found ${names(chosen)}. Call ${chosen.length === 2 ? "both" : `all ${numberInWords(chosen.length)}`} and book the best quote under your limit?`);
+      if (decision === "once") this.callAround(sessionId, chosen.map(candidate => ({ name: candidate.name, phone: candidate.phone })), instruction, maxUsd);
+      if (decision !== "deny") return;
+      candidates.length = 0;
+    }
     for (const [index, candidate] of candidates.entries()) {
       const decision = await this.askToDial(sessionId, `${sessionId}:dial-${index}`, this.dialQuestion(candidate));
       if (decision === "cancel") return;
@@ -254,53 +308,151 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
     });
   }
 
-  private dial(sessionId: string, business: { name: string; phone: PhoneNumber }, instruction: string, maxUsd: number | undefined): void {
-    const { household, memory } = this.options;
+  private dial(sessionId: string, business: Business, instruction: string, maxUsd: number | undefined): void {
     if (this.cancelled.has(sessionId)) return;
+    const call = this.placeCall(sessionId, business, instruction, maxUsd, event => this.emit({ ...event, sessionId }));
+    if (!call) return;
+    this.calls.set(sessionId, call);
+    void call.done.then(() => this.calls.delete(sessionId));
+  }
+
+  private callAround(sessionId: string, chosen: Business[], instruction: string, maxUsd: number | undefined): void {
+    if (this.cancelled.has(sessionId)) return;
+    const errand: Errand = {
+      state: startErrand({ ...(maxUsd !== undefined ? { limitUsd: maxUsd } : {}), calls: chosen.map((business, index) => ({ callId: `${sessionId}:${index}`, business: business.name })) }),
+      calls: new Map(),
+      board: chosen.map(business => ({ business: business.name, state: "calling" })),
+      ...(maxUsd !== undefined ? { maxUsd } : {}),
+      feed: () => {}
+    };
+    this.errands.set(sessionId, errand);
+    const publish = (text: string) => this.emit({ type: "status.update", sessionId, payload: { text, board: errand.board } });
+    const mark = (index: number, patch: Partial<BoardCall>) => {
+      errand.board = errand.board.map((item, at) => at === index ? { ...item, ...patch } : item);
+    };
+    errand.feed = input => {
+      const result = errandStep(errand.state, input, new Date().toISOString());
+      errand.state = result.state;
+      for (const effect of result.effects) this.applyErrand(sessionId, errand, effect, mark, publish);
+    };
+    publish(`Calling ${names(chosen)} at once`);
+    errand.timer = setTimeout(() => errand.feed({ kind: "deadline" }), this.options.quoteWindowMs ?? 120_000);
+    errand.timer.unref();
+    chosen.forEach((business, index) => {
+      const callId = `${sessionId}:${index}`;
+      const call = this.placeCall(callId, business, instruction, maxUsd, event => {
+        if (event.type === "approval.request") {
+          const { requestId, amountUsd, when } = event.payload;
+          mark(index, { state: "quoted", ...(amountUsd !== undefined ? { amountUsd } : {}), ...(when ? { when } : {}) });
+          publish(`${business.name} quoted ${amountUsd !== undefined ? dollarsInWords(amountUsd) : "no price"}${when ? ` for ${when}` : ""}`);
+          errand.feed({ kind: "quoted", callId, requestId, ...(amountUsd !== undefined ? { amountUsd } : {}), ...(when ? { when } : {}) });
+          return;
+        }
+        if (event.type === "message.complete") {
+          const outcome = event.payload.outcome ?? { kind: "unconfirmed" as const, reason: "the call ended" };
+          const state = errand.board[index]!.state;
+          mark(index, { state: outcome.kind === "confirmed" ? "booked" : state === "released" ? "released" : "ended" });
+          errand.feed({ kind: "ended", callId, outcome });
+          return;
+        }
+        if (event.type === "status.update") {
+          const text = event.payload.text?.replace(/^Ambient: /, `Ambient to ${business.name}: `);
+          if (errand.board[index]!.state === "calling" && text?.startsWith(`${business.name}: `)) mark(index, { state: "talking" });
+          if (text) this.emit({ type: "status.update", sessionId, payload: { text, board: errand.board } });
+        }
+      }, true);
+      if (call) errand.calls.set(callId, call);
+    });
+  }
+
+  private applyErrand(sessionId: string, errand: Errand, effect: ErrandEffect, mark: (index: number, patch: Partial<BoardCall>) => void, publish: (text: string) => void): void {
+    const index = errand.state.calls.findIndex(call => "callId" in effect && call.callId === effect.callId);
+    switch (effect.kind) {
+      case "approve":
+        mark(index, { state: "booking" });
+        publish(`Booking ${errand.board[index]!.business}`);
+        errand.calls.get(effect.callId)?.ownerDecided(effect.requestId, "once");
+        return;
+      case "release":
+        mark(index, { state: "released" });
+        errand.calls.get(effect.callId)?.release(effect.requestId);
+        return;
+      case "ask_owner": {
+        const terms = `${effect.amountUsd !== undefined ? dollarsInWords(effect.amountUsd) : "no price"}${effect.when ? ` for ${effect.when}` : ""}`;
+        const over = effect.amountUsd !== undefined && errand.maxUsd !== undefined ? `, over your limit of ${dollarsInWords(errand.maxUsd)}` : "";
+        const question = `${effect.business} has the best quote: ${terms}${over}. Should I book it?`;
+        errand.ask = { requestId: `${sessionId}:best`, question, ...(effect.amountUsd !== undefined ? { amountUsd: effect.amountUsd } : {}), ...(effect.when ? { when: effect.when } : {}) };
+        this.emit({
+          type: "approval.request",
+          sessionId,
+          payload: {
+            requestId: errand.ask.requestId,
+            command: question,
+            description: question,
+            choices: ["once", "deny"],
+            kind: effect.amountUsd !== undefined ? "spend" : "other",
+            ...(effect.amountUsd !== undefined ? { amountUsd: effect.amountUsd } : {}),
+            ...(errand.maxUsd !== undefined ? { limitUsd: errand.maxUsd } : {}),
+            ...(effect.when ? { when: effect.when } : {})
+          }
+        });
+        return;
+      }
+      case "done": {
+        clearTimeout(errand.timer);
+        this.errands.delete(sessionId);
+        const booked = errand.state.calls.find(call => call.callId === effect.booked)?.outcome;
+        const outcome = booked ?? { kind: "no_deal" as const, reason: "no quote was booked" };
+        this.emit({ type: "status.update", sessionId, payload: { text: booked ? `Booked ${errand.board[index >= 0 ? index : 0]!.business}` : "No quote was booked", board: errand.board } });
+        this.emit({ type: "message.complete", sessionId, payload: { text: outcome.kind === "confirmed" ? outcome.summary : outcome.reason, status: "completed", outcome } });
+      }
+    }
+  }
+
+  private placeCall(callId: string, business: Business, instruction: string, maxUsd: number | undefined, emit: (event: AssistantEvent) => void, compare = false): CallHandle | undefined {
+    const { household, memory } = this.options;
     const now = new Date().toISOString();
     const placed = [...(memory?.placedCalls() ?? []), ...this.inFlight.values()];
     const blocked = blockedNumber(business.phone);
     const limit = blocked ?? (this.options.limitDials === false ? { ok: true as const } : checkDialLimits(placed, business.phone, now));
     if (!limit.ok) {
-      this.emit({
+      emit({
         type: "message.complete",
-        sessionId,
         payload: { text: limit.reason, status: "completed", outcome: { kind: "no_deal", reason: blocked ? "premium-rate number" : "call limit reached" } }
       });
-      return;
+      return undefined;
     }
     const brief: CallBrief = {
       goal: instruction,
       business,
       ownerName: household.ownerName,
       ...(maxUsd !== undefined ? { maxUsd } : {}),
+      ...(compare ? { compare: true as const } : {}),
       facts: [...householdFacts(household), ...(memory?.facts(business.phone) ?? []).map(fact => `${EARLIER_CALL} ${fact}`), ...this.pastCalls(business.phone)]
     };
-    this.emit({ type: "status.update", sessionId, payload: { text: `Calling ${business.name}`, subject: business.name } });
+    emit({ type: "status.update", payload: { text: `Calling ${business.name}`, ...(compare ? {} : { subject: business.name }) } });
     const last = memory?.history(business.phone)[0];
-    if (last) this.emit({ type: "status.update", sessionId, payload: { text: `Remembered from ${dayLabel(last.at)} — ${describeOutcome(last.outcome)}` } });
-    const line = this.options.line();
+    if (last) emit({ type: "status.update", payload: { text: `Remembered from ${dayLabel(last.at)} — ${describeOutcome(last.outcome)}` } });
+    const line = this.options.line(business);
     const call = runCall({
       brief,
-      callId: sessionId,
+      callId,
       line,
       brain: this.options.brain,
-      emit: event => this.emit({ ...event, sessionId }),
+      emit,
       ...(memory ? { remember: fact => {
         const note = noteFromCall(fact);
         if (note) memory.addFact(business.phone, note);
       } } : {}),
       ...(this.options.tickMs !== undefined ? { tickMs: this.options.tickMs } : {})
     });
-    this.calls.set(sessionId, call);
-    this.inFlight.set(sessionId, { to: business.phone, startedAt: now });
-    if (line.joinUrl) this.emit({ type: "status.update", sessionId, payload: { text: `Waiting for ${business.name} to answer at ${line.joinUrl}` } });
+    this.inFlight.set(callId, { to: business.phone, startedAt: now });
+    if (line.joinUrl) emit({ type: "status.update", payload: { text: `Waiting for ${business.name} to answer at ${line.joinUrl}` } });
     void call.done.then(state => {
-      this.calls.delete(sessionId);
-      this.inFlight.delete(sessionId);
+      this.inFlight.delete(callId);
       if (memory && !this.closed && state.phase.kind === "ended") {
         memory.recordCall({
-          runId: sessionId,
+          runId: callId,
           businessName: business.name,
           phone: business.phone,
           goal: instruction,
@@ -309,6 +461,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
         });
       }
     });
+    return call;
   }
 
   private pastCalls(phone: PhoneNumber): string[] {

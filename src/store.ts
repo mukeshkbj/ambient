@@ -4,7 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import type { PlacedCall } from "./calls/rules.js";
 import type { CallOutcome, CallRecord, PhoneNumber } from "./calls/types.js";
 import type { ApprovalKind } from "./runtimes/types.js";
-import type { Approval, Conversation, Run, RunStatus, Runtime, RuntimeId, RuntimeState, RunView } from "./types.js";
+import type { Approval, BoardCall, Conversation, Run, RunStatus, Runtime, RuntimeId, RuntimeState, RunView } from "./types.js";
 
 type Row = Record<string, unknown>;
 
@@ -45,6 +45,16 @@ function stepsList(value: unknown): string[] {
   }
 }
 
+function boardValue(value: unknown): BoardCall[] | undefined {
+  if (typeof value !== "string" || !value) return undefined;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) ? parsed as BoardCall[] : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function outcomeValue(value: unknown): CallOutcome | undefined {
   if (typeof value !== "string" || !value) return undefined;
   try {
@@ -67,6 +77,7 @@ function callRecord(row: Row): CallRecord {
 
 function run(row: Row): Run {
   const outcome = outcomeValue(row.outcome_json);
+  const board = boardValue(row.board_json);
   return {
     id: text(row.id),
     conversationId: text(row.conversation_id),
@@ -82,6 +93,7 @@ function run(row: Row): Run {
     ...(optionalText(row.failure) ? { failure: text(row.failure) } : {}),
     ...(outcome ? { outcome } : {}),
     ...(optionalText(row.subject) ? { subject: text(row.subject) } : {}),
+    ...(board ? { board } : {}),
     createdAt: text(row.created_at),
     updatedAt: text(row.updated_at)
   };
@@ -243,6 +255,7 @@ export class AmbientStore {
     if (!columns.has("title")) this.db.exec("ALTER TABLE runs ADD COLUMN title TEXT");
     if (!columns.has("steps_json")) this.db.exec("ALTER TABLE runs ADD COLUMN steps_json TEXT");
     if (!columns.has("outcome_json")) this.db.exec("ALTER TABLE runs ADD COLUMN outcome_json TEXT");
+    if (!columns.has("board_json")) this.db.exec("ALTER TABLE runs ADD COLUMN board_json TEXT");
     if (!columns.has("subject")) this.db.exec("ALTER TABLE runs ADD COLUMN subject TEXT");
   }
 
@@ -544,6 +557,7 @@ export class AmbientStore {
     failure?: string | null;
     outcome?: CallOutcome | null;
     subject?: string;
+    board?: BoardCall[];
     liveSessionId?: string;
     updatedAt: string;
   }): Run {
@@ -557,7 +571,7 @@ export class AmbientStore {
       : current.steps ?? [];
     this.db.prepare(`
       UPDATE runs SET status = ?, answer = ?, progress = ?, failure = ?, live_session_id = ?, steps_json = ?,
-        outcome_json = ?, subject = ?, updated_at = ?
+        outcome_json = ?, subject = ?, board_json = ?, updated_at = ?
       WHERE id = ?
     `).run(
       changes.status ?? current.status,
@@ -568,6 +582,7 @@ export class AmbientStore {
       JSON.stringify(steps),
       outcome ? JSON.stringify(outcome) : null,
       changes.subject ?? current.subject ?? null,
+      changes.board ? JSON.stringify(changes.board) : current.board ? JSON.stringify(current.board) : null,
       changes.updatedAt,
       id
     );

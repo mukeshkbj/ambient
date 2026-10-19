@@ -50,8 +50,16 @@ export type Run = {
   failure?: string;
   outcome?: CallOutcome;
   subject?: string;
+  board?: BoardCall[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type BoardCall = {
+  business: string;
+  state: "calling" | "talking" | "quoted" | "booking" | "booked" | "released" | "ended";
+  amountUsd?: number;
+  when?: string;
 };
 
 export type Approval = {

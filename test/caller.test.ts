@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { scriptedBrain, type Brain } from "../src/calls/brain.js";
 import type { Candidate } from "../src/calls/discover.js";
-import { DEMO_SCRIPT, JOES_PLUMBING, JOES_PLUMBING_HANGS_UP } from "../src/calls/demo.js";
+import { AROUND, DEMO_SCRIPT, JOES_PLUMBING, JOES_PLUMBING_HANGS_UP } from "../src/calls/demo.js";
 import { simulatedLine, type BusinessPersona, type Line } from "../src/calls/line.js";
 import { parsePhoneNumber } from "../src/calls/types.js";
 import { ConversationEngine } from "../src/conversations.js";
@@ -10,12 +10,12 @@ import { AmbientStore } from "../src/store.js";
 import type { RunView } from "../src/types.js";
 import { speak } from "../src/voice.js";
 
-function setup(persona: BusinessPersona = JOES_PLUMBING, options: { discover?: () => Promise<Candidate[]>; memory?: boolean; brain?: Brain; limitDials?: boolean } = {}) {
+function setup(persona: BusinessPersona = JOES_PLUMBING, options: { discover?: () => Promise<Candidate[]>; memory?: boolean; brain?: Brain; limitDials?: boolean; personas?: BusinessPersona[] } = {}) {
   const store = new AmbientStore();
   const client = new CallerClient({
     household: { ownerName: "Maya", address: "12 Elm Street", maxUsdDefault: 200, facts: [] },
     business: { name: "Joe's Plumbing", phone: parsePhoneNumber("4155550134") },
-    line: () => simulatedLine(persona, { speedMs: 1 }),
+    line: business => simulatedLine(options.personas?.find(item => item.name === business.name) ?? persona, { speedMs: 1 }),
     brain: options.brain ?? scriptedBrain(DEMO_SCRIPT),
     tickMs: 5,
     ...(options.discover ? { discover: options.discover } : {}),
@@ -247,5 +247,49 @@ describe("spendingLimit", () => {
     ["book a visit", undefined]
   ] as const)("%s", (text, expected) => {
     expect(spendingLimit(text)).toBe(expected);
+  });
+});
+
+describe("CallerClient calling around", () => {
+  const around = () => setup(JOES_PLUMBING, { discover: async () => AROUND.map(item => item.candidate), personas: AROUND.map(item => item.persona) });
+
+  it("asks once to call every business it found", async () => {
+    const { engine, close } = around();
+    const run = await engine.ask("Get quotes from plumbers to fix the kitchen sink, under 150", undefined, true);
+    const ask = await until(engine, run.id, item => item.status === "waiting_approval");
+    expect(ask.approval).toMatchObject({ kind: "dial" });
+    expect(ask.approval?.command).toBe("I found Pete's Pipes, Drain Bros and Rapid Rooter. Call all three and book the best quote under your limit?");
+    close();
+  });
+
+  it("calls them at once, books the cheapest quote under the limit, and releases the others", async () => {
+    const { engine, close } = around();
+    const run = await engine.ask("Get quotes from plumbers to fix the kitchen sink, under 150", undefined, true);
+    const ask = await until(engine, run.id, item => item.status === "waiting_approval");
+    await engine.respondToApproval(ask.approval!.id, "once");
+    const view = await until(engine, run.id, item => item.status === "completed");
+    expect(view.outcome).toMatchObject({ kind: "confirmed", amountUsd: 125 });
+    expect(view.board).toEqual([
+      { business: "Pete's Pipes", state: "released", amountUsd: 140, when: "Tuesday the 20th at 9 am" },
+      { business: "Drain Bros", state: "booked", amountUsd: 125, when: "Tuesday the 20th at 11 am" },
+      { business: "Rapid Rooter", state: "released", amountUsd: 160, when: "Wednesday the 21st at 8 am" }
+    ]);
+    expect(view.steps).toContain("Ambient to Pete's Pipes: Thanks so much for the quote. Maya is going with another option this time. Bye.");
+    expect(view.steps.some(step => /^Ambient to Drain Bros: .*one hundred twenty-five dollars total, Tuesday the 20th at 11 am\. Is that right\?$/.test(step))).toBe(true);
+    close();
+  });
+
+  it("asks the owner about the best quote when every quote is over the limit", async () => {
+    const { engine, close } = around();
+    const run = await engine.ask("Get quotes from plumbers to fix the kitchen sink, under 100", undefined, true);
+    const dial = await until(engine, run.id, item => item.status === "waiting_approval");
+    await engine.respondToApproval(dial.approval!.id, "once");
+    const best = await until(engine, run.id, item => item.approval?.kind === "spend");
+    expect(best.approval?.command).toBe("Drain Bros has the best quote: one hundred twenty-five dollars for Tuesday the 20th at 11 am, over your limit of one hundred dollars. Should I book it?");
+    expect(best.board?.map(item => item.state)).toEqual(["released", "quoted", "released"]);
+    await engine.respondToApproval(best.approval!.id, "once");
+    const view = await until(engine, run.id, item => item.status === "completed");
+    expect(view.outcome).toMatchObject({ kind: "confirmed", amountUsd: 125 });
+    close();
   });
 });
