@@ -11,11 +11,13 @@ export type CallBrief = {
   facts: string[];
 };
 
+export type ProofOfYes = { readBack: string; readBackAt: string; yes: string; yesAt: string };
+
 export type Speaker = "agent" | "business" | "owner";
 export type CallTurn = { speaker: Speaker; text: string; at: string };
 
 export type CallOutcome =
-  | { kind: "confirmed"; summary: string; amountUsd?: number; when?: string }
+  | { kind: "confirmed"; summary: string; amountUsd?: number; when?: string; proof?: ProofOfYes }
   | { kind: "declined"; reason: string }
   | { kind: "no_deal"; reason: string }
   | { kind: "unconfirmed"; reason: string };

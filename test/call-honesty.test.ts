@@ -144,6 +144,8 @@ describe("honesty over generated calls", () => {
       if (readBack && chargedIn(readBack.text).some(value => value !== amount)) fail(`booked ${amount} after a read-back that named another price`);
       if (readBack && amountsIn(state.phase.outcome.summary).some(value => !amountsIn(readBack.text).includes(value))) fail(`reported "${state.phase.outcome.summary}", which the read-back did not say`);
       if (replies.at(-1)?.clean !== true || reply?.text !== replies.at(-1)?.text) fail("booked without a clean yes");
+      const proof = state.phase.outcome.proof;
+      if (!proof || proof.readBack !== readBack?.text || proof.readBackAt !== readBack.at || proof.yes !== reply?.text || proof.yesAt !== reply.at) fail("the proof of yes is not the read-back and the reply that booked it");
       const when = state.phase.outcome.when;
       if (when && /\d{3,}|deposit|plus|card/i.test(when.normalize("NFKC"))) fail(`booked with "${when}", which carries more than a time`);
       const allowed = approved.some(grant => grant.amount === amount && (grant.when === undefined || grant.when === when));

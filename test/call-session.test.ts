@@ -1028,3 +1028,21 @@ describe("chosen by the errand", () => {
     expect(play([[{ kind: "chosen", requestId }, 3000]], start.state, comparing).effects).toEqual([]);
   });
 });
+
+describe("proof of yes", () => {
+  it("keeps the exact read-back and the yes that booked it, with their times", () => {
+    const { state } = play([answered, [heard("I can do it for 140"), 1000], [confirm(140, "Tuesday the 20th at 10 am", "Tuesday the 20th at 10 am"), 2000], [{ kind: "played", text: "" }, 3000], [heard("Yes, that's right."), 4000]]);
+    expect(state.phase).toMatchObject({
+      kind: "ended",
+      outcome: {
+        kind: "confirmed",
+        proof: {
+          readBack: "Okay, so just to confirm, one hundred forty dollars total, Tuesday the 20th at 10 am. Is that right?",
+          readBackAt: at(2000),
+          yes: "Yes, that's right.",
+          yesAt: at(4000)
+        }
+      }
+    });
+  });
+});

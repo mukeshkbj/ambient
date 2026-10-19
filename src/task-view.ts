@@ -73,11 +73,10 @@ body.booked .check path{animation:draw 600ms 180ms cubic-bezier(0.2,0,0,1) both}
 .tile[data-state="booking"],.tile[data-state="booked"]{box-shadow:inset 0 0 0 1.5px var(--done);background:oklch(0.26 0.05 155)}
 .tile[data-state="booking"] .state,.tile[data-state="booked"] .state{color:var(--done)}
 .tile[data-state="released"],.tile[data-state="ended"]{opacity:.5}
-body.multi[data-state="done"]:not([data-device="tv"]){justify-content:flex-start;gap:1.4vw}
-body.multi[data-state="done"] .stake{font-size:1.55em}
-body.multi[data-state="done"] .check{width:1.6em;height:1.6em}
-body.multi[data-state="done"] .tile{padding:.5em .7em .55em}
-body.multi[data-state="done"] .tile .price{font-size:1.2em}
+body.multi[data-state="done"] .board{display:none}
+body.proof:not([data-device="tv"]){justify-content:flex-start}
+body.proof .foot{margin-top:.4em;margin-bottom:0}
+body.proof .line span{-webkit-line-clamp:3}
 .tile[data-state="released"] .price{text-decoration:line-through;text-decoration-thickness:2px}
 .tile[data-state="released"] .state,.tile[data-state="ended"] .state{color:var(--dim)}
 .actions{display:flex;gap:.5em;flex-wrap:wrap;align-items:center;margin-top:.3em}
@@ -123,7 +122,6 @@ body[data-device="tv"] .tvline{display:block}
  body:not([data-device="tv"]) .hint{font-size:13px}
  body:not([data-device="tv"]) .foot{grid-template-columns:1fr;font-size:14px;gap:2px}
  body:not([data-device="tv"]) .board{grid-template-columns:1fr;gap:6px}
- body.multi[data-state="done"]:not([data-device="tv"]) .board{display:none}
  body:not([data-device="tv"]) .tile{grid-template-columns:1fr auto;grid-template-areas:"name price" "state slot";align-items:baseline;padding:10px 12px}
  body:not([data-device="tv"]) .tile b{grid-area:name;font-size:15px}
  body:not([data-device="tv"]) .tile .price{grid-area:price;font-size:20px}
@@ -181,7 +179,10 @@ function offers(ap,said){const limit=ap.limitUsd,amount=ap.amountUsd;if(limit===
  return said.some(l=>l.who!=="Ambient"&&l.text.trim().toLowerCase()==="offer "+limit)?[]:[limit];}
 function dated(when){return /\\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\b|\\d{1,2}\\/\\d{1,2}|\\bthe (?:\\d{1,2}(?:st|nd|rd|th)|(?:twenty|thirty)?-? ?(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth)|tenth|eleventh|twelfth|thirteenth|fourteenth|fifteenth|sixteenth|seventeenth|eighteenth|nineteenth|twentieth|thirtieth)\\b/i.test(when||"");}
 function buttons(list){const box=$("actions");box.innerHTML="";
- for(const b of list){const el=document.createElement("button");el.type="button";el.textContent=b.label;if(b.note){const n=document.createElement("small");n.textContent=b.note;el.appendChild(n);}if(b.kind)el.className=b.kind;el.onclick=()=>{el.disabled=true;b.run();};box.appendChild(el);}}
+ for(const b of list){const el=document.createElement("button");el.type="button";el.textContent=b.label;if(b.note){const n=document.createElement("small");n.textContent=b.note;el.appendChild(n);}if(b.kind)el.className=b.kind;el.onclick=()=>{if(!b.keep)el.disabled=true;b.run();};box.appendChild(el);}}
+const stamp=s=>{const d=new Date(s);return Number.isNaN(d.getTime())?"":d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",second:"2-digit"});};
+function replay(p){const voice=globalThis.speechSynthesis;if(!voice||typeof SpeechSynthesisUtterance!=="function")return;voice.cancel();
+ const them=new SpeechSynthesisUtterance(p.yes);them.pitch=.75;them.rate=1.05;voice.speak(new SpeechSynthesisUtterance(p.readBack));voice.speak(them);}
 function foot(lines){const box=$("foot");
  box.innerHTML=lines.map(l=>'<div class="line"><b>'+esc(l.who)+'</b><span>'+l.text+'</span></div>').join("");}
 function ownerSaid(line,biz){if(!line)return "";const decided=/^(Approved|Declined): /.exec(line.text);if(decided)return "You "+decided[1].toLowerCase()+" it.";
@@ -201,7 +202,7 @@ function render(d){
  const said=speakers(steps,biz),owner=said.filter(l=>l.who!=="Ambient"&&l.who!==biz&&!names.includes(l.who)).at(-1),what=errand(t.instruction);
  const theirs=said.filter(l=>l.who===biz).at(-1);
  const kind=ap?"needs":o?"done":live?"live":"idle";
- document.body.classList.remove("booked","open","arrive");document.body.classList.toggle("multi",!!list);
+ document.body.classList.remove("booked","open","arrive","proof");document.body.classList.toggle("multi",!!list);
  if(kind==="needs"&&shown!=="needs"){void document.body.offsetWidth;document.body.classList.add("arrive");}
  shown=kind;document.body.dataset.state=kind;
  over.textContent="";flag.textContent="";flag.className="flag";hint.textContent="";tv.textContent="";$("what").textContent="";$("clock").textContent="";buttons([]);foot([]);board(list);
@@ -237,7 +238,10 @@ function render(d){
   const readBack=said.some(l=>l.who==="Ambient"&&/\\bIs that right\\?$/.test(l.text));
   sub.textContent=ok?(theirs?(readBack?"Ambient read back the total and the time. "+biz+" said \\u201c"+theirs.text+"\\u201d":"In their words: \\u201c"+theirs.text+"\\u201d"):"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed.":cap(o.reason).replace(/\\.+$/,"")+".";
   const mine=said.filter(l=>l.who!=="Ambient"&&l.who!==biz);
-  if(ok)hint.textContent=mine.some(l=>/^Approved: /.test(l.text))?"You approved this price from home.":mine.some(l=>/^offer\\b/i.test(l.text))?"You offered this price from home.":list?"Cheapest of "+list.filter(b=>b.amountUsd!==undefined).length+" quotes"+(limitOf(t.instruction)?", within your "+limitOf(t.instruction).slice(6)+" limit.":"."):limitOf(t.instruction)?"Within your "+limitOf(t.instruction).slice(6)+" limit.":"";
+  if(ok)hint.textContent=mine.some(l=>/^Approved: /.test(l.text))?"You approved this price from home.":mine.some(l=>/^offer\\b/i.test(l.text))?"You offered this price from home.":list?"Cheapest of "+list.filter(b=>b.amountUsd!==undefined).length+" quotes"+(list.some(b=>b.state==="released")?" ("+list.filter(b=>b.state==="released"&&b.amountUsd!==undefined).map(b=>usd(b.amountUsd)+" passed").join(", ")+")":"")+(limitOf(t.instruction)?", within your "+limitOf(t.instruction).slice(6)+" limit.":"."):limitOf(t.instruction)?"Within your "+limitOf(t.instruction).slice(6)+" limit.":"";
+  if(ok&&o.proof){sub.textContent="";document.body.classList.add("proof");
+   foot([{who:"Ambient \u00b7 "+stamp(o.proof.readBackAt),text:"\u201c"+esc(o.proof.readBack)+"\u201d"},{who:biz+" \u00b7 "+stamp(o.proof.yesAt),text:"\u201c"+esc(o.proof.yes)+"\u201d"}]);
+   buttons([{label:"Hear them say yes",note:"Replays the read-back and their answer",kind:"offer",keep:true,run:()=>replay(o.proof)}]);}
   if(!ok){if(theirs)foot([{who:"Last from "+biz,text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
    buttons([{label:"Call "+biz+" again",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);}}
  else if(live&&list){chip.className="chip";const quoted=list.filter(b=>b.amountUsd!==undefined).length;

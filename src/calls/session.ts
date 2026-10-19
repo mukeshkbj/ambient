@@ -250,7 +250,10 @@ function granted(state: CallState, amountUsd: number | undefined, when: string |
 function answerReadBack(state: CallState, readBack: ReadBack, reply: string, now: string): Transition | undefined {
   const lastAgent = state.turns.findLast(turn => turn.speaker === "agent");
   if (lastAgent?.text !== readBack.line) return undefined;
-  return agreesTo(reply, readBack.terms, readBack.outcome.amountUsd, readBack.outcome.when, readBack.line) ? close({ ...state, readBack: undefined }, readBack.outcome, now) : undefined;
+  if (!agreesTo(reply, readBack.terms, readBack.outcome.amountUsd, readBack.outcome.when, readBack.line)) return undefined;
+  const full = state.turns.findLast(turn => turn.speaker === "agent" && turn.text.endsWith(`${readBack.terms}. Is that right?`)) ?? lastAgent;
+  const proof = { readBack: full.text, readBackAt: full.at, yes: reply, yesAt: now };
+  return close({ ...state, readBack: undefined }, { ...readBack.outcome, proof }, now);
 }
 
 function price(amount: number): string {
