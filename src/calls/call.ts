@@ -7,6 +7,7 @@ import type { CallBrief, CallEffect, CallInput } from "./types.js";
 export type CallHandle = {
   ownerSaid(text: string): void;
   ownerDecided(requestId: string, decision: "once" | "deny"): boolean;
+  release(requestId: string): void;
   hangUp(): void;
   state(): CallState;
   done: Promise<CallState>;
@@ -119,6 +120,7 @@ export function runCall(options: RunCallOptions): CallHandle {
       dispatch({ kind: "owner_decided", requestId, decision });
       return waiting;
     },
+    release: requestId => dispatch({ kind: "released", requestId }),
     hangUp() {
       options.line.hangUp();
       if (state.phase.kind !== "ended") dispatch({ kind: "line_ended", reason: "hangup" });

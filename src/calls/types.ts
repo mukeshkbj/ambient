@@ -7,6 +7,7 @@ export type CallBrief = {
   business: { name: string; phone: PhoneNumber };
   ownerName: string;
   maxUsd?: number;
+  compare?: true;
   facts: string[];
 };
 
@@ -37,6 +38,7 @@ export type CallInput =
   | { kind: "brain"; turn: number; step: BrainStep }
   | { kind: "owner_said"; text: string }
   | { kind: "owner_decided"; requestId: string; decision: "once" | "deny" }
+  | { kind: "released"; requestId: string }
   | { kind: "hold_tick" };
 
 export type BrainStep =

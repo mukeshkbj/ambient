@@ -149,6 +149,11 @@ function transition(state: CallState, input: CallInput, now: string): Transition
         : approved ? { approved: [...state.approved, grant] } : { deniedUsd: [...state.deniedUsd, amount] };
       return think({ ...ownerNote(state, note, now, ledger), phase: { kind: "talking" } }, now);
     }
+    case "released": {
+      if (phase.kind !== "waiting_for_owner" || phase.requestId !== input.requestId) return unchanged(state);
+      const line = `Thanks so much for the quote. ${brief.ownerName} is going with another option this time. Bye.`;
+      return end(withTurn(state, "agent", line, now), { kind: "no_deal", reason: `${brief.ownerName} went with another quote` }, [say(line), { kind: "hang_up" }]);
+    }
     case "hold_tick": {
       if (phase.kind !== "waiting_for_owner") return unchanged(state);
       const elapsed = (from: string) => Date.parse(now) - Date.parse(from);
@@ -204,8 +209,10 @@ function confirm(state: CallState, proposed: Confirmed, now: string): Transition
     return close(state, { kind: "no_deal", reason: `${owner} declined ${dollarsInWords(charge)}` }, now,
       `Okay, no problem. ${owner} will pass at that price. Thanks for your time, bye.`);
   }
-  if (charge !== undefined && charge > limit && !granted(state, charge, outcome.when)) {
-    const question = `${brief.business.name} wants ${price(charge)}, over your limit of ${price(limit)}. Should I agree?`;
+  if (charge !== undefined && (charge > limit || brief.compare) && !granted(state, charge, outcome.when)) {
+    const question = charge <= limit
+      ? `${brief.business.name} can do ${outcome.when ?? "it"} for ${price(charge)}.`
+      : `${brief.business.name} wants ${price(charge)}, over your limit of ${price(limit)}. Should I agree?`;
     return askOwner(state, question, charge, now, false, outcome.when);
   }
   if (charge === undefined && state.deniedUnpriced) {

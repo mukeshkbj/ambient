@@ -979,3 +979,33 @@ describe("numbers Ambient never dials", () => {
     expect(blockedNumber(parsePhoneNumber("(415) 555-0134"))).toBeUndefined();
   });
 });
+
+describe("comparing quotes", () => {
+  const comparing: CallBrief = { ...brief, compare: true };
+
+  it("holds a quote inside the limit for the errand to decide", () => {
+    const { state } = play([answered, [heard("I can do it for 140"), 1000], [confirm(140, "Tuesday the 20th at 10 am", "Tuesday the 20th at 10 am"), 2000]], undefined, comparing);
+    expect(state.phase).toMatchObject({ kind: "waiting_for_owner", amountUsd: 140, question: "Joe's Plumbing can do Tuesday the 20th at 10 am for one hundred forty dollars." });
+  });
+
+  it("closes politely without booking when the errand releases it", () => {
+    const held = play([answered, [heard("I can do it for 140"), 1000], [confirm(140, "Tuesday the 20th at 10 am", "Tuesday the 20th at 10 am"), 2000]], undefined, comparing);
+    const requestId = held.state.phase.kind === "waiting_for_owner" ? held.state.phase.requestId : "";
+    const { state, effects } = play([[{ kind: "released", requestId }, 3000]], held.state, comparing);
+    expect(state.phase).toEqual({ kind: "ended", outcome: { kind: "no_deal", reason: "Maya went with another quote" } });
+    expect(spoken(effects)).toEqual(["Thanks so much for the quote. Maya is going with another option this time. Bye."]);
+    expect(state.turns.some(turn => turn.speaker === "owner")).toBe(false);
+  });
+
+  it("ignores a release for a question it is not asking", () => {
+    const held = play([answered, [heard("I can do it for 140"), 1000], [confirm(140, "Tuesday the 20th at 10 am", "Tuesday the 20th at 10 am"), 2000]], undefined, comparing);
+    expect(play([[{ kind: "released", requestId: "other" }, 3000]], held.state, comparing).effects).toEqual([]);
+  });
+
+  it("books through the normal read-back once the errand approves", () => {
+    const held = play([answered, [heard("I can do it for 140"), 1000], [confirm(140, "Tuesday the 20th at 10 am", "Tuesday the 20th at 10 am"), 2000]], undefined, comparing);
+    const requestId = held.state.phase.kind === "waiting_for_owner" ? held.state.phase.requestId : "";
+    const approved = play([[{ kind: "owner_decided", requestId, decision: "once" }, 3000], [confirm(140, "Tuesday the 20th at 10 am", "Tuesday the 20th at 10 am"), 4000]], held.state, comparing);
+    expect(approved.state.readBack?.terms).toBe("one hundred forty dollars total, Tuesday the 20th at 10 am");
+  });
+});
