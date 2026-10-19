@@ -72,6 +72,21 @@
           ]
         },
         {
+          "name": "MoveBookingIntent",
+          "slots": [
+            { "name": "when", "type": "AMAZON.SearchQuery" }
+          ],
+          "samples": [
+            "move it to {when}",
+            "move the booking to {when}",
+            "move my booking to {when}",
+            "move the plumber to {when}",
+            "reschedule it for {when}",
+            "reschedule to {when}",
+            "change the booking to {when}"
+          ]
+        },
+        {
           "name": "RespondApprovalIntent",
           "slots": [
             { "name": "decision", "type": "Decision" }

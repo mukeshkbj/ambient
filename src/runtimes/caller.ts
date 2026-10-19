@@ -30,6 +30,7 @@ type CallerMemory = {
   facts(phone: PhoneNumber): string[];
   addFact(phone: PhoneNumber, fact: string): void;
   placedCalls(): PlacedCall[];
+  lastBooking(): CallRecord | undefined;
 };
 
 export type CallerOptions = {
@@ -55,6 +56,8 @@ type Errand = {
   timer?: NodeJS.Timeout;
   feed(input: ErrandInput): void;
 };
+
+const MOVE = /^(?:please\s+)?(?:move|reschedule|change)\b.*?\bto\s+(.+?)[.?!]*$/i;
 
 const AROUND_WORDS = /\b(?:call around|shop around|compare|cheapest|quotes?)\b/i;
 
@@ -240,6 +243,11 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
   private async begin(sessionId: string, instruction: string): Promise<void> {
     const { household, business } = this.options;
     const maxUsd = spendingLimit(instruction) ?? household.maxUsdDefault;
+    const move = MOVE.exec(instruction);
+    if (move) {
+      this.moveBooking(sessionId, move[1]!);
+      return;
+    }
     const given = phoneIn(instruction);
     if (given) {
       const name = mentions(instruction, business.name) ? business.name : given;
@@ -280,6 +288,19 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
     });
   }
 
+  private moveBooking(sessionId: string, to: string): void {
+    const booking = this.options.memory?.lastBooking();
+    if (!booking || booking.outcome.kind !== "confirmed") {
+      this.emit({ type: "message.complete", sessionId, payload: { text: "I don't have a booking to move.", status: "completed", outcome: { kind: "no_deal", reason: "there is no booking to move" } } });
+      return;
+    }
+    const { amountUsd, when } = booking.outcome;
+    const from = when ?? "the booked time";
+    this.emit({ type: "status.update", sessionId, payload: { text: `Moving your booking with ${booking.businessName} from ${from} to ${to}` } });
+    const goal = `Move the booking with ${booking.businessName} from ${from} to ${to}. Keep the same job${amountUsd !== undefined ? ` and the same price, ${dollarsInWords(amountUsd)}` : ""}.`;
+    this.dial(sessionId, { name: booking.businessName, phone: booking.phone }, goal, amountUsd, amountUsd);
+  }
+
   private ranked(candidates: Candidate[]): Candidate[] {
     const memory = this.options.memory;
     if (!memory) return candidates;
@@ -309,9 +330,9 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
     });
   }
 
-  private dial(sessionId: string, business: Business, instruction: string, maxUsd: number | undefined): void {
+  private dial(sessionId: string, business: Business, instruction: string, maxUsd: number | undefined, approvedUsd?: number): void {
     if (this.cancelled.has(sessionId)) return;
-    const call = this.placeCall(sessionId, business, instruction, maxUsd, event => this.emit({ ...event, sessionId }));
+    const call = this.placeCall(sessionId, business, instruction, maxUsd, event => this.emit({ ...event, sessionId }), false, approvedUsd);
     if (!call) return;
     this.calls.set(sessionId, call);
     void call.done.then(() => this.calls.delete(sessionId));
@@ -411,7 +432,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
     }
   }
 
-  private placeCall(callId: string, business: Business, instruction: string, maxUsd: number | undefined, emit: (event: AssistantEvent) => void, compare = false): CallHandle | undefined {
+  private placeCall(callId: string, business: Business, instruction: string, maxUsd: number | undefined, emit: (event: AssistantEvent) => void, compare = false, approvedUsd?: number): CallHandle | undefined {
     const { household, memory } = this.options;
     if (memory?.facts(business.phone).includes(OPTED_OUT)) {
       emit({
@@ -437,6 +458,7 @@ export class CallerClient extends AssistantEvented implements AssistantClient {
       ownerName: household.ownerName,
       ...(maxUsd !== undefined ? { maxUsd } : {}),
       ...(compare ? { compare: true as const } : {}),
+      ...(approvedUsd !== undefined ? { approvedUsd } : {}),
       ...(business.language ? { language: business.language } : {}),
       facts: [...householdFacts(household), ...(memory?.facts(business.phone) ?? []).map(fact => `${EARLIER_CALL} ${fact}`), ...this.pastCalls(business.phone)]
     };

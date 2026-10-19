@@ -41,7 +41,7 @@ export function startCall(brief: CallBrief, callId: string): Transition {
       turns: [],
       turn: 0,
       asks: 0,
-      approved: [],
+      approved: brief.approvedUsd !== undefined ? [{ amountUsd: brief.approvedUsd }] : [],
       deniedUsd: [],
       disclosed: false,
       disclosurePlayed: false,

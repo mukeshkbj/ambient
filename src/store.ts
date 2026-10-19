@@ -698,6 +698,11 @@ export class AmbientStore {
     return rows.map(callRecord);
   }
 
+  lastBooking(): CallRecord | undefined {
+    const rows = this.db.prepare("SELECT * FROM call_history ORDER BY created_at DESC, id DESC").all() as Row[];
+    return rows.map(callRecord).find(call => call.outcome.kind === "confirmed");
+  }
+
   addFact(phone: PhoneNumber, fact: string): void {
     this.db.prepare("INSERT INTO facts (business_phone, fact, created_at) VALUES (?, ?, ?)")
       .run(phone, fact, new Date().toISOString());

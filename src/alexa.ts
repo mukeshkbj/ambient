@@ -276,6 +276,18 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
     }
   }
   if (name === "RetryCallIntent") return retryCall(registry, attributes, dependencies);
+  if (name === "MoveBookingIntent") {
+    const when = slotValue(intent, "when");
+    if (!when) return response("When should I move it to?", attributes);
+    const entry = defaultEntry(registry);
+    if (!entry) return response("I could not reach the assistant.", attributes);
+    try {
+      const run = await entry.engine.ask(`Move my booking to ${when}`, undefined, true, { waitMs: dependencies.askWaitMs ?? 0 });
+      return response(startedCall(entry, run), runAttributes(attributes, run), false, isLive(run));
+    } catch (error) {
+      return response(errorText(error), attributes);
+    }
+  }
   if (name === "SteerCallIntent" || name === "OfferAmountIntent") {
     const amount = name === "OfferAmountIntent" ? slotValue(intent, "amount") : undefined;
     const message = name === "OfferAmountIntent"

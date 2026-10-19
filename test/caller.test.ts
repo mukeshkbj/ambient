@@ -307,3 +307,28 @@ describe("CallerClient calling around", () => {
     close();
   });
 });
+
+describe("CallerClient follow-through", () => {
+  it("moves the last booking to a new time, with the same business and the price already approved", async () => {
+    const { engine, close } = setup(JOES_PLUMBING, { memory: true });
+    const first = await engine.ask("Call Joe's Plumbing and book a visit under 150", undefined, true);
+    const waiting = await until(engine, first.id, item => item.status === "waiting_approval");
+    await engine.respondToApproval(waiting.approval!.id, "once");
+    await until(engine, first.id, item => item.status === "completed");
+    const moved = await engine.ask("Move my plumber booking to Thursday", undefined, true);
+    const view = await until(engine, moved.id, item => item.status === "completed" || item.status === "waiting_approval");
+    expect(view.status).toBe("completed");
+    expect(view.outcome).toMatchObject({ kind: "confirmed", amountUsd: 180, when: "Thursday the 22nd at 10 am" });
+    expect(view.steps).toContain("Moving your booking with Joe's Plumbing from Tuesday the 20th at 10 am to Thursday");
+    expect(view.steps).toContain("Ambient: Okay, so just to confirm, one hundred eighty dollars total, Thursday the 22nd at 10 am. Is that right?");
+    close();
+  });
+
+  it("says so when there is no booking to move", async () => {
+    const { engine, close } = setup(JOES_PLUMBING, { memory: true });
+    const moved = await engine.ask("Move my plumber booking to Thursday", undefined, true);
+    const view = await until(engine, moved.id, item => item.status === "completed");
+    expect(view.outcome).toEqual({ kind: "no_deal", reason: "there is no booking to move" });
+    close();
+  });
+});

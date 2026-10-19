@@ -9,6 +9,7 @@ export type CallBrief = {
   ownerName: string;
   maxUsd?: number;
   compare?: true;
+  approvedUsd?: number;
   language?: Language;
   facts: string[];
 };

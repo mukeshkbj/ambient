@@ -171,7 +171,7 @@ function board(list){const box=$("board");if(!list||list.length<2){box.innerHTML
  const open=list.filter(b=>b.state==="quoted"&&b.amountUsd!==undefined),low=open.length?Math.min(...open.map(b=>b.amountUsd)):undefined;
  box.style.setProperty("--n",list.length);
  box.innerHTML=list.map(b=>'<div class="tile'+(b.state==="quoted"&&b.amountUsd===low&&open.length>1?" best":"")+'" data-state="'+esc(b.state)+'"><b>'+esc(b.business)+'</b><span class="price">'+(b.amountUsd!==undefined?esc(usd(b.amountUsd)):"")+'</span><span class="slot">'+esc(nb(b.when?cap(b.when):""))+'</span><span class="state">'+esc(STATE[b.state]||b.state)+'</span></div>').join("");}
-function errand(title){const m=/\\bto ([a-z][^,.]{2,48})/i.exec(title||"");return m?cap(m[1].trim()):"";}
+function errand(title){if(/^(?:move|reschedule|change)\\b/i.test(title||""))return "Moved booking";const m=/\\bto ([a-z][^,.]{2,48})/i.exec(title||"");return m?cap(m[1].trim()):"";}
 function limitOf(text){const m=/\\b(?:under|below|up to|no more than|max(?:imum)?)\\s+\\$?(\\d[\\d,]*)/i.exec(text||"");return m?"limit $"+m[1]:"";}
 function business(steps){for(const s of steps){const m=/^(?:Calling|Connected to) (.+)$/.exec(s);if(m)return m[1];}return "";}
 function speaker(s,biz){const who=["Ambient",biz].find(n=>n&&s.startsWith(n+": "));if(who)return{who,text:s.slice(who.length+2)};const m=/^([^:]{1,40}): (.+)$/.exec(s);if(!m)return null;const to=/^Ambient to (.+)$/.exec(m[1]);return to?{who:"Ambient",to:to[1],text:m[2]}:{who:m[1],text:m[2]};}
@@ -240,7 +240,9 @@ function render(d){
   const readBack=said.some(l=>l.who==="Ambient"&&/\\bIs that right\\?$/.test(l.text));
   sub.textContent=ok?(theirs?(readBack?"Ambient read back the total and the time. "+biz+" said \\u201c"+theirs.text+"\\u201d":"In their words: \\u201c"+theirs.text+"\\u201d"):"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed.":cap(o.reason).replace(/\\.+$/,"")+".";
   const mine=said.filter(l=>l.who!=="Ambient"&&l.who!==biz);
-  if(ok)hint.textContent=mine.some(l=>/^Approved: /.test(l.text))?"You approved this price from home.":mine.some(l=>/^offer\\b/i.test(l.text))?"You offered this price from home.":list?"Cheapest of "+list.filter(b=>b.amountUsd!==undefined).length+" quotes"+(list.some(b=>b.state==="released")?" ("+list.filter(b=>b.state==="released"&&b.amountUsd!==undefined).map(b=>usd(b.amountUsd)+" passed").join(", ")+")":"")+(limitOf(t.instruction)?", within your "+limitOf(t.instruction).slice(6)+" limit.":"."):limitOf(t.instruction)?"Within your "+limitOf(t.instruction).slice(6)+" limit.":"";
+  const moved=steps.map(s=>/^Moving your booking with .+? from (.+) to .+$/.exec(s)).find(Boolean);
+  if(ok&&moved)hint.textContent="Moved from "+moved[1]+", at the price you already approved.";
+  else if(ok)hint.textContent=mine.some(l=>/^Approved: /.test(l.text))?"You approved this price from home.":mine.some(l=>/^offer\\b/i.test(l.text))?"You offered this price from home.":list?"Cheapest of "+list.filter(b=>b.amountUsd!==undefined).length+" quotes"+(list.some(b=>b.state==="released")?" ("+list.filter(b=>b.state==="released"&&b.amountUsd!==undefined).map(b=>usd(b.amountUsd)+" passed").join(", ")+")":"")+(limitOf(t.instruction)?", within your "+limitOf(t.instruction).slice(6)+" limit.":"."):limitOf(t.instruction)?"Within your "+limitOf(t.instruction).slice(6)+" limit.":"";
   if(ok&&o.proof){sub.textContent="";document.body.classList.add("proof");
    const spanish=o.proof.language==="es"?" \u00b7 in Spanish":"";
    foot([{who:"Ambient \u00b7 "+stamp(o.proof.readBackAt)+spanish,text:"\u201c"+esc(o.proof.readBack)+"\u201d"+(o.proof.inEnglish?'<small class="gloss">In English: \u201c'+esc(o.proof.inEnglish)+'\u201d</small>':"")},{who:biz+" \u00b7 "+stamp(o.proof.yesAt),text:"\u201c"+esc(o.proof.yes)+"\u201d"}]);

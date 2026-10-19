@@ -10,6 +10,8 @@ export const JOES_PLUMBING: BusinessPersona = {
   name: "Joe's Plumbing",
   opening: "Oh, okay. Joe's Plumbing, this is Joe. How can I help?",
   rules: [
+    { when: /\bcould we move it to .+\?$/i, reply: "Sure, Thursday the 22nd at 10 am works." },
+    { when: /\bthursday\b.*\bis that right\?$/i, reply: "Yes, that's right. See you then." },
     { when: /^okay, so just to confirm\b/i, reply: "Yes, plus parts." },
     { when: /^let me say it back\b/i, reply: "Yes, that's right. See you then." },
     { when: /\bwith parts\b/i, reply: "Fair enough. A sink like that needs no parts, so that's all in." },
@@ -129,10 +131,26 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
   ...AROUND_SCRIPT,
   {
     when: /how can i help/i,
-    reply: (_, state) => [{
-      kind: "say",
-      text: ["Hi Joe. I'd like to book a visit to fix a leaking kitchen sink.", state.brief.facts[0] && `${state.brief.facts[0]}.`, "When could you come?"].filter(Boolean).join(" "),
-      last: true
+    reply: (_, state) => {
+      const move = /^Move the booking with .+? from (.+?) to (.+?)\. Keep/.exec(state.brief.goal);
+      if (move) return [{ kind: "say", text: `Hi Joe. I have a booking with you for ${move[1]}. Could we move it to ${move[2]}?`, last: true }];
+      return [{
+        kind: "say",
+        text: ["Hi Joe. I'd like to book a visit to fix a leaking kitchen sink.", state.brief.facts[0] && `${state.brief.facts[0]}.`, "When could you come?"].filter(Boolean).join(" "),
+        last: true
+      }];
+    }
+  },
+  {
+    when: /^sure, (.+) works\.$/i,
+    reply: (match, state) => [{
+      kind: "end_call",
+      outcome: {
+        kind: "confirmed",
+        summary: `${state.brief.business.name} moved the booking to ${match[1]}${state.brief.approvedUsd !== undefined ? ` for ${dollarsInWords(state.brief.approvedUsd)}` : ""}.`,
+        ...(state.brief.approvedUsd !== undefined ? { amountUsd: state.brief.approvedUsd } : {}),
+        when: match[1]!
+      }
     }]
   },
   {

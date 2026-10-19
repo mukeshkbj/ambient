@@ -196,6 +196,14 @@ describe("Alexa call intents", () => {
     close();
   });
 
+  it("hears \"move it to Thursday\" as moving the last booking", async () => {
+    const { deps, entry, close } = setup();
+    await handleAlexaRequest(request("MoveBookingIntent", { when: "Thursday" }), deps);
+    expect(entry.engine.listRuns(1)[0]).toMatchObject({ instruction: "Move my booking to Thursday" });
+    expect(speechOf(await handleAlexaRequest(request("MoveBookingIntent"), deps))).toContain("When should I move it to?");
+    close();
+  });
+
   it("asks who to call on \"call them again\" when there was no call", async () => {
     const { deps, close } = setup();
     expect(speechOf(await handleAlexaRequest(request("RetryCallIntent"), deps))).toContain("Who should I call?");
@@ -229,6 +237,7 @@ describe("Alexa call intents", () => {
     expect(samples("CallStatusIntent")).toEqual(expect.arrayContaining(["status", "what's the status", "how it went", "how it's going"]));
     expect(samples("HangUpIntent")).toContain("hang up");
     expect(samples("RetryCallIntent")).toEqual(expect.arrayContaining(["call them again", "try again"]));
+    expect(samples("MoveBookingIntent")).toEqual(expect.arrayContaining(["move it to {when}", "move the plumber to {when}"]));
     expect(samples("OfferAmountIntent")).toEqual(expect.arrayContaining(["offer {amount}", "{amount}"]));
     expect([approve.value, ...approve.synonyms]).toEqual(expect.arrayContaining(["approve", "book"]));
   });
