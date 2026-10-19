@@ -76,6 +76,19 @@ describe("runCall with the simulated line", () => {
     expect(final.turns.some(turn => turn.speaker === "business" && /one fifty is too low/i.test(turn.text))).toBe(true);
   });
 
+  it("does not book on \"yes, plus parts\" and reads the total back again", async () => {
+    const { call, events } = start();
+    await until(call, "waiting_for_owner");
+    call.ownerDecided(String(approvalRequest(events)?.payload.requestId), "once");
+    const final = await call.done;
+    const texts = final.turns.map(turn => `${turn.speaker}: ${turn.text}`);
+    const plus = texts.indexOf("business: Yes, plus parts.");
+    expect(plus).toBeGreaterThan(0);
+    expect(texts[plus + 1]).toBe("agent: Sorry, I can only book a total price. With parts, what's the total?");
+    expect(texts.slice(plus).some(text => text.startsWith("agent: Let me check once more: one hundred eighty dollars total"))).toBe(true);
+    expect(final.phase).toMatchObject({ kind: "ended", outcome: { kind: "confirmed", amountUsd: 180 } });
+  });
+
   it("ends without a deal when the owner declines", async () => {
     const { call, events } = start();
     await until(call, "waiting_for_owner");

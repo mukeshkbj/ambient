@@ -52,9 +52,12 @@ try {
   await call("approve", { decision: "once" });
   const done = await waitFor(["completed", "failed", "cancelled", "unknown"]);
   if (status(done) !== "completed" || !/one hundred sixty/i.test(speech(done))) throw new Error(`Expected a confirmed booking at 160, got ${status(done)}: ${speech(done)}`);
+  const steps = done.structuredContent?.task?.steps ?? [];
+  const plus = steps.indexOf("Joe's Plumbing: Yes, plus parts.");
+  if (plus < 0 || !steps.slice(plus).some(line => line.startsWith("Ambient: Let me check once more:"))) throw new Error("The call did not refuse \"yes, plus parts\" and read the total back again");
   console.log("\nThe call itself (Ambient and the simulated business, with the owner's notes):");
-  for (const line of done.structuredContent?.task?.steps ?? []) if (line.includes(": ")) console.log(`  ${line}`);
-  console.log("smoke: ok, the business countered the owner's offer and the call booked at the approved counter");
+  for (const line of steps) if (line.includes(": ")) console.log(`  ${line}`);
+  console.log("smoke: ok, the business countered, \"yes, plus parts\" did not book, and the call booked at the approved counter");
 } finally {
   await client.close();
 }

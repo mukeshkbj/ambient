@@ -10,7 +10,6 @@
           ],
           "samples": [
             "call {task}",
-            "to call {task}",
             "find {task}",
             "handle {task}",
             "get me {task}"
@@ -24,9 +23,7 @@
           "samples": [
             "tell him {message}",
             "tell her {message}",
-            "tell them {message}",
-            "say {message}",
-            "offer {message}"
+            "tell them {message}"
           ]
         },
         {

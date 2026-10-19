@@ -376,6 +376,9 @@ function render() {
   if (ap) {
     const cue = `${biz} wants ${ap.amountUsd !== undefined ? usd(ap.amountUsd) : "your OK"}. Say approve, or offer an amount.`;
     if (cue !== state.lastCue) { state.lastCue = cue; speak(cue); }
+  } else if (state.lastCue) {
+    if ($("caption").textContent === state.lastCue) $("caption").textContent = live() ? `Ambient is back on the phone with ${biz}.` : "";
+    state.lastCue = null;
   }
 
   clearInterval(state.tick);

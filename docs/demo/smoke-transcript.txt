@@ -15,8 +15,10 @@ tools: delegate, delegate_task, status, approve, stop, agents, briefing
 The call itself (Ambient and the simulated business, with the owner's notes):
   Ambient: Hi, this is an AI assistant calling for Maya. This call is transcribed.
   Joe's Plumbing: Oh, okay. Joe's Plumbing, this is Joe. How can I help?
-  Ambient: Hi Joe. I'd like to book a visit to fix a leaking kitchen sink. The address is 12 Elm Street. When could you come, and what would it cost?
-  Joe's Plumbing: Sure, we can come Tuesday at ten. It'll be one eighty for the call-out and the repair.
+  Ambient: Hi Joe. I'd like to book a visit to fix a leaking kitchen sink. The address is 12 Elm Street. When could you come?
+  Joe's Plumbing: Sure, we can come Tuesday at ten.
+  Ambient: Tuesday at ten works. What would it cost?
+  Joe's Plumbing: It'll be one eighty for the call-out and the repair.
   Ambient: Hmm, okay. Is there any room on the price?
   Joe's Plumbing: Best I can do is one eighty, honestly. Parts went up this year.
   Ambient: One moment, let me check with Maya.
@@ -28,6 +30,10 @@ The call itself (Ambient and the simulated business, with the owner's notes):
   Ambient: Thanks for waiting. Maya says one sixty is fine. Please go ahead and book Tuesday at ten.
   Joe's Plumbing: Hmm, one sixty. Alright, that works if you're my first job that morning. I'll put you down for Tuesday at ten.
   Ambient: Just to confirm: one hundred sixty dollars total, Tuesday at ten. Is that right?
+  Joe's Plumbing: Yes, plus parts.
+  Ambient: Sorry, I can only book a total price. With parts, what's the total?
+  Joe's Plumbing: Fair enough. A sink like that needs no parts, so that's all in.
+  Ambient: Let me check once more: one hundred sixty dollars total, Tuesday at ten. Is that right?
   Joe's Plumbing: Yes, that's right. See you then.
   Ambient: Great, Maya will expect you Tuesday at ten. Thanks, goodbye.
-smoke: ok, the business countered the owner's offer and the call booked at the approved counter
+smoke: ok, the business countered, "yes, plus parts" did not book, and the call booked at the approved counter

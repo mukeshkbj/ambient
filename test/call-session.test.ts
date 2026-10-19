@@ -336,7 +336,7 @@ describe("round 2 review findings", () => {
 
   it("does not repeat the still-checking line for every business sentence", () => {
     const { effects } = play([heard("Hello?"), heard("Still there?")], quoted().state);
-    expect(spoken(effects)).toEqual(["Still checking with Maya, one moment."]);
+    expect(spoken(effects)).toEqual(["Still checking with Maya, thanks for holding."]);
   });
 
   it("keeps redacting digits that keep streaming after a card number", () => {
@@ -532,7 +532,7 @@ describe("holding", () => {
   it("answers the business while still waiting on the owner, without thinking", () => {
     const { state, effects } = play([heard("Are you still there?")], quoted().state);
     expect(state.phase.kind).toBe("waiting_for_owner");
-    expect(spoken(effects)).toEqual(["Still checking with Maya, one moment."]);
+    expect(spoken(effects)).toEqual(["Still checking with Maya, thanks for holding."]);
     expect(kinds(effects)).not.toContain("think");
   });
 

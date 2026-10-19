@@ -82,7 +82,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
       const heard = withTurn(flushDraft(state, now), "business", input.text, now);
       if (phase.kind === "waiting_for_owner") {
         if (phase.lastHoldLine !== phase.since && !(Date.parse(now) - Date.parse(phase.lastHoldLine) >= HOLD_LINE_MS)) return { state: heard, effects: [] };
-        const line = `Still checking with ${brief.ownerName}, one moment.`;
+        const line = holdLine(state);
         return { state: { ...withTurn(heard, "agent", line, now), phase: { ...phase, lastHoldLine: now } }, effects: [say(line)] };
       }
       if (!state.disclosed) return think(heard, now);
@@ -148,8 +148,7 @@ function transition(state: CallState, input: CallInput, now: string): Transition
         return end(closed, { kind: "unconfirmed", reason: `${brief.ownerName} didn't answer in time, so nothing was agreed` }, [say(line), { kind: "hang_up" }]);
       }
       if (!(elapsed(phase.lastHoldLine) >= HOLD_LINE_MS)) return unchanged(state);
-      const holds = [`Still checking with ${brief.ownerName}, thanks for holding.`, `Thanks for holding, ${brief.ownerName} hasn't answered yet.`];
-      const line = holds[state.turns.filter(turn => turn.speaker === "agent" && holds.includes(turn.text)).length % holds.length]!;
+      const line = holdLine(state);
       return { state: { ...withTurn(state, "agent", line, now), phase: { ...phase, lastHoldLine: now } }, effects: [say(line)] };
     }
   }
@@ -251,6 +250,12 @@ function end(state: CallState, outcome: CallOutcome, effects: CallEffect[]): Tra
     state: { ...state, phase: { kind: "ended", outcome } },
     effects: [...effects, { kind: "emit", event: { type: "message.complete", payload: { text, status: "completed", outcome } } }]
   };
+}
+
+function holdLine(state: CallState): string {
+  const owner = state.brief.ownerName;
+  const lines = [`Still checking with ${owner}, thanks for holding.`, `Thanks for holding, ${owner} hasn't answered yet.`];
+  return lines[state.turns.filter(turn => turn.speaker === "agent" && lines.includes(turn.text)).length % lines.length]!;
 }
 
 function think(state: CallState, now: string): Transition {

@@ -168,7 +168,7 @@ function render(d){
   if(ok)document.body.classList.add("booked");
   chip.textContent=ok?"Booked \\u00b7 confirmed by "+biz:o.kind==="unconfirmed"?"Not booked":o.kind==="declined"?"Declined":"No deal";
   if(ok){$("what").textContent=what?biz+" \\u00b7 "+what:biz;setStake(o.amountUsd,cap(o.when||biz));
-   if(!dated(o.when))flag.textContent="Date not confirmed \\u00b7 ask "+biz;}
+   if(!dated(o.when))flag.textContent="Day agreed, calendar date not given \\u00b7 check with "+biz;}
   else{stake.textContent="Nothing was booked.";$("what").textContent=[biz,what,limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");}
   const readBack=said.some(l=>l.who==="Ambient"&&/^(Just to confirm|Let me check once more|One last check|To be sure):/.test(l.text));
   sub.textContent=ok?(theirs?(readBack?"Ambient read back the total and the time. "+biz+" said \\u201c"+theirs.text+"\\u201d":"In their words: \\u201c"+theirs.text+"\\u201d"):"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed.":cap(o.reason)+".";

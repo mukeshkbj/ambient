@@ -7,12 +7,15 @@ export const JOES_PLUMBING: BusinessPersona = {
   name: "Joe's Plumbing",
   opening: "Oh, okay. Joe's Plumbing, this is Joe. How can I help?",
   rules: [
-    { when: /^just to confirm\b/i, reply: "Yes, that's right. See you then." },
+    { when: /^just to confirm\b/i, reply: "Yes, plus parts." },
+    { when: /^let me check once more\b/i, reply: "Yes, that's right. See you then." },
+    { when: /\bwith parts\b/i, reply: "Fair enough. A sink like that needs no parts, so that's all in." },
+    { when: /\bwhat would it cost\b/i, reply: "It'll be one eighty for the call-out and the repair." },
     { when: /\b(one (hundred )?sixty|160)\b/i, reply: "Hmm, one sixty. Alright, that works if you're my first job that morning. I'll put you down for Tuesday at ten." },
     { when: /\bone (hundred )?fifty\b/i, reply: "One fifty is too low for me. I could do one sixty." },
     { when: /\bany room on the price\b/i, reply: "Best I can do is one eighty, honestly. Parts went up this year." },
     { when: /\b(go ahead|book it|that works)\b/i, reply: "Great, you're booked for Tuesday at ten. That's one eighty." },
-    { when: /\b(sink|leak|visit|plumb)/i, reply: "Sure, we can come Tuesday at ten. It'll be one eighty for the call-out and the repair." }
+    { when: /\b(sink|leak|visit|plumb)/i, reply: "Sure, we can come Tuesday at ten." }
   ]
 };
 
@@ -29,9 +32,28 @@ export const DEMO_SCRIPT: ScriptedTurn[] = [
     when: /how can i help/i,
     reply: (_, state) => [{
       kind: "say",
-      text: ["Hi Joe. I'd like to book a visit to fix a leaking kitchen sink.", state.brief.facts[0] && `${state.brief.facts[0]}.`, "When could you come, and what would it cost?"].filter(Boolean).join(" "),
+      text: ["Hi Joe. I'd like to book a visit to fix a leaking kitchen sink.", state.brief.facts[0] && `${state.brief.facts[0]}.`, "When could you come?"].filter(Boolean).join(" "),
       last: true
     }]
+  },
+  {
+    when: /\bplus parts\b/i,
+    reply: () => [{ kind: "say", text: "Sorry, I can only book a total price. With parts, what's the total?", last: true }]
+  },
+  {
+    when: /\ball in\b/i,
+    reply: (_, state) => {
+      const readBack = state.turns.findLast(turn => turn.speaker === "agent" && /^Just to confirm:/.test(turn.text))?.text ?? "";
+      const amount = amountsIn(readBack.split(" total")[0] ?? "").at(-1);
+      return [{
+        kind: "end_call",
+        outcome: { kind: "confirmed", summary: `Joe's Plumbing confirmed Tuesday at ten${amount !== undefined ? ` for ${dollarsInWords(amount)}` : ""}.`, ...(amount !== undefined ? { amountUsd: amount } : {}), when: "Tuesday at ten" }
+      }];
+    }
+  },
+  {
+    when: /\bwe can come tuesday at ten\.$/i,
+    reply: () => [{ kind: "say", text: "Tuesday at ten works. What would it cost?", last: true }]
   },
   {
     when: /\b(booked|works)\b/i,

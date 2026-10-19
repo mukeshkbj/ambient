@@ -37,6 +37,6 @@ export default tseslint.config(
     }
   },
   {
-    ignores: ["dist/**", "cdk.out/**", "node_modules/**", "infra/**", "coverage/**", "dashboard/**"]
+    ignores: ["dist/**", "cdk.out/**", "node_modules/**", "infra/**", "coverage/**", "dashboard/**", ".ambient/**", ".audit/**"]
   }
 );

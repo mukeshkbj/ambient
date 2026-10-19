@@ -2,7 +2,8 @@
 """Screenshot the /sim page through full simulated calls.
 
 Usage: python scripts/shots-sim.py [base_url]
-Needs a fresh `pnpm demo` server, and playwright with chromium installed.
+Needs a fresh `pnpm demo` server started with AMBIENT_DATA_DIR set to an
+empty directory, and playwright with chromium installed.
 """
 import asyncio
 import re
@@ -55,12 +56,16 @@ async def main():
             await shot(page, "talking")
             await phase(page, "needs")
             await shot(page, "needs-you")
+            await page.locator("#show8").screenshot(path=OUT / "sim-card-hero.png")
+            print("saved card-hero")
             await tap(page, r"^Offer \$150")
             await page.wait_for_selector(".note", timeout=10000)
             await shot(page, "steered")
             await page.frame_locator("#show8").get_by_role("button", name=re.compile(r"^Book \$160")).wait_for(timeout=30000)
             await shot(page, "countered")
             await tap(page, r"^Book \$160")
+            await page.get_by_text("With parts, what's the total?").wait_for(timeout=30000)
+            await shot(page, "refused")
             await page.wait_for_selector(".outcome.ok", timeout=30000)
             await shot(page, "confirmed")
             await page.click("#again")

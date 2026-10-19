@@ -109,6 +109,19 @@ describe("Alexa call intents", () => {
     close();
   });
 
+  it("opens on the held call's choices when the owner launches the skill mid-call", async () => {
+    const { deps, fake, close } = setup();
+    await startCall(deps);
+    fake.emit({ type: "approval.request", sessionId: "runtime-1", payload: { requestId: "req-1", command: "book at one hundred eighty dollars", amountUsd: 180, limitUsd: 150, kind: "spend" } });
+    const launched = await handleAlexaRequest({ ...request("unused"), request: { type: "LaunchRequest", requestId: "request-2" } }, deps);
+    expect(speechOf(launched)).not.toContain("Who should I call?");
+    expect(speechOf(launched)).toContain("one hundred eighty dollars");
+    expect(launched.response.reprompt?.outputSpeech.ssml).toMatch(/^<speak>Say approve to /);
+    const stopped = await handleAlexaRequest(request("AMAZON.StopIntent"), deps);
+    expect(speechOf(stopped)).toContain("still holding for your answer");
+    close();
+  });
+
   it("hears \"book it\" as approval", async () => {
     const { deps, fake, close } = setup();
     await startCall(deps);

@@ -60,7 +60,8 @@ function speech(value: string): { type: "SSML"; ssml: string } {
 
 function repromptFor(value: string, live: boolean): string {
   const question = value.match(/[^.?!]+\?$/)?.[0]?.trim();
-  return question ?? (live ? "Say status, or hang up." : "What should I call about?");
+  const choices = value.match(/Say approve[^.?!]*\.$/)?.[0];
+  return question ?? choices ?? (live ? "Say status, or hang up." : "What should I call about?");
 }
 
 const ENDED: RunStatus[] = ["completed", "failed", "cancelled", "unknown"];
@@ -225,7 +226,10 @@ async function intentResponse(intent: AlexaEnvelope, attributes: Record<string, 
   }
   if (name === "AMAZON.StopIntent" || name === "AMAZON.CancelIntent") {
     const live = activeCall(registry, attributes);
-    return response(live ? "Goodbye. The call is still going. Ask me how it went when you're back." : "Goodbye.", attributes, true);
+    const goodbye = !live ? "Goodbye." : live.run.approval
+      ? `Goodbye. ${live.run.subject ?? "The business"} is still holding for your answer. Say, Alexa, open Ambient, to hear it again.`
+      : "Goodbye. The call is still going. Ask me how it went when you're back.";
+    return response(goodbye, attributes, true);
   }
   if (name === "AMAZON.FallbackIntent") {
     const live = activeCall(registry, attributes);
@@ -306,7 +310,11 @@ export async function handleAlexaRequest(input: unknown, dependencies: AlexaSkil
   await authorize(envelope, dependencies);
   const attributes = sessionAttributes(envelope);
   const type = requestType(envelope);
-  if (type === "LaunchRequest") return response("Who should I call? You can say: call Joe's Plumbing to fix the kitchen sink.", attributes);
+  if (type === "LaunchRequest") {
+    const live = activeCall(dependencies.registry, attributes);
+    if (live) return response(callStatus(live), runAttributes(attributes, live.run), false, true);
+    return response("Who should I call? You can say: call Joe's Plumbing to fix the kitchen sink.", attributes);
+  }
   if (type === "SessionEndedRequest") return response("Goodbye.", attributes, true);
   if (type !== "IntentRequest") throw new AlexaRequestError(400, "Unsupported Alexa request type");
   const intent = object(requestObject(envelope).intent);
