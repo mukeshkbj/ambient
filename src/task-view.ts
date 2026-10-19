@@ -140,10 +140,11 @@ function render(d){
   $("what").textContent=what;
   setStake(ap.amountUsd,ap.when?cap(ap.when):biz);
   if(ap.amountUsd!==undefined&&ap.limitUsd!==undefined)over.textContent=usd(ap.amountUsd-ap.limitUsd)+" over your "+usd(ap.limitUsd)+" limit";
-  const began=Date.parse(t.createdAt||"");
-  sub.textContent=ap.kind==="dial"?"Place this call?":biz+" is holding.";
-  const hold=()=>{$("clock").textContent=Number.isFinite(began)?clock(Date.now()-began):"";};
+  const asked=Date.parse(ap.createdAt||"");
+  sub.textContent=ap.kind==="dial"?"Place this call?":biz+" is on the line, waiting for you.";
+  const hold=()=>{$("clock").textContent=Number.isFinite(asked)?"Waiting "+clock(Date.now()-asked):"";};
   if(ap.kind!=="dial"){hold();tick=setInterval(hold,1000);}
+  if(theirs)foot([{who:biz+" said",text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
   buttons([{label:ap.amountUsd!==undefined?"Approve "+usd(ap.amountUsd):"Approve",kind:"primary",run:()=>act("approve",{decision:"once"})},
    ...offers(ap).map(v=>({label:"Offer "+usd(v)+" instead",kind:"offer",run:()=>act("delegate",{task:"offer "+v})})),
    {label:"Decline",kind:"quiet",run:()=>act("approve",{decision:"deny"})}]);
@@ -152,16 +153,16 @@ function render(d){
   if(ok)document.body.classList.add("booked");
   chip.textContent=ok?"Booked \\u00b7 confirmed by "+biz:o.kind==="unconfirmed"?"Not confirmed":o.kind==="declined"?"Declined":"No deal";
   if(ok){$("what").textContent=what?biz+" \\u00b7 "+what:biz;setStake(o.amountUsd,cap(o.when||biz));}
-  else{stake.textContent=biz;$("what").textContent=[what,limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");}
-  const readBack=said.some(l=>l.who==="Ambient"&&l.text.startsWith("Just to confirm:"));
-  sub.textContent=ok?(theirs?(readBack?"Ambient read back the total and the time. "+biz+" said \\u201c"+theirs.text+"\\u201d":"In their words: \\u201c"+theirs.text+"\\u201d"):"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed. Nothing was booked.":cap(o.reason)+". Nothing was booked.";
+  else{stake.textContent="Nothing was booked.";$("what").textContent=[biz,what,limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");}
+  const readBack=said.some(l=>l.who==="Ambient"&&/^(Just to confirm|Let me check once more|One last check|To be sure):/.test(l.text));
+  sub.textContent=ok?(theirs?(readBack?"Ambient read back the total and the time. "+biz+" said \\u201c"+theirs.text+"\\u201d":"In their words: \\u201c"+theirs.text+"\\u201d"):"Booked with "+biz+"."):t.status==="cancelled"?"You ended the call before "+biz+" confirmed.":cap(o.reason)+".";
   const mine=said.filter(l=>l.who!=="Ambient"&&l.who!==biz);
   if(ok)hint.textContent=mine.some(l=>/ approved: /.test(l.text))?"You approved this price from home.":mine.some(l=>/^offer\\b/i.test(l.text))?"You offered this price from home.":limitOf(t.instruction)?"Within your "+limitOf(t.instruction).slice(6)+" limit.":"";
   if(!ok){if(theirs)foot([{who:"Last from "+biz,text:"\\u201c"+esc(theirs.text)+"\\u201d"}]);
    buttons([{label:"Call "+biz+" again",kind:"call",run:()=>act("delegate",{task:DEMO,newConversation:true})}]);}}
  else if(live){chip.className="chip";chip.textContent=connected?"On the phone":"Calling";
   const offered=owner?/^offer\\s+\\$?(\\d+)/i.exec(owner.text):null;
-  $("what").textContent=[what,offered?limitOf(t.instruction)+" \\u00b7 you raised it to "+usd(offered[1]):limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");
+  $("what").textContent=[what,offered?limitOf(t.instruction)+" \\u00b7 you offered "+usd(offered[1]):limitOf(t.instruction)].filter(Boolean).join(" \\u00b7 ");
   stake.textContent=biz;
   const asked=said.filter(l=>l.who==="Ambient"&&/dollars/.test(l.text)).at(-1);
   sub.textContent=offered&&asked?"Ambient asked: \\u201c"+asked.text+"\\u201d":owner?ownerSaid(owner,biz):theirs?"\\u201c"+cap(theirs.text)+"\\u201d":connected?biz+" answered. Ambient said it is an AI.":"Ringing\\u2026 Ambient will say it is an AI first.";
