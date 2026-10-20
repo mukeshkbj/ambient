@@ -353,7 +353,7 @@ export function createMcpServer({ registry, askWaitMs = 0, hearProof }: McpDepen
     try {
       const outcome = registry.engineForRun(taskId).getWork(taskId).outcome;
       const clip = outcome?.kind === "confirmed" && outcome.proof ? await hearProof(outcome.proof) : undefined;
-      if (!clip) return say("There is no recording of this call.", {});
+      if (!clip) return say("There is no recording of this call.");
       return say("Playing the read-back and their yes.", clip);
     } catch (error) {
       return failure(error);

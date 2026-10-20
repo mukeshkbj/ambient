@@ -1,8 +1,7 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import { chatChunk, CHAT_DONE, proofClip, type AssemblyAi, type Clip } from "./assemblyai.js";
-import type { Language } from "./language.js";
+import { lines, type Language } from "./language.js";
 import type { Line } from "./line.js";
-import { lines } from "./language.js";
 import type { LineInput, PhoneNumber, ProofOfYes } from "./types.js";
 
 export type PageEvent = { type: "speak" } | { type: "hangup" } | { type: "receipt"; text: string };

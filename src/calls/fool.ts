@@ -37,5 +37,5 @@ export function tryToFool(reply: string, language: Language = "en"): Attempt {
   if (outcome?.kind === "confirmed") return { readBack: readBack.line, reply, result: "booked", why: "It is a clean yes to the exact terms that were read back." };
   if (outcome?.kind === "declined") return { readBack: readBack.line, reply, result: "opted_out", why: "The business asked not to be called. Ambient ends the call and never calls this number again." };
   const verdict = language === "es" ? spanishVerdict(reply) : readBackVerdict(reply, readBack.terms, deal.amountUsd, deal.when, readBack.line);
-  return { readBack: readBack.line, reply, result: "not_booked", why: verdict.books ? "Ambient heard it before the read-back had finished playing." : verdict.why };
+  return { readBack: readBack.line, reply, result: "not_booked", why: verdict.books ? "Ambient does not book it." : verdict.why };
 }
