@@ -1,0 +1,5 @@
+renders/
+.hyperframes/
+node_modules/
+assets/mix.wav
+assets/mix-raw.wav

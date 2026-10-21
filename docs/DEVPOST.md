@@ -1,9 +1,34 @@
 # Ambient: Alexa, handle the call
 
-Track: Alexa+
+This file holds every field of the Devpost entry, in form order. Paste each field as it is. Fill the two bracketed links before you submit.
 
-Demo video: [VIDEO URL]
-Public repo: [PUBLIC REPO URL]
+## Form fields
+
+| Field | Value |
+|---|---|
+| Project name | Ambient |
+| Elevator pitch (200 characters) | An AI that phones the plumber for you. It says first that it is an AI, it asks you before it spends more, and it will not book on "Yes, plus parts." |
+| Track | Alexa+ |
+| Video demo link | [VIDEO URL] |
+| Try it out | [PUBLIC REPO URL] |
+| Thumbnail | `launch/film/renders/thumbnail.png`, the "+ parts" price struck through (3:2, from the launch film) |
+| Built with (tags) | alexa-skills-kit, alexa-plus, mcp, model-context-protocol, claude, anthropic, assemblyai, typescript, node.js, sqlite, vitest, aws-cdk, pnpm |
+| License | MIT (`LICENSE`) |
+| Friction log | Paste or link [`docs/friction-log.md`](friction-log.md) |
+| Product feedback | Paste or link [`docs/product-feedback.md`](product-feedback.md) |
+
+Gallery images, in this order, with these captions:
+
+1. `docs/media/sim-card-hero.png`: "The plumber quotes $180 against a $150 limit. The call holds, and the Echo Show asks the owner."
+2. `docs/media/sim-fool.png`: "Try to fool it. Type any answer to the read-back. "Yes, plus parts." does not book."
+3. `docs/media/around-quotes.png`: "Three plumbers at once. Ambient books the cheapest quote under the limit."
+4. `docs/media/call-business-ringing.png`: "The business side. The first words say that the caller is an AI."
+5. `docs/media/sim-confirmed.png`: "Booked, with proof: the read-back and the reply that booked it, each with its time."
+6. `docs/media/architecture.png`: "Alexa skill and MCP server, call reducer, voice line, Claude brain."
+
+## About the project
+
+Paste from here to the end of "Built with" into the "About the project" field.
 
 Ambient is an AI caller for the household that cannot lie for you and cannot be lied to. Alexa asks it to phone a business. It says first that it is an AI, spends only what the owner allows, books only on a clean yes to the exact price and time, and keeps that yes as proof.
 

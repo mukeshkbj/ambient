@@ -3,6 +3,24 @@
 Plan: `docs/plans/2026-10-18-handle-the-call/overview.md`. Deadline Fri 2026-10-23 12:00 PT; submit Thu 2026-10-22.
 Branch: `hackathon/household-consent`. Nothing is pushed.
 
+## Launch kit (started 2026-10-21, overnight goal)
+
+Goal: a 30 to 40 s launch film that makes a judge sit forward in 3 s, a launch-grade README, one Devpost file, and the full video script. Bar: the Claude Opus 5.5 and Sonnet 5.5 launch films and Poke's launch film, plus every launch film on recent.design. A fresh harsh critic judges each piece blind against reference frames; a final check uses films no builder or critic has seen.
+
+- [x] References downloaded to `~/honey/ambient-launch-refs/` (22 films: 20 from recent.design/launch-videos, both Claude films; Poke is in both sets). Cut times, 3 s hook strips, whole-film sheets and end strips in `lv/ev/`.
+- [x] earshot (Leonxlnx/earshot 0.3.0) installed in `~/honey/ambient-launch-refs/.venv`; its 201-sound bank renders. Listening transcripts of every film running.
+- [x] In-depth analysis: 5 Sonnet 5.5 subagents wrote one file per film plus `SUMMARY-A` to `E` in `analysis/`. Story and emotion score 1 to 4 in every film except Poke (8): the open lane.
+- [x] Synthesis, in `launch/film/SPEC.md` "What the research changed": a person with a stake (Maya, her $150 limit, a stranger's trick); one object (the price, rolled $180, $150, $160, with "+ parts" stripped off); one repeated move (the rolling figure); open inside the trap with a voice at 0.15 s; fast cuts then a hold; silence before the hit; end on a next action ("Alexa, handle the call.").
+- [x] Storyline A "Plus parts." picked. `SPEC.md` holds the numbers and the BANNED line.
+- [x] Draft 1 built: `launch/film/index.html`, 36.5 s. Voices are Kokoro (Joe am_michael, Ambient af_heart on a 300 to 3400 Hz phone band, Maya af_bella). `tools/mix.py` holds every sound time, mixes the soundtrack and writes `cues.js` (per-word times the picture reads). The score is original, from MusicGen on this machine (`tools/music.py`, takes in `assets/music/`): a tense pulse until the booking, a warm resolve after it.
+- [x] Sound: `earshot critique` on draft 1 says launch-grade, 21 of 23 metrics in range. The two minor gaps (near mono; three cuts with no sound) are fixed in the mix for draft 2.
+- [ ] Critic round 1 (blind pairs against Opus 5.5, Sonnet 5.5, Poke; key in `critic/keys/r1.json`): running.
+- [ ] Loop each piece (hook, beats, type, motion, sound, end card) until a fresh critic picks ours blind; final hold-out check.
+- [x] `docs/submission.md` renamed to `docs/DEVPOST.md`, with every Devpost form field on top (pitch, tags, gallery and captions). Thumbnail still to export from the film.
+- [ ] README top with the film; film script and demo script; each through a critic.
+
+Surprises: `npx hyperframes skills update general-video` retired `general-video` and folded it into the `hyperframes` skill. yt-dlp and pip fail with WinError 448 while `C:\Users\mukes\AppData\Local\Programs\Cua\cua-driver\bin` is on PATH; removing it from PATH for the command fixes both.
+
 ## Decisions taken this session (2026-10-18)
 
 - **Phone path: AssemblyAI, no Twilio.** The user has no Twilio budget. AssemblyAI cannot dial out (its SIP path is inbound only), so phase 6 builds the AssemblyAI Voice Agent line where the business joins through a browser link (a phone's browser works). The `Line` seam keeps a Twilio Media Streams bridge possible later. The real-phone-rings moment is not available without paid Twilio.

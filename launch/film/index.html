@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="cues.js"></script>
+    <style>
+      @font-face { font-family: Newsreader; src: url("assets/fonts/Newsreader.woff2") format("woff2"); font-weight: 200 800; font-style: normal; }
+      :root {
+        --ink: #f1ece3;
+        --muted: #8f8a82;
+        --amber: #ffb44a;
+        --blue: #a9c6ff;
+        --blue-label: #6ea8ff;
+        --green: #4fd18b;
+        --serif: Newsreader, Georgia, serif;
+        --label: "Segoe UI", system-ui, sans-serif;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #100f0e; }
+      #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: radial-gradient(120% 90% at 30% 40%, #1d1b19 0%, #100f0e 70%); font-family: var(--serif); color: var(--ink); -webkit-font-smoothing: antialiased; }
+      .scene { position: absolute; inset: 0; }
+      .label { position: absolute; font: 600 24px/1 var(--label); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+      .label b { font-weight: 600; color: var(--ink); }
+      .num { font-variant-numeric: tabular-nums; }
+      .line { position: absolute; left: 176px; font-size: 84px; line-height: 1.06; letter-spacing: -.02em; font-variation-settings: "opsz" 72; }
+      .line .w { display: inline-block; opacity: 0; }
+      .row-label { position: absolute; left: 180px; }
+      .joe { color: #e4ddd1; }
+      .amb { color: var(--blue); }
+      .trap { color: var(--amber); }
+      .price { position: absolute; left: 160px; top: 200px; display: flex; align-items: flex-end; font-size: 360px; line-height: 1; letter-spacing: -.04em; font-variation-settings: "opsz" 72; font-variant-numeric: tabular-nums lining-nums; }
+      .wheel { display: inline-block; height: 1.1em; overflow: hidden; -webkit-mask-image: linear-gradient(transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(transparent, #000 14%, #000 86%, transparent); }
+      .wheel > span { display: flex; flex-direction: column; }
+      .wheel > span > i { font-style: normal; height: 1.1em; line-height: 1.1em; }
+      .cur { align-self: flex-start; margin: .2em .04em 0 0; font-size: .46em; line-height: 1; }
+      .slot { position: relative; display: inline-block; }
+      .tag { position: relative; display: inline-block; margin: 0 0 .44em 40px; line-height: 1; font-size: 150px; letter-spacing: -.03em; }
+      .tag .strike { position: absolute; left: -6px; right: -6px; top: 54%; height: 12px; background: var(--blue); transform: scaleX(0); transform-origin: 0 50%; }
+      .device { position: absolute; padding: 20px; border-radius: 34px; background: #050506; box-shadow: 0 0 0 2px #2a2826, 0 40px 80px rgb(0 0 0 / .45); }
+      .device .screen { position: relative; overflow: hidden; border-radius: 14px; }
+      .device img { display: block; width: 100%; }
+      .device .over { position: absolute; inset: 0; opacity: 0; }
+      .tap { position: absolute; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; border: 4px solid var(--ink); opacity: 0; }
+      .phone { position: absolute; left: 1270px; top: 93px; width: 428px; padding: 14px; border-radius: 64px; background: #050506; box-shadow: 0 0 0 2px #2a2826, 0 40px 80px rgb(0 0 0 / .45); }
+      .phone .screen { height: 866px; overflow: hidden; border-radius: 50px; }
+      .phone img { display: block; width: 400px; }
+      .ring { position: absolute; left: 1484px; top: 441px; width: 160px; height: 160px; margin: -80px 0 0 -80px; border-radius: 50%; border: 3px solid var(--blue-label); opacity: 0; }
+      .sim { position: absolute; font: 400 28px/1 var(--label); color: var(--muted); }
+      #wave { position: absolute; left: 180px; top: 1000px; }
+      .big { position: absolute; left: 176px; font-size: 150px; line-height: 1.02; letter-spacing: -.035em; font-variation-settings: "opsz" 72; }
+      .mark { width: 132px; height: 132px; border-radius: 50%; border: 22px solid var(--blue-label); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="36.5" data-width="1920" data-height="1080">
+      <audio id="mix" src="assets/mix.wav" data-start="0" data-duration="36.5" data-track-index="9"></audio>
+
+      <div id="s-hook" class="scene clip" data-start="0" data-duration="4.7" data-track-index="0">
+        <div class="label" id="hook-top" style="left:180px;top:140px">An AI on the phone for Maya <b>· On the call <span id="timer" class="num">0:41</span></b></div>
+        <div class="price" id="hook-price"><span class="cur">$</span><span data-price="160"></span><span class="tag trap" id="hook-tag">+ parts<span class="strike"></span></span></div>
+        <div class="label row-label" id="hook-joe-label" style="top:676px">Joe's Plumbing</div>
+        <div class="line joe" data-cue="hook-joe" data-trap="plus,parts." style="top:710px"></div>
+        <div class="label row-label" id="hook-amb-label" style="top:826px;color:var(--blue-label)">Ambient · AI</div>
+        <div class="line amb" data-cue="hook-amb" style="top:860px"></div>
+      </div>
+
+      <div id="s-ask" class="scene clip" data-start="4.7" data-duration="3.65" data-track-index="1">
+        <div class="label" id="ask-label" style="left:180px;top:250px">Maya, at home</div>
+        <div class="line" data-cue="ask" style="top:290px;width:760px;font-size:88px"></div>
+        <div class="label" id="ask-limit" style="left:180px;top:760px;padding:14px 20px;border:2px solid #4a4640;border-radius:999px;color:var(--ink)">Her limit · $150</div>
+        <div class="device" id="ask-device" style="left:1010px;top:230px;width:780px"><div class="screen"><img src="assets/ui/card-idle.png" alt="" /></div></div>
+        <div class="sim" id="ask-sim" style="left:1030px;top:760px">Echo Show 8 · Alexa+ host simulated</div>
+      </div>
+
+      <div id="s-ring" class="scene clip" data-start="8.35" data-duration="4.4" data-track-index="2">
+        <div class="label row-label" id="ring-label" style="top:250px;color:var(--blue-label)">Ambient · calling Joe's Plumbing</div>
+        <div class="line amb" data-cue="disclose" style="top:290px;width:960px;font-size:96px"></div>
+        <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+        <div class="phone" id="ring-phone"><div class="screen"><img src="assets/ui/business-ringing-en.png" alt="" /></div></div>
+        <div class="sim" id="ring-sim" style="left:1290px;top:1010px">Joe's phone · the business side</div>
+      </div>
+
+      <div id="s-deal" class="scene clip" data-start="12.75" data-duration="8.55" data-track-index="3">
+        <div class="price" id="deal-price" style="font-size:250px;top:150px"><span class="cur">$</span><span data-price="000"></span></div>
+        <div class="label" id="deal-over" style="left:184px;top:440px;color:var(--amber)"><span id="deal-over-text">$30 over</span> her $150 limit</div>
+        <div class="label row-label" id="deal-joe-label" style="top:600px">Joe's Plumbing</div>
+        <div class="line joe" data-cue="quote" style="top:636px;width:640px;font-size:62px"></div>
+        <div class="line joe" data-cue="counter" style="top:636px;width:640px;font-size:62px"></div>
+        <div class="label row-label" id="deal-amb-label" style="top:836px;color:var(--blue-label)">Ambient · AI</div>
+        <div class="line amb" data-cue="check" style="top:872px;width:1500px;font-size:68px"></div>
+        <div class="line amb" data-cue="offer" style="top:872px;width:1500px;font-size:68px"></div>
+        <div class="device" id="deal-device" style="left:840px;top:110px;width:990px">
+          <div class="screen">
+            <img src="assets/ui/card-needs-180.png" alt="" />
+            <img class="over" id="deal-offered" src="assets/ui/card-offered-150.png" alt="" />
+            <img class="over" id="deal-160" src="assets/ui/card-needs-160.png" alt="" />
+            <div class="tap" id="tap-offer" style="left:50%;top:70%"></div>
+            <div class="tap" id="tap-book" style="left:27.6%;top:69%"></div>
+          </div>
+        </div>
+        <div class="sim" id="deal-sim" style="left:860px;top:752px">Maya's Echo Show 8 · Alexa+ host simulated</div>
+      </div>
+
+      <div id="s-trap" class="scene clip" data-start="21.3" data-duration="2.4" data-track-index="4">
+        <div class="label" style="left:180px;top:140px">An AI on the phone for Maya <b>· On the call 0:41</b></div>
+        <div class="price" id="trap-price"><span class="cur">$</span><span data-price="160"></span><span class="slot"><span class="tag trap" id="trap-tag">+ parts<span class="strike" style="transform:scaleX(1)"></span></span><span class="tag" id="trap-total" style="position:absolute;left:0;bottom:0;opacity:0">total</span></span></div>
+        <div class="label row-label" style="top:676px">Joe's Plumbing</div>
+        <div class="line joe" data-cue="allin" style="top:710px"></div>
+      </div>
+
+      <div id="s-booked" class="scene clip" data-start="23.7" data-duration="3.62" data-track-index="5">
+        <div class="label" id="booked-label" style="left:340px;top:70px;color:var(--green)">Booked · $160 total · Tuesday the 20th at 10 am</div>
+        <div class="device" id="booked-device" style="left:340px;top:120px;width:1240px"><div class="screen"><img src="assets/ui/card-booked.png" alt="" /></div></div>
+        <div class="line joe" data-cue="yes" style="top:950px;left:340px;font-size:64px"></div>
+        <div class="sim" style="left:1360px;top:976px">Alexa+ host simulated</div>
+      </div>
+
+      <div id="s-more" class="scene clip" data-start="27.32" data-duration="3.0" data-track-index="6">
+        <div class="big" id="more-0" style="top:420px;width:780px;font-size:124px">In Spanish.</div>
+        <div class="big" id="more-1" style="top:420px;width:780px;font-size:124px;opacity:0">Three quotes.</div>
+        <div class="big" id="more-2" style="top:360px;width:780px;font-size:124px;opacity:0">The cheapest, booked.</div>
+        <div class="phone" id="more-phone" style="left:1310px"><div class="screen"><img src="assets/ui/business-ringing-es.png" alt="" /></div></div>
+        <div class="device" id="more-device" style="left:960px;top:200px;width:880px;opacity:0">
+          <div class="screen">
+            <img src="assets/ui/card-around-quotes.png" alt="" />
+            <img class="over" id="more-booked" src="assets/ui/card-around-booked.png" alt="" />
+          </div>
+        </div>
+      </div>
+
+      <div id="s-claim" class="scene clip" data-start="30.32" data-duration="3.08" data-track-index="7">
+        <div class="big" id="claim-1" style="top:330px">Ambient makes the call.</div>
+        <div class="big" id="claim-2" style="top:500px;color:var(--green)">You still make the call.</div>
+      </div>
+
+      <div id="s-end" class="scene clip" data-start="33.4" data-duration="3.1" data-track-index="8">
+        <div id="end-lock" style="position:absolute;left:0;right:0;top:330px;display:flex;flex-direction:column;align-items:center;gap:34px">
+          <div class="mark" id="end-mark"></div>
+          <div id="end-name" style="font-size:150px;line-height:1;letter-spacing:-.035em">Ambient</div>
+          <div id="end-say" style="font-size:52px;color:var(--muted);letter-spacing:-.01em">“Alexa, handle the call.”</div>
+        </div>
+        <div class="sim" id="end-sim" style="left:0;right:0;top:1000px;text-align:center">Alexa+ host simulated in this film · the call and screens are the real product</div>
+      </div>
+
+      <svg id="wave" width="1560" height="60"><path id="wave-path" fill="none" stroke="#4a4640" stroke-width="3" /></svg>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const $ = (s) => document.querySelector(s);
+      const $$ = (s) => [...document.querySelectorAll(s)];
+      const arrive = { duration: 0.6, ease: "expo.out" };
+      const leave = { duration: 0.3, ease: "power2.in" };
+
+      for (const el of $$("[data-price]")) {
+        el.innerHTML = [...el.dataset.price].map(() => `<span class="wheel" data-layout-ignore><span>${"0123456789".split("").map((d) => `<i>${d}</i>`).join("")}</span></span>`).join("");
+        [...el.dataset.price].forEach((d, i) => gsap.set(el.children[i].firstChild, { yPercent: -10 * Number(d) }));
+      }
+      function roll(sel, value, at, spin = 0) {
+        const wheels = $$(`${sel} .wheel > span`);
+        [...String(value)].forEach((d, i) => tl.to(wheels[i], { yPercent: -10 * Number(d), duration: 0.55 + spin * 0.12, ease: "power3.inOut" }, at + i * 0.04));
+      }
+
+      for (const el of $$("[data-cue]")) {
+        const cue = window.CUES[el.dataset.cue];
+        const trap = (el.dataset.trap || "").split(",");
+        el.innerHTML = cue.words.map((w) => `<span class="w${trap.includes(w.w) ? " trap" : ""}">${w.w}</span>`).join(" ");
+        el.querySelectorAll(".w").forEach((span, i) => tl.fromTo(span, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, cue.words[i].t - 0.04));
+      }
+      const swapOut = (cue, at) => tl.to(`[data-cue="${cue}"]`, { opacity: 0, ...leave, duration: 0.2 }, at);
+
+      tl.from("#hook-top", { opacity: 0, duration: 0.3 }, 0);
+      tl.from("#hook-joe-label", { opacity: 0, duration: 0.3 }, 0.1);
+      tl.fromTo("#hook-tag", { opacity: 0, scale: 1.35, x: 40 }, { opacity: 1, scale: 1, x: 0, duration: 0.45, ease: "expo.out", transformOrigin: "0% 80%" }, window.CUES["hook-joe"].words[1].t);
+      tl.from("#hook-amb-label", { opacity: 0, duration: 0.3 }, 1.6);
+      tl.to('[data-cue="hook-joe"]', { opacity: 0.35, duration: 0.3 }, 1.65);
+      tl.to("#hook-tag .strike", { scaleX: 1, duration: 0.28, ease: "power3.out" }, window.CUES["hook-amb"].words[3].t);
+      tl.to("#hook-tag", { y: 60, rotation: 5, opacity: 0, duration: 0.4, ease: "power2.in" }, window.CUES["hook-amb"].words[5].t + 0.1);
+
+      const timer = { s: 41 };
+      tl.to(timer, { s: 0, duration: 0.7, ease: "power2.in", onUpdate: () => ($("#timer").textContent = `0:${String(Math.round(timer.s)).padStart(2, "0")}`) }, 3.65);
+      tl.to(["#hook-price", '[data-cue="hook-joe"]', '[data-cue="hook-amb"]', "#hook-joe-label", "#hook-amb-label"], { x: -90, opacity: 0, filter: "blur(10px)", duration: 0.45, ease: "power2.in", stagger: 0.04 }, 3.65);
+      tl.to("#hook-top", { opacity: 0, duration: 0.2 }, 4.45);
+
+      tl.from("#ask-label", { opacity: 0, ...arrive }, 4.75);
+      tl.fromTo("#ask-device", { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, ...arrive, duration: 0.7 }, 4.7);
+      tl.from("#ask-sim", { opacity: 0, duration: 0.4 }, 5.1);
+      tl.fromTo("#ask-limit", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.45, ease: "expo.out", transformOrigin: "0% 50%" }, window.CUES.ask.words[6].t);
+
+      tl.from(["#ring-phone", "#ring-sim"], { opacity: 0, scale: 0.96, duration: 0.5, ease: "expo.out" }, 8.35);
+      tl.from("#ring-label", { opacity: 0, duration: 0.4 }, 8.5);
+      $$(".ring").forEach((r, i) => tl.fromTo(r, { scale: 1, opacity: 0.7 }, { scale: 3.4, opacity: 0, duration: 1.1, ease: "power2.out" }, 8.35 + i * 0.3));
+      tl.to("#ring-phone", { scale: 0.985, duration: 0.08, yoyo: true, repeat: 1 }, 9.42);
+      tl.to(["#ring-phone", "#ring-sim"], { x: 140, opacity: 0, ...leave, duration: 0.4 }, 11.0);
+
+      tl.from("#deal-joe-label", { opacity: 0, duration: 0.3 }, 12.8);
+      tl.fromTo("#deal-price", { opacity: 0 }, { opacity: 1, duration: 0.25 }, window.CUES.quote.words[2].t - 0.15);
+      roll("#deal-price", 180, window.CUES.quote.words[2].t - 0.15, 1);
+      tl.to("#deal-price", { color: "#ffb44a", duration: 0.3 }, window.CUES.quote.words[3].t + 0.35);
+      tl.fromTo("#deal-over", { opacity: 0, x: -20 }, { opacity: 1, x: 0, ...arrive }, 14.0);
+      tl.from("#deal-amb-label", { opacity: 0, duration: 0.3 }, 14.55);
+      tl.to('[data-cue="quote"]', { opacity: 0.35, duration: 0.3 }, 14.55);
+      tl.fromTo(["#deal-device", "#deal-sim"], { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, ...arrive, duration: 0.7 }, window.CUES.check.words[4].t);
+      tl.fromTo("#tap-offer", { opacity: 0.9, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.5, ease: "power2.out" }, 16.95);
+      tl.to("#deal-offered", { opacity: 1, duration: 0.15 }, 17.05);
+      roll("#deal-price", 150, 17.05);
+      tl.to("#deal-price", { color: "#f1ece3", duration: 0.3 }, 17.3);
+      tl.to("#deal-over", { opacity: 0, duration: 0.2 }, 17.05);
+      swapOut("check", 17.1);
+      swapOut("quote", 18.85);
+      tl.to("#deal-160", { opacity: 1, duration: 0.15 }, 20.1);
+      roll("#deal-price", 160, 20.05);
+      tl.to("#deal-price", { color: "#ffb44a", duration: 0.3 }, 20.3);
+      tl.set("#deal-over-text", { textContent: "$10 over" }, 20.2);
+      tl.to("#deal-over", { opacity: 1, duration: 0.3 }, 20.25);
+      tl.to('[data-cue="offer"]', { opacity: 0.35, duration: 0.3 }, 18.95);
+      tl.fromTo("#tap-book", { opacity: 0.9, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.5, ease: "power2.out" }, 21.0);
+
+      tl.to("#trap-tag", { y: 70, rotation: 6, opacity: 0, duration: 0.45, ease: "power2.in" }, 21.4);
+      tl.fromTo("#trap-total", { opacity: 0, x: -40 }, { opacity: 1, x: 0, ...arrive }, window.CUES.allin.words[4].t);
+      tl.to("#trap-price", { color: "#4fd18b", duration: 0.25 }, 23.5);
+
+      tl.fromTo("#booked-device", { opacity: 0, scale: 1.06 }, { opacity: 1, scale: 1, duration: 0.7, ease: "expo.out" }, 23.7);
+      tl.from("#booked-label", { opacity: 0, y: 10, ...arrive }, 23.85);
+
+      const shots = [27.32, 28.32, 29.32];
+      shots.slice(1).forEach((t, i) => {
+        tl.set(`#more-${i}`, { opacity: 0 }, t);
+        tl.fromTo(`#more-${i + 1}`, { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 0.35, ease: "expo.out" }, t);
+      });
+      tl.from("#more-0", { opacity: 0, x: 30, duration: 0.35, ease: "expo.out" }, 27.32);
+      tl.from("#more-phone", { opacity: 0, y: 40, duration: 0.45, ease: "expo.out" }, 27.32);
+      tl.set("#more-phone", { opacity: 0 }, 28.32);
+      tl.fromTo("#more-device", { opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.45, ease: "expo.out" }, 28.32);
+      tl.set("#more-booked", { opacity: 1 }, 29.32);
+
+      tl.from("#claim-1", { opacity: 0, y: 24, duration: 0.7, ease: "expo.out" }, 30.45);
+      tl.from("#claim-2", { opacity: 0, y: 24, duration: 0.7, ease: "expo.out" }, 31.45);
+
+      tl.from("#end-mark", { scale: 0.6, opacity: 0, duration: 0.8, ease: "expo.out" }, 33.4);
+      tl.from("#end-name", { opacity: 0, y: 20, duration: 0.7, ease: "expo.out" }, 33.55);
+      tl.from("#end-say", { opacity: 0, duration: 0.6 }, 34.2);
+      tl.from("#end-sim", { opacity: 0, duration: 0.6 }, 34.6);
+
+      const talk = Object.entries(window.CUES).filter(([k]) => k !== "ask").map(([, c]) => c);
+      const onCall = (t) => (t < 3.62) || (t > 9.42 && t < 23.6);
+      tl.eventCallback("onUpdate", () => {
+        const t = tl.time();
+        const live = talk.some((c) => t >= c.at && t <= c.end) ? 1 : 0.15;
+        let d = "M0 30";
+        for (let x = 0; x <= 1560; x += 6) d += ` L${x} ${(30 + Math.sin(x * 0.05 + t * 9) * Math.sin(x * 0.011 - t * 3) * 22 * live).toFixed(1)}`;
+        $("#wave-path").setAttribute("d", d);
+        $("#wave").style.opacity = onCall(t) ? 1 : 0;
+      });
+
+      tl.set({}, {}, 36.5);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

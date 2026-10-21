@@ -1,6 +1,6 @@
 # Video script: Ambient, "Alexa, handle the call"
 
-Target: 2:40 by the per-beat budget below. The hard cap is 2:55, under the 3:00 limit. English, public YouTube. No third-party music or trademarks. The final URL goes into `docs/submission.md` at [VIDEO URL].
+Target: 2:40 by the per-beat budget below. The hard cap is 2:55, under the 3:00 limit. English, public YouTube. No third-party music or trademarks. The final URL goes into `docs/DEVPOST.md` at [VIDEO URL].
 
 There is no phone dial-out in this version, so no real phone rings. The business answers on a web link that a phone browser opens like an incoming call.
 
