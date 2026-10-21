@@ -38,3 +38,9 @@ shot maya tap 0.8 4.6 "$(printf "$portrait" 600)"
 shot trap joe 13.0 2.6 "$(printf "$portrait" 700)"
 shot fix fix 0.5 3.8 "$wide"
 shot calm kitchen 2.2 4.0 "$wide"
+
+ffmpeg -v error -y -ss 3.75 -i "$src/drip.mp4" -frames:v 1 "$src/dry.png"
+ffmpeg -v error -y -loop 1 -t 3.6 -i "$src/dry.png" -an \
+  -vf "${wide},${grade},zoompan=z='1+0.0005*on':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1920x1080:fps=30,format=yuv420p" \
+  -c:v libx264 -crf 18 -preset slow -movflags +faststart assets/footage/dry.mp4
+echo dry

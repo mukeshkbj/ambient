@@ -14,52 +14,53 @@ from scipy.signal import butter, resample_poly, sosfilt
 
 ROOT = Path(__file__).resolve().parents[1]
 SR = 48000
-LENGTH = 36.5
+LENGTH = 34.83
 
 LINES = [
     ("hook-joe", 0.15, "joe-plusparts", "Yes, plus parts.", "phone"),
     ("hook-amb", 1.70, "amb-onetotal", "Sorry. I need one total price.", "phone"),
-    ("ask", 4.5, "maya-ask", "Alexa, get the sink fixed. Keep it under one fifty.", "room"),
-    ("disclose", 9.60, "amb-disclose", "Hi. This is an AI assistant, calling for Maya.", "phone"),
-    ("quote", 12.85, "joe-180", "It'll be one eighty.", "phone"),
-    ("check", 14.60, "amb-check", "One moment. Let me check with Maya.", "phone"),
-    ("offer", 17.35, "amb-150", "Could you do one fifty?", "phone"),
-    ("counter", 18.95, "joe-160", "I could do one sixty.", "phone"),
-    ("allin", 21.70, "joe-allin", "Fair enough. That's all in.", "phone"),
-    ("yes", 24.20, "joe-yes", "Yes, that's right. See you then.", "phone"),
+    ("ask", 4.4, "maya-ask", "Alexa, fix the sink. Under one fifty.", "room"),
+    ("disclose", 7.93, "amb-disclose", "Hi. This is an AI assistant, calling for Maya.", "phone"),
+    ("quote", 11.18, "joe-180", "It'll be one eighty.", "phone"),
+    ("check", 12.93, "amb-check", "One moment. Let me check with Maya.", "phone"),
+    ("offer", 15.68, "amb-150", "Could you do one fifty?", "phone"),
+    ("counter", 17.28, "joe-160", "I could do one sixty.", "phone"),
+    ("allin", 20.03, "joe-allin", "Fair enough. That's all in.", "phone"),
+    ("yes", 22.53, "joe-yes", "Yes, that's right. See you then.", "phone"),
 ]
 
 EFFECTS = [
     ("swish", 2.62, 0.22, -0.3),
+    ("hit", 3.65, 0.25, 0.0),
     ("rewind", 4.25, 0.5, 0.0),
-    ("drip", 6.45, 0.5, 0.2),
-    ("drip", 7.35, 0.45, 0.2),
-    ("drip", 8.2, 0.4, 0.2),
-    ("whoosh", 8.35, 0.25, 0.4),
-    ("ring", 8.35, 0.35, 0.5),
-    ("pickup", 9.42, 0.5, 0.5),
-    ("hit", 12.75, 0.22, 0.0),
-    ("hit", 13.93, 0.35, -0.4),
-    ("whoosh", 15.82, 0.2, 0.4),
-    ("tap", 16.95, 0.6, 0.35),
-    ("hit", 17.6, 0.3, -0.4),
-    ("hit", 20.6, 0.32, -0.4),
-    ("tap", 21.00, 0.6, -0.2),
-    ("stopdown", 21.30, 0.35, 0.0),
-    ("drip", 21.42, 0.55, 0.0),
-    ("impact", 23.70, 0.55, 0.0),
-    ("ding", 23.72, 0.35, 0.0),
-    ("whoosh", 25.9, 0.25, 0.3),
-    ("swish", 29.4, 0.3, -0.3),
-    ("riser", 33.0, 0.3, 0.0),
-    ("impact", 33.0, 0.7, 0.0),
-    ("sting", 33.05, 0.4, 0.0),
+    ("drip", 4.75, 0.5, 0.2),
+    ("drip", 5.65, 0.45, 0.2),
+    ("drip", 6.55, 0.4, 0.2),
+    ("whoosh", 7.15, 0.25, 0.4),
+    ("ring", 7.15, 0.35, 0.5),
+    ("pickup", 7.75, 0.5, 0.5),
+    ("hit", 11.08, 0.22, 0.0),
+    ("hit", 12.26, 0.35, -0.4),
+    ("whoosh", 14.15, 0.2, 0.4),
+    ("tap", 15.28, 0.6, 0.35),
+    ("hit", 15.93, 0.3, -0.4),
+    ("hit", 18.93, 0.32, -0.4),
+    ("tap", 19.33, 0.6, -0.2),
+    ("stopdown", 19.63, 0.35, 0.0),
+    ("drip", 19.75, 0.55, 0.0),
+    ("impact", 22.03, 0.9, 0.0),
+    ("ding", 22.05, 0.35, 0.0),
+    ("whoosh", 24.23, 0.25, 0.3),
+    ("swish", 27.73, 0.3, -0.3),
+    ("riser", 31.33, 0.2, 0.0),
+    ("impact", 31.33, 0.42, 0.0),
+    ("sting", 31.38, 0.4, 0.0),
 ]
 
 PEAK = {"rewind": 0.853, "whoosh": 0.162, "swish": 0.35, "stopdown": 0.103, "riser": 2.771}
 
-TENSION = [(0.0, 0.2), (3.6, 0.22), (4.3, 0.12), (5.0, 0.24), (16.9, 0.28), (20.9, 0.34), (21.15, 0.0), (36.5, 0.0)]
-RELEASE = [(0.0, 0.0), (22.9, 0.0), (23.6, 0.2), (23.7, 0.46), (26.2, 0.32), (29.4, 0.42), (32.85, 0.55), (32.98, 0.0), (33.25, 0.0), (33.5, 0.4), (35.8, 0.3), (36.5, 0.0)]
+TENSION = [(0.0, 0.16), (3.6, 0.18), (4.3, 0.1), (5.0, 0.18), (15.23, 0.24), (19.23, 0.32), (19.48, 0.0), (34.83, 0.0)]
+RELEASE = [(0.0, 0.0), (21.23, 0.0), (21.93, 0.2), (22.03, 0.6), (24.53, 0.36), (27.73, 0.38), (31.18, 0.42), (31.31, 0.0), (31.58, 0.0), (31.83, 0.3), (34.13, 0.24), (34.83, 0.0)]
 
 
 def load(path):
@@ -128,7 +129,7 @@ def main():
     beds = sys.argv[1:] or [ROOT / "assets" / "music" / "pulse-small-7.wav", ROOT / "assets" / "music" / "resolve-small-7.wav"]
     for path, points in zip(beds, (TENSION, RELEASE)):
         m = load(path)
-        start = int(23.6 * SR) if points is RELEASE else 0
+        start = int(21.93 * SR) if points is RELEASE else 0
         m = np.concatenate([np.zeros(start, dtype="float32"), m])
         m = np.concatenate([m, np.zeros(max(0, n - len(m)), dtype="float32")])[:n]
         bed += m * envelope(points, n)
