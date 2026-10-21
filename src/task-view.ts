@@ -27,12 +27,12 @@ body{background:var(--bg);color:var(--fg);font:400 clamp(12px,3.2vw,40px)/1.35 -
 button{font:inherit;color:inherit;cursor:pointer;border:0}
 button:focus-visible{outline:2px solid var(--call);outline-offset:3px}
 .top{display:flex;align-items:center;gap:.8em}
-.chip{display:inline-flex;align-items:center;gap:.5em;font-size:max(15px,.58em);font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--call)}
+.chip{display:inline-flex;align-items:center;gap:.5em;font-size:max(15px,.7em);font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--call)}
 .chip::before{content:"";width:.7em;height:.7em;border-radius:50%;background:currentColor}
 .chip.needs{color:var(--needs)}.chip.done{color:var(--done)}.chip.warn{color:var(--warn)}.chip.idle{color:var(--dim)}
 .chip.needs::before{animation:breathe 2.4s ease-in-out infinite}
 @keyframes breathe{50%{opacity:.35;transform:scale(.8)}}
-.clock{margin-left:auto;font-size:max(15px,.62em);font-weight:600;font-variant-numeric:tabular-nums}
+.clock{margin-left:auto;font-size:max(15px,.7em);font-weight:600;font-variant-numeric:tabular-nums}
 .clock:empty{display:none}
 .what{font-size:1em;font-weight:600;margin-bottom:-.5em;text-wrap:balance}
 .what:empty{display:none}
@@ -76,7 +76,7 @@ body.booked .check path{animation:draw 600ms 180ms cubic-bezier(0.2,0,0,1) both}
 body.multi[data-state="done"] .board{display:none}
 body.proof:not([data-device="tv"]){justify-content:flex-start}
 body.proof .foot{margin-top:.4em;margin-bottom:0}
-body.proof .line span{-webkit-line-clamp:5}
+body.proof .line span{display:block}
 @media (min-width:481px){body.proof:not([data-device="tv"]){gap:1.4vw;padding-top:5vw}body.proof .stake{font-size:2em}body.proof.multi .stake{font-size:1.7em}body.proof .check{width:1.7em;height:1.7em}}
 .gloss{display:block;font-size:.88em;color:oklch(0.66 0.01 255);margin-top:.2em}
 .tile[data-state="released"] .price{text-decoration:line-through;text-decoration-thickness:2px}
@@ -197,8 +197,12 @@ function setStake(amount,when){const el=$("stake");el.classList.toggle("long",St
  el.innerHTML=amount===undefined?'<span class="when">'+esc(when)+'</span>':esc(usd(amount))+'<span class="sep"> \\u00b7 </span><span class="when">'+esc(when)+'</span>';}
 const plain=s=>{$("stake").textContent=s;$("stake").classList.toggle("long",s.length>16);};
 let shown="";
+function fit(){const b=document.body;b.style.fontSize="";if(innerWidth<=480||b.dataset.device==="tv")return;
+ const over=()=>{const shown=[...b.children].filter(el=>el.getClientRects().length);return shown.length>0&&Math.max(...shown.map(el=>el.getBoundingClientRect().bottom))>b.clientHeight-parseFloat(getComputedStyle(b).paddingBottom)+1||[...b.querySelectorAll(".line span")].some(el=>el.scrollHeight>el.clientHeight+1);};
+ for(let s=parseFloat(getComputedStyle(b).fontSize);over()&&s>12;){s*=.95;b.style.fontSize=s+"px";}}
+addEventListener("resize",fit);
 function render(d){
- clearInterval(tick);
+ clearInterval(tick);requestAnimationFrame(fit);
  const t=d.task||{},steps=t.steps||[],ap=(d.approvals||[])[0],o=t.outcome,list=t.board&&t.board.length>1?t.board:null;
  const names=list?list.map(b=>b.business):[],pick=list&&(list.find(b=>b.state==="booked"||b.state==="booking")||(ap&&list.find(b=>b.state==="quoted"&&b.amountUsd===ap.amountUsd)));
  const biz=(pick&&pick.business)||t.subject||(list?"":business(steps))||"the business";

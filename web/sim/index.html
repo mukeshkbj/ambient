@@ -128,6 +128,10 @@ body[data-phase="live"] .endlabel,body[data-phase="needs"] .endlabel{display:blo
 .show8{background:var(--device);padding:12px;border-radius:var(--r-panel);box-shadow:var(--lift);aspect-ratio:16/10.6;width:100%;transition:box-shadow 250ms var(--ease)}
 body[data-phase="needs"] .show8{box-shadow:0 0 0 3px var(--needs),var(--lift)}
 .show8 iframe,.corner iframe{width:100%;height:100%;border:0;display:block;border-radius:12px;background:var(--screen)}
+@media (min-width:761px){
+  .show8{position:relative;overflow:hidden}
+  .show8 iframe{position:absolute;left:var(--x,12px);top:var(--y,12px);width:960px;height:600px;transform-origin:0 0;transform:scale(var(--k,1));border-radius:calc(12px / var(--k,1))}
+}
 .devlabel{font-size:14px;color:var(--ink-3)}
 .devlabel b{color:var(--ink-2);font-weight:600}
 .room{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
@@ -526,6 +530,12 @@ if (!Recognition) {
 }
 
 const frames = [$("show8"), $("tvcard")];
+new ResizeObserver(([entry]) => {
+  const slot = entry.target, { width, height } = entry.contentRect, k = Math.min(width / 960, height / 600);
+  slot.style.setProperty("--k", k);
+  slot.style.setProperty("--x", `${12 + (width - 960 * k) / 2}px`);
+  slot.style.setProperty("--y", `${12 + (height - 600 * k) / 2}px`);
+}).observe(document.querySelector(".show8"));
 const hostContext = frame => ({ deviceClass: frame.dataset.device, theme: "dark", displayDimensions: { width: Number(frame.dataset.w), height: Number(frame.dataset.h) }, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
 function pushCards() {
   if (!state.card) return;

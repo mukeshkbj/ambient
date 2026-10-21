@@ -24,7 +24,7 @@ function card() {
   const spoken: { text: string; lang?: string }[] = [];
   const speechSynthesis = { cancel() {}, speak(utterance: { text: string; lang?: string }) { spoken.push(utterance); } };
   class SpeechSynthesisUtterance { lang?: string; constructor(readonly text: string) {} }
-  const context = vm.createContext({ document, parent: { postMessage(message: unknown) { posted.push(message); } }, speechSynthesis, SpeechSynthesisUtterance, addEventListener() {}, setTimeout() {}, setInterval() { return 0; }, clearInterval() {}, Date, Number, String, Math, Map, Intl });
+  const context = vm.createContext({ document, parent: { postMessage(message: unknown) { posted.push(message); } }, speechSynthesis, SpeechSynthesisUtterance, addEventListener() {}, requestAnimationFrame() {}, setTimeout() {}, setInterval() { return 0; }, clearInterval() {}, Date, Number, String, Math, Map, Intl });
   vm.runInContext(script, context);
   const render = (data: unknown) => (context as unknown as { render(data: unknown): void }).render(data);
   return { render, text: (id: string) => document.getElementById(id).textContent, html: (id: string) => document.getElementById(id).innerHTML, buttons: () => document.getElementById("actions").children.map(child => child.textContent), click: (label: string) => document.getElementById("actions").children.find(child => child.textContent === label)!.onclick!(), posted, spoken };
