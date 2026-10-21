@@ -1,12 +1,12 @@
 # Ambient
 
-**Alexa, handle the call.**
+**An Alexa agent that phones a business for you.** It says first that it is an AI, stays under your price limit, and books only on a clean yes. "Alexa, handle the call."
 
-[![The opening of the launch film: on the call, the plumber says "Yes, plus parts." and Ambient answers "Sorry. I need one total price."](docs/media/film-hook.gif)](docs/media/ambient-film.mp4)
+[![The opening of the launch film: the plumber says "Yes, plus parts." and Ambient asks for one total price.](docs/media/film-hook.gif)](docs/media/ambient-film.mp4)
 
-**[Watch the 36-second film](docs/media/ambient-film.mp4)** · **[Try it in one minute, no keys](#run-it)** · **[Try to fool it](#run-it)**
+**[Watch the 35-second film](docs/media/ambient-film.mp4)** · **[Try it in one minute, no keys](#run-it)** · **[Try to fool it](#honesty-rules)**
 
-The film re-enacts the demo call. The voices are text to speech, the footage is from Pexels, and the screens are the real simulator. Its source is in [`launch/film`](launch/film/SCRIPT.md).
+No live call has happened yet: the business and the Alexa+ host are simulated. The film re-enacts the demo call with text-to-speech voices, Pexels footage and the real simulator screens. Its source is in [`launch/film`](launch/film/SCRIPT.md).
 
 Ambient is an AI caller for the household that cannot lie for you and cannot be lied to. You ask Alexa to call the plumber. Ambient says first that it is an AI. It spends only what you allow. It books only when the business says a clean yes to the exact price and time, and it keeps that yes as proof.
 

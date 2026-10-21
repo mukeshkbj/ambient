@@ -1,26 +1,26 @@
 # Ambient: Alexa, handle the call
 
-This file holds every field of the Devpost entry, in form order. Paste each field as it is. Fill the two bracketed links before you submit.
+This file holds every field of the Devpost entry, in form order. Paste each field as it is. Before you submit, replace `[PUBLIC REPO URL]` and `[VIDEO URL]` everywhere in this file with one find-and-replace each.
 
 ## Form fields
 
 | Field | Value |
 |---|---|
 | Project name | Ambient |
-| Elevator pitch (200 characters) | An AI that phones the plumber for you. It says first that it is an AI, it asks you before it spends more, and it will not book on "Yes, plus parts." |
+| Elevator pitch (200 characters) | Alexa hands a phone errand to an AI that must say it is an AI, stay under your price limit, and refuse "Yes, plus parts." 4,000 generated calls: no booking without a clean yes. |
 | Track | Alexa+ |
 | Video demo link | [VIDEO URL] |
 | Try it out | [PUBLIC REPO URL] |
 | Thumbnail | `docs/media/thumbnail.png`, the "+ parts" price struck through (3:2, from the launch film) |
 | Built with (tags) | alexa-skills-kit, alexa-plus, mcp, model-context-protocol, claude, anthropic, assemblyai, typescript, node.js, sqlite, vitest, aws-cdk, pnpm |
 | License | MIT (`LICENSE`) |
-| Friction log | Paste or link [`docs/friction-log.md`](friction-log.md) |
-| Product feedback | Paste or link [`docs/product-feedback.md`](product-feedback.md) |
+| Friction log | [PUBLIC REPO URL]/blob/main/docs/friction-log.md |
+| Product feedback | [PUBLIC REPO URL]/blob/main/docs/product-feedback.md |
 
 Gallery images, in this order, with these captions:
 
 1. `docs/media/sim-card-hero.png`: "The plumber quotes $180 against a $150 limit. The call holds, and the Echo Show asks the owner."
-2. `docs/media/sim-fool.png`: "Try to fool it. Type any answer to the read-back. "Yes, plus parts." does not book."
+2. `docs/media/sim-fool.png`: "Try to fool it. Type any answer to the read-back. 'Yes, plus parts.' does not book."
 3. `docs/media/around-quotes.png`: "Three plumbers at once. Ambient books the cheapest quote under the limit."
 4. `docs/media/call-business-ringing.png`: "The business side. The first words say that the caller is an AI."
 5. `docs/media/sim-confirmed.png`: "Booked, with proof: the read-back and the reply that booked it, each with its time."
@@ -28,11 +28,15 @@ Gallery images, in this order, with these captions:
 
 ## About the project
 
-Paste from here to the end of "Built with" into the "About the project" field.
+Paste from here to the end of "Feedback for the tool makers" into the "About the project" field.
 
-Ambient is an AI caller for the household that cannot lie for you and cannot be lied to. Alexa asks it to phone a business. It says first that it is an AI, spends only what the owner allows, books only on a clean yes to the exact price and time, and keeps that yes as proof.
+Ambient is an AI caller for the household that cannot lie for you and cannot be lied to. Alexa hands it a call to a business. It says first that it is an AI, spends only what the owner allows, books only on a clean yes to the exact price and time, and keeps that yes as proof.
 
-**What you can run today, and what is not live yet.** The whole call runs end to end with zero keys: `pnpm demo` in a browser, and `pnpm smoke:mcp` through the MCP server. In that demo the business is simulated, and so is the Alexa+ host, because the Alexa+ MCP toolkit was gated for entrants as of 2026-10-18. The voice line, the Claude brain, the Alexa skill, the spoken cue, and the AWS stack are built and tested against fixtures written from the docs, but none has run live yet. No real phone call has been placed. The [README table](../README.md#what-is-real-and-what-is-simulated) lists each piece with its evidence.
+| | State today |
+|---|---|
+| Runs now, with zero keys | The whole call, end to end: `pnpm demo` in a browser and `pnpm smoke:mcp` through the MCP server. The honesty rules hold across a seeded test of 4,000 generated calls and a labelled corpus of 192 business replies. |
+| Simulated | The business, and the Alexa+ host. The Alexa+ MCP toolkit was gated for entrants as of 2026-10-18. |
+| Built, not yet run live | The AssemblyAI voice line, the Claude brain, the Alexa skill, the spoken cue and the AWS stack. They are tested against fixtures written from the docs. There is no phone dial-out: the business answers on a web link that a phone browser opens like an incoming call. |
 
 ## Inspiration
 
@@ -62,34 +66,15 @@ Everything else it does:
 - **Honest reports.** Alexa reports only what the business confirmed. If the business agreed a day but gave no calendar date, the card says so.
 - **Memory.** Each call is stored in SQLite. The next call to the same business starts with what the last one learned.
 
-## What a pilot measures
-
-No pilot has run, so we have no results. The numbers below are targets. We chose them before any pilot, and we picked them to be conservative. A pilot would track four measures:
-
-- Calls placed per household per week. Target: at least 1.
-- The share of calls that end confirmed. Target: at least 50%.
-- The share of calls where the owner was asked. Target: at most 50%. A higher share would mean the owner's limits sit below what local businesses quote.
-- The share of read-backs the reducer refused. Target: 100% of the read-backs whose reply carries a qualifier, a new number, or a question, checked by reading every pilot transcript.
-
-**Pilot protocol (a plan, not a result).** The owner recruits 5 households. Each household places 3 real calls, each to a different kind of business line, for example a plumber, a vet, and a repair shop. That gives 15 calls. The owner reads every transcript and the final Alexa report for each call. Any one of these counts as a failure:
-
-- A booking the owner did not approve.
-- A call where the AI disclosure was not the first thing the business heard.
-- A "confirmed" report that the business did not confirm in the transcript.
-
-One failure of any kind means the pilot did not pass. The team fixes the cause and adds a regression test before the next call. This protocol needs the live voice line, which has not run yet.
-
 ## Calls Ambient will not make
 
-This table lists only what the code enforces today.
+The code enforces each of these today:
 
-| Call | What the code does | Where |
-|---|---|---|
-| An emergency or crisis short code such as 911, 988, 112 or 999 | `parsePhoneNumber` rejects it as "Not a phone number". It accepts only 10 digits, 11 digits that start with 1, or a `+` number of 8 to 15 digits. | `src/calls/types.ts` |
-| A premium-rate number, 1-900 or 1-976 | `blockedNumber` refuses it, and the caller checks it before dialing. The call ends with no deal. The check covers `+1` numbers only. | `src/calls/rules.ts`, `src/runtimes/caller.ts` |
-| More than 3 calls to one number, or more than 20 calls in total, in 24 hours | `checkDialLimits` refuses the call. It applies on real lines and counts calls still in progress. | `src/calls/rules.ts`, `src/runtimes/caller.ts` |
-| An unknown business found by search, without the owner's approval | The caller asks "Call them?" and dials only after the owner answers once. When it calls around, one question names every business: "I found Pete's Pipes, Drain Bros and Rapid Rooter. Call all three and book the best quote under your limit?" A number the owner gives is dialed directly. | `src/runtimes/caller.ts` |
-| A business that asked not to be called | A line such as "take us off your list" or "don't call us with an AI" ends the call with no booking, and Ambient never dials that number again while its call memory is on, which is the default. | `src/calls/rules.ts`, `src/calls/session.ts`, `src/runtimes/caller.ts` |
+- It refuses emergency and crisis short codes such as 911, 988, 112 and 999. A number must have 10 digits, 11 digits that start with 1, or a `+` and 8 to 15 digits.
+- It refuses premium-rate numbers, 1-900 and 1-976.
+- It places at most 3 calls to one number and 20 calls in total in 24 hours, in-progress calls included.
+- It dials a business found by search only after the owner says yes. When it calls around, one question names every business.
+- It never calls again a business that said "take us off your list" or "don't call us with an AI".
 
 Phone trees are not handled yet.
 
@@ -100,9 +85,7 @@ Phone trees are not handled yet.
 - It calls at most three businesses at once, and only when the owner asks for quotes.
 - It speaks English and Spanish. A Spanish call uses AssemblyAI's Spanish voice `lola` and Spanish speech recognition, and the business's call page is in Spanish. No live Spanish call has run yet.
 - It cannot use a live phone line without paid telephony.
-- The cost per call is an estimate, not a measurement. We estimate one call at about 26 to 31 cents, and a call-around for three quotes at about three times that. The first live call will replace the estimate with measured numbers. The estimate uses the demo call in `docs/demo/smoke-transcript.txt`:
-  - **Voice line.** The two sides speak 254 words. With the pauses and the two waits for the owner, we estimate three minutes of connected time. The AssemblyAI pricing page, as recorded in `docs/plans/2026-10-18-handle-the-call/reference-assemblyai.md` on 2026-10-18, lists the Voice Agent API at $0.075 per minute. Three minutes cost about 23 cents.
-  - **Claude.** The brain writes about 8 of Ambient's 12 lines. The reducer writes the disclosure and the read-backs. Each brain turn sends about 1,600 tokens of system prompt and tools, which the brain marks for caching, and up to about 500 tokens of transcript. Claude Opus 5.5 costs $4 per million input tokens, $20 per million output tokens and $0.20 per million cached input tokens. If each turn returns 100 to 400 output tokens, thinking included, Claude costs about 3 to 8 cents a call.
+- The cost per call is an estimate, not a measurement: about 26 to 31 cents for the demo call. AssemblyAI is about 23 cents (three minutes at $0.075 per minute), and Claude Opus 5.5 is about 3 to 8 cents. The first live call will replace the estimate. The arithmetic is in the README: [PUBLIC REPO URL]/blob/main/README.md
 
 ## Who this is for
 
@@ -134,9 +117,7 @@ The voice line is the AssemblyAI Voice Agent API. Its LLM is our own endpoint, `
 
 There is no phone dial-out in this version. AssemblyAI cannot dial out, and a paid Twilio account was not funded. The business answers on a web link that a phone browser opens like an incoming call.
 
-The first commit in the git history is dated 2026-09-16. The repo does not record the hackathon start date. The repo began as an agent-supervision bridge for Alexa+. We kept its engine, MCP surface, and Alexa endpoint, and gave them the calling job.
-
-What is real today: the full call runs end to end in the zero-key demo and through `/mcp` (`pnpm smoke:mcp`), with the business simulated. What is built but not yet run live: the AssemblyAI line, the Alexa skill, the spoken cue, and the CDK stack. No real phone call has been placed. No AWS deployment exists. Call latency is not measured. The skill has not run on an Echo Dot. The README carries the same list as a table.
+The first commit in the git history is dated 2026-09-16. The repo began as an agent-supervision bridge for Alexa+. We kept its engine, MCP surface, and Alexa endpoint, and gave them the calling job.
 
 ## Challenges
 
@@ -152,11 +133,9 @@ A gated toolkit. The Alexa+ MCP toolkit and simulator were gated as of 2026-10-1
 
 ## Accomplishments
 
-The honesty rules live in a pure reducer, not in a prompt. Five test files enforce them: `test/call-session.test.ts`, `test/call-honesty.test.ts`, `test/read-back-replies.test.ts`, `test/call.test.ts`, and `test/caller.test.ts`. They include the 4,000-call property test and the 192-reply corpus. The rest of the suite covers voice, Alexa, and security.
+The honesty rules live in a pure reducer, not in a prompt. Five test files enforce them, including the 4,000-call property test and the 192-reply corpus. The rest of the suite covers voice, Alexa and security.
 
-To count the tests, run `pnpm exec vitest list test/call-session.test.ts test/call-honesty.test.ts test/read-back-replies.test.ts test/call.test.ts test/caller.test.ts | grep -c "test/"` for the five files, and `pnpm exec vitest list | grep -c "test/"` for the whole suite.
-
-Three adversarial reviews of the reducer and repeated structural review rounds, all by AI reviewers, tried to break the rules and the voice line. Each round is logged in the [progress log](../progress.md). Every defect they reproduced is now a regression test. When a round showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
+Every defect that review reproduced is now a regression test. When review showed that price parsing would always leak, we replaced it with a read-back instead of patching it.
 
 The demo needs no keys and no accounts. `pnpm install && pnpm demo` runs a full call in the browser, and `pnpm smoke:mcp` drives the same call through `/mcp`.
 
@@ -164,7 +143,7 @@ The demo needs no keys and no accounts. `pnpm install && pnpm demo` runs a full 
 
 Honesty belongs in a state machine. Prompt-level instructions leaked under review. A pure reducer with property tests did not.
 
-MCP elicitation has sharp edges. Inside a tool call, it reaches the client only on an SSE response tied to that request, and otherwise hangs with no error. The reproduction is in `docs/friction-log.md`.
+MCP elicitation has sharp edges. Inside a tool call, it reaches the client only on an SSE response tied to that request, and otherwise hangs with no error. The reproduction is in the friction log: [PUBLIC REPO URL]/blob/main/docs/friction-log.md
 
 The approval card should lead with the stake. "$180 · Tuesday the 20th at 10 am" told the owner more than any sentence we wrote.
 
@@ -178,10 +157,8 @@ Deploy the prepared CDK stack (EC2, Secrets Manager, Elastic IP, auto-TLS) once 
 
 A funded Twilio account would restore the moment when a real phone rings.
 
+Run a small pilot: 5 households, 15 real calls, every transcript read. One booking the owner did not approve fails the pilot.
+
 ## Feedback for the tool makers
 
-Product feedback for each tool is in [`docs/product-feedback.md`](product-feedback.md). Reproducible friction entries, each with a severity, are in [`docs/friction-log.md`](friction-log.md).
-
-## Built with
-
-Alexa Skills Kit (custom skill, en-US and en-GB interaction models, request signature verification). ASK Proactive Events. Voice Monkey. MCP TypeScript SDK 1.30, spec 2025-11-25, Streamable HTTP. MCP Apps (`ui://ambient/task`). AssemblyAI Voice Agent API. Claude `claude-opus-5-5` through the Anthropic API. Node 22.13 or later, and TypeScript. node:sqlite. Vitest. AWS CDK (stack synthesized, not deployed). pnpm.
+Product feedback for each tool: [PUBLIC REPO URL]/blob/main/docs/product-feedback.md. Reproducible friction entries, each with a severity: [PUBLIC REPO URL]/blob/main/docs/friction-log.md.
