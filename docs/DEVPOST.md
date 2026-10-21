@@ -11,7 +11,7 @@ This file holds every field of the Devpost entry, in form order. Paste each fiel
 | Track | Alexa+ |
 | Video demo link | [VIDEO URL] |
 | Try it out | [PUBLIC REPO URL] |
-| Thumbnail | `launch/film/renders/thumbnail.png`, the "+ parts" price struck through (3:2, from the launch film) |
+| Thumbnail | `docs/media/thumbnail.png`, the "+ parts" price struck through (3:2, from the launch film) |
 | Built with (tags) | alexa-skills-kit, alexa-plus, mcp, model-context-protocol, claude, anthropic, assemblyai, typescript, node.js, sqlite, vitest, aws-cdk, pnpm |
 | License | MIT (`LICENSE`) |
 | Friction log | Paste or link [`docs/friction-log.md`](friction-log.md) |

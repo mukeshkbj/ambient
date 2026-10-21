@@ -14,7 +14,11 @@ Goal: a 30 to 40 s launch film that makes a judge sit forward in 3 s, a launch-g
 - [x] Storyline A "Plus parts." picked. `SPEC.md` holds the numbers and the BANNED line.
 - [x] Draft 1 built: `launch/film/index.html`, 36.5 s. Voices are Kokoro (Joe am_michael, Ambient af_heart on a 300 to 3400 Hz phone band, Maya af_bella). `tools/mix.py` holds every sound time, mixes the soundtrack and writes `cues.js` (per-word times the picture reads). The score is original, from MusicGen on this machine (`tools/music.py`, takes in `assets/music/`): a tense pulse until the booking, a warm resolve after it.
 - [x] Sound: `earshot critique` on draft 1 says launch-grade, 21 of 23 metrics in range. The two minor gaps (near mono; three cuts with no sound) are fixed in the mix for draft 2.
-- [ ] Critic round 1 (blind pairs against Opus 5.5, Sonnet 5.5, Poke; key in `critic/keys/r1.json`): running.
+- [x] Critic round 1 (draft 1): the references won all three pairs. Gap: no person and no place (motion 4, sound 4, clarity 8, the best of the six films). Fix: Pexels footage under every beat, faces cropped out because the Pexels license forbids implied endorsement; an audible score from frame 0; price hits.
+- [x] Critic round 2 (draft 4): the references still won, but ours took the first 3 s from the Opus film (hook 7). Gaps: plates dimmed to wallpaper, nine text layers in the negotiation, a weak payoff and no logo hit. Fix in draft 6: a brighter grade with a scrim only behind the type, one spoken line at a time, a 3.5 s payoff, no feature list, whip transitions, and a riser into an impact on the end card. Not fixed by choice: "Maya never appears" (no identifiable face, for the license).
+- [ ] Critic round 3 (draft 6): running. inspora.design checked: its odometer clip rolls digits with motion blur; ours will too.
+- [x] README top: the hook GIF (2.4 MB) links to `docs/media/ambient-film.mp4`. Devpost thumbnail: `docs/media/thumbnail.png`.
+- [x] Correction: the draft 1 to 5 end card said "the call and screens are the real product". The call is simulated, so it now says "Simulated call and Alexa+ host · the screens are the real product".
 - [ ] Loop each piece (hook, beats, type, motion, sound, end card) until a fresh critic picks ours blind; final hold-out check.
 - [x] `docs/submission.md` renamed to `docs/DEVPOST.md`, with every Devpost form field on top (pitch, tags, gallery and captions). Thumbnail still to export from the film.
 - [ ] README top with the film; film script and demo script; each through a critic.
