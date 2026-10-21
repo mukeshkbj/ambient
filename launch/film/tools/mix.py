@@ -30,6 +30,7 @@ LINES = [
 ]
 
 EFFECTS = [
+    ("hit", 0.02, 0.4, 0.0),
     ("swish", 2.62, 0.22, -0.3),
     ("hit", 3.65, 0.25, 0.0),
     ("rewind", 4.25, 0.5, 0.0),
@@ -61,7 +62,7 @@ EFFECTS = [
 PEAK = {"rewind": 0.853, "whoosh": 0.162, "swish": 0.35, "stopdown": 0.103, "riser": 2.771}
 
 TENSION = [(0.0, 0.16), (3.6, 0.2), (4.3, 0.05), (6.9, 0.07), (7.4, 0.14), (11.0, 0.14), (11.3, 0.24), (15.23, 0.3), (19.23, 0.42), (19.48, 0.0), (34.83, 0.0)]
-RELEASE = [(0.0, 0.0), (21.23, 0.0), (21.93, 0.2), (22.03, 0.6), (24.53, 0.36), (27.73, 0.38), (31.18, 0.42), (31.31, 0.0), (31.58, 0.0), (31.83, 0.3), (34.13, 0.24), (34.83, 0.0)]
+RELEASE = [(0.0, 0.0), (21.23, 0.0), (21.93, 0.2), (22.03, 0.6), (24.53, 0.36), (27.73, 0.38), (31.18, 0.42), (31.31, 0.0), (31.58, 0.0), (31.83, 0.3), (34.13, 0.26), (34.83, 0.18)]
 
 
 def load(path):
@@ -139,7 +140,7 @@ def main():
     mix = voice[:, None] + fx + wide
     raw = ROOT / "assets" / "mix-raw.wav"
     sf.write(raw, mix, SR, subtype="PCM_24")
-    subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(raw), "-af", "highshelf=f=4500:g=4,equalizer=f=320:t=q:w=1:g=-2,loudnorm=I=-13.2:TP=-1.5:LRA=11", "-ar", str(SR), str(ROOT / "assets" / "mix.wav")], check=True)
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(raw), "-af", "highshelf=f=3500:g=7,equalizer=f=320:t=q:w=1:g=-2,loudnorm=I=-13.2:TP=-1.5:LRA=11", "-ar", str(SR), str(ROOT / "assets" / "mix.wav")], check=True)
     raw.unlink()
     (ROOT / "cues.js").write_text("window.CUES = " + json.dumps(cues, indent=1) + ";\n", encoding="utf-8")
     print(json.dumps({k: [w["t"] for w in v["words"]] for k, v in cues.items()}))
