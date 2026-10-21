@@ -12,7 +12,7 @@ This file holds every field of the Devpost entry, in form order. Paste each fiel
 | Video demo link | [VIDEO URL] |
 | Try it out | [PUBLIC REPO URL] |
 | Thumbnail | `docs/media/thumbnail.png`, the "+ parts" price struck through (3:2, from the launch film) |
-| Built with (tags) | alexa-skills-kit, alexa-plus, mcp, model-context-protocol, claude, anthropic, assemblyai, typescript, node.js, sqlite, vitest, aws-cdk, pnpm |
+| Built with (tags) | alexa-skills-kit, alexa-plus, mcp, claude, anthropic, assemblyai, typescript, node.js, sqlite, vitest, aws-cdk, pnpm |
 | License | MIT (`LICENSE`) |
 | Friction log | [PUBLIC REPO URL]/blob/main/docs/friction-log.md |
 | Product feedback | [PUBLIC REPO URL]/blob/main/docs/product-feedback.md |
@@ -37,6 +37,10 @@ Ambient is an AI caller for the household. Alexa hands it a call to a business. 
 - **Built, not yet run live:** the AssemblyAI voice line, the Claude brain, the Alexa skill, the spoken cue and the AWS stack. There is no phone dial-out: the business answers on a web link that a phone browser opens like an incoming call.
 
 The repo began on 2026-09-16 as an agent-supervision bridge for Alexa+. We kept its engine, MCP surface and Alexa endpoint. The calling job is new: the call reducer, the read-back, the voice line, the simulator and every honesty rule.
+
+## Try it in one minute, no keys
+
+Open [PUBLIC REPO URL] in GitHub Codespaces. It installs the project, starts the demo and opens `/sim`, and each judge gets a private copy. Or run it locally with Node 22.13 or later: clone the repo, then `pnpm install` and `pnpm demo`, and open http://127.0.0.1:3000/sim. Then type your own answer to the read-back in the "Try to fool it" panel.
 
 ## What it does
 
@@ -64,7 +68,7 @@ The US FCC ruled on 8 February 2024 that the TCPA's rules for "artificial or pre
 
 One pure function owns the call: `step(state, input, now)`. It has no clock, no network and no model inside it. Every honesty rule is a table test against it. The property test plays 4,000 generated calls with mixed event orders and checks that every booking followed a clean yes to a fully played read-back of that exact amount.
 
-The surfaces are an MCP server on `/mcp` (Streamable HTTP), a custom Alexa skill, an MCP App card, and a browser simulator on `/sim` that is a real MCP client. On the voice line, AssemblyAI's Voice Agent API calls our own LLM endpoint. That endpoint passes each business turn into the reducer and speaks only what the reducer allows. Claude Opus 5.5 is the brain behind it, so the honesty rules hold on the voice line too.
+The surfaces are an MCP server on `/mcp` (Streamable HTTP), a custom Alexa skill, an MCP App card, and a browser simulator on `/sim` that is a real MCP client. On the voice line, AssemblyAI's Voice Agent API calls our own LLM endpoint. That endpoint passes each business turn into the reducer and speaks only what the reducer allows. Claude Opus 5.5 is the brain behind it. The reducer decides what may be said, so the rules do not depend on the model. The live voice line has not run yet.
 
 ## Challenges
 

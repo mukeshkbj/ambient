@@ -10,6 +10,8 @@ No live call has happened yet: the business and the Alexa+ host are simulated. T
 
 ## Try it: one minute, no keys
 
+Needs Node 22.13 or later and pnpm (`corepack enable` installs it). From a clone of this repository:
+
 ```sh
 pnpm install
 pnpm demo   # then open http://127.0.0.1:3000/sim
