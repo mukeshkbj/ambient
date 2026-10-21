@@ -1,14 +1,23 @@
 # Ambient
 
-**An Alexa agent that phones a business for you.** It says first that it is an AI, stays under your price limit, and books only on a clean yes. "Alexa, handle the call."
+**An Alexa agent that phones a business for you.** It says first that it is an AI, never spends past your limit without asking, and books only on a clean yes.
 
 [![The opening of the launch film: the plumber says "Yes, plus parts." and Ambient asks for one total price.](docs/media/film-hook.gif)](docs/media/ambient-film.mp4)
 
-**[Watch the 35-second film](docs/media/ambient-film.mp4)** · **[Try it in one minute, no keys](#run-it)** · **[Try to fool it](#honesty-rules)**
+**[Watch the 35-second film](docs/media/ambient-film.mp4)** · **[Try it in one minute, no keys](#try-it-one-minute-no-keys)** · **[Try to fool it](#honesty-rules)**
 
 No live call has happened yet: the business and the Alexa+ host are simulated. The film re-enacts the demo call with text-to-speech voices, Pexels footage and the real simulator screens. Its source is in [`launch/film`](launch/film/SCRIPT.md).
 
-Ambient is an AI caller for the household that cannot lie for you and cannot be lied to. You ask Alexa to call the plumber. Ambient says first that it is an AI. It spends only what you allow. It books only when the business says a clean yes to the exact price and time, and it keeps that yes as proof.
+## Try it: one minute, no keys
+
+```sh
+pnpm install
+pnpm demo   # then open http://127.0.0.1:3000/sim
+```
+
+No local setup? Open the repository in GitHub Codespaces. The container installs the project, starts the demo and opens `/sim`. Each Codespace has its own copy, so two judges never see each other's calls.
+
+You say "Alexa, ask Ambient to call Joe's Plumbing, under 150." Ambient will not book on a price it did not read back, or on a yes with conditions attached. It keeps the yes that booked as proof.
 
 Three moments from the demo:
 
@@ -24,9 +33,7 @@ Three moments from the demo:
 
 ![Call around, simulated: three plumbers ring at once and quote $140, $125 and $120; Ambient books the $120 quote, which a Spanish-speaking plumber gave, in Spanish, and releases the other two](docs/media/around.gif)
 
-**Try it in one minute, with no keys:** run `pnpm install` and `pnpm demo`, then open http://127.0.0.1:3000/sim. With no local setup, open the repository in GitHub Codespaces instead. The container installs the project, starts the demo and opens `/sim`. Each Codespace has its own copy, so two judges never see each other's calls.
-
-**Status.** No live call has happened yet. The demo runs against a simulated business and a simulated Alexa+ host. The voice line, the Claude brain and the Alexa skill are built and tested against local fakes, but none has run live. See [What is real and what is simulated](#what-is-real-and-what-is-simulated).
+The voice line, the Claude brain and the Alexa skill are built and tested against local fakes, but none has run live. See [What is real and what is simulated](#what-is-real-and-what-is-simulated).
 
 ## Who it is for
 
