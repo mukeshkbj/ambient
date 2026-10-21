@@ -21,8 +21,11 @@
       html, body { width: 1920px; height: 1080px; overflow: hidden; background: #100f0e; }
       #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: radial-gradient(120% 90% at 30% 40%, #1d1b19 0%, #100f0e 70%); font-family: var(--serif); color: var(--ink); -webkit-font-smoothing: antialiased; }
       .scene { position: absolute; inset: 0; }
+      .shot { position: absolute; inset: 0; width: 1920px; height: 1080px; object-fit: cover; }
+      .scrim { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(16 15 14 / .88) 0%, rgb(16 15 14 / .62) 48%, rgb(16 15 14 / .3) 100%); }
       .label { position: absolute; font: 600 24px/1 var(--label); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
       .label b { font-weight: 600; color: var(--ink); }
+      .live { display: inline-block; width: 18px; height: 18px; margin: 0 18px 3px 0; border-radius: 50%; background: #ff5a4f; vertical-align: middle; }
       .num { font-variant-numeric: tabular-nums; }
       .line { position: absolute; left: 176px; font-size: 84px; line-height: 1.06; letter-spacing: -.02em; font-variation-settings: "opsz" 72; }
       .line .w { display: inline-block; opacity: 0; }
@@ -55,10 +58,23 @@
   </head>
   <body>
     <div id="root" data-composition-id="main" data-start="0" data-duration="36.5" data-width="1920" data-height="1080">
+      <video id="v-hook" class="clip shot" src="assets/footage/hook.mp4" muted playsinline data-start="0" data-duration="3.65" data-track-index="10"></video>
+      <video id="v-back" class="clip shot" src="assets/footage/back.mp4" muted playsinline data-start="3.65" data-duration="0.65" data-track-index="10"></video>
+      <video id="v-home" class="clip shot" src="assets/footage/home.mp4" muted playsinline data-start="4.3" data-duration="1.8" data-track-index="10"></video>
+      <video id="v-drip" class="clip shot" src="assets/footage/drip.mp4" muted playsinline data-start="6.1" data-duration="2.25" data-track-index="10"></video>
+      <video id="v-ring" class="clip shot" src="assets/footage/ring.mp4" muted playsinline data-start="8.35" data-duration="4.4" data-track-index="10"></video>
+      <video id="v-joe" class="clip shot" src="assets/footage/joe2.mp4" muted playsinline data-start="12.75" data-duration="4.15" data-track-index="10"></video>
+      <video id="v-maya" class="clip shot" src="assets/footage/maya.mp4" muted playsinline data-start="16.9" data-duration="2.05" data-track-index="10"></video>
+      <video id="v-counter" class="clip shot" src="assets/footage/trap.mp4" muted playsinline data-start="18.95" data-duration="2.35" data-track-index="10"></video>
+      <video id="v-return" class="clip shot" src="assets/footage/hook.mp4" muted playsinline data-start="21.3" data-duration="2.4" data-media-start="1.0" data-track-index="10"></video>
+      <video id="v-calm" class="clip shot" src="assets/footage/calm.mp4" muted playsinline data-start="23.7" data-duration="2.2" data-track-index="10"></video>
+      <video id="v-fix" class="clip shot" src="assets/footage/fix.mp4" muted playsinline data-start="25.9" data-duration="1.42" data-track-index="10"></video>
+      <video id="v-claim" class="clip shot" src="assets/footage/calm.mp4" muted playsinline data-start="30.32" data-duration="3.08" data-media-start="0.6" data-track-index="10"></video>
+      <div id="scrim" class="scrim"></div>
       <audio id="mix" src="assets/mix.wav" data-start="0" data-duration="36.5" data-track-index="9"></audio>
 
-      <div id="s-hook" class="scene clip" data-start="0" data-duration="4.7" data-track-index="0">
-        <div class="label" id="hook-top" style="left:180px;top:140px">An AI on the phone for Maya <b>· On the call <span id="timer" class="num">0:41</span></b></div>
+      <div id="s-hook" class="scene clip" data-start="0" data-duration="4.45" data-track-index="0">
+        <div class="label" id="hook-top" style="left:180px;top:120px;font-size:34px;color:var(--ink)"><span class="live"></span>An AI is on the phone for Maya <span style="color:var(--muted)">· <span id="timer" class="num">0:41</span></span></div>
         <div class="price" id="hook-price"><span class="cur">$</span><span data-price="160"></span><span class="tag trap" id="hook-tag">+ parts<span class="strike"></span></span></div>
         <div class="label row-label" id="hook-joe-label" style="top:676px">Joe's Plumbing</div>
         <div class="line joe" data-cue="hook-joe" data-trap="plus,parts." style="top:710px"></div>
@@ -66,12 +82,10 @@
         <div class="line amb" data-cue="hook-amb" style="top:860px"></div>
       </div>
 
-      <div id="s-ask" class="scene clip" data-start="4.7" data-duration="3.65" data-track-index="1">
+      <div id="s-ask" class="scene clip" data-start="4.3" data-duration="4.05" data-track-index="1">
         <div class="label" id="ask-label" style="left:180px;top:250px">Maya, at home</div>
         <div class="line" data-cue="ask" style="top:290px;width:760px;font-size:88px"></div>
         <div class="label" id="ask-limit" style="left:180px;top:760px;padding:14px 20px;border:2px solid #4a4640;border-radius:999px;color:var(--ink)">Her limit · $150</div>
-        <div class="device" id="ask-device" style="left:1010px;top:230px;width:780px"><div class="screen"><img src="assets/ui/card-idle.png" alt="" /></div></div>
-        <div class="sim" id="ask-sim" style="left:1030px;top:760px">Echo Show 8 · Alexa+ host simulated</div>
       </div>
 
       <div id="s-ring" class="scene clip" data-start="8.35" data-duration="4.4" data-track-index="2">
@@ -104,7 +118,7 @@
       </div>
 
       <div id="s-trap" class="scene clip" data-start="21.3" data-duration="2.4" data-track-index="4">
-        <div class="label" style="left:180px;top:140px">An AI on the phone for Maya <b>· On the call 0:41</b></div>
+        <div class="label" style="left:180px;top:120px;font-size:34px;color:var(--ink)"><span class="live"></span>An AI is on the phone for Maya <span style="color:var(--muted)">· 0:41</span></div>
         <div class="price" id="trap-price"><span class="cur">$</span><span data-price="160"></span><span class="slot"><span class="tag trap" id="trap-tag">+ parts<span class="strike" style="transform:scaleX(1)"></span></span><span class="tag" id="trap-total" style="position:absolute;left:0;bottom:0;opacity:0">total</span></span></div>
         <div class="label row-label" style="top:676px">Joe's Plumbing</div>
         <div class="line joe" data-cue="allin" style="top:710px"></div>
@@ -114,15 +128,14 @@
         <div class="label" id="booked-label" style="left:340px;top:70px;color:var(--green)">Booked · $160 total · Tuesday the 20th at 10 am</div>
         <div class="device" id="booked-device" style="left:340px;top:120px;width:1240px"><div class="screen"><img src="assets/ui/card-booked.png" alt="" /></div></div>
         <div class="line joe" data-cue="yes" style="top:950px;left:340px;font-size:64px"></div>
-        <div class="sim" style="left:1360px;top:976px">Alexa+ host simulated</div>
+        <div class="sim" id="booked-sim" style="left:1300px;top:976px">Alexa+ host simulated</div>
+        <div class="label" id="booked-when" style="left:180px;top:120px;font-size:34px;color:var(--green)">Tuesday the 20th · 10 am</div>
       </div>
 
       <div id="s-more" class="scene clip" data-start="27.32" data-duration="3.0" data-track-index="6">
-        <div class="big" id="more-0" style="top:420px;width:780px;font-size:124px">In Spanish.</div>
-        <div class="big" id="more-1" style="top:420px;width:780px;font-size:124px;opacity:0">Three quotes.</div>
-        <div class="big" id="more-2" style="top:360px;width:780px;font-size:124px;opacity:0">The cheapest, booked.</div>
-        <div class="phone" id="more-phone" style="left:1310px"><div class="screen"><img src="assets/ui/business-ringing-es.png" alt="" /></div></div>
-        <div class="device" id="more-device" style="left:960px;top:200px;width:880px;opacity:0">
+        <div class="big" id="more-0" style="top:330px;width:740px;font-size:112px">Three quotes at once.</div>
+        <div class="big" id="more-1" style="top:600px;width:740px;font-size:112px;color:var(--green)">Booked in Spanish.</div>
+        <div class="device" id="more-device" style="left:960px;top:200px;width:880px">
           <div class="screen">
             <img src="assets/ui/card-around-quotes.png" alt="" />
             <img class="over" id="more-booked" src="assets/ui/card-around-booked.png" alt="" />
@@ -136,12 +149,12 @@
       </div>
 
       <div id="s-end" class="scene clip" data-start="33.4" data-duration="3.1" data-track-index="8">
-        <div id="end-lock" style="position:absolute;left:0;right:0;top:330px;display:flex;flex-direction:column;align-items:center;gap:34px">
+        <div id="end-lock" style="position:absolute;inset:0;justify-content:center;display:flex;flex-direction:column;align-items:center;gap:34px">
           <div class="mark" id="end-mark"></div>
           <div id="end-name" style="font-size:150px;line-height:1;letter-spacing:-.035em">Ambient</div>
           <div id="end-say" style="font-size:52px;color:var(--muted);letter-spacing:-.01em">“Alexa, handle the call.”</div>
         </div>
-        <div class="sim" id="end-sim" style="left:0;right:0;top:1000px;text-align:center">Alexa+ host simulated in this film · the call and screens are the real product</div>
+        <div class="sim" id="end-sim" style="left:0;right:0;top:960px;text-align:center;color:#b5afa5">Alexa+ host simulated in this film · the call and screens are the real product</div>
       </div>
 
       <svg id="wave" width="1560" height="60"><path id="wave-path" fill="none" stroke="#4a4640" stroke-width="3" /></svg>
@@ -180,13 +193,11 @@
       tl.to("#hook-tag", { y: 60, rotation: 5, opacity: 0, duration: 0.4, ease: "power2.in" }, window.CUES["hook-amb"].words[5].t + 0.1);
 
       const timer = { s: 41 };
-      tl.to(timer, { s: 0, duration: 0.7, ease: "power2.in", onUpdate: () => ($("#timer").textContent = `0:${String(Math.round(timer.s)).padStart(2, "0")}`) }, 3.65);
+      tl.to(timer, { s: 0, duration: 0.55, ease: "power2.in", onUpdate: () => ($("#timer").textContent = `0:${String(Math.round(timer.s)).padStart(2, "0")}`) }, 3.65);
       tl.to(["#hook-price", '[data-cue="hook-joe"]', '[data-cue="hook-amb"]', "#hook-joe-label", "#hook-amb-label"], { x: -90, opacity: 0, filter: "blur(10px)", duration: 0.45, ease: "power2.in", stagger: 0.04 }, 3.65);
-      tl.to("#hook-top", { opacity: 0, duration: 0.2 }, 4.45);
+      tl.to("#hook-top", { opacity: 0, duration: 0.2 }, 4.2);
 
-      tl.from("#ask-label", { opacity: 0, ...arrive }, 4.75);
-      tl.fromTo("#ask-device", { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, ...arrive, duration: 0.7 }, 4.7);
-      tl.from("#ask-sim", { opacity: 0, duration: 0.4 }, 5.1);
+      tl.from("#ask-label", { opacity: 0, ...arrive }, 4.3);
       tl.fromTo("#ask-limit", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.45, ease: "expo.out", transformOrigin: "0% 50%" }, window.CUES.ask.words[6].t);
 
       tl.from(["#ring-phone", "#ring-sim"], { opacity: 0, scale: 0.96, duration: 0.5, ease: "expo.out" }, 8.35);
@@ -203,7 +214,7 @@
       tl.from("#deal-amb-label", { opacity: 0, duration: 0.3 }, 14.55);
       tl.to('[data-cue="quote"]', { opacity: 0.35, duration: 0.3 }, 14.55);
       tl.fromTo(["#deal-device", "#deal-sim"], { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, ...arrive, duration: 0.7 }, window.CUES.check.words[4].t);
-      tl.fromTo("#tap-offer", { opacity: 0.9, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.5, ease: "power2.out" }, 16.95);
+      tl.fromTo("#tap-offer", { opacity: 0.9, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.5, ease: "power2.out", immediateRender: false }, 16.95);
       tl.to("#deal-offered", { opacity: 1, duration: 0.15 }, 17.05);
       roll("#deal-price", 150, 17.05);
       tl.to("#deal-price", { color: "#f1ece3", duration: 0.3 }, 17.3);
@@ -216,7 +227,7 @@
       tl.set("#deal-over-text", { textContent: "$10 over" }, 20.2);
       tl.to("#deal-over", { opacity: 1, duration: 0.3 }, 20.25);
       tl.to('[data-cue="offer"]', { opacity: 0.35, duration: 0.3 }, 18.95);
-      tl.fromTo("#tap-book", { opacity: 0.9, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.5, ease: "power2.out" }, 21.0);
+      tl.fromTo("#tap-book", { opacity: 0.9, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.5, ease: "power2.out", immediateRender: false }, 21.0);
 
       tl.to("#trap-tag", { y: 70, rotation: 6, opacity: 0, duration: 0.45, ease: "power2.in" }, 21.4);
       tl.fromTo("#trap-total", { opacity: 0, x: -40 }, { opacity: 1, x: 0, ...arrive }, window.CUES.allin.words[4].t);
@@ -224,17 +235,20 @@
 
       tl.fromTo("#booked-device", { opacity: 0, scale: 1.06 }, { opacity: 1, scale: 1, duration: 0.7, ease: "expo.out" }, 23.7);
       tl.from("#booked-label", { opacity: 0, y: 10, ...arrive }, 23.85);
+      tl.set("#booked-when", { opacity: 0 }, 0);
+      tl.to(["#booked-device", "#booked-label", "#booked-sim"], { opacity: 0, scale: 0.97, ...leave }, 25.62);
+      tl.to("#booked-when", { opacity: 1, duration: 0.5 }, 25.95);
+      tl.set("#scrim", { opacity: 1 }, 0);
+      tl.set("#deal-price", { opacity: 0 }, 0);
+      tl.set("#scrim", { opacity: 0.35 }, 25.9);
+      tl.set("#scrim", { opacity: 0 }, 27.32);
+      tl.set("#scrim", { opacity: 1 }, 30.32);
+      tl.set("#scrim", { opacity: 0 }, 33.4);
 
-      const shots = [27.32, 28.32, 29.32];
-      shots.slice(1).forEach((t, i) => {
-        tl.set(`#more-${i}`, { opacity: 0 }, t);
-        tl.fromTo(`#more-${i + 1}`, { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 0.35, ease: "expo.out" }, t);
-      });
-      tl.from("#more-0", { opacity: 0, x: 30, duration: 0.35, ease: "expo.out" }, 27.32);
-      tl.from("#more-phone", { opacity: 0, y: 40, duration: 0.45, ease: "expo.out" }, 27.32);
-      tl.set("#more-phone", { opacity: 0 }, 28.32);
-      tl.fromTo("#more-device", { opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.45, ease: "expo.out" }, 28.32);
-      tl.set("#more-booked", { opacity: 1 }, 29.32);
+      tl.from("#more-0", { opacity: 0, y: 24, duration: 0.6, ease: "expo.out" }, 27.32);
+      tl.fromTo("#more-device", { opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.6, ease: "expo.out" }, 27.4);
+      tl.set("#more-booked", { opacity: 1 }, 28.7);
+      tl.from("#more-1", { opacity: 0, y: 24, duration: 0.6, ease: "expo.out" }, 28.7);
 
       tl.from("#claim-1", { opacity: 0, y: 24, duration: 0.7, ease: "expo.out" }, 30.45);
       tl.from("#claim-2", { opacity: 0, y: 24, duration: 0.7, ease: "expo.out" }, 31.45);
