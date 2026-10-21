@@ -40,15 +40,16 @@ EFFECTS = [
     ("ring", 7.15, 0.35, 0.5),
     ("pickup", 7.75, 0.5, 0.5),
     ("hit", 11.08, 0.22, 0.0),
-    ("hit", 12.26, 0.35, -0.4),
+    ("hit", 12.26, 0.6, -0.2),
     ("whoosh", 14.15, 0.2, 0.4),
     ("tap", 15.28, 0.6, 0.35),
-    ("hit", 15.93, 0.3, -0.4),
-    ("hit", 18.93, 0.32, -0.4),
+    ("hit", 15.93, 0.45, -0.2),
+    ("hit", 18.93, 0.55, -0.2),
     ("tap", 19.33, 0.6, -0.2),
     ("stopdown", 19.63, 0.35, 0.0),
     ("drip", 19.75, 0.55, 0.0),
-    ("impact", 22.03, 0.9, 0.0),
+    ("impact", 22.03, 1.0, 0.0),
+    ("hit", 22.03, 0.5, 0.0),
     ("ding", 22.05, 0.35, 0.0),
     ("whoosh", 24.23, 0.25, 0.3),
     ("swish", 27.73, 0.3, -0.3),
@@ -59,7 +60,7 @@ EFFECTS = [
 
 PEAK = {"rewind": 0.853, "whoosh": 0.162, "swish": 0.35, "stopdown": 0.103, "riser": 2.771}
 
-TENSION = [(0.0, 0.16), (3.6, 0.18), (4.3, 0.1), (5.0, 0.18), (15.23, 0.24), (19.23, 0.32), (19.48, 0.0), (34.83, 0.0)]
+TENSION = [(0.0, 0.16), (3.6, 0.2), (4.3, 0.05), (6.9, 0.07), (7.4, 0.14), (11.0, 0.14), (11.3, 0.24), (15.23, 0.3), (19.23, 0.42), (19.48, 0.0), (34.83, 0.0)]
 RELEASE = [(0.0, 0.0), (21.23, 0.0), (21.93, 0.2), (22.03, 0.6), (24.53, 0.36), (27.73, 0.38), (31.18, 0.42), (31.31, 0.0), (31.58, 0.0), (31.83, 0.3), (34.13, 0.24), (34.83, 0.0)]
 
 
@@ -126,7 +127,7 @@ def main():
         x = x[: n - i] * gain
         fx[i:i + len(x)] += np.outer(x, [np.cos((pan + 1) * np.pi / 4), np.sin((pan + 1) * np.pi / 4)]) * np.sqrt(2)
     bed = np.zeros(n, dtype="float32")
-    beds = sys.argv[1:] or [ROOT / "assets" / "music" / "pulse-small-7.wav", ROOT / "assets" / "music" / "resolve-small-7.wav"]
+    beds = sys.argv[1:] or [ROOT / "assets" / "music" / "pulse-small-7.wav", ROOT / "assets" / "music" / "lift-small-3.wav"]
     for path, points in zip(beds, (TENSION, RELEASE)):
         m = load(path)
         start = int(21.93 * SR) if points is RELEASE else 0

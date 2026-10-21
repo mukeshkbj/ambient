@@ -46,11 +46,11 @@
       .device img { display: block; width: 100%; }
       .device .over { position: absolute; inset: 0; opacity: 0; }
       .tap { position: absolute; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; border: 4px solid var(--ink); opacity: 0; }
-      .phone { position: absolute; left: 1270px; top: 93px; width: 428px; padding: 14px; border-radius: 64px; background: #050506; box-shadow: 0 0 0 2px #2a2826, 0 40px 80px rgb(0 0 0 / .45); }
-      .phone .screen { height: 640px; overflow: hidden; border-radius: 50px; }
-      .phone img { display: block; width: 400px; }
-      .ring { position: absolute; left: 1484px; top: 441px; width: 160px; height: 160px; margin: -80px 0 0 -80px; border-radius: 50%; border: 3px solid var(--blue-label); opacity: 0; }
-      .sim { position: absolute; font: 400 28px/1 var(--label); color: var(--muted); }
+      .phone { position: absolute; left: 1060px; top: 40px; width: 792px; padding: 16px; border-radius: 80px; background: #050506; box-shadow: 0 0 0 2px #2a2826, 0 40px 80px rgb(0 0 0 / .45); }
+      .phone .screen { height: 908px; overflow: hidden; border-radius: 64px; }
+      .phone img { display: block; width: 760px; }
+      .ring { position: absolute; left: 1456px; top: 778px; width: 160px; height: 160px; margin: -80px 0 0 -80px; border-radius: 50%; border: 3px solid var(--blue-label); opacity: 0; }
+      .sim { position: absolute; font: 400 30px/1 var(--label); color: #b5afa5; }
       #wave { position: absolute; left: 180px; top: 1000px; }
       .big { position: absolute; left: 176px; font-size: 150px; line-height: 1.02; letter-spacing: -.035em; font-variation-settings: "opsz" 72; }
       .mark { width: 132px; height: 132px; border-radius: 50%; border: 22px solid var(--blue-label); }
@@ -61,7 +61,6 @@
       <video id="v-hook" class="clip shot" src="assets/footage/hook.mp4" muted playsinline data-start="0" data-duration="3.65" data-track-index="10"></video>
       <video id="v-back" class="clip shot" src="assets/footage/back.mp4" muted playsinline data-start="3.65" data-duration="0.65" data-track-index="10"></video>
             <video id="v-drip" class="clip shot" src="assets/footage/drip.mp4" muted playsinline data-start="4.25" data-duration="2.9" data-track-index="10"></video>
-      <video id="v-ring" class="clip shot" src="assets/footage/ring.mp4" muted playsinline data-start="7.15" data-duration="3.93" data-track-index="10"></video>
       <video id="v-joe" class="clip shot" src="assets/footage/joe2.mp4" muted playsinline data-start="11.08" data-duration="4.15" data-track-index="10"></video>
       <video id="v-maya" class="clip shot" src="assets/footage/maya.mp4" muted playsinline data-start="15.23" data-duration="2.05" data-track-index="10"></video>
       <video id="v-counter" class="clip shot" src="assets/footage/trap.mp4" muted playsinline data-start="17.28" data-duration="2.35" data-track-index="10"></video>
@@ -89,10 +88,10 @@
 
       <div id="s-ring" class="scene clip" data-start="7.15" data-duration="3.93" data-track-index="2">
         <div class="label row-label" id="ring-label" style="top:250px;color:var(--blue-label)">Ambient · calling Joe's Plumbing</div>
-        <div class="line amb" data-cue="disclose" style="top:290px;width:960px;font-size:96px"></div>
+        <div class="line amb" data-cue="disclose" style="top:290px;width:840px;font-size:96px"></div>
         <div class="ring"></div><div class="ring"></div><div class="ring"></div>
         <div class="phone" id="ring-phone"><div class="screen"><img src="assets/ui/business-ringing-en.png" alt="" /></div></div>
-        <div class="sim" id="ring-sim" style="left:1290px;top:1010px">Joe's phone · the business side</div>
+        <div class="sim" id="ring-sim" style="left:180px;top:900px">Joe's phone · the business side</div>
       </div>
 
       <div id="s-deal" class="scene clip" data-start="11.08" data-duration="8.55" data-track-index="3">
@@ -141,7 +140,8 @@
         <div id="end-lock" style="position:absolute;inset:0;justify-content:center;display:flex;flex-direction:column;align-items:center;gap:34px">
           <div class="mark" id="end-mark"></div>
           <div id="end-name" style="font-size:150px;line-height:1;letter-spacing:-.035em">Ambient</div>
-          <div id="end-say" style="font-size:56px;color:var(--ink);letter-spacing:-.01em">“Alexa, handle the call.”</div>
+          <div id="end-say" style="font-size:56px;color:var(--ink);letter-spacing:-.01em">Alexa, handle the call.</div>
+          <div id="end-cta" style="margin-top:18px;font:600 30px/1 var(--label);letter-spacing:.08em;text-transform:uppercase;color:var(--blue-label)">Try it in one minute · no keys</div>
         </div>
         <div class="sim" id="end-sim" style="left:0;right:0;top:960px;text-align:center;font-size:30px;color:#b5afa5">Simulated call and Alexa+ host · the screens are the real product</div>
       </div>
@@ -236,7 +236,7 @@
       tl.from("#booked-when", { opacity: 0, y: 24, duration: 0.8, ease: "expo.out" }, 24.63);
       for (const v of $$(".shot")) tl.fromTo(v, { scale: 1 }, { scale: 1.06, duration: Number(v.dataset.duration), ease: "none", immediateRender: false }, Number(v.dataset.start));
       for (const at of [window.CUES.quote.words[2].t + 0.52, 15.93, 18.93]) tl.fromTo("#deal-price", { scale: 1.06 }, { scale: 1, duration: 0.45, ease: "expo.out", transformOrigin: "0% 100%", immediateRender: false }, at);
-      for (const [at, scene, shot] of [[7.15, "#s-ring", "#v-ring"], [11.08, "#s-deal", "#v-joe"], [24.23, "#s-booked", "#v-fix"]]) tl.from([scene, shot], { x: 180, filter: "blur(16px)", duration: 0.4, ease: "expo.out", immediateRender: false }, at);
+      for (const [at, scene, shot] of [[7.15, "#s-ring"], [11.08, "#s-deal", "#v-joe"], [24.23, "#s-booked", "#v-fix"]]) tl.from([scene, shot].filter(Boolean), { x: 180, filter: "blur(16px)", duration: 0.4, ease: "expo.out", immediateRender: false }, at);
       tl.set("#scrim", { opacity: 1 }, 0);
       tl.set("#deal-price", { opacity: 0 }, 0);
       tl.set("#scrim", { opacity: 0 }, 31.33);
@@ -247,7 +247,8 @@
       tl.from("#end-mark", { scale: 0.4, opacity: 0, duration: 0.9, ease: "expo.out" }, 31.33);
       tl.from("#end-name", { opacity: 0, y: 20, duration: 0.7, ease: "expo.out" }, 31.48);
       tl.from("#end-say", { opacity: 0, duration: 0.6 }, 32.13);
-      tl.from("#end-sim", { opacity: 0, duration: 0.6 }, 32.53);
+      tl.from("#end-cta", { opacity: 0, y: 10, duration: 0.6, ease: "expo.out" }, 32.43);
+      tl.from("#end-sim", { opacity: 0, duration: 0.6 }, 32.73);
 
       const talk = Object.entries(window.CUES).filter(([k]) => k !== "ask").map(([, c]) => c);
       const onCall = (t) => (t < 3.62) || (t > 7.75 && t < 21.93);

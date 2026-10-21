@@ -1,6 +1,6 @@
 """Generate the film's original score locally with MusicGen. No third-party music.
 
-Usage: python tools/music.py small 7   (model size, seed). The film uses pulse-small-7 and resolve-small-7.
+Usage: python tools/music.py small 7   (model size, seed). The film uses pulse-small-7 and lift-small-3.
 Writes WAVs to the current directory; copy the chosen takes to assets/music/.
 """
 import sys, numpy as np, soundfile as sf, torch
@@ -12,6 +12,7 @@ model = MusicgenForConditionalGeneration.from_pretrained(f"facebook/musicgen-{na
 prompts = {
  "pulse": "minimal cinematic underscore, soft felt piano ostinato in D minor over a low warm synth pulse, restrained, building tension, no drums, 96 bpm, clean modern film score",
  "resolve": "warm hopeful cinematic piano and soft strings swell resolving to a major chord, gentle and confident, modern product film, 96 bpm, no drums",
+ "lift": "minimal cinematic underscore, soft felt piano ostinato in D major over a low warm synth pulse, opening up, hopeful and calm, no drums, 96 bpm, clean modern film score",
  "drive": "modern minimal electronic product launch, tight plucked synth arpeggio, deep sub bass, crisp light percussion, confident and warm, 104 bpm",
 }
 for k, p in prompts.items():

@@ -16,7 +16,7 @@ fetch ring 8060393/8060393-hd_2048_1080_25fps.mp4
 fetch tap 7559978/7559978-hd_1080_1920_25fps.mp4
 fetch fix 7584858/7584858-hd_1920_1080_25fps.mp4
 
-grade="eq=brightness=0.0:contrast=1.06:saturation=0.85,colorbalance=rs=0.04:gs=0.01:bs=-0.05:rm=0.03:bm=-0.03,vignette=PI/4.2"
+grade="eq=brightness=0.035:contrast=1.12:saturation=0.92:gamma=1.06,colorbalance=rs=0.04:gs=0.01:bs=-0.05:rm=0.03:bm=-0.03,vignette=PI/5.5"
 portrait="crop=1080:608:0:%s,scale=1920:1080:flags=lanczos"
 wide="scale=1920:1080:force_original_aspect_ratio=increase:flags=lanczos,crop=1920:1080"
 
