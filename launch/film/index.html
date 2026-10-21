@@ -40,8 +40,9 @@
       .cur { align-self: flex-start; margin: .2em .04em 0 0; font-size: .46em; line-height: 1; }
       .slot { position: relative; display: inline-block; }
       .tag { position: relative; display: inline-block; margin: 0 0 .44em 40px; line-height: 1; font-size: 150px; letter-spacing: -.03em; }
-      .tag .strike { position: absolute; left: -6px; right: -6px; top: 54%; height: 12px; background: var(--blue); transform: scaleX(0); transform-origin: 0 50%; }
-      .device { position: absolute; padding: 20px; border-radius: 34px; background: #050506; box-shadow: 0 0 0 2px #2a2826, 0 40px 80px rgb(0 0 0 / .45); }
+      .tag .strike { position: absolute; left: -10px; right: -10px; top: 52%; height: 20px; border-radius: 10px; background: #c9dbff; box-shadow: 0 0 24px rgb(169 198 255 / .55); transform: scaleX(0); transform-origin: 0 50%; }
+      .device { position: absolute; padding: 20px; border-radius: 34px; background: #050506; box-shadow: 0 0 0 2px #2a2826, 0 40px 80px rgb(0 0 0 / .5), 0 0 140px rgb(110 168 255 / .16); transform: perspective(2400px) rotateY(-7deg); }
+      .device::after { content: ""; position: absolute; inset: 20px; border-radius: 14px; background: linear-gradient(115deg, rgb(255 255 255 / .07) 0%, rgb(255 255 255 / 0) 38%); pointer-events: none; }
       .device .screen { position: relative; overflow: hidden; border-radius: 14px; }
       .device img { display: block; width: 100%; }
       .device .over { position: absolute; inset: 0; opacity: 0; }
@@ -132,6 +133,7 @@
       </div>
 
       <div id="s-claim" class="scene clip" data-start="27.73" data-duration="3.6" data-track-index="7">
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg, rgb(16 15 14 / .9) 0%, rgb(16 15 14 / .72) 38%, rgb(16 15 14 / 0) 66%)"></div>
         <div class="big" id="claim-1" style="top:640px">Ambient makes the call.</div>
         <div class="big" id="claim-2" style="top:800px;color:var(--green)">You still make the call.</div>
       </div>
@@ -141,9 +143,9 @@
           <div class="mark" id="end-mark"></div>
           <div id="end-name" style="font-size:150px;line-height:1;letter-spacing:-.035em">Ambient</div>
           <div id="end-say" style="font-size:56px;color:var(--ink);letter-spacing:-.01em">Alexa, handle the call.</div>
-          <div id="end-cta" style="margin-top:18px;font:600 30px/1 var(--label);letter-spacing:.08em;text-transform:uppercase;color:var(--blue-label)">Try it in one minute · no keys</div>
+          <div id="end-cta" style="margin-top:22px;display:flex;align-items:center;gap:22px;font:600 26px/1 var(--label);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Try it in one minute, no keys<span style="padding:16px 26px;border-radius:14px;background:#1f2a3d;color:#dce7ff;font:500 40px/1 Consolas, monospace;letter-spacing:0;text-transform:none">pnpm demo</span></div>
         </div>
-        <div class="sim" id="end-sim" style="left:0;right:0;top:960px;text-align:center;font-size:30px;color:#b5afa5">Simulated call and Alexa+ host · the screens are the real product</div>
+        <div class="sim" id="end-sim" style="left:0;right:0;top:960px;text-align:center;font-size:30px;color:#b5afa5">Simulated call and Alexa+ host · real product screens</div>
       </div>
 
       <svg id="wave" width="1560" height="60"><path id="wave-path" fill="none" stroke="#4a4640" stroke-width="3" /></svg>
@@ -177,7 +179,8 @@
       }
       const swapOut = (cue, at) => tl.to(`[data-cue="${cue}"]`, { opacity: 0, ...leave, duration: 0.2 }, at);
 
-      tl.from("#hook-top", { opacity: 0, duration: 0.3 }, 0);
+      tl.fromTo("#hook-top", { opacity: 0, x: -24 }, { opacity: 1, x: 0, ...arrive, immediateRender: false }, 1.62);
+      tl.set("#hook-top", { opacity: 0 }, 0);
       tl.from("#hook-joe-label", { opacity: 0, duration: 0.3 }, 0.1);
       tl.fromTo("#hook-tag", { opacity: 0, scale: 1.35, x: 40 }, { opacity: 1, scale: 1, x: 0, duration: 0.45, ease: "expo.out", transformOrigin: "0% 80%" }, window.CUES["hook-joe"].words[1].t);
       tl.from("#hook-amb-label", { opacity: 0, duration: 0.3 }, 1.6);
@@ -247,7 +250,9 @@
       tl.from("#end-mark", { scale: 0.4, opacity: 0, duration: 0.9, ease: "expo.out" }, 31.33);
       tl.from("#end-name", { opacity: 0, y: 20, duration: 0.7, ease: "expo.out" }, 31.48);
       tl.from("#end-say", { opacity: 0, duration: 0.6 }, 32.13);
-      tl.from("#end-cta", { opacity: 0, y: 10, duration: 0.6, ease: "expo.out" }, 32.43);
+      tl.from("#end-cta", { opacity: 0, y: 14, scale: 0.96, duration: 0.6, ease: "expo.out" }, 33.05);
+      tl.fromTo("#end-lock", { scale: 1 }, { scale: 1.035, duration: 3.5, ease: "none", immediateRender: false }, 31.33);
+      for (const at of [33.05, 34.02]) tl.fromTo("#end-mark", { boxShadow: "0 0 0 0 rgb(110 168 255 / .55)" }, { boxShadow: "0 0 0 46px rgb(110 168 255 / 0)", duration: 0.8, ease: "power2.out", immediateRender: false }, at);
       tl.from("#end-sim", { opacity: 0, duration: 0.6 }, 32.73);
 
       const talk = Object.entries(window.CUES).filter(([k]) => k !== "ask").map(([, c]) => c);
