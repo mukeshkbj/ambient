@@ -2,7 +2,11 @@
 
 **Alexa, handle the call.**
 
-![The simulated call, 21 seconds: Ambient discloses it is an AI, the owner offers $150, Joe counters at $160, the owner approves, Joe answers the read-back with "Yes, plus parts.", Ambient asks for one total, and the call books](docs/media/demo.gif)
+[![The opening of the launch film: on the call, the plumber says "Yes, plus parts." and Ambient answers "Sorry. I need one total price."](docs/media/film-hook.gif)](docs/media/ambient-film.mp4)
+
+**[Watch the 36-second film](docs/media/ambient-film.mp4)** · **[Try it in one minute, no keys](#run-it)** · **[Try to fool it](#run-it)**
+
+The film re-enacts the demo call. The voices are text to speech, the footage is from Pexels, and the screens are the real simulator. Its source is in [`launch/film`](launch/film/SCRIPT.md).
 
 Ambient is an AI caller for the household that cannot lie for you and cannot be lied to. You ask Alexa to call the plumber. Ambient says first that it is an AI. It spends only what you allow. It books only when the business says a clean yes to the exact price and time, and it keeps that yes as proof.
 
@@ -11,6 +15,8 @@ Three moments from the demo:
 1. **It refuses a false yes.** At the read-back, the plumber says "Yes, plus parts." Ambient does not book. It asks for one total price, reads the terms back again, and books on "Yes, that's right."
 2. **It asks you before it spends more.** The plumber quotes $180 against your $150 limit. The call holds, and the Echo Show asks: "Book $180", "Offer $150" or "Decline". The plumber counters at $160, so the Show asks you again.
 3. **It calls three plumbers at once, in two languages.** It books the cheapest quote under your limit and thanks the other two businesses. The cheapest plumber speaks Spanish, so Ambient books in Spanish while you read English on the Show.
+
+![The simulated call, 21 seconds: Ambient discloses it is an AI, the owner offers $150, Joe counters at $160, the owner approves, Joe answers the read-back with "Yes, plus parts.", Ambient asks for one total, and the call books](docs/media/demo.gif)
 
 **Try to fool it yourself.** In the simulator, you can play the business. Type any answer to the read-back, in English or Spanish. The same call reducer that runs every call decides, and the panel says whether Ambient would book and why.
 

@@ -22,7 +22,7 @@
       #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: radial-gradient(120% 90% at 30% 40%, #1d1b19 0%, #100f0e 70%); font-family: var(--serif); color: var(--ink); -webkit-font-smoothing: antialiased; }
       .scene { position: absolute; inset: 0; }
       .shot { position: absolute; inset: 0; width: 1920px; height: 1080px; object-fit: cover; }
-      .scrim { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(16 15 14 / .88) 0%, rgb(16 15 14 / .62) 48%, rgb(16 15 14 / .3) 100%); }
+      .scrim { position: absolute; inset: 0; background: linear-gradient(90deg, rgb(16 15 14 / .8) 0%, rgb(16 15 14 / .45) 42%, rgb(16 15 14 / 0) 72%), linear-gradient(0deg, rgb(16 15 14 / .55) 0%, rgb(16 15 14 / 0) 40%); }
       .label { position: absolute; font: 600 24px/1 var(--label); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
       .label b { font-weight: 600; color: var(--ink); }
       .live { display: inline-block; width: 18px; height: 18px; margin: 0 18px 3px 0; border-radius: 50%; background: #ff5a4f; vertical-align: middle; }
@@ -47,7 +47,7 @@
       .device .over { position: absolute; inset: 0; opacity: 0; }
       .tap { position: absolute; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; border: 4px solid var(--ink); opacity: 0; }
       .phone { position: absolute; left: 1270px; top: 93px; width: 428px; padding: 14px; border-radius: 64px; background: #050506; box-shadow: 0 0 0 2px #2a2826, 0 40px 80px rgb(0 0 0 / .45); }
-      .phone .screen { height: 866px; overflow: hidden; border-radius: 50px; }
+      .phone .screen { height: 640px; overflow: hidden; border-radius: 50px; }
       .phone img { display: block; width: 400px; }
       .ring { position: absolute; left: 1484px; top: 441px; width: 160px; height: 160px; margin: -80px 0 0 -80px; border-radius: 50%; border: 3px solid var(--blue-label); opacity: 0; }
       .sim { position: absolute; font: 400 28px/1 var(--label); color: var(--muted); }
@@ -68,8 +68,8 @@
       <video id="v-counter" class="clip shot" src="assets/footage/trap.mp4" muted playsinline data-start="18.95" data-duration="2.35" data-track-index="10"></video>
       <video id="v-return" class="clip shot" src="assets/footage/hook.mp4" muted playsinline data-start="21.3" data-duration="2.4" data-media-start="1.0" data-track-index="10"></video>
       <video id="v-calm" class="clip shot" src="assets/footage/calm.mp4" muted playsinline data-start="23.7" data-duration="2.2" data-track-index="10"></video>
-      <video id="v-fix" class="clip shot" src="assets/footage/fix.mp4" muted playsinline data-start="25.9" data-duration="1.42" data-track-index="10"></video>
-      <video id="v-claim" class="clip shot" src="assets/footage/calm.mp4" muted playsinline data-start="30.32" data-duration="3.08" data-media-start="0.6" data-track-index="10"></video>
+      <video id="v-fix" class="clip shot" src="assets/footage/fix.mp4" muted playsinline data-start="25.9" data-duration="3.5" data-track-index="10"></video>
+      <video id="v-claim" class="clip shot" src="assets/footage/calm.mp4" muted playsinline data-start="29.4" data-duration="3.6" data-media-start="0.4" data-track-index="10"></video>
       <div id="scrim" class="scrim"></div>
       <audio id="mix" src="assets/mix.wav" data-start="0" data-duration="36.5" data-track-index="9"></audio>
 
@@ -99,9 +99,9 @@
       <div id="s-deal" class="scene clip" data-start="12.75" data-duration="8.55" data-track-index="3">
         <div class="price" id="deal-price" style="font-size:250px;top:150px"><span class="cur">$</span><span data-price="000"></span></div>
         <div class="label" id="deal-over" style="left:184px;top:440px;color:var(--amber)"><span id="deal-over-text">$30 over</span> her $150 limit</div>
-        <div class="label row-label" id="deal-joe-label" style="top:600px">Joe's Plumbing</div>
-        <div class="line joe" data-cue="quote" style="top:636px;width:640px;font-size:62px"></div>
-        <div class="line joe" data-cue="counter" style="top:636px;width:640px;font-size:62px"></div>
+        <div class="label row-label" id="deal-joe-label" style="top:826px">Joe's Plumbing</div>
+        <div class="line joe" data-cue="quote" style="top:860px;width:1500px;font-size:68px"></div>
+        <div class="line joe" data-cue="counter" style="top:860px;width:1500px;font-size:68px"></div>
         <div class="label row-label" id="deal-amb-label" style="top:836px;color:var(--blue-label)">Ambient · AI</div>
         <div class="line amb" data-cue="check" style="top:872px;width:1500px;font-size:68px"></div>
         <div class="line amb" data-cue="offer" style="top:872px;width:1500px;font-size:68px"></div>
@@ -124,37 +124,27 @@
         <div class="line joe" data-cue="allin" style="top:710px"></div>
       </div>
 
-      <div id="s-booked" class="scene clip" data-start="23.7" data-duration="3.62" data-track-index="5">
+      <div id="s-booked" class="scene clip" data-start="23.7" data-duration="5.7" data-track-index="5">
         <div class="label" id="booked-label" style="left:340px;top:70px;color:var(--green)">Booked · $160 total · Tuesday the 20th at 10 am</div>
         <div class="device" id="booked-device" style="left:340px;top:120px;width:1240px"><div class="screen"><img src="assets/ui/card-booked.png" alt="" /></div></div>
         <div class="line joe" data-cue="yes" style="top:950px;left:340px;font-size:64px"></div>
         <div class="sim" id="booked-sim" style="left:1300px;top:976px">Alexa+ host simulated</div>
-        <div class="label" id="booked-when" style="left:180px;top:120px;font-size:34px;color:var(--green)">Tuesday the 20th · 10 am</div>
+        <div class="big" id="booked-when" style="top:700px;font-size:120px">Tuesday, 10 am.</div>
+        <div class="label" id="booked-when-label" style="left:180px;top:660px;font-size:30px;color:var(--green)">Booked · $160 total</div>
       </div>
 
-      <div id="s-more" class="scene clip" data-start="27.32" data-duration="3.0" data-track-index="6">
-        <div class="big" id="more-0" style="top:330px;width:740px;font-size:112px">Three quotes at once.</div>
-        <div class="big" id="more-1" style="top:600px;width:740px;font-size:112px;color:var(--green)">Booked in Spanish.</div>
-        <div class="device" id="more-device" style="left:960px;top:200px;width:880px">
-          <div class="screen">
-            <img src="assets/ui/card-around-quotes.png" alt="" />
-            <img class="over" id="more-booked" src="assets/ui/card-around-booked.png" alt="" />
-          </div>
-        </div>
+      <div id="s-claim" class="scene clip" data-start="29.4" data-duration="3.6" data-track-index="7">
+        <div class="big" id="claim-1" style="top:640px">Ambient makes the call.</div>
+        <div class="big" id="claim-2" style="top:800px;color:var(--green)">You still make the call.</div>
       </div>
 
-      <div id="s-claim" class="scene clip" data-start="30.32" data-duration="3.08" data-track-index="7">
-        <div class="big" id="claim-1" style="top:330px">Ambient makes the call.</div>
-        <div class="big" id="claim-2" style="top:500px;color:var(--green)">You still make the call.</div>
-      </div>
-
-      <div id="s-end" class="scene clip" data-start="33.4" data-duration="3.1" data-track-index="8">
+      <div id="s-end" class="scene clip" data-start="33.0" data-duration="3.5" data-track-index="8">
         <div id="end-lock" style="position:absolute;inset:0;justify-content:center;display:flex;flex-direction:column;align-items:center;gap:34px">
           <div class="mark" id="end-mark"></div>
           <div id="end-name" style="font-size:150px;line-height:1;letter-spacing:-.035em">Ambient</div>
-          <div id="end-say" style="font-size:52px;color:var(--muted);letter-spacing:-.01em">“Alexa, handle the call.”</div>
+          <div id="end-say" style="font-size:56px;color:var(--ink);letter-spacing:-.01em">“Alexa, handle the call.”</div>
         </div>
-        <div class="sim" id="end-sim" style="left:0;right:0;top:960px;text-align:center;color:#b5afa5">Alexa+ host simulated in this film · the call and screens are the real product</div>
+        <div class="sim" id="end-sim" style="left:0;right:0;top:960px;text-align:center;font-size:30px;color:#b5afa5">Simulated call and Alexa+ host · the screens are the real product</div>
       </div>
 
       <svg id="wave" width="1560" height="60"><path id="wave-path" fill="none" stroke="#4a4640" stroke-width="3" /></svg>
@@ -211,8 +201,10 @@
       roll("#deal-price", 180, window.CUES.quote.words[2].t - 0.15, 1);
       tl.to("#deal-price", { color: "#ffb44a", duration: 0.3 }, window.CUES.quote.words[3].t + 0.35);
       tl.fromTo("#deal-over", { opacity: 0, x: -20 }, { opacity: 1, x: 0, ...arrive }, 14.0);
-      tl.from("#deal-amb-label", { opacity: 0, duration: 0.3 }, 14.55);
-      tl.to('[data-cue="quote"]', { opacity: 0.35, duration: 0.3 }, 14.55);
+      tl.to("#deal-joe-label", { opacity: 0, duration: 0.2 }, 14.4);
+      swapOut("quote", 14.4);
+      tl.fromTo("#deal-amb-label", { opacity: 0 }, { opacity: 1, duration: 0.3, immediateRender: false }, 14.55);
+      tl.set("#deal-amb-label", { opacity: 0 }, 0);
       tl.fromTo(["#deal-device", "#deal-sim"], { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, ...arrive, duration: 0.7 }, window.CUES.check.words[4].t);
       tl.fromTo("#tap-offer", { opacity: 0.9, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.5, ease: "power2.out", immediateRender: false }, 16.95);
       tl.to("#deal-offered", { opacity: 1, duration: 0.15 }, 17.05);
@@ -220,13 +212,14 @@
       tl.to("#deal-price", { color: "#f1ece3", duration: 0.3 }, 17.3);
       tl.to("#deal-over", { opacity: 0, duration: 0.2 }, 17.05);
       swapOut("check", 17.1);
-      swapOut("quote", 18.85);
+      swapOut("offer", 18.8);
+      tl.to("#deal-amb-label", { opacity: 0, duration: 0.2 }, 18.8);
+      tl.to("#deal-joe-label", { opacity: 1, duration: 0.3 }, 18.95);
       tl.to("#deal-160", { opacity: 1, duration: 0.15 }, 20.1);
       roll("#deal-price", 160, 20.05);
       tl.to("#deal-price", { color: "#ffb44a", duration: 0.3 }, 20.3);
       tl.set("#deal-over-text", { textContent: "$10 over" }, 20.2);
       tl.to("#deal-over", { opacity: 1, duration: 0.3 }, 20.25);
-      tl.to('[data-cue="offer"]', { opacity: 0.35, duration: 0.3 }, 18.95);
       tl.fromTo("#tap-book", { opacity: 0.9, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.5, ease: "power2.out", immediateRender: false }, 21.0);
 
       tl.to("#trap-tag", { y: 70, rotation: 6, opacity: 0, duration: 0.45, ease: "power2.in" }, 21.4);
@@ -235,28 +228,23 @@
 
       tl.fromTo("#booked-device", { opacity: 0, scale: 1.06 }, { opacity: 1, scale: 1, duration: 0.7, ease: "expo.out" }, 23.7);
       tl.from("#booked-label", { opacity: 0, y: 10, ...arrive }, 23.85);
-      tl.set("#booked-when", { opacity: 0 }, 0);
-      tl.to(["#booked-device", "#booked-label", "#booked-sim"], { opacity: 0, scale: 0.97, ...leave }, 25.62);
-      tl.to("#booked-when", { opacity: 1, duration: 0.5 }, 25.95);
+      tl.to(["#booked-device", "#booked-label", "#booked-sim", '[data-cue="yes"]'], { opacity: 0, scale: 0.97, ...leave }, 25.75);
+      tl.from("#booked-when-label", { opacity: 0, duration: 0.5 }, 26.2);
+      tl.from("#booked-when", { opacity: 0, y: 24, duration: 0.8, ease: "expo.out" }, 26.3);
+      for (const v of $$(".shot")) tl.fromTo(v, { scale: 1 }, { scale: 1.06, duration: Number(v.dataset.duration), ease: "none", immediateRender: false }, Number(v.dataset.start));
+      for (const at of [window.CUES.quote.words[2].t + 0.52, 17.6, 20.6]) tl.fromTo("#deal-price", { scale: 1.06 }, { scale: 1, duration: 0.45, ease: "expo.out", transformOrigin: "0% 100%", immediateRender: false }, at);
+      for (const [at, scene, shot] of [[8.35, "#s-ring", "#v-ring"], [12.75, "#s-deal", "#v-joe"], [25.9, "#s-booked", "#v-fix"]]) tl.from([scene, shot], { x: 180, filter: "blur(16px)", duration: 0.4, ease: "expo.out", immediateRender: false }, at);
       tl.set("#scrim", { opacity: 1 }, 0);
       tl.set("#deal-price", { opacity: 0 }, 0);
-      tl.set("#scrim", { opacity: 0.35 }, 25.9);
-      tl.set("#scrim", { opacity: 0 }, 27.32);
-      tl.set("#scrim", { opacity: 1 }, 30.32);
-      tl.set("#scrim", { opacity: 0 }, 33.4);
+      tl.set("#scrim", { opacity: 0 }, 33.0);
 
-      tl.from("#more-0", { opacity: 0, y: 24, duration: 0.6, ease: "expo.out" }, 27.32);
-      tl.fromTo("#more-device", { opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.6, ease: "expo.out" }, 27.4);
-      tl.set("#more-booked", { opacity: 1 }, 28.7);
-      tl.from("#more-1", { opacity: 0, y: 24, duration: 0.6, ease: "expo.out" }, 28.7);
+      tl.from("#claim-1", { opacity: 0, y: 24, duration: 0.7, ease: "expo.out" }, 29.5);
+      tl.from("#claim-2", { opacity: 0, y: 24, duration: 0.7, ease: "expo.out" }, 30.7);
 
-      tl.from("#claim-1", { opacity: 0, y: 24, duration: 0.7, ease: "expo.out" }, 30.45);
-      tl.from("#claim-2", { opacity: 0, y: 24, duration: 0.7, ease: "expo.out" }, 31.45);
-
-      tl.from("#end-mark", { scale: 0.6, opacity: 0, duration: 0.8, ease: "expo.out" }, 33.4);
-      tl.from("#end-name", { opacity: 0, y: 20, duration: 0.7, ease: "expo.out" }, 33.55);
-      tl.from("#end-say", { opacity: 0, duration: 0.6 }, 34.2);
-      tl.from("#end-sim", { opacity: 0, duration: 0.6 }, 34.6);
+      tl.from("#end-mark", { scale: 0.4, opacity: 0, duration: 0.9, ease: "expo.out" }, 33.0);
+      tl.from("#end-name", { opacity: 0, y: 20, duration: 0.7, ease: "expo.out" }, 33.15);
+      tl.from("#end-say", { opacity: 0, duration: 0.6 }, 33.8);
+      tl.from("#end-sim", { opacity: 0, duration: 0.6 }, 34.2);
 
       const talk = Object.entries(window.CUES).filter(([k]) => k !== "ask").map(([, c]) => c);
       const onCall = (t) => (t < 3.62) || (t > 9.42 && t < 23.6);
