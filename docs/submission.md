@@ -75,7 +75,9 @@ Phone trees are not handled yet.
 - It calls at most three businesses at once, and only when the owner asks for quotes.
 - It speaks English and Spanish. A Spanish call uses AssemblyAI's Spanish voice `lola` and Spanish speech recognition, and the business's call page is in Spanish. No live Spanish call has run yet.
 - It cannot use a live phone line without paid telephony.
-- Cost per call is not measured. The AssemblyAI pricing page, as recorded in `docs/plans/2026-10-18-handle-the-call/reference-assemblyai.md` on 2026-10-18, lists the Voice Agent API at $0.075 per minute, billed per second of connected time. Our own LLM cost is on top, and the repo records no price for it. The cost of one call depends on its length, the number of Claude turns, and the Claude token counts. None of these has been measured on a live call.
+- The cost per call is an estimate, not a measurement. We estimate one call at about 26 to 31 cents, and a call-around for three quotes at about three times that. The first live call will replace the estimate with measured numbers. The estimate uses the demo call in `docs/demo/smoke-transcript.txt`:
+  - **Voice line.** The two sides speak 254 words. With the pauses and the two waits for the owner, we estimate three minutes of connected time. The AssemblyAI pricing page, as recorded in `docs/plans/2026-10-18-handle-the-call/reference-assemblyai.md` on 2026-10-18, lists the Voice Agent API at $0.075 per minute. Three minutes cost about 23 cents.
+  - **Claude.** The brain writes about 8 of Ambient's 12 lines. The reducer writes the disclosure and the read-backs. Each brain turn sends about 1,600 tokens of system prompt and tools, which the brain marks for caching, and up to about 500 tokens of transcript. Claude Opus 5.5 costs $4 per million input tokens, $20 per million output tokens and $0.20 per million cached input tokens. If each turn returns 100 to 400 output tokens, thinking included, Claude costs about 3 to 8 cents a call.
 
 ## Who this is for
 

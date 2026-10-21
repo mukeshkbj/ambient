@@ -202,6 +202,7 @@ pnpm brain:latency        # time to first word on Claude (needs ANTHROPIC_API_KE
 
 - The real voice line has not yet run against the live AssemblyAI API. The request AssemblyAI sends to our endpoint is undocumented, so the endpoint reads it defensively ([friction log](docs/friction-log.md)).
 - `pnpm brain:latency` has not run yet, so the time to the first word on a live call is not measured. Our own part is measured: in three `pnpm call:dry` runs on 2026-10-19, with the scripted brain over loopback, our endpoint sent its first word 3 to 6 ms (p50) and at most 12 ms after AssemblyAI's request. The honesty checks therefore add almost nothing to a turn. Claude's time to the first token and AssemblyAI's speech time come on top.
+- The cost of a call is estimated, not measured: about 26 to 31 cents for the demo call, of which AssemblyAI is about 23 cents and Claude about 3 to 8 cents. The [submission](docs/submission.md#what-it-does-not-do) shows the arithmetic.
 - The Echo Dot flow needs the custom skill deployed to a public HTTPS host. The AWS stack is prepared (`pnpm infra:synth`) but not deployed.
 - The simulator stands in for the Alexa+ host. It is a real MCP client over loopback.
 
