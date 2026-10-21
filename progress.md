@@ -16,11 +16,14 @@ Goal: a 30 to 40 s launch film that makes a judge sit forward in 3 s, a launch-g
 - [x] Sound: `earshot critique` on draft 1 says launch-grade, 21 of 23 metrics in range. The two minor gaps (near mono; three cuts with no sound) are fixed in the mix for draft 2.
 - [x] Critic round 1 (draft 1): the references won all three pairs. Gap: no person and no place (motion 4, sound 4, clarity 8, the best of the six films). Fix: Pexels footage under every beat, faces cropped out because the Pexels license forbids implied endorsement; an audible score from frame 0; price hits.
 - [x] Critic round 2 (draft 4): the references still won, but ours took the first 3 s from the Opus film (hook 7). Gaps: plates dimmed to wallpaper, nine text layers in the negotiation, a weak payoff and no logo hit. Fix in draft 6: a brighter grade with a scrim only behind the type, one spoken line at a time, a 3.5 s payoff, no feature list, whip transitions, and a riser into an impact on the end card. Not fixed by choice: "Maya never appears" (no identifiable face, for the license).
-- [ ] Critic round 3 (draft 6): running. inspora.design checked: its odometer clip rolls digits with motion blur; ours will too.
+- [x] Critic round 3 (draft 6): references won; hook 6, still ahead of Opus in the first 3 s. Gaps: a dead setup, a payoff shot in a different kitchen, flat sound dynamics. Fix in draft 7 (`d0fc356`, 34.8 s): setup cut by 1.2 s, Maya's line shortened, the payoff is the same tap now dry, the rolling price has motion blur (from the inspora.design odometer clip).
+- [ ] Critic round 4 (draft 7): running.
+- [x] Docs critic round 1: our README top tied Claude Code's (34 each) and had the strongest proof of four. Gaps: a slogan where the definition belongs, two links to `#run-it`, a Devpost pitch that said "phones the plumber" while the text says there is no phone dial-out, relative links that break on Devpost. Fixed in `1d47178`. Docs critic round 2: running.
 - [x] README top: the hook GIF (2.4 MB) links to `docs/media/ambient-film.mp4`. Devpost thumbnail: `docs/media/thumbnail.png`.
 - [x] Correction: the draft 1 to 5 end card said "the call and screens are the real product". The call is simulated, so it now says "Simulated call and Alexa+ host · the screens are the real product".
 - [ ] Loop each piece (hook, beats, type, motion, sound, end card) until a fresh critic picks ours blind; final hold-out check.
-- [x] `docs/submission.md` renamed to `docs/DEVPOST.md`, with every Devpost form field on top (pitch, tags, gallery and captions). Thumbnail still to export from the film.
+- [x] `docs/submission.md` renamed to `docs/DEVPOST.md`, with every Devpost form field on top (pitch, tags, gallery and captions).
+- [ ] Re-export `docs/media/ambient-film.mp4`, `film-hook.gif` and `thumbnail.png` from the final draft (they are from draft 6).
 - [ ] README top with the film; film script and demo script; each through a critic.
 
 Surprises: `npx hyperframes skills update general-video` retired `general-video` and folded it into the `hyperframes` skill. yt-dlp and pip fail with WinError 448 while `C:\Users\mukes\AppData\Local\Programs\Cua\cua-driver\bin` is on PATH; removing it from PATH for the command fixes both.
