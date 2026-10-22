@@ -11,7 +11,7 @@
         --ink: #f1ece3;
         --muted: #8f8a82;
         --amber: #ffb44a;
-        --blue: #a9c6ff;
+        --blue: #c4d8ff;
         --blue-label: #6ea8ff;
         --green: #4fd18b;
         --serif: Newsreader, Georgia, serif;
@@ -27,7 +27,7 @@
       .label b { font-weight: 600; color: var(--ink); }
       .live { display: inline-block; width: 18px; height: 18px; margin: 0 18px 3px 0; border-radius: 50%; background: #ff5a4f; vertical-align: middle; }
       .num { font-variant-numeric: tabular-nums; }
-      .line { position: absolute; left: 176px; font-size: 84px; line-height: 1.06; letter-spacing: -.02em; font-variation-settings: "opsz" 72; }
+      .line { position: absolute; left: 176px; text-shadow: 0 2px 22px rgb(10 10 10 / .6); font-size: 84px; line-height: 1.06; letter-spacing: -.02em; font-variation-settings: "opsz" 72; }
       .line .w { display: inline-block; opacity: 0; }
       .row-label { position: absolute; left: 180px; }
       .joe { color: #e4ddd1; }
@@ -75,7 +75,7 @@
         <div class="label" id="hook-top" style="left:180px;top:120px;font-size:34px;color:var(--ink)"><span class="live"></span>Ambient, an AI, is on the phone for Maya</div>
         <div class="price" id="hook-price"><span class="cur">$</span><span data-price="160"></span><span class="tag trap" id="hook-tag">+ parts<span class="strike"></span></span></div>
         <div class="label row-label" id="hook-joe-label" style="top:676px">Joe's Plumbing</div>
-        <div class="line joe" data-cue="hook-joe" data-trap="plus,parts." style="top:710px"></div>
+        <div class="line joe" data-cue="hook-joe" style="top:710px"></div>
         <div class="label row-label" id="hook-amb-label" style="top:676px;color:var(--blue-label)">Ambient · AI</div>
         <div class="line amb" data-cue="hook-amb" style="top:710px"></div>
       </div>
@@ -123,7 +123,6 @@
       </div>
 
       <div id="s-booked" class="scene clip" data-start="22.03" data-duration="4.5" data-track-index="5">
-        <div class="label" id="booked-label" style="left:340px;top:70px;color:var(--green)">Booked · $160 total · Tuesday the 20th at 10 am</div>
         <div class="device" id="booked-device" style="left:340px;top:120px;width:1240px"><div class="screen"><img src="assets/ui/card-booked.png" alt="" /></div></div>
         <div class="line joe" data-cue="yes" style="top:950px;left:340px;font-size:64px"></div>
         <div class="sim" id="booked-sim" style="left:1300px;top:976px">Alexa+ host simulated</div>
@@ -236,8 +235,7 @@
       tl.to("#trap-price", { color: "#4fd18b", duration: 0.25 }, 21.83);
 
       tl.fromTo("#booked-device", { opacity: 0, scale: 1.06 }, { opacity: 1, scale: 1, duration: 0.7, ease: "expo.out" }, 22.03);
-      tl.from("#booked-label", { opacity: 0, y: 10, ...arrive }, 22.18);
-      tl.to(["#booked-device", "#booked-label", "#booked-sim", '[data-cue="yes"]'], { opacity: 0, scale: 0.97, ...leave }, 24.08);
+      tl.to(["#booked-device", "#booked-sim", '[data-cue="yes"]'], { opacity: 0, scale: 0.97, ...leave }, 24.08);
       tl.from("#booked-when-label", { opacity: 0, duration: 0.5 }, 24.53);
       tl.from("#booked-when", { opacity: 0, y: 24, duration: 0.8, ease: "expo.out" }, 24.63);
       for (const v of $$(".shot")) tl.fromTo(v, { scale: 1 }, { scale: 1.06, duration: Number(v.dataset.duration), ease: "none", immediateRender: false }, Number(v.dataset.start));

@@ -20,7 +20,7 @@ Voices: Joe (Joe's Plumbing) and Ambient speak on a phone band. Maya speaks in t
 | 15.23 | Maya's hands on her tablet (the shot is mirrored). A tap on "Offer $150" while the card fills the frame. The card returns to its place, and the price rolls down to "$150". | Tap, hit. **Ambient:** "Could you do one fifty?" |
 | 17.28 | Joe again. The price rolls to "$160", amber, "$10 over". The card fills the frame again, and a thumb taps "Book $160". | **Joe:** "I could do one sixty." Hit, tap. |
 | 19.63 | Back to the opening frame. The struck "+ parts" falls. On "all in", the word "total" takes its place. | The score stops. One drip in the silence. **Joe:** "Fair enough. That's all in." |
-| 22.03 | The booked card over the kitchen, green: "Booked · $160 total · Tuesday the 20th at 10 am", with the read-back and the reply as proof. | An impact and a chime. The warm score enters. **Joe:** "Yes, that's right. See you then." |
+| 22.03 | The booked card over the kitchen, with the read-back and the reply as proof. | An impact and a chime. The warm score enters. **Joe:** "Yes, that's right. See you then." |
 | 24.23 | A whip to the same tap, now dry. "Booked · $160 total" over "Tuesday, 10 am." | Whoosh. The score carries. |
 | 26.53 | The kitchen again. "Ambient makes the call." | Swish. The score swells. |
 | 29.33 | End card on graphite, drifting slowly closer: the Ambient ring, "Ambient", and in green "You still decide." At 31.05 "Try it in one minute, no keys" lands with the command `pnpm demo`, and the ring pulses on each hit. A small line: "Simulated call and Alexa+ host · real product screens". | A riser lands on an impact, and a soft sting rings out. The score carries to the last frame. |
