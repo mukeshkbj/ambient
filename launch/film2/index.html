@@ -81,6 +81,13 @@
       .note.d { color: var(--ok); background: #2fd37e17; box-shadow: 0 0 0 1px #2fd37e40 inset; }
       .said { position: absolute; right: 64px; top: 146px; width: 400px; padding: 26px 28px; border-radius: 26px; background: #ffffff0b; box-shadow: 0 0 0 1px #ffffff14 inset; }
       .said b { display: block; font: 600 20px/1 Inter; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+      .ladder { position: absolute; right: 64px; top: 318px; width: 400px; height: 120px; }
+      .ladder b { display: block; font: 600 20px/1 Inter; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+      .ladder .lt { position: absolute; left: 0; right: 0; top: 56px; height: 6px; border-radius: 3px; background: #ffffff1a; }
+      .ladder .lover { position: absolute; left: 200px; top: 56px; width: 120px; height: 6px; border-radius: 0 3px 3px 0; background: var(--over); }
+      .ladder .lmark { position: absolute; left: 198px; top: 44px; width: 3px; height: 30px; border-radius: 2px; background: #f3f5f8; }
+      .ladder .ldot { position: absolute; left: 0; top: 47px; width: 24px; height: 24px; margin-left: -12px; border-radius: 50%; background: var(--over); box-shadow: 0 0 0 4px #0b0d12, 0 0 20px #ff9f1c99; }
+      .ladder span { position: absolute; top: 90px; transform: translateX(-50%); font: 500 20px/1 Inter; color: #8b93a3; font-variant-numeric: tabular-nums; }
       .dots { display: flex; gap: 10px; margin-top: 18px; } .dots i { width: 10px; height: 10px; border-radius: 50%; background: #9aa3b2; }
       .said p { margin-top: 14px; font: 400 32px/1.28 Newsreader; color: #eef0f4; }
       .acts { position: absolute; left: 64px; right: 64px; bottom: 56px; display: grid; gap: 16px; }
@@ -219,6 +226,7 @@
               <div class="when">Tuesday the 20th, 10 am</div>
               <div class="note o">$30 over your $150 limit</div>
               <div class="said"><b>Joe said</b><p>“It'll be one eighty.”</p></div>
+              <div class="ladder"><b>Maya's limit</b><div class="lt"></div><div id="lover" class="lover"></div><div class="lmark"></div><div id="ldot" class="ldot"></div><span style="left:0">$100</span><span style="left:200px;color:#f3f5f8">$150</span><span style="left:400px">$200</span></div>
               <div class="acts three">
                 <div class="btn go">Book $180<small>Tells them yes</small></div>
                 <div id="b-offer" class="btn line"><div class="press"></div>Offer $150<small>Your limit</small><div id="r-offer" class="ripple"></div></div>
@@ -439,12 +447,12 @@
       tl.to("#m-price", { opacity: 0, duration: 0.12, ease: "none" }, 13.36);
       tl.fromTo("#c180 .amount", { opacity: 0 }, { opacity: 1, duration: 0.12, ease: "none", immediateRender: false }, 13.3);
       tl.set("#c180 .amount", { opacity: 0 }, 0);
-      tl.set(["#c180 .status", "#c180 .task", "#c180 .when", "#c180 .note", "#c180 .said", "#c180 .acts"], { opacity: 0 }, 0);
-      tl.fromTo(["#c180 .status", "#c180 .task", "#c180 .when", "#c180 .note", "#c180 .said", "#c180 .acts"], { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.42, ease: "expo.out", stagger: 0.05, immediateRender: false }, 13.42);
+      tl.set(["#c180 .status", "#c180 .task", "#c180 .when", "#c180 .note", "#c180 .said", "#c180 .ladder", "#c180 .acts"], { opacity: 0 }, 0);
+      tl.fromTo(["#c180 .status", "#c180 .task", "#c180 .when", "#c180 .note", "#c180 .said", "#c180 .ladder", "#c180 .acts"], { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.42, ease: "expo.out", stagger: 0.05, immediateRender: false }, 13.42);
 
       tl.fromTo("#deal-dev", { y: 900, rotationX: 18, transformPerspective: 2400 }, { y: 0, rotationX: 0, duration: 0.75, ease: "expo.out" }, 12.93);
-      const swapOut = (sel, at) => tl.to(sel, { opacity: 0, y: -24, filter: "blur(8px)", duration: 0.28, ease: "power2.in", stagger: 0.04 }, at);
-      const swapIn = (sel, at) => tl.fromTo(sel, { opacity: 0, y: 24, filter: "blur(8px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.36, ease: "expo.out", stagger: 0.04, immediateRender: false }, at);
+      const swapOut = (sel, at) => tl.to(sel, { opacity: 0, y: -10, filter: "blur(3px)", duration: 0.16, ease: "power2.in", stagger: 0.03 }, at);
+      const swapIn = (sel, at) => tl.fromTo(sel, { opacity: 0, y: 12, filter: "blur(3px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.32, ease: "expo.out", stagger: 0.04, immediateRender: false }, at);
       const press = (btn, at) => {
         tl.fromTo(`${btn} .ripple`, { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.12, ease: "power2.out", immediateRender: false }, at - 0.08);
         tl.fromTo(btn, { scale: 1 }, { scale: 0.97, duration: 0.09, ease: "power2.out", immediateRender: false }, at);
@@ -463,7 +471,14 @@
       swapOut(["#c180 .status", "#c180 .note"], 15.4);
       tl.to("#b-offer", { x: MORPH.x, y: MORPH.y, scaleX: MORPH.sx, scaleY: MORPH.sy, opacity: 0, duration: 0.32, ease: "power3.inOut" }, 15.46);
       tl.fromTo("#c150 .note", { x: -MORPH.x, y: -MORPH.y, scaleX: 1 / MORPH.sx, scaleY: 1 / MORPH.sy, opacity: 0 }, { x: 0, y: 0, scaleX: 1, scaleY: 1, opacity: 1, duration: 0.32, ease: "power3.inOut", transformOrigin: "50% 50%", immediateRender: false }, 15.5);
-      roll("#deal-num", 180, 150, 15.5, 0.42);
+      roll("#deal-num", 180, 150, 15.5, 0.45);
+      tl.set("#ldot", { x: 320 }, 0);
+      tl.fromTo("#ldot", { x: 200 }, { x: 320, duration: 0.6, ease: "expo.out", immediateRender: false }, 13.6);
+      tl.fromTo("#lover", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "expo.out", transformOrigin: "0% 50%", immediateRender: false }, 13.6);
+      tl.to("#ldot", { x: 200, backgroundColor: "#5ad8ff", boxShadow: "0 0 0 4px #0b0d12, 0 0 20px #5ad8ff99", duration: 0.45, ease: "expo.out" }, 15.5);
+      tl.to("#lover", { scaleX: 0, duration: 0.45, ease: "expo.out" }, 15.5);
+      tl.to("#ldot", { x: 240, backgroundColor: "#ff9f1c", boxShadow: "0 0 0 4px #0b0d12, 0 0 20px #ff9f1c99", duration: 0.45, ease: "expo.out" }, 18.9);
+      tl.to("#lover", { scaleX: 1 / 3, duration: 0.45, ease: "expo.out" }, 18.9);
       swapIn(["#c150 .status", "#c150 .acts"], 15.62);
       for (let t = 16.0; t < 18.6; t += 1.5) tl.fromTo("#ghost", { opacity: 0.7 }, { opacity: 0.4, duration: 0.75, yoyo: true, repeat: 1, ease: "sine.inOut", immediateRender: false }, t);
       document.querySelectorAll("#ghost .dots i").forEach((d, i) => {
@@ -471,7 +486,7 @@
       });
       swapOut(["#c150 .acts", "#c150 .status", "#c150 .note", "#c180 .said"], 18.6);
       swapIn(["#c160 .acts", "#c160 .status", "#c160 .note", "#c160 .said"], 18.84);
-      roll("#deal-num", 150, 160, 18.9, 0.42);
+      roll("#deal-num", 150, 160, 18.9, 0.45);
       tl.fromTo("#c180 .amount", { scale: 1.06, color: "#ff9f1c" }, { scale: 1, color: "#f3f5f8", duration: 0.5, ease: "expo.out", transformOrigin: "0% 100%", immediateRender: false }, 18.93);
       press("#b-book", 19.33);
 
