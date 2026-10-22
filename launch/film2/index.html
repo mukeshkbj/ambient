@@ -24,12 +24,12 @@
 
       .ring { border-radius: 50%; background: conic-gradient(from 200deg, var(--amb-1), var(--amb-2), var(--amb-3), var(--amb-1)); }
 
-      .price { position: absolute; left: 0; right: 0; top: 235px; text-align: center; font: 400 360px/1 Newsreader; letter-spacing: -.045em; font-variant-numeric: lining-nums tabular-nums; color: var(--ink); }
-      .price sup { font-size: .42em; vertical-align: .95em; margin-right: .04em; letter-spacing: 0; }
-      .tag { position: absolute; left: 1290px; top: 282px; padding: 18px 40px 20px; border-radius: 999px; background: linear-gradient(180deg, #ffb547, #ff9410); color: #2b1700;
+      .price { position: absolute; left: 0; right: 0; top: 250px; text-align: center; font: 600 300px/1 Inter; letter-spacing: -.055em; font-variant-numeric: tabular-nums; color: var(--ink); }
+      .price sup { font-size: 1em; vertical-align: 0; margin-right: 0; letter-spacing: -.055em; }
+      .tag { position: absolute; left: 1335px; top: 262px; padding: 18px 40px 20px; border-radius: 999px; background: linear-gradient(180deg, #ffb547, #ff9410); color: #2b1700;
         font: 600 72px/1 Inter; letter-spacing: -.03em; box-shadow: 0 1px 0 #ffffff80 inset, 0 24px 50px -18px #b8640080; white-space: nowrap; }
       .tag .strike { position: absolute; left: 22px; right: 22px; top: 50%; height: 9px; margin-top: -4px; border-radius: 6px; background: #15130f; }
-      .total { position: absolute; left: 1345px; top: 325px; font: italic 400 150px/1 Newsreader; letter-spacing: -.03em; color: var(--ink); }
+      .total { position: absolute; left: 1340px; top: 360px; font: italic 400 150px/1 Newsreader; letter-spacing: -.03em; color: var(--ink); }
       .total::after { content: ""; position: absolute; left: 4px; right: 4px; bottom: -6px; height: 8px; border-radius: 6px; background: linear-gradient(90deg, var(--amb-1), var(--amb-2)); }
       .eyebrow { position: absolute; left: 0; right: 0; top: 118px; text-align: center; font: 400 54px/1 Newsreader; letter-spacing: -.02em; color: var(--ink-2); }
       .eyebrow i { display: inline-block; width: 16px; height: 16px; margin-right: 20px; border-radius: 50%; background: #ff3b30; box-shadow: 0 0 14px #ff3b30; vertical-align: 8px; }
@@ -40,17 +40,17 @@
       .pill .av { position: absolute; left: 20px; top: 20px; width: 64px; height: 64px; }
       .pill .av .ring { position: absolute; inset: 0; -webkit-mask: radial-gradient(circle, #0000 30px, #000 31px); mask: radial-gradient(circle, #0000 23px, #000 24px); box-shadow: 0 0 28px #3d7bff99; }
       .pill .av .joe { position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(160deg, #f6c58c, #d98a3d); color: #3a1f05; font: 700 30px/64px Inter; text-align: center; }
-      .pill .who { position: absolute; left: 106px; top: 20px; font: 600 16px/1 Inter; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+      .pill .who { position: absolute; left: 106px; top: 16px; font: 600 20px/1 Inter; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
       .pill .lines { position: absolute; left: 106px; right: 220px; top: 44px; height: 44px; }
-      .pill .line { position: absolute; left: 0; top: 0; white-space: nowrap; font: 500 32px/44px Inter; letter-spacing: -.02em; }
-      .pill .line span { opacity: .18; }
-      .pill .wave { position: absolute; right: 112px; top: 30px; height: 44px; width: 104px; display: flex; align-items: center; justify-content: space-between; }
-      .pill .wave i { display: block; width: 4px; height: 8px; border-radius: 3px; background: linear-gradient(var(--amb-1), var(--amb-2)); }
+      .pill .line { position: absolute; left: 0; top: 0; white-space: nowrap; font: 500 34px/46px Inter; letter-spacing: -.02em; }
+      .pill .line span { opacity: .45; }
+      .pill .wave { position: absolute; right: 112px; top: 30px; height: 44px; width: 150px; display: flex; align-items: center; justify-content: space-between; }
+      .pill .wave i { display: block; width: 3px; height: 8px; border-radius: 3px; background: linear-gradient(var(--amb-1), var(--amb-2)); }
       .pill .time { position: absolute; right: 32px; top: 34px; font: 500 26px/36px Inter; font-variant-numeric: tabular-nums; color: #c9ced8; }
 
       .device { position: absolute; left: 50%; top: 84px; width: 1180px; height: 740px; margin-left: -590px; }
       .device .base { display: none; position: absolute; left: 70px; right: 70px; bottom: -40px; height: 120px; border-radius: 0 0 70px 70px; background: linear-gradient(#3b3d42, #2b2c30); }
-      .device .glow { position: absolute; left: -260px; right: -260px; bottom: -190px; height: 420px; border-radius: 50%; background: radial-gradient(closest-side, currentColor, transparent); opacity: .55; color: #3d7bff; }
+      .device .glow { position: absolute; left: 190px; right: 190px; bottom: -110px; height: 220px; border-radius: 50%; background: radial-gradient(closest-side, currentColor, transparent); filter: blur(30px); opacity: .5; color: #3d7bff; }
       .device .shadow { position: absolute; left: -20px; right: -20px; bottom: -86px; height: 70px; border-radius: 50%; background: radial-gradient(closest-side, #3a2a1666, #3a2a1600); }
       .bezel { position: absolute; inset: 0; border-radius: 44px; background: linear-gradient(180deg, #2b2d33 0%, #17181c 9%, #111215 100%);
         box-shadow: 0 1px 0 0 #ffffff38 inset, 0 0 0 1px #ffffff12 inset, 0 0 0 1px #0000004d, 0 40px 80px -20px #28190a59, 0 12px 24px #28190a2e; }
@@ -78,18 +78,19 @@
       .note.c { color: var(--amb-1); background: #5ad8ff17; box-shadow: 0 0 0 1px #5ad8ff3a inset; }
       .note.d { color: var(--ok); background: #2fd37e17; box-shadow: 0 0 0 1px #2fd37e40 inset; }
       .said { position: absolute; right: 64px; top: 146px; width: 400px; padding: 26px 28px; border-radius: 26px; background: #ffffff0b; box-shadow: 0 0 0 1px #ffffff14 inset; }
-      .said b { display: block; font: 600 18px/1 Inter; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+      .said b { display: block; font: 600 20px/1 Inter; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
       .dots { display: flex; gap: 10px; margin-top: 18px; } .dots i { width: 10px; height: 10px; border-radius: 50%; background: #9aa3b2; }
       .said p { margin-top: 14px; font: 400 32px/1.28 Newsreader; color: #eef0f4; }
       .acts { position: absolute; left: 64px; right: 64px; bottom: 60px; display: grid; gap: 18px; }
-      .acts.three { grid-template-columns: 1fr 1fr 1fr; } .acts.two { grid-template-columns: 1fr 1fr; }
+      .acts.three { grid-template-columns: 1fr 1fr 1fr; } .acts.two { grid-template-columns: 1.5fr 1fr; }
       .btn { position: relative; height: 112px; border-radius: 30px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; font: 600 34px/1 Inter; letter-spacing: -.015em; }
       .btn small { font: 500 24px/1 Inter; letter-spacing: 0; opacity: .72; }
       .btn.go { background: #f4f6f9; color: #0b0d12; box-shadow: 0 12px 34px -10px #ffffff50; }
       .btn.line { background: #ffffff08; color: #f3f5f8; box-shadow: 0 0 0 2px #ffffff66 inset; }
       .btn.no { background: #ffffff0e; color: #f3f5f8; box-shadow: 0 0 0 1px #ffffff1f inset; }
-      .btn.stop { color: #ff8a80; background: #ff5a4a14; box-shadow: 0 0 0 1px #ff8a8030 inset; }
-      .ripple { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: #8a93a399; box-shadow: 0 0 0 2px #ffffffaa; opacity: 0; }
+      .btn.stop { color: #ff8a80; background: transparent; box-shadow: 0 0 0 1px #ff787840 inset; }
+      .btn.stop small { font-size: 20px; opacity: .6; }
+      .ripple { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -8px 0 0 -22px; border-radius: 50%; background: #0b0d1226; box-shadow: 0 0 0 2px #0b0d1240; opacity: 0; }
       .check { position: absolute; right: 64px; top: 196px; width: 96px; height: 96px; }
       .proof { position: absolute; left: 64px; right: 64px; bottom: 60px; padding: 26px 30px; border-radius: 26px; background: #ffffff0a; box-shadow: 0 0 0 1px #ffffff14 inset; display: grid; grid-template-columns: 170px 1fr; row-gap: 14px; font: 400 28px/1.3 Inter; color: #d9dde5; }
       .proof b { font: 600 20px/1.6 Inter; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
@@ -134,11 +135,11 @@
       .rule { display: flex; align-items: center; gap: 26px; font: 400 54px/1.1 Newsreader; letter-spacing: -.02em; color: var(--ink); }
       .rule svg { width: 60px; height: 60px; flex: none; }
       .endc { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; }
-      .endc .mark { margin-top: 250px; width: 150px; height: 150px; -webkit-mask: radial-gradient(circle, #0000 54px, #000 55px); mask: radial-gradient(circle, #0000 54px, #000 55px); box-shadow: 0 0 80px #3d7bff99; }
+      .endc .mark { margin-top: 220px; width: 150px; height: 150px; -webkit-mask: radial-gradient(circle, #0000 54px, #000 55px); mask: radial-gradient(circle, #0000 54px, #000 55px); box-shadow: 0 0 80px #3d7bff99; }
       .endc .name { margin-top: 44px; font: 400 150px/1 Newsreader; letter-spacing: -.04em; }
       .endc .say { margin-top: 26px; font: italic 400 64px/1 Newsreader; color: var(--ink-2); }
-      .endc .cta { margin-top: 70px; display: flex; align-items: center; gap: 22px; font: 500 30px/1 Inter; color: var(--ink-2); }
-      .endc .cta code { padding: 14px 24px; border-radius: 16px; background: #15130f; color: #f3f5f8; font-family: "JetBrains Mono", monospace; font-size: 30px; font-weight: 500; line-height: 1; }
+      .endc .cta { margin-top: 64px; display: flex; align-items: center; gap: 24px; font: 500 36px/1 Inter; color: var(--ink-2); }
+      .endc .cta code { padding: 14px 24px; border-radius: 16px; background: #15130f; color: #f3f5f8; font-family: "JetBrains Mono", monospace; font-size: 36px; font-weight: 500; line-height: 1; }
       .fine { position: absolute; left: 0; right: 0; bottom: 56px; text-align: center; font: 500 24px/1 Inter; color: #6f695f; }
       .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
     </style>
@@ -149,7 +150,7 @@
       <div id="sun" class="sun"></div>
 
       <div id="s-hook" class="scene clip" data-start="0" data-duration="3.65">
-        <div id="hook-eyebrow" class="eyebrow"><i></i>An AI is on the phone for Maya. Her limit is $150.</div>
+        <div id="hook-eyebrow" class="eyebrow"><i></i>An AI is on the phone for Maya.</div>
         <div id="hook-price" class="price"><sup>$</sup>160</div>
         <div id="hook-tag" class="tag">+ parts<div class="strike"></div></div>
       </div>
@@ -221,12 +222,12 @@
               </div>
             </div>
             <div id="c150" class="card">
-              <div class="status s-call"><i></i>On the phone<span class="wait">0:08</span></div>
+              <div class="status s-call"><i></i>On the phone</div>
               <div class="task">Fix the kitchen sink · limit $150</div>
-              <div id="c150-amt" class="amount" style="font-size:104px;margin-top:22px">Joe's Plumbing</div>
+              <div id="c150-amt" class="amount" style="font-size:84px;margin-top:24px;letter-spacing:-.04em">Joe's Plumbing</div>
               <div class="note c" style="margin-top:34px">You offered $150</div>
               <div class="when" style="margin-top:22px;color:#9aa3b2;font-size:34px">Waiting for Joe's Plumbing.</div>
-              <div class="said" style="opacity:.6;top:auto;right:auto;left:64px;bottom:60px;width:560px"><b>Joe said</b><p>“It'll be one eighty.”</p><div class="dots"><i></i><i></i><i></i></div></div>
+              <div class="said" style="opacity:.6"><b>Joe said</b><p>“It'll be one eighty.”</p><div class="dots"><i></i><i></i><i></i></div></div>
             </div>
             <div id="c160" class="card">
               <div class="status s-needs"><i></i>Needs you<span class="wait">Joe's Plumbing is on the line</span></div>
@@ -250,14 +251,14 @@
         <div id="trap-total" class="total">total</div>
       </div>
 
-      <div id="s-booked" class="scene clip" data-start="21.6" data-duration="7.73">
+      <div id="s-booked" class="scene clip" data-start="21.6" data-duration="5.83">
         <div id="booked-dev" class="device">
           <div class="glow"></div><div class="shadow"></div><div class="base"></div>
           <div class="bezel"><div class="screen">
             <div class="card">
               <div class="status s-done"><i></i>Booked · confirmed by Joe's Plumbing</div>
               <div class="task">Fix the kitchen sink</div>
-              <div class="amount">$160 <span style="font-weight:500;font-size:.4em;letter-spacing:-.02em;color:#c9ced8">total</span></div>
+              <div class="amount"><span id="bk-num">$160</span> <span style="font-weight:500;font-size:.4em;letter-spacing:-.02em;color:#c9ced8">total</span></div>
               <div class="when">Tuesday the 20th, 10 am</div>
               <svg class="check" viewBox="0 0 150 150"><circle id="chk-c" cx="75" cy="75" r="68" fill="none" stroke="#2fd37e" stroke-width="7" stroke-linecap="round" transform="rotate(-90 75 75)"/><path id="chk-t" d="M45 77l20 20 41-44" fill="none" stroke="#2fd37e" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <div class="proof"><b>Read back</b><span>“$160 total, Tuesday the 20th at 10 am. Is that right?”</span><b>Joe</b><span>“Yes, that's right.”</span></div>
@@ -298,7 +299,15 @@
         <div id="pb-time" class="time">0:00</div>
       </div>
 
-      <div id="s-end" class="scene clip" data-start="29.33" data-duration="3.5">
+      <div id="pill-m" class="pill clip" data-start="14.7" data-duration="4.9" style="top:930px">
+        <div class="av"><div class="joe" style="background:linear-gradient(160deg,#c7f0d8,#4fbf86);color:#073b22">M</div></div>
+        <div class="who">Maya · on the Echo Show</div>
+        <div class="lines">
+          <div id="pm-1" class="line">Taps <b>Offer $150</b>.</div>
+          <div id="pm-2" class="line">Taps <b>Book $160</b>.</div>
+        </div>
+      </div>
+      <div id="s-end" class="scene clip" data-start="27.43" data-duration="5.4">
         <div id="end-lock" class="endc">
           <div id="end-mark" class="mark ring"></div>
           <div id="end-name" class="name">Ambient</div>
@@ -327,7 +336,7 @@
         tl.to(o, { v: to, duration: dur, ease: "expo.out", onUpdate: () => (document.querySelector(sel).textContent = Math.round(o.v)) }, at);
       }
 
-      document.querySelectorAll(".pill .wave").forEach((w) => (w.innerHTML = "<i></i>".repeat(16)));
+      document.querySelectorAll(".pill .wave").forEach((w) => (w.innerHTML = "<i></i>".repeat(22)));
       document.querySelectorAll(".pill .line[data-cue]").forEach((el) => {
         const cue = el.dataset.cue;
         words(el, cue);
@@ -355,8 +364,8 @@
         const f = Math.min(L.level.length - 1, Math.max(0, Math.round(t * L.fps)));
         const lv = (L.level[f] + (L.level[f - 1] || 0) + (L.level[f + 1] || 0)) / 3;
         bars.forEach((b, i) => {
-          const k = i % 16;
-          const shape = 0.35 + 0.65 * Math.sin(((k + 0.5) / 16) * Math.PI);
+          const k = i % 22;
+          const shape = 0.35 + 0.65 * Math.sin(((k + 0.5) / 22) * Math.PI);
           const jit = 0.65 + 0.35 * Math.sin(t * 23 + k * 1.9) * Math.sin(t * 7 + k * 0.7);
           b.style.height = 6 + 38 * lv * shape * jit + "px";
         });
@@ -385,9 +394,9 @@
       tl.fromTo("#ask-bar", { scaleX: 0.3, opacity: 0.4 }, { scaleX: 1, opacity: 1, duration: 0.4, ease: "expo.out" }, 4.4);
       for (const w of C.ask.words) tl.fromTo("#ask-bar", { scaleY: 2.2 }, { scaleY: 1, duration: 0.3, ease: "power2.out", immediateRender: false }, w.t);
       tl.fromTo("#ask-limit", { opacity: 0, y: 30 }, { opacity: 1, y: 0, ...out }, W("ask", 5));
-      tl.to("#ask-dev", { y: -900, scale: 0.9, duration: 0.35, ease: "power3.in" }, 6.85);
+      tl.to("#ask-dev", { scale: 7, rotationY: 0, transformOrigin: "121px 523px", opacity: 0, filter: "blur(10px)", duration: 0.42, ease: "power3.in" }, 6.78);
 
-      tl.fromTo("#phone", { y: 1000, rotation: 6 }, { y: 0, rotation: 0, duration: 0.6, ease: "expo.out" }, 7.15);
+      tl.fromTo("#phone", { scale: 2.4, opacity: 0, filter: "blur(14px)", transformOrigin: "220px 439px" }, { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.7, ease: "expo.out" }, 7.12);
       tl.set("#ph-live", { opacity: 0 }, 0);
       for (const [h, at] of [["#halo1", 7.15], ["#halo2", 7.4], ["#halo1", 7.65]]) tl.fromTo(h, { scale: 1, opacity: 0.9 }, { scale: 1.9, opacity: 0, duration: 0.8, ease: "power2.out", immediateRender: false }, at);
       tl.fromTo("#ph-accept", { scale: 1 }, { scale: 0.86, duration: 0.08, yoyo: true, repeat: 1 }, 7.7);
@@ -401,7 +410,7 @@
       tl.fromTo("#stamp-tick", { strokeDasharray: 40, strokeDashoffset: 40 }, { strokeDashoffset: 0, duration: 0.35, ease: "power2.out" }, W("disclose", 4) + 0.15);
       tl.to("#phone", { scale: 1.03, duration: 3, ease: "none" }, 8);
 
-      tl.fromTo("#m-price", { opacity: 0, y: 30 }, { opacity: 1, y: 0, ...out }, 11.08);
+      tl.fromTo("#m-price", { opacity: 0, y: 30 }, { opacity: 1, y: 0, ...out, immediateRender: false }, 11.08);
       tl.fromTo("#meter", { opacity: 0, y: 40 }, { opacity: 1, y: 0, ...out }, 11.12);
       tl.fromTo("#pill-b", { y: 80, opacity: 0 }, { y: 0, opacity: 1, ...out }, 11.1);
       tl.set("#m-fill", { width: 650 }, 0);
@@ -413,10 +422,12 @@
       tl.fromTo("#m-price", { scale: 1.07 }, { scale: 1, duration: 0.5, ease: "expo.out", immediateRender: false }, 12.26);
       tl.fromTo("#m-diff", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, 12.26);
       tl.to("#meter", { y: 40, opacity: 0, duration: 0.3, ease: "power2.in" }, 12.66);
-      tl.to("#m-price", { x: -303, y: 44, scale: 0.55, color: "#f3f5f8", duration: 0.62, ease: "expo.inOut" }, 12.72);
+      tl.to("#m-price", { x: -306, y: 49, scale: 0.576, color: "#f3f5f8", duration: 0.62, ease: "expo.inOut" }, 12.72);
       tl.to("#m-price", { opacity: 0, duration: 0.12, ease: "none" }, 13.36);
       tl.fromTo("#c180 .amount", { opacity: 0 }, { opacity: 1, duration: 0.12, ease: "none", immediateRender: false }, 13.3);
       tl.set("#c180 .amount", { opacity: 0 }, 0);
+      tl.set(["#c180 .status", "#c180 .task", "#c180 .when", "#c180 .note", "#c180 .said", "#c180 .acts"], { opacity: 0 }, 0);
+      tl.fromTo(["#c180 .status", "#c180 .task", "#c180 .when", "#c180 .note", "#c180 .said", "#c180 .acts"], { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.42, ease: "expo.out", stagger: 0.05, immediateRender: false }, 13.42);
 
       tl.fromTo("#deal-dev", { y: 900, rotationX: 18, transformPerspective: 2400 }, { y: 0, rotationX: 0, duration: 0.75, ease: "expo.out" }, 12.93);
       tl.set(["#c150", "#c160"], { opacity: 0 }, 0);
@@ -425,7 +436,7 @@
       tl.fromTo("#b-offer", { scale: 1 }, { scale: 0.95, duration: 0.09, yoyo: true, repeat: 1, ease: "power2.out" }, 15.28);
       tl.fromTo("#r-offer", { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.14, ease: "power2.out" }, 15.28 - 0.06);
       tl.to("#r-offer", { opacity: 0, scale: 1.15, duration: 0.25, ease: "power2.in" }, 15.28 + 0.2);
-      tl.to(["#c180 .acts .btn:not(#b-offer)"], { opacity: 0, y: 8, duration: 0.18, ease: "power2.out" }, 15.36);
+      tl.to(["#c180 .acts .btn:not(#b-offer)"], { opacity: 0, filter: "blur(6px)", duration: 0.16, ease: "power2.out" }, 15.36);
       tl.to("#c180 .said", { opacity: 0, x: 12, duration: 0.2, ease: "power2.out" }, 15.36);
       tl.to("#c180", { opacity: 0, duration: 0.3, ease: "power2.inOut" }, 15.48);
       tl.fromTo("#c150", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.36, ease: "power2.out", immediateRender: false }, 15.74);
@@ -442,18 +453,19 @@
       tl.set("#trap-tag", { rotation: -5 }, 0);
       tl.set("#trap-tag .strike", { scaleX: 1 }, 0);
       tl.to("#deal-dev", { opacity: 0, scale: 1.3, filter: "blur(16px)", duration: 0.3, ease: "power2.in" }, 19.48);
+      tl.to(["#c160 .status", "#c160 .task", "#c160 .when", "#c160 .note", "#c160 .said", "#c160 .acts"], { opacity: 0, duration: 0.12, ease: "none" }, 19.38);
       tl.set("#c160 .amount", { opacity: 0 }, 19.47);
-      tl.fromTo("#trap-price", { x: -282, y: -30, scale: 0.62, color: "#f3f5f8" }, { x: 0, y: 0, scale: 1, color: "#15130f", duration: 0.55, ease: "expo.out", immediateRender: false }, 19.47);
+      tl.fromTo("#trap-price", { x: -310, y: -86, scale: 0.68, color: "#f3f5f8" }, { x: 0, y: 0, scale: 1, color: "#15130f", duration: 0.55, ease: "expo.out", immediateRender: false }, 19.47);
       tl.set("#trap-tag", { opacity: 0 }, 0);
       tl.fromTo("#trap-tag", { opacity: 0, scale: 1.3 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)", transformOrigin: "0% 60%", immediateRender: false }, 19.75);
       tl.to("#trap-total", { opacity: 0, duration: 0.2 }, 21.62);
-      tl.to("#trap-price", { x: -312, y: -18, scale: 0.53, color: "#f3f5f8", duration: 0.5, ease: "expo.inOut" }, 21.62);
+      tl.to("#trap-price", { x: -302, y: -50, scale: 0.565, color: "#f3f5f8", duration: 0.5, ease: "expo.inOut" }, 21.62);
       tl.set("#trap-price", { opacity: 0 }, 22.12);
       tl.set("#s-booked .amount", { opacity: 0 }, 0);
       tl.set("#s-booked .amount", { opacity: 1 }, 22.12);
       tl.fromTo("#booked-dev", { y: 900 }, { y: 0, duration: 0.55, ease: "expo.out", immediateRender: false }, 21.6);
       tl.fromTo("#booked-dev .glow", { opacity: 1.0 }, { opacity: 0.6, duration: 0.9, ease: "power2.out", immediateRender: false }, 22.03);
-      tl.to("#trap-tag", { y: 240, rotation: 24, opacity: 0, duration: 0.55, ease: "power2.in" }, W("allin", 3));
+      tl.to("#trap-tag", { y: 240, rotation: 24, opacity: 0, duration: 0.36, ease: "power2.in" }, W("allin", 3) - 0.1);
       tl.fromTo("#trap-total", { opacity: 0, y: -50, scale: 1.2 }, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "expo.out", transformOrigin: "0% 100%" }, W("allin", 4));
 
       tl.fromTo("#chk-c", { strokeDasharray: 428, strokeDashoffset: 428 }, { strokeDashoffset: 0, duration: 0.6, ease: "power2.out" }, 22.1);
@@ -466,19 +478,19 @@
       tl.to("#sun", { x: 300, y: 80, duration: 5, ease: "none" }, 24.23);
       document.querySelectorAll("#rules .rule").forEach((el, i) => {
         tl.set(el, { opacity: 0 }, 0);
-        tl.fromTo(el, { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.6, ease: "expo.out", immediateRender: false }, 24.75 + i * 1.2);
-        tl.fromTo(el.querySelector("svg"), { scale: 0.4 }, { scale: 1, duration: 0.45, ease: "back.out(2.6)", transformOrigin: "50% 50%", immediateRender: false }, 24.75 + i * 1.2);
+        tl.fromTo(el, { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.6, ease: "expo.out", immediateRender: false }, 24.75 + i * 0.6);
+        tl.fromTo(el.querySelector("svg"), { scale: 0.4 }, { scale: 1, duration: 0.45, ease: "back.out(2.6)", transformOrigin: "50% 50%", immediateRender: false }, 24.75 + i * 0.6);
       });
-      tl.to("#booked-dev", { scale: 0.53, duration: 3.6, ease: "none" }, 25.33);
-      tl.to(["#rules", "#booked-dev"], { opacity: 0, y: -20, duration: 0.3, ease: "power2.in" }, 29.0);
+      tl.to("#booked-dev", { scale: 0.53, duration: 1.8, ease: "none" }, 25.33);
+      tl.to(["#rules", "#booked-dev"], { opacity: 0, y: -20, duration: 0.28, ease: "power2.in" }, 27.13);
 
-      tl.fromTo("#end-mark", { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.7, ease: "expo.out" }, 29.33);
-      tl.fromTo("#end-name", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" }, 29.45);
-      tl.fromTo("#end-say", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" }, 29.9);
-      tl.fromTo("#end-cta", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 30.7);
-      tl.fromTo("#end-fine", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 31.2);
-      tl.fromTo("#end-lock", { scale: 1 }, { scale: 1.03, duration: 3.5, ease: "none" }, 29.33);
-      tl.fromTo("#end-mark", { boxShadow: "0 0 140px #3d7bffff" }, { boxShadow: "0 0 80px #3d7bff99", duration: 0.8, ease: "power2.out", immediateRender: false }, 31.05);
+      tl.fromTo("#end-mark", { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.7, ease: "expo.out" }, 27.43);
+      tl.fromTo("#end-name", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" }, 27.55);
+      tl.fromTo("#end-say", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" }, 27.95);
+      tl.fromTo("#end-cta", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 28.2);
+      tl.fromTo("#end-fine", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 28.6);
+      tl.fromTo("#end-lock", { scale: 1 }, { scale: 1.04, duration: 5.4, ease: "none" }, 27.43);
+      tl.fromTo("#end-mark", { boxShadow: "0 0 140px #3d7bffff" }, { boxShadow: "0 0 80px #3d7bff99", duration: 0.8, ease: "power2.out", immediateRender: false }, 28.2);
 
       tl.set(["#ask-dev", "#deal-dev", "#booked-dev"], { transformPerspective: 2600 }, 0);
       tl.fromTo("#ask-dev", { rotationY: 7 }, { rotationY: -3, duration: 2.9, ease: "none", immediateRender: false }, 4.25);
@@ -494,6 +506,17 @@
         for (let t = 15.9; t < 18.2; t += 0.6) tl.fromTo(d, { opacity: 0.3 }, { opacity: 1, duration: 0.2, yoyo: true, repeat: 1, ease: "sine.inOut", immediateRender: false }, t + i * 0.12);
       });
       tl.fromTo("#s-booked .check", { scale: 0.8 }, { scale: 1, duration: 0.32, ease: "back.out(3)", transformOrigin: "50% 50%" }, 22.36);
+      for (const [a, b] of [[14.55, 15.6], [18.75, 19.45]]) {
+        tl.to("#pill-b", { y: 60, opacity: 0, duration: 0.25, ease: "power2.in" }, a);
+        tl.to("#pill-b", { y: 0, opacity: 1, duration: 0.35, ease: "expo.out" }, b);
+      }
+      tl.set(["#pill-m", "#pm-1", "#pm-2"], { opacity: 0 }, 0);
+      for (const [line, a, b] of [["#pm-1", 14.75, 15.62], ["#pm-2", 18.95, 19.5]]) {
+        tl.set(line, { opacity: 1 }, a);
+        tl.fromTo("#pill-m", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.35, ease: "expo.out", immediateRender: false }, a);
+        tl.to("#pill-m", { opacity: 0, y: 30, duration: 0.2, ease: "power2.in" }, b - 0.2);
+        tl.set(line, { opacity: 0 }, b);
+      }
       tl.to({}, { duration: 0.01 }, 32.82);
 
       window.__timelines = window.__timelines || {};

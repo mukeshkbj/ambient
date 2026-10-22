@@ -10,6 +10,11 @@ Branch: `hackathon/household-consent`. Nothing is pushed.
 - Card UI is redesigned (Inter, 172 px price, white primary button, outlined Offer, quiet Decline). Button order and states copy the product's `src/task-view.ts`. TODO: port the new card style into `src/task-view.ts` so "Ambient's own screens" stays true.
 - Critic tooling: `ambient-launch-refs/critic/mk.py` builds blind sets from a JSON spec (random labels, random CRF).
 - v2-01 rendered (`launch/film2/renders/v2-01.mp4`). Blind rounds running: `ui1` (UI craft vs 3 inspora clips, Fomo, Linearity) and `v2r1` (film vs Opus 5.5, Sonnet 5.5, Poke).
+- Round v2r1 / ui1 (v2-01): film lost all three pairs overall, won product clarity in all three; UI 5th of 6 (32/60). Fixed: check collision, hard state swaps, oversized pill, flat bezel, dead right half, title-cropping zoom, debug-looking ripple, answer-before-question hook, self-contradicting end.
+- Round v2r2 / ui2 (v2-03): film still lost all three overall (UI craft 7, tied with Poke); UI 5th of 6 (36/60, top 46). Fixed: one face for money (Inter everywhere for prices), measured shared-element price flights, staged card entry, pill hides during zooms, Maya's taps named in their own pill with a silence before each tap, end card 1.9 s earlier and held 5.4 s, CTA 36 px. Zoom-through from the Echo Show ring to the phone ring.
+- Product card restyled in `src/task-view.ts` (view tests pass; screenshots in `ambient-launch-refs/v2/prod/`).
+- Round v2r3 / ui3 running on v2-05.
+- Still owner-limited: no people or real world on screen (every film critic names it).
 
 ## Launch kit (started 2026-10-21, overnight goal)
 
