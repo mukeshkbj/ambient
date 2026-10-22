@@ -41,12 +41,12 @@
       .slot { position: relative; display: inline-block; }
       .tag { position: relative; display: inline-block; margin: 0 0 .44em 40px; line-height: 1; font-size: 150px; letter-spacing: -.03em; }
       .tag .strike { position: absolute; left: -10px; right: -10px; top: 52%; height: 20px; border-radius: 10px; background: #c9dbff; box-shadow: 0 0 24px rgb(169 198 255 / .55); transform: scaleX(0); transform-origin: 0 50%; }
-      .device { position: absolute; padding: 20px; border-radius: 34px; background: #050506; box-shadow: 0 0 0 2px #2a2826, 0 40px 80px rgb(0 0 0 / .5), 0 0 140px rgb(110 168 255 / .16); transform: perspective(2400px) rotateY(-7deg); }
+      .device { position: absolute; padding: 20px; border-radius: 34px; background: #050506; box-shadow: 0 0 0 2px #2a2826, 0 40px 80px rgb(0 0 0 / .5), 0 0 140px rgb(110 168 255 / .16); }
       .device::after { content: ""; position: absolute; inset: 20px; border-radius: 14px; background: linear-gradient(115deg, rgb(255 255 255 / .07) 0%, rgb(255 255 255 / 0) 38%); pointer-events: none; }
       .device .screen { position: relative; overflow: hidden; border-radius: 14px; }
       .device img { display: block; width: 100%; }
       .device .over { position: absolute; inset: 0; opacity: 0; }
-      .tap { position: absolute; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; border: 4px solid var(--ink); opacity: 0; }
+      .tap { position: absolute; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; border: 6px solid #fff; background: rgb(255 255 255 / .18); opacity: 0; }
       .phone { position: absolute; left: 1060px; top: 40px; width: 792px; padding: 16px; border-radius: 80px; background: #050506; box-shadow: 0 0 0 2px #2a2826, 0 40px 80px rgb(0 0 0 / .45); }
       .phone .screen { height: 908px; overflow: hidden; border-radius: 64px; }
       .phone img { display: block; width: 760px; }
@@ -58,7 +58,7 @@
     </style>
   </head>
   <body>
-    <div id="root" data-composition-id="main" data-start="0" data-duration="34.83" data-width="1920" data-height="1080">
+    <div id="root" data-composition-id="main" data-start="0" data-duration="32.83" data-width="1920" data-height="1080">
       <video id="v-hook" class="clip shot" src="assets/footage/hook.mp4" muted playsinline data-start="0" data-duration="3.65" data-track-index="10"></video>
       <video id="v-back" class="clip shot" src="assets/footage/back.mp4" muted playsinline data-start="3.65" data-duration="0.65" data-track-index="10"></video>
             <video id="v-drip" class="clip shot" src="assets/footage/drip.mp4" muted playsinline data-start="4.25" data-duration="2.9" data-track-index="10"></video>
@@ -67,10 +67,10 @@
       <video id="v-counter" class="clip shot" src="assets/footage/trap.mp4" muted playsinline data-start="17.28" data-duration="2.35" data-track-index="10"></video>
       <video id="v-return" class="clip shot" src="assets/footage/hook.mp4" muted playsinline data-start="19.63" data-duration="2.4" data-media-start="1.0" data-track-index="10"></video>
       <video id="v-calm" class="clip shot" src="assets/footage/calm.mp4" muted playsinline data-start="22.03" data-duration="2.2" data-track-index="10"></video>
-      <video id="v-fix" class="clip shot" src="assets/footage/dry.mp4" muted playsinline data-start="24.23" data-duration="3.5" data-track-index="10"></video>
-      <video id="v-claim" class="clip shot" src="assets/footage/calm.mp4" muted playsinline data-start="27.73" data-duration="3.6" data-media-start="0.4" data-track-index="10"></video>
+      <video id="v-fix" class="clip shot" src="assets/footage/dry.mp4" muted playsinline data-start="24.23" data-duration="2.3" data-track-index="10"></video>
+      <video id="v-claim" class="clip shot" src="assets/footage/calm.mp4" muted playsinline data-start="26.53" data-duration="2.8" data-media-start="0.4" data-track-index="10"></video>
       <div id="scrim" class="scrim"></div>
-      <audio id="mix" src="assets/mix.wav" data-start="0" data-duration="34.83" data-track-index="9"></audio>
+      <audio id="mix" src="assets/mix.wav" data-start="0" data-duration="32.83" data-track-index="9"></audio>
 
       <div id="s-hook" class="scene clip" data-start="0" data-duration="4.45" data-track-index="0">
         <div class="label" id="hook-top" style="left:180px;top:120px;font-size:34px;color:var(--ink)"><span class="live"></span>An AI is on the phone for Maya <span style="color:var(--muted)">· <span id="timer" class="num">0:41</span></span></div>
@@ -123,7 +123,7 @@
         <div class="line joe" data-cue="allin" style="top:710px"></div>
       </div>
 
-      <div id="s-booked" class="scene clip" data-start="22.03" data-duration="5.7" data-track-index="5">
+      <div id="s-booked" class="scene clip" data-start="22.03" data-duration="4.5" data-track-index="5">
         <div class="label" id="booked-label" style="left:340px;top:70px;color:var(--green)">Booked · $160 total · Tuesday the 20th at 10 am</div>
         <div class="device" id="booked-device" style="left:340px;top:120px;width:1240px"><div class="screen"><img src="assets/ui/card-booked.png" alt="" /></div></div>
         <div class="line joe" data-cue="yes" style="top:950px;left:340px;font-size:64px"></div>
@@ -132,13 +132,12 @@
         <div class="label" id="booked-when-label" style="left:180px;top:660px;font-size:30px;color:var(--green)">Booked · $160 total</div>
       </div>
 
-      <div id="s-claim" class="scene clip" data-start="27.73" data-duration="3.6" data-track-index="7">
+      <div id="s-claim" class="scene clip" data-start="26.53" data-duration="2.8" data-track-index="7">
         <div style="position:absolute;inset:0;background:linear-gradient(0deg, rgb(16 15 14 / .9) 0%, rgb(16 15 14 / .72) 38%, rgb(16 15 14 / 0) 66%)"></div>
-        <div class="big" id="claim-1" style="top:640px">Ambient makes the call.</div>
-        <div class="big" id="claim-2" style="top:800px;color:var(--green)">You still make the call.</div>
+        <div class="big" id="claim-1" style="top:760px">Ambient makes the call.</div>
       </div>
 
-      <div id="s-end" class="scene clip" data-start="31.33" data-duration="3.5" data-track-index="8">
+      <div id="s-end" class="scene clip" data-start="29.33" data-duration="3.5" data-track-index="8">
         <div id="end-lock" style="position:absolute;inset:0;justify-content:center;display:flex;flex-direction:column;align-items:center;gap:34px">
           <div class="mark" id="end-mark"></div>
           <div id="end-name" style="font-size:150px;line-height:1;letter-spacing:-.035em">Ambient</div>
@@ -212,7 +211,12 @@
       swapOut("quote", 12.73);
       tl.fromTo("#deal-amb-label", { opacity: 0 }, { opacity: 1, duration: 0.3, immediateRender: false }, 12.88);
       tl.set("#deal-amb-label", { opacity: 0 }, 0);
-      tl.fromTo(["#deal-device", "#deal-sim"], { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, ...arrive, duration: 0.7 }, window.CUES.check.words[4].t);
+      tl.set("#deal-device", { transformPerspective: 2400, rotationY: -7 }, 0);
+      tl.fromTo(["#deal-device", "#deal-sim"], { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, ...arrive, duration: 0.6 }, window.CUES.check.words[0].t);
+      tl.to(["#deal-price", "#deal-over", "#deal-sim", "#deal-amb-label", '[data-cue="check"]'], { opacity: 0, duration: 0.25 }, 13.55);
+      tl.to("#deal-device", { x: -395, y: 90, scale: 1.5, rotationY: 0, transformOrigin: "50% 70%", duration: 0.6, ease: "expo.inOut" }, 13.6);
+      tl.to("#deal-device", { x: 0, y: 0, scale: 1, rotationY: -7, duration: 0.5, ease: "expo.inOut" }, 15.45);
+      tl.to(["#deal-price", "#deal-sim", "#deal-amb-label"], { opacity: 1, duration: 0.3 }, 15.6);
       tl.fromTo("#tap-offer", { opacity: 0.9, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.5, ease: "power2.out", immediateRender: false }, 15.28);
       tl.to("#deal-offered", { opacity: 1, duration: 0.15 }, 15.38);
       roll("#deal-price", 150, 15.38);
@@ -243,18 +247,17 @@
       for (const [at, scene, shot] of [[7.15, "#s-ring"], [11.08, "#s-deal", "#v-joe"], [24.23, "#s-booked", "#v-fix"]]) tl.from([scene, shot].filter(Boolean), { x: 180, filter: "blur(16px)", duration: 0.4, ease: "expo.out", immediateRender: false }, at);
       tl.set("#scrim", { opacity: 1 }, 0);
       tl.set("#deal-price", { opacity: 0 }, 0);
-      tl.set("#scrim", { opacity: 0 }, 31.33);
+      tl.set("#scrim", { opacity: 0 }, 29.33);
 
-      tl.from("#claim-1", { opacity: 0, y: 24, duration: 0.7, ease: "expo.out" }, 27.83);
-      tl.from("#claim-2", { opacity: 0, y: 24, duration: 0.7, ease: "expo.out" }, 29.03);
+      tl.from("#claim-1", { opacity: 0, y: 24, duration: 0.7, ease: "expo.out" }, 26.63);
 
-      tl.from("#end-mark", { scale: 0.4, opacity: 0, duration: 0.9, ease: "expo.out" }, 31.33);
-      tl.from("#end-name", { opacity: 0, y: 20, duration: 0.7, ease: "expo.out" }, 31.48);
-      tl.from("#end-say", { opacity: 0, duration: 0.6 }, 32.13);
-      tl.from("#end-cta", { opacity: 0, y: 14, scale: 0.96, duration: 0.6, ease: "expo.out" }, 33.05);
-      tl.fromTo("#end-lock", { scale: 1 }, { scale: 1.035, duration: 3.5, ease: "none", immediateRender: false }, 31.33);
-      for (const at of [33.05, 34.02]) tl.fromTo("#end-mark", { boxShadow: "0 0 0 0 rgb(110 168 255 / .55)" }, { boxShadow: "0 0 0 46px rgb(110 168 255 / 0)", duration: 0.8, ease: "power2.out", immediateRender: false }, at);
-      tl.from("#end-sim", { opacity: 0, duration: 0.6 }, 32.73);
+      tl.from("#end-mark", { scale: 0.4, opacity: 0, duration: 0.9, ease: "expo.out" }, 29.33);
+      tl.from("#end-name", { opacity: 0, y: 20, duration: 0.7, ease: "expo.out" }, 29.48);
+      tl.from("#end-say", { opacity: 0, y: 16, duration: 0.7, ease: "expo.out" }, 29.93);
+      tl.from("#end-cta", { opacity: 0, y: 14, scale: 0.96, duration: 0.6, ease: "expo.out" }, 31.05);
+      tl.fromTo("#end-lock", { scale: 1 }, { scale: 1.035, duration: 3.5, ease: "none", immediateRender: false }, 29.33);
+      for (const at of [31.05, 32.02]) tl.fromTo("#end-mark", { boxShadow: "0 0 0 0 rgb(110 168 255 / .55)" }, { boxShadow: "0 0 0 46px rgb(110 168 255 / 0)", duration: 0.8, ease: "power2.out", immediateRender: false }, at);
+      tl.from("#end-sim", { opacity: 0, duration: 0.6 }, 30.73);
 
       const talk = Object.entries(window.CUES).filter(([k]) => k !== "ask").map(([, c]) => c);
       const onCall = (t) => (t < 3.62) || (t > 7.75 && t < 21.93);
@@ -267,7 +270,7 @@
         $("#wave").style.opacity = onCall(t) ? 1 : 0;
       });
 
-      tl.set({}, {}, 34.83);
+      tl.set({}, {}, 32.83);
       window.__timelines = window.__timelines || {};
       window.__timelines["main"] = tl;
       tl.seek(0);

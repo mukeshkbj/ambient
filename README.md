@@ -4,7 +4,7 @@
 
 [![The opening of the launch film: the plumber says "Yes, plus parts." and Ambient asks for one total price.](docs/media/film-hook.gif)](docs/media/ambient-film.mp4)
 
-**[Watch the 35-second film](docs/media/ambient-film.mp4)** · **[Try it in one minute, no keys](#try-it-one-minute-no-keys)** · **[Try to fool it](#honesty-rules)**
+**[Watch the 33-second film](docs/media/ambient-film.mp4)** · **[Try it in one minute, no keys](#try-it-one-minute-no-keys)** · **[Try to fool it](#honesty-rules)**
 
 No live call has happened yet: the business and the Alexa+ host are simulated. The film re-enacts the demo call with text-to-speech voices, Pexels footage and the real simulator screens. Its source is in [`launch/film`](launch/film/SCRIPT.md).
 
