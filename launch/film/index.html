@@ -200,7 +200,7 @@
       tl.from("#ring-label", { opacity: 0, duration: 0.4 }, 7.3);
       $$(".ring").forEach((r, i) => tl.fromTo(r, { scale: 1, opacity: 0.7 }, { scale: 3.4, opacity: 0, duration: 1.1, ease: "power2.out" }, 7.15 + i * 0.3));
       tl.to("#ring-phone", { scale: 0.985, duration: 0.08, yoyo: true, repeat: 1 }, 7.75);
-      tl.to(["#ring-phone", "#ring-sim"], { x: 140, opacity: 0, ...leave, duration: 0.4 }, 9.33);
+      tl.to("#ring-phone", { scale: 1.03, duration: 1.7, ease: "none" }, 9.33);
 
       tl.from("#deal-joe-label", { opacity: 0, duration: 0.3 }, 11.13);
       tl.fromTo("#deal-price", { opacity: 0 }, { opacity: 1, duration: 0.25 }, window.CUES.quote.words[2].t - 0.15);
