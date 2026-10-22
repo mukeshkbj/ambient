@@ -73,7 +73,7 @@
       <audio id="mix" src="assets/mix.wav" data-start="0" data-duration="32.83" data-track-index="9"></audio>
 
       <div id="s-hook" class="scene clip" data-start="0" data-duration="4.45" data-track-index="0">
-        <div class="label" id="hook-top" style="left:180px;top:120px;font-size:34px;color:var(--ink)"><span class="live"></span>An AI is on the phone for Maya <span style="color:var(--muted)">· <span id="timer" class="num">0:41</span></span></div>
+        <div class="label" id="hook-top" style="left:180px;top:120px;font-size:34px;color:var(--ink)"><span class="live"></span>Ambient, an AI, is on the phone for Maya <span style="color:var(--muted)">· <span id="timer" class="num">0:41</span></span></div>
         <div class="price" id="hook-price"><span class="cur">$</span><span data-price="160"></span><span class="tag trap" id="hook-tag">+ parts<span class="strike"></span></span></div>
         <div class="label row-label" id="hook-joe-label" style="top:676px">Joe's Plumbing</div>
         <div class="line joe" data-cue="hook-joe" data-trap="plus,parts." style="top:710px"></div>
@@ -117,7 +117,7 @@
       </div>
 
       <div id="s-trap" class="scene clip" data-start="19.63" data-duration="2.4" data-track-index="4">
-        <div class="label" style="left:180px;top:120px;font-size:34px;color:var(--ink)"><span class="live"></span>An AI is on the phone for Maya <span style="color:var(--muted)">· 0:41</span></div>
+        <div class="label" style="left:180px;top:120px;font-size:34px;color:var(--ink)"><span class="live"></span>Ambient, an AI, is on the phone for Maya <span style="color:var(--muted)">· 0:41</span></div>
         <div class="price" id="trap-price"><span class="cur">$</span><span data-price="160"></span><span class="slot"><span class="tag trap" id="trap-tag">+ parts<span class="strike" style="transform:scaleX(1)"></span></span><span class="tag" id="trap-total" style="position:absolute;left:0;bottom:0;opacity:0">total</span></span></div>
         <div class="label row-label" style="top:676px">Joe's Plumbing</div>
         <div class="line joe" data-cue="allin" style="top:710px"></div>
@@ -141,7 +141,7 @@
         <div id="end-lock" style="position:absolute;inset:0;justify-content:center;display:flex;flex-direction:column;align-items:center;gap:34px">
           <div class="mark" id="end-mark"></div>
           <div id="end-name" style="font-size:150px;line-height:1;letter-spacing:-.035em">Ambient</div>
-          <div id="end-say" style="font-size:64px;color:var(--green);letter-spacing:-.015em">You still make the call.</div>
+          <div id="end-say" style="font-size:64px;color:var(--green);letter-spacing:-.015em">You still decide.</div>
           <div id="end-cta" style="margin-top:22px;display:flex;align-items:center;gap:22px;font:600 26px/1 var(--label);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Try it in one minute, no keys<span style="padding:16px 26px;border-radius:14px;background:#1f2a3d;color:#dce7ff;font:500 40px/1 Consolas, monospace;letter-spacing:0;text-transform:none">pnpm demo</span></div>
         </div>
         <div class="sim" id="end-sim" style="left:0;right:0;top:1012px;text-align:center;font-size:24px;color:var(--muted)">Simulated call and Alexa+ host · real product screens</div>
@@ -218,7 +218,7 @@
       tl.to("#deal-device", { x: 0, y: 0, scale: 1, rotationY: -7, duration: 0.5, ease: "expo.inOut" }, 15.45);
       tl.to(["#deal-price", "#deal-sim", "#deal-amb-label"], { opacity: 1, duration: 0.3 }, 15.6);
       tl.fromTo("#tap-offer", { opacity: 0.9, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.5, ease: "power2.out", immediateRender: false }, 15.28);
-      tl.to("#deal-offered", { opacity: 1, duration: 0.15 }, 15.38);
+      tl.set("#deal-offered", { opacity: 1 }, 15.44);
       roll("#deal-price", 150, 15.38);
       tl.to("#deal-price", { color: "#f1ece3", duration: 0.3 }, 15.63);
       tl.to("#deal-over", { opacity: 0, duration: 0.2 }, 15.38);
@@ -226,7 +226,7 @@
       swapOut("offer", 17.13);
       tl.to("#deal-amb-label", { opacity: 0, duration: 0.2 }, 17.13);
       tl.to("#deal-joe-label", { opacity: 1, duration: 0.3 }, 17.28);
-      tl.to("#deal-160", { opacity: 1, duration: 0.15 }, 18.43);
+      tl.set("#deal-160", { opacity: 1 }, 18.43);
       roll("#deal-price", 160, 18.38);
       tl.to("#deal-price", { color: "#ffb44a", duration: 0.3 }, 18.63);
       tl.set("#deal-over-text", { textContent: "$10 over" }, 18.53);
