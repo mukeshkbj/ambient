@@ -232,6 +232,8 @@
       tl.set("#deal-over-text", { textContent: "$10 over" }, 18.53);
       tl.to("#deal-over", { opacity: 1, duration: 0.3 }, 18.58);
       tl.fromTo("#tap-book", { opacity: 0.9, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.5, ease: "power2.out", immediateRender: false }, 19.33);
+      tl.to(["#deal-price", "#deal-over", "#deal-sim", "#deal-joe-label", '[data-cue="counter"]'], { opacity: 0, duration: 0.25 }, 18.75);
+      tl.to("#deal-device", { x: -395, y: 90, scale: 1.5, rotationY: 0, duration: 0.55, ease: "expo.inOut" }, 18.8);
 
       tl.to("#trap-tag", { y: 70, rotation: 6, opacity: 0, duration: 0.45, ease: "power2.in" }, 19.73);
       tl.fromTo("#trap-total", { opacity: 0, x: -40 }, { opacity: 1, x: 0, ...arrive }, window.CUES.allin.words[4].t);

@@ -17,8 +17,8 @@ Voices: Joe (Joe's Plumbing) and Ambient speak on a phone band. Maya speaks in t
 | 7.93 | Ambient's first words, in blue. | **Ambient:** "Hi. This is an AI assistant, calling for Maya." |
 | 11.08 | A whip back to Joe on the phone. The price wheels roll up to an amber "$180": "$30 over her $150 limit". | A low hit on the cut and on the landing. **Joe:** "It'll be one eighty." |
 | 12.93 | The Echo Show card "Needs you" lands, then fills the frame: $180, "$30 over your $150 limit", and Book $180, Offer $150, Decline. | **Ambient:** "One moment. Let me check with Maya." |
-| 15.23 | Maya's hands on her tablet. A tap on "Offer $150" while the card fills the frame. The card returns to its place, and the price rolls down to "$150". | Tap, hit. **Ambient:** "Could you do one fifty?" |
-| 17.28 | Joe again. The price rolls to "$160", amber, "$10 over". A tap on "Book $160". | **Joe:** "I could do one sixty." Hit, tap. |
+| 15.23 | Maya's hands on her tablet (the shot is mirrored). A tap on "Offer $150" while the card fills the frame. The card returns to its place, and the price rolls down to "$150". | Tap, hit. **Ambient:** "Could you do one fifty?" |
+| 17.28 | Joe again. The price rolls to "$160", amber, "$10 over". The card fills the frame again, and a thumb taps "Book $160". | **Joe:** "I could do one sixty." Hit, tap. |
 | 19.63 | Back to the opening frame. The struck "+ parts" falls. On "all in", the word "total" takes its place. | The score stops. One drip in the silence. **Joe:** "Fair enough. That's all in." |
 | 22.03 | The booked card over the kitchen, green: "Booked · $160 total · Tuesday the 20th at 10 am", with the read-back and the reply as proof. | An impact and a chime. The warm score enters. **Joe:** "Yes, that's right. See you then." |
 | 24.23 | A whip to the same tap, now dry. "Booked · $160 total" over "Tuesday, 10 am." | Whoosh. The score carries. |
