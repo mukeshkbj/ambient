@@ -1,0 +1,96 @@
+{
+ "lines": [
+  {
+   "file": "hook-n1",
+   "at": 2.16,
+   "text": "Nobody wants to make this call.",
+   "band": "room"
+  },
+  {
+   "file": "hook-n2",
+   "at": 4.16,
+   "text": "So Alexa makes it.",
+   "band": "room"
+  }
+ ],
+ "effects": [
+  {
+   "name": "tap",
+   "at": 0,
+   "gain": 0.24,
+   "pan": -0.15
+  },
+  {
+   "name": "tap",
+   "at": 0.36,
+   "gain": 0.27,
+   "pan": 0.15
+  },
+  {
+   "name": "tap",
+   "at": 0.68,
+   "gain": 0.3,
+   "pan": -0.15
+  },
+  {
+   "name": "tap",
+   "at": 0.96,
+   "gain": 0.32999999999999996,
+   "pan": 0.15
+  },
+  {
+   "name": "tap",
+   "at": 1.2,
+   "gain": 0.36,
+   "pan": -0.15
+  },
+  {
+   "name": "tap",
+   "at": 1.42,
+   "gain": 0.39,
+   "pan": 0.15
+  },
+  {
+   "name": "drip",
+   "at": 0.2,
+   "gain": 0.16,
+   "pan": 0.2
+  },
+  {
+   "name": "drip",
+   "at": 0.85,
+   "gain": 0.14,
+   "pan": 0.2
+  },
+  {
+   "name": "drip",
+   "at": 1.5,
+   "gain": 0.16,
+   "pan": 0.2
+  },
+  {
+   "name": "swish",
+   "at": 1.76,
+   "gain": 0.14,
+   "pan": 0.0
+  },
+  {
+   "name": "hit",
+   "at": 2.12,
+   "gain": 0.32,
+   "pan": 0.0
+  },
+  {
+   "name": "hit",
+   "at": 4.12,
+   "gain": 0.4,
+   "pan": 0.0
+  },
+  {
+   "name": "whoosh",
+   "at": 6.0,
+   "gain": 0.22,
+   "pan": 0.0
+  }
+ ]
+}

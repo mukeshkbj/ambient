@@ -24,26 +24,9 @@ SR = f2.SR
 HTML = (ROOT / "index.html").read_text(encoding="utf-8")
 LENGTH = float(re.search(r'data-composition-id="main" data-start="0" data-duration="([\d.]+)"', HTML).group(1))
 STARTS = {m.group(1): float(m.group(2)) for m in re.finditer(r'id="(\w+)"[^>]*?data-start="([\d.]+)"', HTML)}
-STORY_IN, STORY_OUT = 3.75, 28.73
+STORY_IN, STORY_OUT = 3.95, 28.73
 SHIFT = STARTS["story"] - STORY_IN
 STORY_END = STARTS["story"] + STORY_OUT - STORY_IN
-
-HOOK_FX = [("tap", t, 0.22 + 0.04 * i, 0.15 * (i % 2 * 2 - 1)) for i, t in enumerate([0.08, 0.6, 1.02, 1.38, 1.68, 1.94])]
-HOOK_FX += [("drip", 0.35, 0.16, 0.2), ("drip", 1.25, 0.14, 0.2), ("drip", 2.2, 0.16, 0.2), ("swish", 2.42, 0.12, 0.0), ("hit", 2.62, 0.3, 0.0), ("hit", 4.42, 0.35, 0.0), ("whoosh", 6.85, 0.22, 0.0)]
-GLUE_FX = [("hit", STARTS["bridge"] + 0.12, 0.4, 0.0), ("hit", STARTS["bridge"] + 1.72, 0.45, 0.0), ("whoosh", STARTS["bridge"] + 2.5, 0.22, 0.0)]
-for name in ("honest", "built"):
-    if name in STARTS:
-        GLUE_FX += [("whoosh", STARTS[name], 0.2, 0.0)]
-if "honest" in STARTS:
-    GLUE_FX += [("tick", STARTS["honest"] + t, 0.35, 0.0) for t in (0.35, 3.75, 7.15, 10.55)]
-if "built" in STARTS:
-    b = STARTS["built"]
-    GLUE_FX += [("tick", b + 0.55 + i * 0.32, 0.22, -0.4 + 0.2 * i) for i in range(5)]
-    GLUE_FX += [("swish", b + 10.3, 0.2, 0.0), ("hit", b + 10.65, 0.5, 0.0), ("tick", b + 11.5, 0.35, 0.0)]
-if "end" in STARTS:
-    e = STARTS["end"]
-    GLUE_FX += [("riser", e, 0.7, 0.0), ("impact", e, 1.0, 0.0), ("hit", e, 1.0, 0.0), ("sting", e + 0.05, 0.4, 0.0)]
-
 
 def scene_cues():
     lines, effects = [], []
@@ -79,8 +62,8 @@ def main():
     voice = np.zeros(n, dtype="float32")
     fx = np.zeros((n, 2), dtype="float32")
     lines = [(file, at + SHIFT, text, band) for _, at, file, text, band in f2.LINES if STORY_IN <= at < STORY_OUT]
-    effects = [(name, hit + SHIFT, gain, pan) for name, hit, gain, pan in f2.EFFECTS if STORY_IN + 0.3 <= hit < STORY_OUT]
-    effects += [("whoosh", STARTS["story"], 0.25, 0.0)] + HOOK_FX + GLUE_FX
+    effects = [(name, hit + SHIFT, gain, pan) for name, hit, gain, pan in f2.EFFECTS if STORY_IN + 0.1 <= hit < STORY_OUT]
+    effects += [("whoosh", STARTS["story"], 0.25, 0.0)]
     more_lines, more_fx = scene_cues()
     lines += more_lines
     effects += more_fx
@@ -98,7 +81,7 @@ def main():
         fx[i:i + len(stereo)] += stereo
     bed = np.zeros(n, dtype="float32")
     music = ROOT / "assets" / "music"
-    tension = [(0.0, 0.1), (2.5, 0.14), (2.62, 0.2), (7.0, 0.2)] + [(t + SHIFT, v) for t, v in f2.TENSION if STORY_IN < t < STORY_OUT]
+    tension = [(0.0, 0.12), (2.0, 0.16), (2.12, 0.22), (STARTS["story"] - 0.1, 0.22)] + [(t + SHIFT, v) for t, v in f2.TENSION if STORY_IN < t < STORY_OUT]
     tension += [(STORY_END, 0.0), (LENGTH, 0.0)]
     release = [(0.0, 0.0)] + [(t + SHIFT, v) for t, v in f2.RELEASE if STORY_IN < t <= STORY_OUT] + [(STORY_END + 0.25, 0.0), (LENGTH, 0.0)]
     flex_start = STARTS["bridge"]
@@ -108,8 +91,8 @@ def main():
         if sid in STARTS:
             s = STARTS[sid]
             drive += [(s - 0.12, 0.55), (s - 0.02, 0.28), (s + 0.35, 0.55)]
-    drive += [(flex_end - 0.4, 0.6), (flex_end - 0.02, 0.0), (LENGTH, 0.0)]
-    resolve = [(0.0, 0.0), (flex_end, 0.0), (flex_end + 0.3, 0.7), (LENGTH - 1.2, 0.6), (LENGTH, 0.0)]
+    drive += [(flex_end - 0.4, 0.6), (flex_end + 0.3, 0.0), (LENGTH, 0.0)]
+    resolve = [(0.0, 0.0), (flex_end, 0.0), (flex_end + 0.25, 0.85), (LENGTH - 1.4, 0.85), (LENGTH, 0.0)]
     tracks = [
         ("pulse-small-7.wav", 0.0, tension),
         ("lift-small-3.wav", 21.93 + SHIFT, release),

@@ -87,14 +87,14 @@
   <script>
     (function () {
       const tl = gsap.timeline({ paused: true });
-      const AT = [0.35, 3.75, 7.15, 10.55];
-      const END = 13.62;
+      const AT = [0.08, 3.0, 5.7, 8.4];
+      const END = 10.7;
       const GLOW = ["#ff9f1c", "#2fd37e", "#ff5a4e", "#2fd37e"];
       for (let i = 0; i < 4; i++) {
         tl.set(["#honest-s" + i + " .honest-k", "#honest-s" + i + " .honest-x", "#honest-h" + i + " > *"], { opacity: 0 }, 0);
         tl.set("#honest-b" + i, { scaleX: 0 }, 0);
       }
-      tl.fromTo("#honest-dev", { y: 40, opacity: 0, rotationY: -6, filter: "blur(8px)" }, { y: 0, opacity: 1, rotationY: -2, filter: "blur(0px)", duration: 0.6, ease: "expo.out", immediateRender: false }, 0);
+      tl.fromTo("#honest-dev", { y: 30, opacity: 0, rotationY: -6, filter: "blur(4px)" }, { y: 0, opacity: 1, rotationY: -2, filter: "blur(0px)", duration: 0.45, ease: "expo.out", immediateRender: false }, 0);
       tl.fromTo(".honest-bars", { opacity: 0 }, { opacity: 1, duration: 0.3, immediateRender: false }, 0.1);
       AT.forEach((at, i) => {
         const keys = "#honest-s" + i + " .honest-k";
@@ -109,9 +109,9 @@
         tl.to("#honest-glow", { color: GLOW[i], duration: 0.4, ease: "power2.out" }, at);
         tl.fromTo("#honest-b" + i, { scaleX: 0 }, { scaleX: 1, duration: (AT[i + 1] || END) - at - 0.1, ease: "none", immediateRender: false }, at);
       });
-      tl.fromTo("#honest-s2 .honest-amb", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.32, ease: "expo.out", immediateRender: false }, 8.0);
-      tl.fromTo("#honest-s2 .honest-final", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.32, ease: "expo.out", immediateRender: false }, 9.0);
-      tl.fromTo("#honest-s3 .honest-when s", { color: "#f3f5f8" }, { color: "#6b7280", duration: 0.3, immediateRender: false }, 10.95);
+      tl.fromTo("#honest-s2 .honest-amb", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.32, ease: "expo.out", immediateRender: false }, 6.4);
+      tl.fromTo("#honest-s2 .honest-final", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.32, ease: "expo.out", immediateRender: false }, 7.2);
+      tl.fromTo("#honest-s3 .honest-when s", { color: "#f3f5f8" }, { color: "#6b7280", duration: 0.3, immediateRender: false }, 8.75);
       tl.to(["#honest-dev", ".honest-left", ".honest-bars"], { opacity: 0, filter: "blur(10px)", y: -14, duration: 0.3, ease: "power2.in" }, END);
       window.__timelines["honest"] = tl;
     })();

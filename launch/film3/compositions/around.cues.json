@@ -1,8 +1,8 @@
 {
   "lines": [
     {"file": "around-ask", "at": 1.4, "text": "Alexa, get quotes from plumbers to fix the kitchen sink. Under one fifty.", "band": "room"},
-    {"file": "around-readback", "at": 10.7, "text": "Muy bien, para confirmar, ciento veinte dólares en total, el martes 20 a las 9 de la mañana. ¿Es correcto?", "band": "phone"},
-    {"file": "around-si", "at": 17.0, "text": "Sí, correcto.", "band": "phone"}
+    {"file": "around-readback-short", "at": 9.4, "text": "…ciento veinte dólares en total, el martes 20 a las 9 de la mañana. ¿Es correcto?", "band": "phone"},
+    {"file": "around-si", "at": 13.98, "text": "Sí, correcto.", "band": "phone"}
   ],
   "effects": [
     {"name": "whoosh", "at": 1.32, "gain": 0.3, "pan": 0},
@@ -14,13 +14,14 @@
     {"name": "pickup", "at": 7.28, "gain": 0.6, "pan": -0.6},
     {"name": "pickup", "at": 7.36, "gain": 0.6, "pan": 0},
     {"name": "pickup", "at": 7.44, "gain": 0.6, "pan": 0.6},
-    {"name": "hit", "at": 7.85, "gain": 0.65, "pan": -0.6},
-    {"name": "hit", "at": 8.15, "gain": 0.65, "pan": 0},
-    {"name": "hit", "at": 8.45, "gain": 0.7, "pan": 0.6},
-    {"name": "swish", "at": 9.15, "gain": 0.35, "pan": 0},
-    {"name": "tick", "at": 10.0, "gain": 0.5, "pan": 0.2},
-    {"name": "tick", "at": 10.5, "gain": 0.6, "pan": -0.2},
-    {"name": "impact", "at": 18.15, "gain": 0.8, "pan": 0},
-    {"name": "ding", "at": 18.27, "gain": 0.7, "pan": 0.15}
+    {"name": "hit", "at": 7.8, "gain": 0.65, "pan": -0.6},
+    {"name": "hit", "at": 8.05, "gain": 0.65, "pan": 0},
+    {"name": "hit", "at": 8.3, "gain": 0.7, "pan": 0.6},
+    {"name": "swish", "at": 8.95, "gain": 0.35, "pan": 0},
+    {"name": "tick", "at": 9.6, "gain": 0.5, "pan": -0.2},
+    {"name": "tick", "at": 10.2, "gain": 0.6, "pan": -0.3},
+    {"name": "swish", "at": 13.93, "gain": 0.25, "pan": 0.2},
+    {"name": "impact", "at": 14.8, "gain": 0.8, "pan": 0},
+    {"name": "ding", "at": 14.92, "gain": 0.7, "pan": 0}
   ]
 }

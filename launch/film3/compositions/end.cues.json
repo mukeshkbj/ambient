@@ -1,0 +1,36 @@
+{
+ "lines": [
+  {
+   "file": "end-n1",
+   "at": 0.5,
+   "text": "Alexa makes the call. You still decide.",
+   "band": "room"
+  }
+ ],
+ "effects": [
+  {
+   "name": "riser",
+   "at": 0.0,
+   "gain": 0.45,
+   "pan": 0.0
+  },
+  {
+   "name": "impact",
+   "at": 0.0,
+   "gain": 0.6,
+   "pan": 0.0
+  },
+  {
+   "name": "hit",
+   "at": 0.0,
+   "gain": 0.6,
+   "pan": 0.0
+  },
+  {
+   "name": "sting",
+   "at": 0.05,
+   "gain": 0.3,
+   "pan": 0.0
+  }
+ ]
+}

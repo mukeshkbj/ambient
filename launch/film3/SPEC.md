@@ -1,4 +1,4 @@
-# Film 3: the demo video, about 2:16
+# Film 3: the demo video, about 1:58
 
 The Devpost demo video. The rules: under 3:00, English, no third-party music or trademarks. It must show the project on its intended platform. A simulated Alexa+ experience is allowed if the video clearly shows it. Judges are Amazon Alexa+ people. They score Tech Implementation, Design, Potential Impact and Quality of the Idea.
 
@@ -14,18 +14,18 @@ A phone lock screen. The reminder "Call the plumber about the sink" arrives, the
 
 | Scene | id | Start | Length | What it shows |
 |---|---|---|---|---|
-| Hook | `hook` | 0.0 | 7.2 | The snoozed reminder pile, then "Nobody wants to make this call." and "Would you trust an AI to make it?" |
-| Story | video `assets/video/story.mp4` | 7.2 | 24.98 | Film v2-10 from 3.75 s to 28.73 s: the ask, the disclosure, $180 over the $150 limit, the offer, the $160 counter, "+ parts?" refused, booked with proof, the three rules. |
-| Bridge | `bridge` | 32.18 | 2.8 | "That was one call." then "Now make it hard." |
-| Try to fool it | `fool` | 34.98 | 18 | Typed replies to the read-back, each with the reducer's real verdict. A counter: 4,000 generated calls. |
-| Three at once | `around` | 52.98 | 20 | Three plumbers rung at once, quotes land, the cheapest one speaks Spanish, Ambient books in Spanish. |
-| Every screen | `screens` | 72.98 | 14 | The same "needs you" moment on Echo Show 8, Echo Show 15, Fire TV, a phone, and voice only. |
-| Honest edges | `honest` | 86.98 | 14 | "No yes, no booking." The business receipt. "Stop calling" is final. "Move it to Thursday." |
-| How it is built | `built` | 100.98 | 17 | Alexa skill and MCP server, `step(state, input, now)`, Claude proposes and the reducer decides, 931 tests, 4,000 generated calls, 192 labelled replies. |
-| The real thing | `real` | 117.98 | 12 | A screen recording of the real `/sim` page, labelled as the simulator. |
-| End | `end` | 129.98 | 6 | Ambient ring, "Alexa makes the call. You still decide.", `pnpm demo`. |
+| Hook | `hook` | 0.0 | 6.4 | The "Call the plumber" reminder snoozed Mon to Sat, then "Nobody wants to make this call." and "So Alexa makes it.", each spoken. |
+| Story | video `assets/video/story.mp4` | 6.4 | 24.78 | Film 2 (v2-11) from 3.95 s to 28.73 s: the ask, the disclosure, $180 over the $150 limit, the offer, the $160 counter, "+ parts?" refused, booked with proof, the three rules. |
+| Bridge | `bridge` | 31.18 | 2.2 | "That was one call." then "Now make it hard." |
+| Try to fool it | `fool` | 33.38 | 13 | Four typed replies with the reducer's real verdicts, then 4,000 generated calls. |
+| Three at once | `around` | 46.38 | 16 | Three plumbers rung at once, quotes land, the cheapest speaks Spanish, Ambient books in Spanish. |
+| Every screen | `screens` | 62.38 | 14 | The same "needs you" card on Echo Show 8 and 15, Fire TV, a phone and voice only. |
+| Honest edges | `honest` | 76.38 | 11 | No yes, no booking; the receipt; "stop calling" is final; "move it to Thursday". Narrated. |
+| How it is built | `built` | 87.38 | 12 | Alexa skill and MCP, Claude proposes and the code decides, `step(state, input, now)`, 931 tests. Narrated. |
+| The real thing | `real` | 99.38 | 12 | The real `/sim` call at 2x, full-bleed, then a push into the booked card. |
+| End | `end` | 111.38 | 6.5 | "Alexa makes the call. You still decide.", spoken; `pnpm demo`. |
 
-Total: 135.98 s.
+Total: 117.88 s.
 
 ## Look (inherit from film 2, do not invent a new one)
 

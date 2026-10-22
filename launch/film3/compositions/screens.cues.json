@@ -5,12 +5,12 @@
     { "file": "screens-v3", "at": 10.15, "text": "Say yes to book it, offer a price like one fifty, or say no.", "band": "room" }
   ],
   "effects": [
-    { "name": "whoosh", "at": 0.95, "gain": 0.2, "pan": 0.0 },
-    { "name": "whoosh", "at": 3.2, "gain": 0.22, "pan": -0.6 },
-    { "name": "whoosh", "at": 4.1, "gain": 0.22, "pan": 0.6 },
+    { "name": "whoosh", "at": 1.35, "gain": 0.18, "pan": 0.0 },
+    { "name": "whoosh", "at": 2.85, "gain": 0.32, "pan": 0.0 },
+    { "name": "whoosh", "at": 3.05, "gain": 0.16, "pan": -0.6 },
+    { "name": "whoosh", "at": 3.2, "gain": 0.16, "pan": 0.6 },
     { "name": "tap", "at": 4.85, "gain": 0.25, "pan": 0.6 },
     { "name": "whoosh", "at": 4.9, "gain": 0.18, "pan": 0.35 },
-    { "name": "whoosh", "at": 5.8, "gain": 0.2, "pan": -0.35 },
     { "name": "hit", "at": 6.9, "gain": 0.45, "pan": 0.0 }
   ]
 }

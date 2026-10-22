@@ -2,30 +2,29 @@
   <style>
     #real { position: absolute; inset: 0; font-family: Inter, sans-serif; color: #15130f; -webkit-font-smoothing: antialiased; }
     #real .real-bg { position: absolute; inset: 0; background: radial-gradient(75% 65% at 46% 34%, #fbf9f6 0%, #eee9e1 52%, #dad3c7 100%); }
-    #real .real-title { position: absolute; left: 310px; top: 58px; display: flex; align-items: baseline; gap: 28px; }
-    #real .real-h { font: 400 64px/1 Newsreader; letter-spacing: -.03em; white-space: nowrap; }
-    #real .real-h em { font-style: italic; color: #777166; }
-    #real .real-eye { font: 600 24px/1 Inter; letter-spacing: .14em; text-transform: uppercase; color: #857e72; }
-    #real .real-win { position: absolute; left: 310px; top: 146px; width: 1300px; height: 856px; border-radius: 26px; overflow: hidden; background: #f6f4f1; transform-origin: 691px 330px;
+    #real .real-title { position: absolute; left: 0; right: 0; top: 56px; text-align: center; font: 400 64px/1 Newsreader; letter-spacing: -.03em; white-space: nowrap; }
+    #real .real-title em { font-style: italic; color: #777166; }
+    #real .real-win { position: absolute; left: 310px; top: 146px; width: 1300px; height: 856px; border-radius: 26px; overflow: hidden; background: #f6f4f1; transform-origin: 650px 428px;
       box-shadow: 0 0 0 1px #15130f1a, 0 2px 4px #140e061f, 0 60px 110px -30px #3a2a1673; }
     #real .real-bar { position: absolute; left: 0; right: 0; top: 0; height: 44px; background: linear-gradient(#fbfaf8, #f1eee9); box-shadow: 0 1px 0 #15130f14; }
     #real .real-bar i { position: absolute; top: 16px; width: 12px; height: 12px; border-radius: 50%; background: #d8d2c8; }
     #real .real-url { position: absolute; left: 50%; top: 9px; width: 420px; margin-left: -210px; height: 26px; border-radius: 8px; background: #15130f0d; text-align: center; font: 500 16px/26px "JetBrains Mono"; color: #6f695e; }
     #real .real-img, #real .real-vid { position: absolute; left: 0; top: 44px; width: 1300px; height: 812px; object-fit: cover; }
-    #real .real-cap { position: absolute; left: 50%; bottom: 46px; transform: translateX(-50%); display: flex; align-items: center; gap: 22px; padding: 16px 18px 16px 30px; border-radius: 999px; white-space: nowrap;
-      background: linear-gradient(180deg, #1d1f25, #0c0d10); box-shadow: 0 1px 0 #ffffff1f inset, 0 24px 48px -12px #1a120873; color: #f3f5f8; font: 500 30px/1 Inter; letter-spacing: -.01em; }
-    #real .real-cap code { padding: 12px 20px; border-radius: 999px; background: #ffffff1a; font: 500 28px/1 "JetBrains Mono"; color: #5ad8ff; }
+    #real .real-cap { position: absolute; left: 50%; top: 40px; transform: translateX(-50%); display: flex; align-items: center; gap: 20px; padding: 14px 16px 14px 28px; border-radius: 999px; white-space: nowrap;
+      background: linear-gradient(180deg, #1d1f25, #0c0d10); box-shadow: 0 1px 0 #ffffff1f inset, 0 24px 48px -12px #1a120873; color: #f3f5f8; font: 500 28px/1 Inter; letter-spacing: -.01em; }
+    #real .real-cap i { width: 14px; height: 14px; border-radius: 50%; background: #2fd37e; box-shadow: 0 0 12px #2fd37e; }
+    #real .real-cap code { padding: 10px 18px; border-radius: 999px; background: #ffffff1a; font: 500 26px/1 "JetBrains Mono"; color: #5ad8ff; }
   </style>
   <div id="real" data-composition-id="real" data-width="1920" data-height="1080">
     <div class="real-bg"></div>
-    <div class="real-title" id="real-title"><div class="real-h">The real simulator, <em>running.</em></div><div class="real-eye">Zero keys · real MCP calls</div></div>
+    <div class="real-title" id="real-title">The real simulator, <em>running now.</em></div>
     <div class="real-win" id="real-win">
       <div class="real-bar"><i style="left:20px"></i><i style="left:40px"></i><i style="left:60px"></i><div class="real-url">127.0.0.1:3000/sim</div></div>
       <img class="real-img" id="real-first" src="assets/img/real-first.png" alt="" />
       <img class="real-img" id="real-last" src="assets/img/real-last.png" alt="" />
       <video id="real-vid" class="real-vid clip" src="assets/video/real-call.mp4" data-start="0.5" data-duration="8.96" muted playsinline></video>
     </div>
-    <div class="real-cap" id="real-cap" data-layout-allow-overlap>Simulated business and Alexa+ host. Every action is a real MCP tool call. <code>pnpm demo</code></div>
+    <div class="real-cap" id="real-cap" data-layout-allow-overlap><i></i>Simulated business and Alexa+ host · every action is a real MCP tool call <code>pnpm demo</code></div>
   </div>
   <script>
     (function () {
@@ -33,11 +32,13 @@
       tl.set("#real-last", { opacity: 0 }, 0);
       tl.set("#real-last", { opacity: 1 }, 9.4);
       tl.set("#real-first", { opacity: 0 }, 0.55);
-      tl.fromTo("#real-title > *", { opacity: 0, y: 16, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.5, ease: "expo.out", stagger: 0.08 }, 0.05);
+      tl.set("#real-cap", { opacity: 0 }, 0);
+      tl.fromTo("#real-title", { opacity: 0, y: 16, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.5, ease: "expo.out" }, 0.05);
       tl.fromTo("#real-win", { y: 80, scale: 0.94, opacity: 0, filter: "blur(10px)" }, { y: 0, scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.7, ease: "expo.out" }, 0.1);
-      tl.fromTo("#real-cap", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out" }, 1.0);
-      tl.to("#real-title", { opacity: 0, y: -14, filter: "blur(6px)", duration: 0.3, ease: "power2.in" }, 9.2);
-      tl.to("#real-win", { scale: 1.72, y: 60, duration: 1.5, ease: "power3.inOut" }, 9.3);
+      tl.to("#real-title", { opacity: 0, y: -20, filter: "blur(6px)", duration: 0.3, ease: "power2.in" }, 1.7);
+      tl.to("#real-win", { scale: 1.48, y: -34, borderRadius: 0, duration: 1.0, ease: "expo.inOut" }, 1.75);
+      tl.fromTo("#real-cap", { opacity: 0, y: -16 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out", immediateRender: false }, 2.5);
+      tl.to("#real-win", { scale: 2.2, x: -90, y: 182, duration: 1.4, ease: "expo.inOut" }, 9.45);
       tl.to(["#real-win", "#real-cap"], { opacity: 0, filter: "blur(10px)", duration: 0.32, ease: "power2.in" }, 11.62);
       window.__timelines["real"] = tl;
     })();

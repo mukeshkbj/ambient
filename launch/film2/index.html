@@ -542,14 +542,14 @@
       tl.fromTo("#ask-dev .glow", { opacity: 0.25 }, { opacity: 0.6, duration: 0.5, immediateRender: false }, 4.4);
       tl.fromTo("#s-booked .check", { scale: 0.8 }, { scale: 1, duration: 0.32, ease: "back.out(3)", transformOrigin: "50% 50%" }, 22.36);
       for (const [a, b] of [[14.72, 15.62], [18.92, 19.5]]) {
-        tl.to("#pill-b", { opacity: 0, filter: "blur(6px)", duration: 0.2, ease: "power2.in" }, a);
+        tl.to("#pill-b", { opacity: 0, filter: "blur(6px)", duration: 0.14, ease: "power2.in" }, a - 0.1);
         tl.to("#pill-b", { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, b);
       }
       tl.set(["#pill-m", "#pm-1", "#pm-2"], { opacity: 0 }, 0);
       for (const [line, a, b] of [["#pm-1", 14.75, 15.62], ["#pm-2", 18.95, 19.5]]) {
         tl.set(line, { opacity: 1 }, a);
-        tl.fromTo("#pill-m", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out", immediateRender: false }, a);
-        tl.to("#pill-m", { opacity: 0, filter: "blur(6px)", duration: 0.2, ease: "power2.in" }, b - 0.2);
+        tl.fromTo("#pill-m", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out", immediateRender: false }, a + 0.05);
+        tl.to("#pill-m", { opacity: 0, filter: "blur(6px)", duration: 0.14, ease: "power2.in" }, b - 0.16);
         tl.set(line, { opacity: 0 }, b);
       }
       tl.fromTo(".pill .av .ring", { rotation: 0 }, { rotation: 3400, duration: 32.63, ease: "none" }, 0);

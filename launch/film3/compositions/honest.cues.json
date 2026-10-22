@@ -1,0 +1,66 @@
+{
+ "lines": [
+  {
+   "file": "honest-n1",
+   "at": 0.4,
+   "text": "No yes? No booking.",
+   "band": "room"
+  },
+  {
+   "file": "honest-n2",
+   "at": 3.1,
+   "text": "The business gets a receipt.",
+   "band": "room"
+  },
+  {
+   "file": "honest-n3",
+   "at": 5.8,
+   "text": "Say stop, and it never calls again.",
+   "band": "room"
+  },
+  {
+   "file": "honest-n4",
+   "at": 8.5,
+   "text": "Change the day, and it calls back.",
+   "band": "room"
+  }
+ ],
+ "effects": [
+  {
+   "name": "whoosh",
+   "at": 0.0,
+   "gain": 0.2,
+   "pan": 0.0
+  },
+  {
+   "name": "tick",
+   "at": 0.3,
+   "gain": 0.35,
+   "pan": 0.0
+  },
+  {
+   "name": "tick",
+   "at": 3.0,
+   "gain": 0.35,
+   "pan": 0.0
+  },
+  {
+   "name": "tick",
+   "at": 5.7,
+   "gain": 0.35,
+   "pan": 0.0
+  },
+  {
+   "name": "tick",
+   "at": 8.4,
+   "gain": 0.35,
+   "pan": 0.0
+  },
+  {
+   "name": "whoosh",
+   "at": 10.72,
+   "gain": 0.2,
+   "pan": 0.0
+  }
+ ]
+}

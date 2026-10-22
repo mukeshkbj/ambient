@@ -3,6 +3,13 @@
 Plan: `docs/plans/2026-10-18-handle-the-call/overview.md`. Deadline Fri 2026-10-23 12:00 PT; submit Thu 2026-10-22.
 Branch: `hackathon/household-consent`. Nothing is pushed.
 
+## Film 3: the 2:14 demo video (started 2026-10-22, user: "about 2 minutes, showoffy, a GREAT hook judges relate to")
+
+- Rules checked: the Devpost video must be under 3:00 and must clearly show the project on its intended platform (a simulated Alexa+ experience is allowed). Project: `launch/film3/` (`SPEC.md` holds the timeline, `BRIEF.md` the scene-builder brief, `tools/mix.py` the soundtrack).
+- Structure: hook (the "Call the plumber" reminder snoozed Mon to Sat, "Nobody wants to make this call.", "Would you trust an AI to make it?"), the v2-10 story as a clip, then the flex chapters: Try to fool it (real `tryToFool` verdicts, 4,000 generated calls), three plumbers at once with the Spanish booking, the same card on every Alexa device, honest edges (no yes no booking, receipt, opt-out, move), how it is built (`step(state, input, now)`, 931 tests), the real `/sim` recording, end card.
+- Scenes `fool`, `around` and `screens` were built by Opus 5.5 subagents; `/sim` clips captured by `tools/capture_sim.py` (`/sim` has no device switcher, so the devices clip is the same card re-sent per device class and is not captioned as a switcher). The score adds an original MusicGen bed (`tools/music.py`, extended by continuation and level-matched in the mix).
+- Draft 2 (`389acfc`, `renders/f3-02.mp4`, 133.98 s): 0 check errors, -16.5 LUFS, -1.8 dBFS peak. Critic round 1 (Opus 5.5) running.
+
 ## Film v2: motion-design rebuild (started 2026-10-22, user: "visuals look shit, UI horrid")
 
 - Project: `launch/film2/` (draft 17 stays in `launch/film/`). Same voice, mix and cue times; every visual is new.

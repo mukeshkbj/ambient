@@ -1,0 +1,72 @@
+{
+ "lines": [
+  {
+   "file": "built-n1",
+   "at": 2.65,
+   "text": "Alexa reaches it through MCP.",
+   "band": "room"
+  },
+  {
+   "file": "built-n2",
+   "at": 4.85,
+   "text": "Claude proposes. The code decides.",
+   "band": "room"
+  },
+  {
+   "file": "built-n3",
+   "at": 7.4,
+   "text": "One pure function decides every word it says.",
+   "band": "room"
+  }
+ ],
+ "effects": [
+  {
+   "name": "tick",
+   "at": 0.35,
+   "gain": 0.22,
+   "pan": -0.4
+  },
+  {
+   "name": "tick",
+   "at": 0.61,
+   "gain": 0.22,
+   "pan": -0.2
+  },
+  {
+   "name": "tick",
+   "at": 0.87,
+   "gain": 0.22,
+   "pan": 0.0
+  },
+  {
+   "name": "tick",
+   "at": 1.13,
+   "gain": 0.22,
+   "pan": 0.20000000000000007
+  },
+  {
+   "name": "tick",
+   "at": 1.3900000000000001,
+   "gain": 0.22,
+   "pan": 0.4
+  },
+  {
+   "name": "swish",
+   "at": 7.0,
+   "gain": 0.2,
+   "pan": 0.0
+  },
+  {
+   "name": "hit",
+   "at": 7.3,
+   "gain": 0.5,
+   "pan": 0.0
+  },
+  {
+   "name": "tick",
+   "at": 8.6,
+   "gain": 0.35,
+   "pan": 0.0
+  }
+ ]
+}

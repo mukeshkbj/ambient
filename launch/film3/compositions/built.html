@@ -7,10 +7,10 @@
     #built .built-h { margin-top: 22px; font: 400 76px/1.04 Newsreader; letter-spacing: -.03em; white-space: nowrap; }
     #built .built-h em { font-style: italic; color: #777166; }
     #built .built-dia { position: absolute; inset: 0; transform-origin: 960px 540px; }
-    #built .built-n { position: absolute; top: 455px; width: 300px; height: 170px; padding: 26px 28px; border-radius: 30px; background: linear-gradient(180deg, #fdfcfa, #f6f2ec);
+    #built .built-n { position: absolute; top: 450px; width: 300px; height: 180px; padding: 26px 28px; border-radius: 30px; background: linear-gradient(180deg, #fdfcfa, #f6f2ec);
       box-shadow: 0 1px 0 #fff inset, 0 0 0 1px #15130f12, 0 2px 4px #140e061a, 0 30px 60px -28px #3a2a1659; }
     #built .built-n small { display: block; font: 600 22px/1 "JetBrains Mono"; letter-spacing: .04em; text-transform: uppercase; color: #857e72; }
-    #built .built-n b { display: block; margin-top: 18px; font: 600 34px/1.05 Inter; letter-spacing: -.025em; }
+    #built .built-n b { display: block; margin-top: 18px; font: 600 30px/1.05 Inter; letter-spacing: -.025em; white-space: nowrap; }
     #built .built-n span { display: block; margin-top: 12px; font: 400 22px/1.3 "JetBrains Mono"; color: #6f695e; white-space: nowrap; }
     #built .built-core { background: radial-gradient(90% 75% at 10% 0%, #1b2a4a 0%, #0c1018 60%, #07090d 100%); color: #f3f5f8; box-shadow: 0 0 0 1px #ffffff14 inset, 0 0 0 2px #ff9f1c, 0 0 50px -6px #ff9f1c88, 0 40px 70px -28px #140e0699; }
     #built .built-core small { color: #ff9f1c; }
@@ -57,8 +57,7 @@
       <div class="built-n built-brain" id="built-n5" style="left:810px"><small>Brain</small><b>Claude</b><span>Opus 5.5</span></div>
     </div>
     <div class="built-cap" id="built-c0">Alexa reaches Ambient through MCP.</div>
-    <div class="built-cap" id="built-c1">Every word on the call passes through one function.</div>
-    <div class="built-cap" id="built-c2">Claude proposes. The reducer decides.</div>
+        <div class="built-cap" id="built-c2">Claude proposes. The code decides.</div>
     <div class="built-code" id="built-code"><span class="k">function</span> <span class="f">step</span>(state, input, now)<br>&nbsp;&nbsp;<span class="k">→</span> { state, effects }<br><span class="c">// no clock · no network · no model</span></div>
     <div class="built-chip" id="built-chip"><i></i><b>931</b> tests pass, including every honesty rule</div>
     <div class="built-foot" id="built-foot">Demo: simulated business and Alexa+ host. The voice line and Claude brain are built, not yet live.</div>
@@ -67,39 +66,38 @@
     (function () {
       const tl = gsap.timeline({ paused: true });
       const NODES = ["#built-n0", "#built-n1", "#built-n2", "#built-n3", "#built-n4"];
-      tl.set([...NODES, "#built-n5", "#built-vl", "#built-dot", "#built-dot2", "#built-c0", "#built-c1", "#built-c2", "#built-code", "#built-chip", "#built-foot", "#built-title > *"], { opacity: 0 }, 0);
+      tl.set([...NODES, "#built-n5", "#built-vl", "#built-dot", "#built-dot2", "#built-c0", "#built-c2", "#built-code", "#built-chip", "#built-foot", "#built-title > *"], { opacity: 0 }, 0);
       tl.set([".built-e"], { scaleX: 0 }, 0);
       tl.set("#built-v", { scaleY: 0 }, 0);
-      tl.fromTo("#built-title > *", { opacity: 0, y: 18, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.5, ease: "expo.out", stagger: 0.07, immediateRender: false }, 0.1);
+      tl.fromTo("#built-title > *", { opacity: 0, y: 18, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.5, ease: "expo.out", stagger: 0.07, immediateRender: false }, 0.05);
       NODES.forEach((n, i) => {
-        const at = 0.55 + i * 0.32;
+        const at = 0.35 + i * 0.26;
         tl.fromTo(n, { opacity: 0, y: 26, scale: 0.94, filter: "blur(6px)" }, { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.5, ease: "expo.out", immediateRender: false }, at);
-        if (i > 0) tl.fromTo("#built-e" + (i - 1), { scaleX: 0 }, { scaleX: 1, duration: 0.3, ease: "power3.inOut", immediateRender: false }, at - 0.1);
+        if (i > 0) tl.fromTo("#built-e" + (i - 1), { scaleX: 0 }, { scaleX: 1, duration: 0.28, ease: "power3.inOut", immediateRender: false }, at - 0.1);
       });
-      tl.fromTo("#built-v", { scaleY: 0 }, { scaleY: 1, duration: 0.35, ease: "power3.inOut", immediateRender: false }, 2.2);
-      tl.fromTo("#built-n5", { opacity: 0, y: 26, scale: 0.94, filter: "blur(6px)" }, { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.5, ease: "expo.out", immediateRender: false }, 2.4);
-      tl.fromTo("#built-vl", { opacity: 0, x: -8 }, { opacity: 1, x: 0, duration: 0.3, ease: "expo.out", immediateRender: false }, 2.6);
+      tl.fromTo("#built-v", { scaleY: 0 }, { scaleY: 1, duration: 0.32, ease: "power3.inOut", immediateRender: false }, 1.55);
+      tl.fromTo("#built-n5", { opacity: 0, y: 26, scale: 0.94, filter: "blur(6px)" }, { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.5, ease: "expo.out", immediateRender: false }, 1.72);
+      tl.fromTo("#built-vl", { opacity: 0, x: -8 }, { opacity: 1, x: 0, duration: 0.3, ease: "expo.out", immediateRender: false }, 1.9);
       const cap = (id, a, b) => {
         tl.fromTo(id, { opacity: 0, y: 12, filter: "blur(4px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.36, ease: "expo.out", immediateRender: false }, a);
         tl.to(id, { opacity: 0, y: -10, filter: "blur(4px)", duration: 0.16, ease: "power2.in" }, b);
       };
-      tl.to("#built-title", { opacity: 0, y: -14, filter: "blur(6px)", duration: 0.26, ease: "power2.in" }, 2.75);
-      cap("#built-c0", 3.0, 5.0);
-      tl.set("#built-dot", { opacity: 1, x: 270 }, 3.0);
-      tl.fromTo("#built-dot", { x: 270 }, { x: 960, duration: 1.4, ease: "power2.inOut", immediateRender: false }, 3.0);
-      cap("#built-c1", 5.2, 8.0);
-      tl.to("#built-dot", { x: 1650, duration: 1.6, ease: "power2.inOut" }, 5.6);
-      tl.to("#built-dot", { opacity: 0, duration: 0.2 }, 7.2);
-      tl.fromTo("#built-n2", { boxShadow: "0 0 0 1px #ffffff14 inset, 0 0 0 2px #ff9f1c, 0 0 50px -6px #ff9f1c88, 0 40px 70px -28px #140e0699" }, { boxShadow: "0 0 0 1px #ffffff14 inset, 0 0 0 3px #ff9f1c, 0 0 90px 0px #ff9f1caa, 0 40px 70px -28px #140e0699", duration: 0.3, yoyo: true, repeat: 1, immediateRender: false }, 5.9);
-      cap("#built-c2", 8.2, 10.2);
-      tl.set("#built-dot2", { opacity: 1, x: 960, y: 330 }, 8.3);
-      tl.fromTo("#built-dot2", { x: 960, y: 330 }, { x: 960, y: 0, duration: 0.9, ease: "power2.inOut", immediateRender: false }, 8.3);
-      tl.to("#built-dot2", { opacity: 0, duration: 0.2 }, 9.25);
-      tl.to("#built-dia", { scale: 1.9, opacity: 0, filter: "blur(10px)", duration: 0.6, ease: "power3.in" }, 10.3);
-      tl.fromTo("#built-code", { opacity: 0, scale: 0.7, filter: "blur(12px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.6, ease: "expo.out", immediateRender: false }, 10.65);
-      tl.fromTo("#built-chip", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out", immediateRender: false }, 11.5);
-      tl.fromTo("#built-foot", { opacity: 0 }, { opacity: 1, duration: 0.4, immediateRender: false }, 12.0);
-      tl.to(["#built-code", "#built-chip", "#built-foot"], { opacity: 0, filter: "blur(8px)", duration: 0.3, ease: "power2.in" }, 14.6);
+      tl.to("#built-title", { opacity: 0, y: -14, filter: "blur(6px)", duration: 0.24, ease: "power2.in" }, 2.35);
+      cap("#built-c0", 2.6, 4.6);
+      tl.set("#built-dot", { opacity: 1, x: 270 }, 2.6);
+      tl.fromTo("#built-dot", { x: 270 }, { x: 960, duration: 1.2, ease: "power2.inOut", immediateRender: false }, 2.6);
+      tl.to("#built-dot", { x: 1650, duration: 1.0, ease: "power2.inOut" }, 3.8);
+      tl.to("#built-dot", { opacity: 0, duration: 0.2 }, 4.75);
+      tl.fromTo("#built-n2", { boxShadow: "0 0 0 1px #ffffff14 inset, 0 0 0 2px #ff9f1c, 0 0 50px -6px #ff9f1c88, 0 40px 70px -28px #140e0699" }, { boxShadow: "0 0 0 1px #ffffff14 inset, 0 0 0 3px #ff9f1c, 0 0 90px 0px #ff9f1caa, 0 40px 70px -28px #140e0699", duration: 0.3, yoyo: true, repeat: 1, immediateRender: false }, 3.7);
+      cap("#built-c2", 4.8, 6.95);
+      tl.set("#built-dot2", { opacity: 1, x: 960, y: 330 }, 4.85);
+      tl.fromTo("#built-dot2", { x: 960, y: 330 }, { x: 960, y: 0, duration: 0.85, ease: "power2.inOut", immediateRender: false }, 4.85);
+      tl.to("#built-dot2", { opacity: 0, duration: 0.2 }, 5.75);
+      tl.to("#built-dia", { scale: 1.9, opacity: 0, filter: "blur(10px)", duration: 0.5, ease: "power3.in" }, 7.0);
+      tl.fromTo("#built-code", { opacity: 0, scale: 0.7, filter: "blur(12px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.6, ease: "expo.out", immediateRender: false }, 7.3);
+      tl.fromTo("#built-chip", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out", immediateRender: false }, 8.6);
+      tl.fromTo("#built-foot", { opacity: 0 }, { opacity: 1, duration: 0.4, immediateRender: false }, 9.2);
+      tl.to(["#built-code", "#built-chip", "#built-foot"], { opacity: 0, filter: "blur(8px)", duration: 0.3, ease: "power2.in" }, 11.62);
       window.__timelines["built"] = tl;
     })();
   </script>

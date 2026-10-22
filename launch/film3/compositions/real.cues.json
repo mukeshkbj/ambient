@@ -1,0 +1,30 @@
+{
+ "lines": [
+  {
+   "file": "real-n1",
+   "at": 0.45,
+   "text": "And it runs today, with zero keys.",
+   "band": "room"
+  }
+ ],
+ "effects": [
+  {
+   "name": "whoosh",
+   "at": 0.1,
+   "gain": 0.22,
+   "pan": 0.0
+  },
+  {
+   "name": "swish",
+   "at": 1.75,
+   "gain": 0.18,
+   "pan": 0.0
+  },
+  {
+   "name": "whoosh",
+   "at": 9.45,
+   "gain": 0.22,
+   "pan": 0.0
+  }
+ ]
+}
