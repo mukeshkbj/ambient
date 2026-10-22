@@ -101,7 +101,8 @@
       .btn .press { position: absolute; inset: 0; border-radius: inherit; background: #ffffff; opacity: 0; }
       .btn.ghost { color: #9aa1ad; background: #ffffff05; box-shadow: 0 0 0 1.5px #ffffff14 inset; flex-direction: row; gap: 18px; font-weight: 500; font-size: 32px; }
       .btn.ghost .dots { margin: 0; }
-      .ripple { position: absolute; left: 50%; top: 50%; width: 36px; height: 36px; margin: -6px 0 0 -18px; border-radius: 50%; background: #0b0d1230; box-shadow: 0 0 0 2px #0b0d1250; opacity: 0; }
+      .ripple { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -22px 0 0 -28px; border-radius: 50%; background: #ffffff47; box-shadow: 0 0 0 2px #ffffff3d; opacity: 0; }
+      .btn.go .ripple { background: #0b0d1238; box-shadow: 0 0 0 2px #0b0d1250; }
       .check { position: absolute; right: 56px; top: 190px; width: 120px; height: 120px; }
       .proof { position: absolute; left: 64px; right: 64px; bottom: 60px; padding: 26px 30px; border-radius: 26px; background: #ffffff0a; box-shadow: 0 0 0 1px #ffffff14 inset; display: grid; grid-template-columns: 170px 1fr; row-gap: 14px; font: 400 28px/1.3 Inter; color: #d9dde5; }
       .proof b { font: 600 20px/1.6 Inter; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
@@ -318,7 +319,7 @@
         <div id="pb-time" class="time">0:00</div>
       </div>
 
-      <div id="pill-m" class="pill clip" data-start="14.7" data-duration="4.9" style="top:930px">
+      <div id="pill-m" class="pill clip" data-start="14.7" data-duration="4.9">
         <div class="av"><div class="joe" style="background:linear-gradient(160deg,#c7f0d8,#4fbf86);color:#073b22">M</div></div>
         <div class="who">Maya · on the Echo Show</div>
         <div class="lines">
@@ -462,16 +463,13 @@
       };
       tl.set(["#c150 > *", "#c160 > *"], { opacity: 0 }, 0);
       tl.set(["#c150 .ph", "#c160 .ph"], { opacity: 0 }, 0);
-      tl.to("#deal-dev", { scale: 1.04, y: -14, duration: 0.92, ease: "none" }, 13.68);
-      tl.to("#deal-dev", { scale: 1.18, x: 0, y: 0, transformOrigin: "50% 62%", rotationY: 0, duration: 0.55, ease: "expo.inOut" }, 14.62);
-      tl.to("#deal-dev", { scale: 1, x: 0, y: 0, rotationY: -3, duration: 0.6, ease: "expo.inOut" }, 15.5);
-      tl.to("#deal-dev", { scale: 1.18, x: 0, y: 0, transformOrigin: "26% 62%", rotationY: 0, duration: 0.5, ease: "expo.inOut" }, 18.8);
+      tl.to("#deal-dev", { rotationY: -3, duration: 0.6, ease: "power2.inOut" }, 15.5);
       press("#b-offer", 15.28);
       tl.to(["#c180 .acts .btn:not(#b-offer)"], { opacity: 0, filter: "blur(8px)", scale: 0.96, duration: 0.2, ease: "power2.in" }, 15.36);
       swapOut(["#c180 .status", "#c180 .note"], 15.4);
       tl.to("#b-offer", { x: MORPH.x, y: MORPH.y, scaleX: MORPH.sx, scaleY: MORPH.sy, opacity: 0, duration: 0.32, ease: "power3.inOut" }, 15.46);
       tl.fromTo("#c150 .note", { x: -MORPH.x, y: -MORPH.y, scaleX: 1 / MORPH.sx, scaleY: 1 / MORPH.sy, opacity: 0 }, { x: 0, y: 0, scaleX: 1, scaleY: 1, opacity: 1, duration: 0.32, ease: "power3.inOut", transformOrigin: "50% 50%", immediateRender: false }, 15.5);
-      roll("#deal-num", 180, 150, 15.5, 0.45);
+      roll("#deal-num", 180, 150, 15.5, 0.52);
       tl.set("#ldot", { x: 320 }, 0);
       tl.fromTo("#ldot", { x: 200 }, { x: 320, duration: 0.6, ease: "expo.out", immediateRender: false }, 13.6);
       tl.fromTo("#lover", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "expo.out", transformOrigin: "0% 50%", immediateRender: false }, 13.6);
@@ -486,14 +484,14 @@
       });
       swapOut(["#c150 .acts", "#c150 .status", "#c150 .note", "#c180 .said"], 18.6);
       swapIn(["#c160 .acts", "#c160 .status", "#c160 .note", "#c160 .said"], 18.84);
-      roll("#deal-num", 150, 160, 18.9, 0.45);
+      roll("#deal-num", 150, 160, 18.9, 0.52);
       tl.fromTo("#c180 .amount", { scale: 1.06, color: "#ff9f1c" }, { scale: 1, color: "#f3f5f8", duration: 0.5, ease: "expo.out", transformOrigin: "0% 100%", immediateRender: false }, 18.93);
       press("#b-book", 19.33);
 
       tl.set(["#cconf > *", "#deal-total", "#deal-tag"], { opacity: 0 }, 0);
       tl.set("#deal-tag", { rotation: -4 }, 0);
       tl.set("#deal-tag .strike", { scaleX: 0 }, 0);
-      tl.to("#deal-dev", { scale: 1, x: 0, y: 0, rotationY: -2, duration: 0.6, ease: "expo.inOut" }, 19.5);
+      tl.to("#deal-dev", { rotationY: -2, duration: 0.6, ease: "power2.inOut" }, 19.5);
       swapOut(["#c160 .acts", "#c160 .status", "#c160 .note"], 19.45);
       swapIn(["#cconf .acts", "#cconf .status", "#cconf .note"], 19.66);
       tl.fromTo("#deal-tag", { opacity: 0, scale: 1.4 }, { opacity: 1, scale: 1, duration: 0.28, ease: "back.out(2.4)", transformOrigin: "0% 60%", immediateRender: false }, 19.75);
@@ -535,7 +533,7 @@
       tl.set(["#ask-dev", "#deal-dev", "#booked-dev"], { transformPerspective: 2600 }, 0);
       tl.fromTo("#ask-dev", { rotationY: 7 }, { rotationY: -3, duration: 3.4, ease: "none", immediateRender: false }, 3.75);
       tl.fromTo("#deal-dev", { rotationY: 6 }, { rotationY: 1, duration: 1.68, ease: "none", immediateRender: false }, 12.93);
-      tl.to("#deal-dev", { rotationY: -2, scale: 1.06, duration: 2.6, ease: "none" }, 16.15);
+      tl.to("#deal-dev", { rotationY: -2, duration: 2.6, ease: "none" }, 16.15);
       tl.fromTo("#deal-dev .glow", { color: "#3d7bff" }, { color: "#ff9f1c", duration: 0.6, immediateRender: false }, 13.1);
       tl.to("#deal-dev .glow", { color: "#3d7bff", duration: 0.5 }, 15.48);
       tl.to("#deal-dev .glow", { color: "#ff9f1c", duration: 0.4 }, 18.42);
@@ -543,15 +541,15 @@
       tl.fromTo("#booked-dev", { rotationY: -2 }, { rotationY: 3, duration: 7.3, ease: "none", immediateRender: false }, 22.03);
       tl.fromTo("#ask-dev .glow", { opacity: 0.25 }, { opacity: 0.6, duration: 0.5, immediateRender: false }, 4.4);
       tl.fromTo("#s-booked .check", { scale: 0.8 }, { scale: 1, duration: 0.32, ease: "back.out(3)", transformOrigin: "50% 50%" }, 22.36);
-      for (const [a, b] of [[14.55, 15.6], [18.75, 19.55]]) {
-        tl.to("#pill-b", { y: 60, opacity: 0, duration: 0.25, ease: "power2.in" }, a);
-        tl.to("#pill-b", { y: 0, opacity: 1, duration: 0.35, ease: "expo.out" }, b);
+      for (const [a, b] of [[14.72, 15.62], [18.92, 19.5]]) {
+        tl.to("#pill-b", { opacity: 0, filter: "blur(6px)", duration: 0.2, ease: "power2.in" }, a);
+        tl.to("#pill-b", { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, b);
       }
       tl.set(["#pill-m", "#pm-1", "#pm-2"], { opacity: 0 }, 0);
       for (const [line, a, b] of [["#pm-1", 14.75, 15.62], ["#pm-2", 18.95, 19.5]]) {
         tl.set(line, { opacity: 1 }, a);
-        tl.fromTo("#pill-m", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.35, ease: "expo.out", immediateRender: false }, a);
-        tl.to("#pill-m", { opacity: 0, y: 30, duration: 0.2, ease: "power2.in" }, b - 0.2);
+        tl.fromTo("#pill-m", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out", immediateRender: false }, a);
+        tl.to("#pill-m", { opacity: 0, filter: "blur(6px)", duration: 0.2, ease: "power2.in" }, b - 0.2);
         tl.set(line, { opacity: 0 }, b);
       }
       tl.fromTo(".pill .av .ring", { rotation: 0 }, { rotation: 3400, duration: 32.63, ease: "none" }, 0);
