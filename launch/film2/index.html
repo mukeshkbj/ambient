@@ -29,13 +29,11 @@
       .tag { position: absolute; left: 1335px; top: 262px; padding: 18px 40px 20px; border-radius: 999px; background: linear-gradient(180deg, #ffb547, #ff9410); color: #2b1700;
         font: 600 72px/1 Inter; letter-spacing: -.03em; box-shadow: 0 1px 0 #ffffff80 inset, 0 24px 50px -18px #b8640080; white-space: nowrap; }
       .tag .strike { position: absolute; left: 22px; right: 22px; top: 50%; height: 9px; margin-top: -4px; border-radius: 6px; background: #15130f; }
-      .total { position: absolute; left: 1340px; top: 360px; font: italic 400 150px/1 Newsreader; letter-spacing: -.03em; color: var(--ink); }
-      .total::after { content: ""; position: absolute; left: 4px; right: 4px; bottom: -6px; height: 8px; border-radius: 6px; background: linear-gradient(90deg, var(--amb-1), var(--amb-2)); }
       .eyebrow { position: absolute; left: 0; right: 0; top: 118px; text-align: center; font: 400 54px/1 Newsreader; letter-spacing: -.02em; color: var(--ink-2); }
       .eyebrow i { display: inline-block; width: 16px; height: 16px; margin-right: 20px; border-radius: 50%; background: #ff3b30; box-shadow: 0 0 14px #ff3b30; vertical-align: 8px; }
 
-      .pill { position: absolute; left: 50%; top: 866px; width: 1000px; height: 104px; margin-left: -500px; border-radius: 999px;
-        background: linear-gradient(180deg, #1c1e23, #0a0b0e); box-shadow: 0 1px 0 #ffffff22 inset, 0 0 0 1px #00000030, 0 36px 70px -26px #3a260f99;
+      .pill { position: absolute; left: 50%; top: 870px; width: 1000px; height: 104px; margin-left: -500px; border-radius: 999px;
+        background: linear-gradient(180deg, #1d1f25, #0c0d10); box-shadow: 0 1px 0 #ffffff1f inset, 0 0 0 1px #0000002e, 0 24px 48px -12px #1a120873;
         color: #f3f5f8; }
       .pill .av { position: absolute; left: 20px; top: 20px; width: 64px; height: 64px; }
       .pill .av .ring { position: absolute; inset: 0; -webkit-mask: radial-gradient(circle, #0000 30px, #000 31px); mask: radial-gradient(circle, #0000 23px, #000 24px); box-shadow: 0 0 28px #3d7bff99; }
@@ -43,19 +41,19 @@
       .pill .who { position: absolute; left: 106px; top: 16px; font: 600 20px/1 Inter; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
       .pill .lines { position: absolute; left: 106px; right: 220px; top: 44px; height: 44px; }
       .pill .line { position: absolute; left: 0; top: 0; white-space: nowrap; font: 500 34px/46px Inter; letter-spacing: -.02em; }
-      .pill .line span { opacity: .45; }
+      .pill .line span { opacity: .5; }
       .pill .wave { position: absolute; right: 112px; top: 30px; height: 44px; width: 150px; display: flex; align-items: center; justify-content: space-between; }
       .pill .wave i { display: block; width: 3px; height: 8px; border-radius: 3px; background: linear-gradient(var(--amb-1), var(--amb-2)); }
       .pill .time { position: absolute; right: 32px; top: 34px; font: 500 26px/36px Inter; font-variant-numeric: tabular-nums; color: #c9ced8; }
 
       .device { position: absolute; left: 50%; top: 84px; width: 1180px; height: 740px; margin-left: -590px; }
       .device .base { display: none; position: absolute; left: 70px; right: 70px; bottom: -40px; height: 120px; border-radius: 0 0 70px 70px; background: linear-gradient(#3b3d42, #2b2c30); }
-      .device .glow { position: absolute; left: 190px; right: 190px; bottom: -110px; height: 220px; border-radius: 50%; background: radial-gradient(closest-side, currentColor, transparent); filter: blur(30px); opacity: .5; color: #3d7bff; }
+      .device .glow { position: absolute; left: 140px; right: 140px; bottom: -40px; height: 90px; border-radius: 50%; background: radial-gradient(closest-side, currentColor, transparent); filter: blur(40px); opacity: .5; color: #3d7bff; mix-blend-mode: multiply; }
       .device .shadow { position: absolute; left: -20px; right: -20px; bottom: -86px; height: 70px; border-radius: 50%; background: radial-gradient(closest-side, #3a2a1666, #3a2a1600); }
-      .bezel { position: absolute; inset: 0; border-radius: 44px; background: linear-gradient(180deg, #2b2d33 0%, #17181c 9%, #111215 100%);
-        box-shadow: 0 1px 0 0 #ffffff38 inset, 0 0 0 1px #ffffff12 inset, 0 0 0 1px #0000004d, 0 40px 80px -20px #28190a59, 0 12px 24px #28190a2e; }
-      .screen { position: absolute; inset: 18px; border-radius: 28px; overflow: hidden; background: radial-gradient(90% 75% at 10% 0%, #1b2a4a 0%, #0c1018 55%, #07090d 100%); color: #f3f5f8; }
-      .glare { position: absolute; inset: 18px; border-radius: 28px; background: linear-gradient(115deg, #ffffff10 0%, #ffffff05 22%, #ffffff00 42%); pointer-events: none; }
+      .bezel { position: absolute; inset: 0; border-radius: 52px; background: linear-gradient(180deg, #2b2d33 0%, #16171b 120px, #101114 100%);
+        box-shadow: 0 1px 0 0 #ffffff4d inset, 0 0 0 1px #ffffff10 inset, 0 0 0 1px #0000004d, 0 2px 4px #140e062e, 0 48px 90px -24px #140e0661; }
+      .screen { position: absolute; inset: 14px; border-radius: 38px; overflow: hidden; background: radial-gradient(90% 75% at 10% 0%, #1b2a4a 0%, #0c1018 55%, #07090d 100%); color: #f3f5f8; }
+      .glare { position: absolute; inset: 14px; border-radius: 38px; background: linear-gradient(115deg, #ffffff12 0%, #ffffff06 22%, #ffffff00 40%); pointer-events: none; }
       .lightbar { position: absolute; left: 22%; right: 22%; bottom: 0; height: 8px; border-radius: 8px 8px 0 0; background: linear-gradient(90deg, #5ad8ff00, var(--amb-1), var(--amb-2), #8a5cff00); box-shadow: 0 0 40px 8px #3d7bff66; }
 
       .clock { position: absolute; left: 64px; top: 52px; font: 500 34px/1 Inter; color: var(--dim); font-variant-numeric: tabular-nums; }
@@ -70,9 +68,13 @@
       .status i { width: 12px; height: 12px; border-radius: 50%; background: currentColor; box-shadow: 0 0 18px currentColor; }
       .status .wait { margin-left: auto; color: var(--dim); letter-spacing: .02em; text-transform: none; font-weight: 500; font-variant-numeric: tabular-nums; }
       .s-needs { color: var(--over); } .s-call { color: var(--amb-1); } .s-done { color: var(--ok); }
-      .task { margin-top: 40px; font: 500 30px/1.2 Inter; color: var(--dim); letter-spacing: -.01em; }
-      .amount { margin-top: 8px; font: 600 172px/.95 Inter; letter-spacing: -.055em; font-variant-numeric: tabular-nums; }
-      .when { margin-top: 14px; font: 500 40px/1.2 Inter; letter-spacing: -.02em; color: #e6e9ef; }
+      .task { margin-top: 40px; font: 500 28px/1.2 Inter; color: #8b93a3; letter-spacing: -.01em; }
+      .amount { position: relative; margin-top: 24px; font: 600 172px/.95 Inter; letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+      .unit { font-weight: 500; font-size: .4em; letter-spacing: -.02em; color: #c9ced8; }
+      .ctag { position: absolute; left: 436px; top: 30px; padding: 8px 18px 10px; border-radius: 999px; background: linear-gradient(180deg, #ffb347, #ff8a00); color: #2b1700; font: 600 34px/1 Inter; letter-spacing: -.02em; box-shadow: 0 10px 24px #ff8a0059; white-space: nowrap; }
+      .ctag .strike { position: absolute; left: 14px; right: 14px; top: 50%; height: 5px; margin-top: -2px; border-radius: 4px; background: #15130f; }
+      .when { margin-top: 16px; font: 500 34px/1.2 Inter; letter-spacing: -.015em; color: #aab0bd; }
+      .ph { visibility: hidden; }
       .note { display: inline-flex; margin-top: 22px; padding: 10px 18px; border-radius: 999px; font: 600 24px/1 Inter; }
       .note.o { color: var(--over); background: #ff9f1c1f; box-shadow: 0 0 0 1px #ff9f1c44 inset; }
       .note.c { color: var(--amb-1); background: #5ad8ff17; box-shadow: 0 0 0 1px #5ad8ff3a inset; }
@@ -81,17 +83,19 @@
       .said b { display: block; font: 600 20px/1 Inter; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
       .dots { display: flex; gap: 10px; margin-top: 18px; } .dots i { width: 10px; height: 10px; border-radius: 50%; background: #9aa3b2; }
       .said p { margin-top: 14px; font: 400 32px/1.28 Newsreader; color: #eef0f4; }
-      .acts { position: absolute; left: 64px; right: 64px; bottom: 60px; display: grid; gap: 18px; }
+      .acts { position: absolute; left: 64px; right: 64px; bottom: 56px; display: grid; gap: 16px; }
+      .acts.one { grid-template-columns: 1fr; }
       .acts.three { grid-template-columns: 1fr 1fr 1fr; } .acts.two { grid-template-columns: 1.5fr 1fr; }
-      .btn { position: relative; height: 112px; border-radius: 30px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; font: 600 34px/1 Inter; letter-spacing: -.015em; }
-      .btn small { font: 500 24px/1 Inter; letter-spacing: 0; opacity: .72; }
-      .btn.go { background: #f4f6f9; color: #0b0d12; box-shadow: 0 12px 34px -10px #ffffff50; }
-      .btn.line { background: #ffffff08; color: #f3f5f8; box-shadow: 0 0 0 2px #ffffff66 inset; }
-      .btn.no { background: #ffffff0e; color: #f3f5f8; box-shadow: 0 0 0 1px #ffffff1f inset; }
-      .btn.stop { color: #ff8a80; background: transparent; box-shadow: 0 0 0 1px #ff787840 inset; }
-      .btn.stop small { font-size: 20px; opacity: .6; }
-      .ripple { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -8px 0 0 -22px; border-radius: 50%; background: #0b0d1226; box-shadow: 0 0 0 2px #0b0d1240; opacity: 0; }
-      .check { position: absolute; right: 64px; top: 196px; width: 96px; height: 96px; }
+      .btn { position: relative; height: 112px; border-radius: 24px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; font: 600 36px/1 Inter; letter-spacing: -.02em; }
+      .btn small { font: 500 22px/1 Inter; letter-spacing: 0; opacity: .55; }
+      .btn.go { background: #f4f6f9; color: #0b0d12; box-shadow: 0 8px 24px #00000080, 0 1px 0 #fff inset; }
+      .btn.line { background: #ffffff0a; color: #f3f5f8; box-shadow: 0 0 0 1.5px #ffffff3d inset; }
+      .btn.stop { color: #ff8a80; background: transparent; box-shadow: 0 0 0 1.5px #ffffff1f inset; }
+      .btn .press { position: absolute; inset: 0; border-radius: inherit; background: #ffffff; opacity: 0; }
+      .btn.ghost { color: #9aa1ad; background: #ffffff05; box-shadow: 0 0 0 1.5px #ffffff14 inset; flex-direction: row; gap: 18px; font-weight: 500; font-size: 32px; }
+      .btn.ghost .dots { margin: 0; }
+      .ripple { position: absolute; left: 50%; top: 50%; width: 36px; height: 36px; margin: -6px 0 0 -18px; border-radius: 50%; background: #0b0d1230; box-shadow: 0 0 0 2px #0b0d1250; opacity: 0; }
+      .check { position: absolute; right: 56px; top: 190px; width: 120px; height: 120px; }
       .proof { position: absolute; left: 64px; right: 64px; bottom: 60px; padding: 26px 30px; border-radius: 26px; background: #ffffff0a; box-shadow: 0 0 0 1px #ffffff14 inset; display: grid; grid-template-columns: 170px 1fr; row-gap: 14px; font: 400 28px/1.3 Inter; color: #d9dde5; }
       .proof b { font: 600 20px/1.6 Inter; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
 
@@ -131,7 +135,7 @@
 
       .claim { position: absolute; left: 0; right: 0; top: 150px; text-align: center; font: 400 128px/1 Newsreader; letter-spacing: -.035em; }
       .claim em { font-style: italic; }
-      .rules { position: absolute; left: 930px; top: 360px; display: grid; row-gap: 44px; }
+      .rules { position: absolute; left: 990px; top: 360px; display: grid; row-gap: 44px; }
       .rule { display: flex; align-items: center; gap: 26px; font: 400 54px/1.1 Newsreader; letter-spacing: -.02em; color: var(--ink); }
       .rule svg { width: 60px; height: 60px; flex: none; }
       .endc { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; }
@@ -140,12 +144,12 @@
       .endc .say { margin-top: 26px; font: italic 400 64px/1 Newsreader; color: var(--ink-2); }
       .endc .cta { margin-top: 64px; display: flex; align-items: center; gap: 24px; font: 500 36px/1 Inter; color: var(--ink-2); }
       .endc .cta code { padding: 14px 24px; border-radius: 16px; background: #15130f; color: #f3f5f8; font-family: "JetBrains Mono", monospace; font-size: 36px; font-weight: 500; line-height: 1; }
-      .fine { position: absolute; left: 0; right: 0; bottom: 56px; text-align: center; font: 500 24px/1 Inter; color: #6f695f; }
+      .fine { position: absolute; left: 0; right: 0; bottom: 56px; text-align: center; font: 500 28px/1 Inter; color: #4f4a42; }
       .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
     </style>
   </head>
   <body>
-    <div id="root" data-composition-id="main" data-start="0" data-duration="32.83" data-width="1920" data-height="1080">
+    <div id="root" data-composition-id="main" data-start="0" data-duration="31.03" data-width="1920" data-height="1080">
       <div class="ground"></div>
       <div id="sun" class="sun"></div>
 
@@ -155,7 +159,7 @@
         <div id="hook-tag" class="tag">+ parts<div class="strike"></div></div>
       </div>
 
-      <div id="s-ask" class="scene clip" data-start="4.25" data-duration="2.9">
+      <div id="s-ask" class="scene clip" data-start="3.75" data-duration="3.4">
         <div id="ask-dev" class="device">
           <div class="glow"></div><div class="shadow"></div><div class="base"></div>
           <div class="bezel"><div class="screen">
@@ -204,51 +208,58 @@
         </div>
       </div>
 
-      <div id="s-deal" class="scene clip" data-start="12.93" data-duration="6.9">
+      <div id="s-deal" class="scene clip" data-start="12.93" data-duration="9.0">
         <div id="deal-dev" class="device">
           <div class="glow"></div><div class="shadow"></div><div class="base"></div>
           <div class="bezel"><div class="screen">
             <div id="c180" class="card">
               <div class="status s-needs"><i></i>Needs you<span class="wait">Joe's Plumbing is on the line</span></div>
               <div class="task">Fix the kitchen sink · Joe's Plumbing</div>
-              <div class="amount">$180</div>
+              <div class="amount">$<span id="deal-num">180</span> <span id="deal-total" class="unit">total</span><span id="deal-tag" class="ctag">+ parts?<i class="strike"></i></span></div>
               <div class="when">Tuesday the 20th, 10 am</div>
               <div class="note o">$30 over your $150 limit</div>
               <div class="said"><b>Joe said</b><p>“It'll be one eighty.”</p></div>
               <div class="acts three">
                 <div class="btn go">Book $180<small>Tells them yes</small></div>
-                <div id="b-offer" class="btn line">Offer $150<small>Your limit</small><div id="r-offer" class="ripple"></div></div>
-                <div class="btn no stop">Decline<small>Ambient hangs up</small></div>
+                <div id="b-offer" class="btn line"><div class="press"></div>Offer $150<small>Your limit</small><div id="r-offer" class="ripple"></div></div>
+                <div class="btn stop">Decline<small>Ambient hangs up</small></div>
               </div>
             </div>
             <div id="c150" class="card">
-              <div class="status s-call"><i></i>On the phone</div>
-              <div class="task">Fix the kitchen sink · limit $150</div>
-              <div id="c150-amt" class="amount" style="font-size:84px;margin-top:24px;letter-spacing:-.04em">Joe's Plumbing</div>
-              <div class="note c" style="margin-top:34px">You offered $150</div>
-              <div class="when" style="margin-top:22px;color:#9aa3b2;font-size:34px">Waiting for Joe's Plumbing.</div>
-              <div class="said" style="opacity:.6"><b>Joe said</b><p>“It'll be one eighty.”</p><div class="dots"><i></i><i></i><i></i></div></div>
+              <div class="status s-call"><i></i>On the phone<span class="wait">Asking Joe's Plumbing for $150</span></div>
+              <div class="task ph">Fix the kitchen sink</div>
+              <div class="amount ph">$150</div>
+              <div class="when ph">Tuesday the 20th, 10 am</div>
+              <div class="note c">You offered $150</div>
+              <div class="said ph"><b>Joe said</b><p>“It'll be one eighty.”</p></div>
+              <div class="acts one">
+                <div id="ghost" class="btn ghost">Waiting for Joe's Plumbing<div class="dots"><i></i><i></i><i></i></div></div>
+              </div>
             </div>
             <div id="c160" class="card">
               <div class="status s-needs"><i></i>Needs you<span class="wait">Joe's Plumbing is on the line</span></div>
-              <div class="task">Fix the kitchen sink · Joe's Plumbing</div>
-              <div class="amount">$160</div>
-              <div class="when">Tuesday the 20th, 10 am</div>
+              <div class="task ph">Fix the kitchen sink</div>
+              <div class="amount ph">$160</div>
+              <div class="when ph">Tuesday the 20th, 10 am</div>
               <div class="note o">$10 over your $150 limit</div>
               <div class="said"><b>Joe said</b><p>“I could do one sixty.”</p></div>
               <div class="acts two">
-                <div id="b-book" class="btn go">Book $160<small>Tells them yes</small><div id="r-book" class="ripple"></div></div>
-                <div class="btn no stop">Decline<small>Ambient hangs up</small></div>
+                <div id="b-book" class="btn go"><div class="press" style="background:#0b0d12"></div>Book $160<small>Tells them yes</small><div id="r-book" class="ripple"></div></div>
+                <div class="btn stop">Decline<small>Ambient hangs up</small></div>
+              </div>
+            </div>
+            <div id="cconf" class="card">
+              <div class="status s-call"><i></i>On the phone<span class="wait">Checking $160 is the total</span></div>
+              <div class="task ph">Fix the kitchen sink</div>
+              <div class="amount ph">$160</div>
+              <div class="when ph">Tuesday the 20th, 10 am</div>
+              <div class="note c">You said yes to $160</div>
+              <div class="acts one">
+                <div class="btn ghost">Asking if parts are included<div class="dots"><i></i><i></i><i></i></div></div>
               </div>
             </div>
           </div><div class="glare"></div></div>
         </div>
-      </div>
-
-      <div id="s-trap" class="scene clip" data-start="19.45" data-duration="2.75" style="z-index:6">
-        <div id="trap-price" class="price"><sup>$</sup>160</div>
-        <div id="trap-tag" class="tag">+ parts<div class="strike"></div></div>
-        <div id="trap-total" class="total">total</div>
       </div>
 
       <div id="s-booked" class="scene clip" data-start="21.6" data-duration="5.83">
@@ -258,7 +269,7 @@
             <div class="card">
               <div class="status s-done"><i></i>Booked · confirmed by Joe's Plumbing</div>
               <div class="task">Fix the kitchen sink</div>
-              <div class="amount"><span id="bk-num">$160</span> <span style="font-weight:500;font-size:.4em;letter-spacing:-.02em;color:#c9ced8">total</span></div>
+              <div class="amount"><span id="bk-num">$160</span> <span class="unit">total</span></div>
               <div class="when">Tuesday the 20th, 10 am</div>
               <svg class="check" viewBox="0 0 150 150"><circle id="chk-c" cx="75" cy="75" r="68" fill="none" stroke="#2fd37e" stroke-width="7" stroke-linecap="round" transform="rotate(-90 75 75)"/><path id="chk-t" d="M45 77l20 20 41-44" fill="none" stroke="#2fd37e" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <div class="proof"><b>Read back</b><span>“$160 total, Tuesday the 20th at 10 am. Is that right?”</span><b>Joe</b><span>“Yes, that's right.”</span></div>
@@ -307,7 +318,7 @@
           <div id="pm-2" class="line">Taps <b>Book $160</b>.</div>
         </div>
       </div>
-      <div id="s-end" class="scene clip" data-start="27.43" data-duration="5.4">
+      <div id="s-end" class="scene clip" data-start="27.43" data-duration="3.6">
         <div id="end-lock" class="endc">
           <div id="end-mark" class="mark ring"></div>
           <div id="end-name" class="name">Ambient</div>
@@ -318,7 +329,7 @@
       </div>
 
       <div id="flash" class="flash"></div>
-      <audio id="mix" src="assets/mix.wav" data-start="0" data-duration="32.83" data-track-index="9"></audio>
+      <audio id="mix" src="assets/mix.wav" data-start="0" data-duration="31.03" data-track-index="9"></audio>
     </div>
 
     <script>
@@ -326,6 +337,7 @@
       const W = (cue, i) => C[cue].words[i].t;
       const tl = gsap.timeline({ paused: true });
       const out = { duration: 0.5, ease: "expo.out" };
+      const MORPH = { x: -346, y: -156, sx: 0.8, sy: 0.4 };
 
       function words(el, cue) {
         el.innerHTML = C[cue].words.map((w) => `<span>${w.w}</span>`).join(" ");
@@ -343,7 +355,7 @@
         tl.set(el, { opacity: 0 }, 0);
         tl.set(el, { opacity: 1 }, C[cue].at - 0.05);
         const later = Object.values(C).map((c) => c.at).filter((a) => a > C[cue].at);
-        const next = Math.min(C[cue].end + 0.25, later.length ? Math.min(...later) - 0.12 : 99);
+        const next = later.length ? Math.min(...later) - 0.12 : C[cue].end + 0.25;
         tl.to(el, { opacity: 0, duration: 0.15 }, next);
       });
 
@@ -388,7 +400,7 @@
       tl.to(["#hook-price", "#hook-eyebrow"], { scale: 0.86, opacity: 0, filter: "blur(18px)", duration: 0.5, ease: "power2.in" }, 3.3);
       tl.to("#pill-a", { scale: 0.5, opacity: 0, duration: 0.45, ease: "power2.in" }, 3.3);
 
-      tl.fromTo("#ask-dev", { scale: 0.86, y: 40, opacity: 0, filter: "blur(12px)" }, { scale: 1, y: 0, opacity: 1, filter: "blur(0px)", duration: 0.8, ease: "expo.out" }, 4.25);
+      tl.fromTo("#ask-dev", { scale: 0.86, y: 40, opacity: 0, filter: "blur(12px)" }, { scale: 1, y: 0, opacity: 1, filter: "blur(0px)", duration: 0.9, ease: "expo.out" }, 3.75);
       tl.to("#ask-dev", { scale: 1.04, duration: 2.1, ease: "none" }, 5.05);
       words(document.getElementById("ask-heard"), "ask");
       tl.fromTo("#ask-bar", { scaleX: 0.3, opacity: 0.4 }, { scaleX: 1, opacity: 1, duration: 0.4, ease: "expo.out" }, 4.4);
@@ -415,14 +427,14 @@
       tl.fromTo("#pill-b", { y: 80, opacity: 0 }, { y: 0, opacity: 1, ...out }, 11.1);
       tl.set("#m-fill", { width: 650 }, 0);
       tl.set("#m-knob", { x: 650 }, 0);
-      roll("#m-num", 150, 180, W("quote", 2), 0.9);
+      roll("#m-num", 150, 180, W("quote", 2), 0.01);
       tl.to("#m-knob", { x: 1040, duration: 0.9, ease: "expo.out" }, W("quote", 2));
       tl.to("#m-over", { width: 390, duration: 0.9, ease: "expo.out" }, W("quote", 2));
       tl.to("#m-price", { color: "#d97a00", duration: 0.25 }, 12.26);
       tl.fromTo("#m-price", { scale: 1.07 }, { scale: 1, duration: 0.5, ease: "expo.out", immediateRender: false }, 12.26);
       tl.fromTo("#m-diff", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, 12.26);
       tl.to("#meter", { y: 40, opacity: 0, duration: 0.3, ease: "power2.in" }, 12.66);
-      tl.to("#m-price", { x: -306, y: 49, scale: 0.576, color: "#f3f5f8", duration: 0.62, ease: "expo.inOut" }, 12.72);
+      tl.to("#m-price", { x: -314, y: 68, scale: 0.576, color: "#f3f5f8", duration: 0.62, ease: "expo.inOut" }, 12.72);
       tl.to("#m-price", { opacity: 0, duration: 0.12, ease: "none" }, 13.36);
       tl.fromTo("#c180 .amount", { opacity: 0 }, { opacity: 1, duration: 0.12, ease: "none", immediateRender: false }, 13.3);
       tl.set("#c180 .amount", { opacity: 0 }, 0);
@@ -430,58 +442,70 @@
       tl.fromTo(["#c180 .status", "#c180 .task", "#c180 .when", "#c180 .note", "#c180 .said", "#c180 .acts"], { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.42, ease: "expo.out", stagger: 0.05, immediateRender: false }, 13.42);
 
       tl.fromTo("#deal-dev", { y: 900, rotationX: 18, transformPerspective: 2400 }, { y: 0, rotationX: 0, duration: 0.75, ease: "expo.out" }, 12.93);
-      tl.set(["#c150", "#c160"], { opacity: 0 }, 0);
+      const swapOut = (sel, at) => tl.to(sel, { opacity: 0, y: -24, filter: "blur(8px)", duration: 0.28, ease: "power2.in", stagger: 0.04 }, at);
+      const swapIn = (sel, at) => tl.fromTo(sel, { opacity: 0, y: 24, filter: "blur(8px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.36, ease: "expo.out", stagger: 0.04, immediateRender: false }, at);
+      const press = (btn, at) => {
+        tl.fromTo(`${btn} .ripple`, { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.12, ease: "power2.out", immediateRender: false }, at - 0.08);
+        tl.fromTo(btn, { scale: 1 }, { scale: 0.97, duration: 0.09, ease: "power2.out", immediateRender: false }, at);
+        tl.to(btn, { scale: 1, duration: 0.3, ease: "back.out(3)" }, at + 0.09);
+        tl.fromTo(`${btn} .press`, { opacity: 0 }, { opacity: 0.12, duration: 0.09, ease: "none", immediateRender: false }, at);
+        tl.to(`${btn} .ripple`, { scale: 1.8, opacity: 0, duration: 0.42, ease: "power2.out" }, at + 0.04);
+      };
+      tl.set(["#c150 > *", "#c160 > *"], { opacity: 0 }, 0);
+      tl.set(["#c150 .ph", "#c160 .ph"], { opacity: 0 }, 0);
       tl.to("#deal-dev", { scale: 1.04, y: -14, duration: 0.92, ease: "none" }, 13.68);
       tl.to("#deal-dev", { scale: 1.18, x: 0, y: 0, transformOrigin: "50% 62%", rotationY: 0, duration: 0.55, ease: "expo.inOut" }, 14.62);
-      tl.fromTo("#b-offer", { scale: 1 }, { scale: 0.95, duration: 0.09, yoyo: true, repeat: 1, ease: "power2.out" }, 15.28);
-      tl.fromTo("#r-offer", { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.14, ease: "power2.out" }, 15.28 - 0.06);
-      tl.to("#r-offer", { opacity: 0, scale: 1.15, duration: 0.25, ease: "power2.in" }, 15.28 + 0.2);
-      tl.to(["#c180 .acts .btn:not(#b-offer)"], { opacity: 0, filter: "blur(6px)", duration: 0.16, ease: "power2.out" }, 15.36);
-      tl.to("#c180 .said", { opacity: 0, x: 12, duration: 0.2, ease: "power2.out" }, 15.36);
-      tl.to("#c180", { opacity: 0, duration: 0.3, ease: "power2.inOut" }, 15.48);
-      tl.fromTo("#c150", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.36, ease: "power2.out", immediateRender: false }, 15.74);
       tl.to("#deal-dev", { scale: 1, x: 0, y: 0, rotationY: -3, duration: 0.6, ease: "expo.inOut" }, 15.5);
-      tl.fromTo("#c150 .note", { scale: 1.12, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(2)", transformOrigin: "0% 50%", immediateRender: false }, 15.93);
-      tl.to("#c150", { opacity: 0, duration: 0.24, ease: "power2.inOut" }, 18.3);
-      tl.fromTo("#c160", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.36, ease: "power2.out", immediateRender: false }, 18.38);
-      tl.fromTo("#c160 .amount", { scale: 1.08, color: "#ff9f1c" }, { scale: 1, color: "#f3f5f8", duration: 0.5, ease: "expo.out", transformOrigin: "0% 100%", immediateRender: false }, 18.93);
       tl.to("#deal-dev", { scale: 1.18, x: 0, y: 0, transformOrigin: "26% 62%", rotationY: 0, duration: 0.5, ease: "expo.inOut" }, 18.8);
-      tl.fromTo("#b-book", { scale: 1 }, { scale: 0.95, duration: 0.09, yoyo: true, repeat: 1, ease: "power2.out" }, 19.33);
-      tl.fromTo("#r-book", { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.14, ease: "power2.out" }, 19.33 - 0.06);
-      tl.to("#r-book", { opacity: 0, scale: 1.15, duration: 0.25, ease: "power2.in" }, 19.33 + 0.2);
+      press("#b-offer", 15.28);
+      tl.to(["#c180 .acts .btn:not(#b-offer)"], { opacity: 0, filter: "blur(8px)", scale: 0.96, duration: 0.2, ease: "power2.in" }, 15.36);
+      swapOut(["#c180 .status", "#c180 .note"], 15.4);
+      tl.to("#b-offer", { x: MORPH.x, y: MORPH.y, scaleX: MORPH.sx, scaleY: MORPH.sy, opacity: 0, duration: 0.32, ease: "power3.inOut" }, 15.46);
+      tl.fromTo("#c150 .note", { x: -MORPH.x, y: -MORPH.y, scaleX: 1 / MORPH.sx, scaleY: 1 / MORPH.sy, opacity: 0 }, { x: 0, y: 0, scaleX: 1, scaleY: 1, opacity: 1, duration: 0.32, ease: "power3.inOut", transformOrigin: "50% 50%", immediateRender: false }, 15.5);
+      roll("#deal-num", 180, 150, 15.5, 0.42);
+      swapIn(["#c150 .status", "#c150 .acts"], 15.62);
+      for (let t = 16.0; t < 18.6; t += 1.5) tl.fromTo("#ghost", { opacity: 0.7 }, { opacity: 0.4, duration: 0.75, yoyo: true, repeat: 1, ease: "sine.inOut", immediateRender: false }, t);
+      document.querySelectorAll("#ghost .dots i").forEach((d, i) => {
+        for (let t = 15.9; t < 18.6; t += 0.6) tl.fromTo(d, { opacity: 0.3 }, { opacity: 1, duration: 0.2, yoyo: true, repeat: 1, ease: "sine.inOut", immediateRender: false }, t + i * 0.12);
+      });
+      swapOut(["#c150 .acts", "#c150 .status", "#c150 .note", "#c180 .said"], 18.6);
+      swapIn(["#c160 .acts", "#c160 .status", "#c160 .note", "#c160 .said"], 18.84);
+      roll("#deal-num", 150, 160, 18.9, 0.42);
+      tl.fromTo("#c180 .amount", { scale: 1.06, color: "#ff9f1c" }, { scale: 1, color: "#f3f5f8", duration: 0.5, ease: "expo.out", transformOrigin: "0% 100%", immediateRender: false }, 18.93);
+      press("#b-book", 19.33);
 
-      tl.set("#trap-tag", { rotation: -5 }, 0);
-      tl.set("#trap-tag .strike", { scaleX: 1 }, 0);
-      tl.to("#deal-dev", { opacity: 0, scale: 1.3, filter: "blur(16px)", duration: 0.3, ease: "power2.in" }, 19.48);
-      tl.to(["#c160 .status", "#c160 .task", "#c160 .when", "#c160 .note", "#c160 .said", "#c160 .acts"], { opacity: 0, duration: 0.12, ease: "none" }, 19.38);
-      tl.set("#c160 .amount", { opacity: 0 }, 19.47);
-      tl.fromTo("#trap-price", { x: -310, y: -86, scale: 0.68, color: "#f3f5f8" }, { x: 0, y: 0, scale: 1, color: "#15130f", duration: 0.55, ease: "expo.out", immediateRender: false }, 19.47);
-      tl.set("#trap-tag", { opacity: 0 }, 0);
-      tl.fromTo("#trap-tag", { opacity: 0, scale: 1.3 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)", transformOrigin: "0% 60%", immediateRender: false }, 19.75);
-      tl.to("#trap-total", { opacity: 0, duration: 0.2 }, 21.62);
-      tl.to("#trap-price", { x: -302, y: -50, scale: 0.565, color: "#f3f5f8", duration: 0.5, ease: "expo.inOut" }, 21.62);
-      tl.set("#trap-price", { opacity: 0 }, 22.12);
-      tl.set("#s-booked .amount", { opacity: 0 }, 0);
-      tl.set("#s-booked .amount", { opacity: 1 }, 22.12);
-      tl.fromTo("#booked-dev", { y: 900 }, { y: 0, duration: 0.55, ease: "expo.out", immediateRender: false }, 21.6);
+      tl.set(["#cconf > *", "#deal-total", "#deal-tag"], { opacity: 0 }, 0);
+      tl.set("#deal-tag", { rotation: -4 }, 0);
+      tl.set("#deal-tag .strike", { scaleX: 0 }, 0);
+      tl.to("#deal-dev", { scale: 1, x: 0, y: 0, rotationY: -2, duration: 0.6, ease: "expo.inOut" }, 19.5);
+      swapOut(["#c160 .acts", "#c160 .status", "#c160 .note"], 19.45);
+      swapIn(["#cconf .acts", "#cconf .status", "#cconf .note"], 19.66);
+      tl.fromTo("#deal-tag", { opacity: 0, scale: 1.4 }, { opacity: 1, scale: 1, duration: 0.28, ease: "back.out(2.4)", transformOrigin: "0% 60%", immediateRender: false }, 19.75);
+      tl.fromTo("#deal-tag .strike", { scaleX: 0 }, { scaleX: 1, duration: 0.26, ease: "power3.out", transformOrigin: "0% 50%", immediateRender: false }, W("allin", 3) - 0.1);
+      tl.to("#deal-tag", { y: 160, rotation: 20, opacity: 0, duration: 0.36, ease: "power2.in" }, W("allin", 4));
+      tl.fromTo("#deal-total", { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out", immediateRender: false }, W("allin", 4) + 0.12);
+      document.querySelectorAll("#cconf .dots i").forEach((d, i) => {
+        for (let t = 19.9; t < 21.5; t += 0.6) tl.fromTo(d, { opacity: 0.3 }, { opacity: 1, duration: 0.2, yoyo: true, repeat: 1, ease: "sine.inOut", immediateRender: false }, t + i * 0.12);
+      });
+      tl.fromTo("#booked-dev", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out", immediateRender: false }, 21.62);
+      tl.set("#booked-dev", { rotationY: -2 }, 0);
       tl.fromTo("#booked-dev .glow", { opacity: 1.0 }, { opacity: 0.6, duration: 0.9, ease: "power2.out", immediateRender: false }, 22.03);
-      tl.to("#trap-tag", { y: 240, rotation: 24, opacity: 0, duration: 0.36, ease: "power2.in" }, W("allin", 3) - 0.1);
-      tl.fromTo("#trap-total", { opacity: 0, y: -50, scale: 1.2 }, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "expo.out", transformOrigin: "0% 100%" }, W("allin", 4));
 
       tl.fromTo("#chk-c", { strokeDasharray: 428, strokeDashoffset: 428 }, { strokeDashoffset: 0, duration: 0.6, ease: "power2.out" }, 22.1);
-      tl.fromTo("#chk-t", { strokeDasharray: 90, strokeDashoffset: 90 }, { strokeDashoffset: 0, duration: 0.35, ease: "power2.out" }, 22.5);
+      tl.fromTo("#chk-t", { strokeDasharray: 90, strokeDashoffset: 90 }, { strokeDashoffset: 0, duration: 0.28, ease: "power2.out" }, 22.5);
+      tl.fromTo("#s-booked .check", { scale: 1 }, { scale: 1.08, duration: 0.08, yoyo: true, repeat: 1, ease: "power2.out", transformOrigin: "50% 50%", immediateRender: false }, 22.78);
       tl.to("#pb-end", { opacity: 1, duration: 0.2 }, 24.35);
       tl.to(".pb-joe", { opacity: 0, duration: 0.2 }, 24.3);
       tl.to(".pb-amb", { opacity: 1, duration: 0.2 }, 24.3);
       tl.to("#pill-b", { y: 40, opacity: 0, duration: 0.4, ease: "power2.in" }, 23.98 + 0.4);
-      tl.to("#booked-dev", { scale: 0.56, x: -500, y: 40, rotationY: 14, duration: 1.1, ease: "expo.inOut" }, 24.23);
+      tl.to("#booked-dev", { scale: 0.66, x: -440, y: 30, rotationY: 12, duration: 1.1, ease: "expo.inOut" }, 24.23);
       tl.to("#sun", { x: 300, y: 80, duration: 5, ease: "none" }, 24.23);
       document.querySelectorAll("#rules .rule").forEach((el, i) => {
         tl.set(el, { opacity: 0 }, 0);
         tl.fromTo(el, { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.6, ease: "expo.out", immediateRender: false }, 24.75 + i * 0.6);
         tl.fromTo(el.querySelector("svg"), { scale: 0.4 }, { scale: 1, duration: 0.45, ease: "back.out(2.6)", transformOrigin: "50% 50%", immediateRender: false }, 24.75 + i * 0.6);
       });
-      tl.to("#booked-dev", { scale: 0.53, duration: 1.8, ease: "none" }, 25.33);
+      tl.to("#booked-dev", { scale: 0.64, duration: 1.8, ease: "none" }, 25.33);
       tl.to(["#rules", "#booked-dev"], { opacity: 0, y: -20, duration: 0.28, ease: "power2.in" }, 27.13);
 
       tl.fromTo("#end-mark", { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.7, ease: "expo.out" }, 27.43);
@@ -489,11 +513,11 @@
       tl.fromTo("#end-say", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" }, 27.95);
       tl.fromTo("#end-cta", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 28.2);
       tl.fromTo("#end-fine", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 28.6);
-      tl.fromTo("#end-lock", { scale: 1 }, { scale: 1.04, duration: 5.4, ease: "none" }, 27.43);
+      tl.fromTo("#end-lock", { scale: 1 }, { scale: 1.03, duration: 3.6, ease: "none" }, 27.43);
       tl.fromTo("#end-mark", { boxShadow: "0 0 140px #3d7bffff" }, { boxShadow: "0 0 80px #3d7bff99", duration: 0.8, ease: "power2.out", immediateRender: false }, 28.2);
 
       tl.set(["#ask-dev", "#deal-dev", "#booked-dev"], { transformPerspective: 2600 }, 0);
-      tl.fromTo("#ask-dev", { rotationY: 7 }, { rotationY: -3, duration: 2.9, ease: "none", immediateRender: false }, 4.25);
+      tl.fromTo("#ask-dev", { rotationY: 7 }, { rotationY: -3, duration: 3.4, ease: "none", immediateRender: false }, 3.75);
       tl.fromTo("#deal-dev", { rotationY: 6 }, { rotationY: 1, duration: 1.68, ease: "none", immediateRender: false }, 12.93);
       tl.to("#deal-dev", { rotationY: -2, scale: 1.06, duration: 2.6, ease: "none" }, 16.15);
       tl.fromTo("#deal-dev .glow", { color: "#3d7bff" }, { color: "#ff9f1c", duration: 0.6, immediateRender: false }, 13.1);
@@ -502,11 +526,8 @@
       tl.set("#booked-dev .glow", { color: "#2fd37e", opacity: 0.6 }, 0);
       tl.fromTo("#booked-dev", { rotationY: -2 }, { rotationY: 3, duration: 7.3, ease: "none", immediateRender: false }, 22.03);
       tl.fromTo("#ask-dev .glow", { opacity: 0.25 }, { opacity: 0.6, duration: 0.5, immediateRender: false }, 4.4);
-      document.querySelectorAll("#c150 .dots i").forEach((d, i) => {
-        for (let t = 15.9; t < 18.2; t += 0.6) tl.fromTo(d, { opacity: 0.3 }, { opacity: 1, duration: 0.2, yoyo: true, repeat: 1, ease: "sine.inOut", immediateRender: false }, t + i * 0.12);
-      });
       tl.fromTo("#s-booked .check", { scale: 0.8 }, { scale: 1, duration: 0.32, ease: "back.out(3)", transformOrigin: "50% 50%" }, 22.36);
-      for (const [a, b] of [[14.55, 15.6], [18.75, 19.45]]) {
+      for (const [a, b] of [[14.55, 15.6], [18.75, 19.55]]) {
         tl.to("#pill-b", { y: 60, opacity: 0, duration: 0.25, ease: "power2.in" }, a);
         tl.to("#pill-b", { y: 0, opacity: 1, duration: 0.35, ease: "expo.out" }, b);
       }
@@ -517,7 +538,8 @@
         tl.to("#pill-m", { opacity: 0, y: 30, duration: 0.2, ease: "power2.in" }, b - 0.2);
         tl.set(line, { opacity: 0 }, b);
       }
-      tl.to({}, { duration: 0.01 }, 32.82);
+      tl.fromTo(".pill .av .ring", { rotation: 0 }, { rotation: 3400, duration: 31.03, ease: "none" }, 0);
+      tl.to({}, { duration: 0.01 }, 31.02);
 
       window.__timelines = window.__timelines || {};
       window.__timelines["main"] = tl;
