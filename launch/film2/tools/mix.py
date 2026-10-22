@@ -158,7 +158,7 @@ def main():
     mix = voice[:, None] + fx + wide
     raw = ROOT / "assets" / "mix-raw.wav"
     sf.write(raw, mix, SR, subtype="PCM_24")
-    subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(raw), "-af", "highshelf=f=3500:g=7,equalizer=f=320:t=q:w=1:g=-2,equalizer=f=2000:t=o:w=1.5:g=-2.5,loudnorm=I=-13.2:TP=-1.5:LRA=11", "-ar", str(SR), str(ROOT / "assets" / "mix.wav")], check=True)
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(raw), "-af", "highshelf=f=3500:g=7,equalizer=f=320:t=q:w=1:g=-2,equalizer=f=2000:t=o:w=1.5:g=-2.5,loudnorm=I=-14:TP=-2.5:LRA=11", "-ar", str(SR), str(ROOT / "assets" / "mix.wav")], check=True)
     raw.unlink()
     (ROOT / "cues.js").write_text("window.CUES = " + json.dumps(cues, indent=1) + ";\n", encoding="utf-8")
     print(json.dumps({k: [w["t"] for w in v["words"]] for k, v in cues.items()}))
