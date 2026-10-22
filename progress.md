@@ -3,6 +3,14 @@
 Plan: `docs/plans/2026-10-18-handle-the-call/overview.md`. Deadline Fri 2026-10-23 12:00 PT; submit Thu 2026-10-22.
 Branch: `hackathon/household-consent`. Nothing is pushed.
 
+## Film v2: motion-design rebuild (started 2026-10-22, user: "visuals look shit, UI horrid")
+
+- Project: `launch/film2/` (draft 17 stays in `launch/film/`). Same voice, mix and cue times; every visual is new.
+- Look: a warm porcelain world (light, like the inspora.design bar). Hero objects are drawn in HTML: an Echo Show with a state-coloured glow (blue on the call, amber when it needs you, green when booked), Joe's phone, and a live call pill that carries the speaker, the words as they are said, a voice-driven waveform (`levels.js` from `tools/levels.py`) and the call timer. The price flies from the limit meter into the card (a shared-element move).
+- Card UI is redesigned (Inter, 172 px price, white primary button, outlined Offer, quiet Decline). Button order and states copy the product's `src/task-view.ts`. TODO: port the new card style into `src/task-view.ts` so "Ambient's own screens" stays true.
+- Critic tooling: `ambient-launch-refs/critic/mk.py` builds blind sets from a JSON spec (random labels, random CRF).
+- v2-01 rendered (`launch/film2/renders/v2-01.mp4`). Blind rounds running: `ui1` (UI craft vs 3 inspora clips, Fomo, Linearity) and `v2r1` (film vs Opus 5.5, Sonnet 5.5, Poke).
+
 ## Launch kit (started 2026-10-21, overnight goal)
 
 Goal: a 30 to 40 s launch film that makes a judge sit forward in 3 s, a launch-grade README, one Devpost file, and the full video script. Bar: the Claude Opus 5.5 and Sonnet 5.5 launch films and Poke's launch film, plus every launch film on recent.design. A fresh harsh critic judges each piece blind against reference frames; a final check uses films no builder or critic has seen.

@@ -22,19 +22,19 @@ export const TASK_HTML = `<!doctype html>
  --go:oklch(0.52 0.13 152);--btn:oklch(0.26 0.01 255)}
 *{box-sizing:border-box;margin:0}
 html,body{height:100%}
-body{background:var(--bg);color:var(--fg);font:400 clamp(12px,3.2vw,40px)/1.35 -apple-system,"SF Pro Text",system-ui,sans-serif;
+body{background:radial-gradient(90% 75% at 10% 0%,oklch(0.30 0.06 262),transparent 60%) var(--bg);color:var(--fg);font:400 clamp(12px,3.2vw,40px)/1.35 Inter,-apple-system,"SF Pro Text",system-ui,sans-serif;
  -webkit-font-smoothing:antialiased;padding:7vw 6vw 4.5vw;display:flex;flex-direction:column;justify-content:flex-start;gap:2.2vw;overflow:hidden}
 button{font:inherit;color:inherit;cursor:pointer;border:0}
 button:focus-visible{outline:2px solid var(--call);outline-offset:3px}
 .top{display:flex;align-items:center;gap:.8em}
-.chip{display:inline-flex;align-items:center;gap:.5em;font-size:max(15px,.7em);font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--call)}
-.chip::before{content:"";width:.7em;height:.7em;border-radius:50%;background:currentColor}
+.chip{display:inline-flex;align-items:center;gap:.6em;font-size:max(15px,.62em);font-weight:620;letter-spacing:.14em;text-transform:uppercase;color:var(--call)}
+.chip::before{content:"";width:.6em;height:.6em;border-radius:50%;background:currentColor;box-shadow:0 0 .9em currentColor}
 .chip.needs{color:var(--needs)}.chip.done{color:var(--done)}.chip.warn{color:var(--warn)}.chip.idle{color:var(--dim)}
 .chip.needs::before{animation:breathe 2.4s ease-in-out infinite}
 @keyframes breathe{50%{opacity:.35;transform:scale(.8)}}
-.clock{margin-left:auto;font-size:max(15px,.7em);font-weight:600;font-variant-numeric:tabular-nums}
+.clock{margin-left:auto;font-size:max(15px,.7em);font-weight:500;color:var(--dim);font-variant-numeric:tabular-nums}
 .clock:empty{display:none}
-.what{font-size:1em;font-weight:600;margin-bottom:-.5em;text-wrap:balance}
+.what{font-size:.85em;font-weight:500;color:var(--dim);margin-bottom:-.6em;text-wrap:balance}
 .what:empty{display:none}
 .sep{display:none}
 .when{display:block}
@@ -48,9 +48,10 @@ body.booked .check{display:grid;animation:land 420ms cubic-bezier(0.2,0,0,1) bot
 body.booked .check path{animation:draw 600ms 180ms cubic-bezier(0.2,0,0,1) both}
 @keyframes land{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
 @keyframes draw{0%{stroke-dashoffset:24}100%{stroke-dashoffset:0}}
-.stake{font-size:2.6em;font-weight:680;letter-spacing:-.025em;line-height:1.04;font-variant-numeric:tabular-nums;text-wrap:balance}
+.stake{font-size:2.9em;font-weight:620;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums;text-wrap:balance}
+.stake .sep~.when{font-size:.34em;font-weight:500;letter-spacing:-.02em;line-height:1.2;margin-top:.3em;color:oklch(0.92 0.005 255)}
 .stake.long{font-size:2em}
-.over{font-size:1.05em;font-weight:620;color:var(--needs);font-variant-numeric:tabular-nums;margin-top:-.4em}
+.over{align-self:flex-start;padding:.3em .75em;border-radius:999px;background:oklch(0.78 0.17 62 / .12);box-shadow:inset 0 0 0 1px oklch(0.78 0.17 62 / .27);font-size:.72em;font-weight:620;color:var(--needs);font-variant-numeric:tabular-nums;margin-top:-.3em}
 .over:empty{display:none}
 .flag{font-size:.72em;font-weight:600;color:var(--needs);margin-top:-.4em}
 .flag:empty{display:none}
@@ -83,22 +84,22 @@ body.proof .line span{display:block}
 .tile[data-state="released"] .state,.tile[data-state="ended"] .state{color:var(--dim)}
 .actions{display:flex;gap:.5em;flex-wrap:wrap;align-items:center;margin-top:.3em}
 .actions:empty{display:none}
-.actions button{min-height:2.5em;padding:0 1em;border-radius:.55em;background:var(--btn);font-weight:600;font-size:.95em}
-.actions button.primary{background:var(--go);color:#fff;padding:0 1.4em}
-.actions button.offer{background:transparent;box-shadow:inset 0 0 0 1.5px oklch(1 0 0 / .4)}
-.actions button.quiet{background:transparent;color:var(--stop);padding:0 .8em;box-shadow:inset 0 0 0 1.5px oklch(0.68 0.20 25 / .45)}
+.actions button{min-height:2.5em;padding:0 1em;border-radius:.8em;background:oklch(1 0 0 / .06);box-shadow:inset 0 0 0 1px oklch(1 0 0 / .12);font-weight:600;font-size:.95em;letter-spacing:-.01em}
+.actions button.primary{background:var(--fg);color:var(--bg);box-shadow:0 .3em 1em -.3em oklch(1 0 0 / .3);padding:0 1.4em}
+.actions button.offer{background:oklch(1 0 0 / .03);box-shadow:inset 0 0 0 2px oklch(1 0 0 / .4)}
+.actions button.quiet{background:oklch(0.68 0.20 25 / .08);color:oklch(0.78 0.13 25);padding:0 .8em;box-shadow:inset 0 0 0 1px oklch(0.78 0.13 25 / .2)}
 body[data-state="live"]:not([data-device="tv"]),body[data-state="done"]:not([data-device="tv"]){justify-content:center}
 body[data-state="needs"]:not([data-device="tv"]){justify-content:flex-start}
 @media (min-width:481px){body[data-state="needs"]:not([data-device="tv"]){padding-top:4.5vw;gap:1.5vw}}
 body[data-state="needs"]:not([data-device="tv"]) .actions{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);align-items:stretch}
 body[data-state="needs"] .actions button{padding-inline:.6em;min-height:max(56px,2.9em);min-width:44px}
-.actions button small{display:block;font-size:max(13px,.8em);font-weight:500;text-wrap:balance}
+.actions button small{display:block;font-size:max(13px,.72em);font-weight:500;opacity:.72;text-wrap:balance}
 .actions button.offer{padding-top:.3em;padding-bottom:.3em}
 .actions button.call{background:var(--fg);color:var(--bg)}
 .actions button:active{transform:scale(.97)}
 .hint{font-size:max(15px,.72em);color:oklch(0.86 0.01 255)}
 .hint:empty{display:none}
-.foot{margin-top:1em;margin-bottom:1.2em;display:grid;grid-template-columns:minmax(0,max-content) 1fr;gap:.45em .8em;align-content:start;border-top:1px solid var(--faint);padding-top:.9em;font-size:max(13px,.72em);color:var(--dim)}
+.foot{margin-top:1em;margin-bottom:1.2em;display:grid;grid-template-columns:minmax(0,max-content) 1fr;gap:.45em .8em;align-content:start;border-radius:.7em;background:oklch(1 0 0 / .04);box-shadow:inset 0 0 0 1px oklch(1 0 0 / .08);padding:.8em 1em;font-size:max(13px,.72em);color:var(--dim)}
 .foot:empty{display:none}
 .line{display:contents}
 .line b{font-weight:600;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
