@@ -8,10 +8,10 @@ Voices: Joe (Joe's Plumbing) and Ambient speak on a phone band. Maya speaks in t
 
 | Time | Picture | Sound |
 |---|---|---|
-| 0.0 | Joe's hand on his phone, graded warm, pushing in slowly. A huge "$160" punches in out of a blur on a low hit. A phone waveform at the bottom. | The tense score starts. |
+| 0.0 | Joe's hand on his phone, graded warm, pushing in slowly. A huge "$160" punches in out of a blur on a low hit. | The tense score starts. |
 | 0.15 | Joe's words arrive one by one. On "plus", an amber "+ parts" slams onto the price. | **Joe:** "Yes, plus parts." |
-| 1.70 | Ambient's words arrive in blue, and the twist lands with them: a red live dot, "Ambient, an AI, is on the phone for Maya · 0:41". On "one total", a bright line strikes "+ parts", and the tag falls away. | **Ambient:** "Sorry. I need one total price." A swish on the strike. |
-| 3.65 | The footage runs backwards at five times speed. The call timer runs back to 0:00. | A reversed whoosh. |
+| 1.70 | Joe's line clears, Ambient's words arrive in blue in its place, and the twist lands with them: a red live dot, "Ambient, an AI, is on the phone for Maya". On "one total", a bright line strikes "+ parts", and the tag falls away. | **Ambient:** "Sorry. I need one total price." A swish on the strike. |
+| 3.65 | The footage runs backwards at five times speed. | A reversed whoosh. |
 | 4.3 | The dripping tap in low sun. Maya's words arrive. A chip lands: "Her limit · $150". | **Maya:** "Alexa, fix the sink. Under one fifty." Three drips. |
 | 7.15 | A whip into Joe's phone ringing: the real incoming-call screen, "Ambient · AI assistant". Blue rings pulse from the Ambient mark. | Whoosh, two-tone ring, pickup click. |
 | 7.93 | Ambient's first words, in blue. | **Ambient:** "Hi. This is an AI assistant, calling for Maya." |

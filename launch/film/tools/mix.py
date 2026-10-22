@@ -61,7 +61,7 @@ EFFECTS = [
 
 PEAK = {"rewind": 0.853, "whoosh": 0.162, "swish": 0.35, "stopdown": 0.103, "riser": 2.771}
 
-TENSION = [(0.0, 0.16), (3.6, 0.2), (4.3, 0.05), (6.9, 0.07), (7.4, 0.14), (11.0, 0.14), (11.3, 0.24), (15.23, 0.3), (19.23, 0.42), (19.48, 0.0), (32.83, 0.0)]
+TENSION = [(0.0, 0.16), (3.6, 0.2), (4.3, 0.05), (6.9, 0.07), (7.4, 0.14), (10.45, 0.14), (10.55, 0.0), (11.06, 0.0), (11.1, 0.3), (15.23, 0.3), (19.23, 0.42), (19.48, 0.0), (32.83, 0.0)]
 RELEASE = [(0.0, 0.0), (21.23, 0.0), (21.93, 0.2), (22.03, 0.6), (24.53, 0.36), (26.53, 0.38), (29.18, 0.42), (29.31, 0.0), (29.58, 0.0), (29.83, 0.3), (32.13, 0.26), (32.83, 0.18)]
 
 
@@ -105,6 +105,17 @@ def words(x, text):
     return [{"w": w, "t": round(o / 100, 2)} for w, o in zip(tokens, onsets)]
 
 
+def duck(voice, depth=0.72):
+    level = np.abs(voice)
+    smooth = np.zeros_like(level)
+    attack, release = np.exp(-1 / (0.03 * SR)), np.exp(-1 / (0.45 * SR))
+    state = 0.0
+    for i, x in enumerate(level[:: SR // 1000]):
+        state = max(x, state * (release if x < state else attack))
+        smooth[i * (SR // 1000):(i + 1) * (SR // 1000)] = state
+    return 1 - depth * np.clip(smooth / 0.08, 0, 1)
+
+
 def envelope(points, n):
     t = np.arange(n) / SR
     xs, ys = zip(*points)
@@ -135,12 +146,13 @@ def main():
         m = np.concatenate([np.zeros(start, dtype="float32"), m])
         m = np.concatenate([m, np.zeros(max(0, n - len(m)), dtype="float32")])[:n]
         bed += m * envelope(points, n)
+    bed *= duck(voice)
     haas = int(0.011 * SR)
     wide = np.stack([bed, np.concatenate([np.zeros(haas, dtype="float32"), bed[:-haas]])], axis=1)
     mix = voice[:, None] + fx + wide
     raw = ROOT / "assets" / "mix-raw.wav"
     sf.write(raw, mix, SR, subtype="PCM_24")
-    subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(raw), "-af", "highshelf=f=3500:g=7,equalizer=f=320:t=q:w=1:g=-2,loudnorm=I=-13.2:TP=-1.5:LRA=11", "-ar", str(SR), str(ROOT / "assets" / "mix.wav")], check=True)
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(raw), "-af", "highshelf=f=3500:g=7,equalizer=f=320:t=q:w=1:g=-2,equalizer=f=2000:t=o:w=1.5:g=-2.5,loudnorm=I=-13.2:TP=-1.5:LRA=11", "-ar", str(SR), str(ROOT / "assets" / "mix.wav")], check=True)
     raw.unlink()
     (ROOT / "cues.js").write_text("window.CUES = " + json.dumps(cues, indent=1) + ";\n", encoding="utf-8")
     print(json.dumps({k: [w["t"] for w in v["words"]] for k, v in cues.items()}))

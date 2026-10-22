@@ -52,7 +52,6 @@
       .phone img { display: block; width: 760px; }
       .ring { position: absolute; left: 1456px; top: 778px; width: 160px; height: 160px; margin: -80px 0 0 -80px; border-radius: 50%; border: 3px solid var(--blue-label); opacity: 0; }
       .sim { position: absolute; font: 400 30px/1 var(--label); color: #b5afa5; }
-      #wave { position: absolute; left: 180px; top: 1000px; }
       .big { position: absolute; left: 176px; font-size: 150px; line-height: 1.02; letter-spacing: -.035em; font-variation-settings: "opsz" 72; }
       .mark { width: 132px; height: 132px; border-radius: 50%; border: 22px solid var(--blue-label); }
     </style>
@@ -73,12 +72,12 @@
       <audio id="mix" src="assets/mix.wav" data-start="0" data-duration="32.83" data-track-index="9"></audio>
 
       <div id="s-hook" class="scene clip" data-start="0" data-duration="4.45" data-track-index="0">
-        <div class="label" id="hook-top" style="left:180px;top:120px;font-size:34px;color:var(--ink)"><span class="live"></span>Ambient, an AI, is on the phone for Maya <span style="color:var(--muted)">· <span id="timer" class="num">0:41</span></span></div>
+        <div class="label" id="hook-top" style="left:180px;top:120px;font-size:34px;color:var(--ink)"><span class="live"></span>Ambient, an AI, is on the phone for Maya</div>
         <div class="price" id="hook-price"><span class="cur">$</span><span data-price="160"></span><span class="tag trap" id="hook-tag">+ parts<span class="strike"></span></span></div>
         <div class="label row-label" id="hook-joe-label" style="top:676px">Joe's Plumbing</div>
         <div class="line joe" data-cue="hook-joe" data-trap="plus,parts." style="top:710px"></div>
-        <div class="label row-label" id="hook-amb-label" style="top:826px;color:var(--blue-label)">Ambient · AI</div>
-        <div class="line amb" data-cue="hook-amb" style="top:860px"></div>
+        <div class="label row-label" id="hook-amb-label" style="top:676px;color:var(--blue-label)">Ambient · AI</div>
+        <div class="line amb" data-cue="hook-amb" style="top:710px"></div>
       </div>
 
       <div id="s-ask" class="scene clip" data-start="4.3" data-duration="2.85" data-track-index="1">
@@ -117,7 +116,7 @@
       </div>
 
       <div id="s-trap" class="scene clip" data-start="19.63" data-duration="2.4" data-track-index="4">
-        <div class="label" style="left:180px;top:120px;font-size:34px;color:var(--ink)"><span class="live"></span>Ambient, an AI, is on the phone for Maya <span style="color:var(--muted)">· 0:41</span></div>
+        <div class="label" style="left:180px;top:120px;font-size:34px;color:var(--ink)"><span class="live"></span>Ambient, an AI, is on the phone for Maya</div>
         <div class="price" id="trap-price"><span class="cur">$</span><span data-price="160"></span><span class="slot"><span class="tag trap" id="trap-tag">+ parts<span class="strike" style="transform:scaleX(1)"></span></span><span class="tag" id="trap-total" style="position:absolute;left:0;bottom:0;opacity:0">total</span></span></div>
         <div class="label row-label" style="top:676px">Joe's Plumbing</div>
         <div class="line joe" data-cue="allin" style="top:710px"></div>
@@ -144,10 +143,9 @@
           <div id="end-say" style="font-size:64px;color:var(--green);letter-spacing:-.015em">You still decide.</div>
           <div id="end-cta" style="margin-top:22px;display:flex;align-items:center;gap:22px;font:600 26px/1 var(--label);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Try it in one minute, no keys<span style="padding:16px 26px;border-radius:14px;background:#1f2a3d;color:#dce7ff;font:500 40px/1 Consolas, monospace;letter-spacing:0;text-transform:none">pnpm demo</span></div>
         </div>
-        <div class="sim" id="end-sim" style="left:0;right:0;top:1012px;text-align:center;font-size:24px;color:var(--muted)">Simulated call and Alexa+ host · real product screens</div>
+        <div class="sim" id="end-sim" style="left:0;right:0;top:1000px;text-align:center;font-size:28px;color:#b5afa5">Simulated call and Alexa+ host · real product screens</div>
       </div>
 
-      <svg id="wave" width="1560" height="60"><path id="wave-path" fill="none" stroke="#4a4640" stroke-width="3" /></svg>
     </div>
 
     <script>
@@ -184,12 +182,10 @@
       tl.from("#hook-price", { scale: 1.14, filter: "blur(10px)", opacity: 0, duration: 0.55, ease: "expo.out", transformOrigin: "0% 60%" }, 0);
       tl.fromTo("#hook-tag", { opacity: 0, scale: 1.35, x: 40 }, { opacity: 1, scale: 1, x: 0, duration: 0.45, ease: "expo.out", transformOrigin: "0% 80%" }, window.CUES["hook-joe"].words[1].t);
       tl.from("#hook-amb-label", { opacity: 0, duration: 0.3 }, 1.6);
-      tl.to('[data-cue="hook-joe"]', { opacity: 0.35, duration: 0.3 }, 1.65);
+      tl.to(['[data-cue="hook-joe"]', "#hook-joe-label"], { opacity: 0, duration: 0.25 }, 1.6);
       tl.to("#hook-tag .strike", { scaleX: 1, duration: 0.28, ease: "power3.out" }, window.CUES["hook-amb"].words[3].t);
       tl.to("#hook-tag", { y: 60, rotation: 5, opacity: 0, duration: 0.4, ease: "power2.in" }, window.CUES["hook-amb"].words[5].t + 0.1);
 
-      const timer = { s: 41 };
-      tl.to(timer, { s: 0, duration: 0.55, ease: "power2.in", onUpdate: () => ($("#timer").textContent = `0:${String(Math.round(timer.s)).padStart(2, "0")}`) }, 3.65);
       tl.to(["#hook-price", '[data-cue="hook-joe"]', '[data-cue="hook-amb"]', "#hook-joe-label", "#hook-amb-label"], { x: -90, opacity: 0, filter: "blur(10px)", duration: 0.45, ease: "power2.in", stagger: 0.04 }, 3.65);
       tl.to("#hook-top", { opacity: 0, duration: 0.2 }, 4.2);
 
@@ -260,17 +256,6 @@
       tl.fromTo("#end-lock", { scale: 1 }, { scale: 1.035, duration: 3.5, ease: "none", immediateRender: false }, 29.33);
       for (const at of [31.05, 32.02]) tl.fromTo("#end-mark", { boxShadow: "0 0 0 0 rgb(110 168 255 / .55)" }, { boxShadow: "0 0 0 46px rgb(110 168 255 / 0)", duration: 0.8, ease: "power2.out", immediateRender: false }, at);
       tl.from("#end-sim", { opacity: 0, duration: 0.6 }, 30.73);
-
-      const talk = Object.entries(window.CUES).filter(([k]) => k !== "ask").map(([, c]) => c);
-      const onCall = (t) => (t < 3.62) || (t > 7.75 && t < 21.93);
-      tl.eventCallback("onUpdate", () => {
-        const t = tl.time();
-        const live = talk.some((c) => t >= c.at && t <= c.end) ? 1 : 0.15;
-        let d = "M0 30";
-        for (let x = 0; x <= 1560; x += 6) d += ` L${x} ${(30 + Math.sin(x * 0.05 + t * 9) * Math.sin(x * 0.011 - t * 3) * 22 * live).toFixed(1)}`;
-        $("#wave-path").setAttribute("d", d);
-        $("#wave").style.opacity = onCall(t) ? 1 : 0;
-      });
 
       tl.set({}, {}, 32.83);
       window.__timelines = window.__timelines || {};
