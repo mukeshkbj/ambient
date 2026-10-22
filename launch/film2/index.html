@@ -149,7 +149,7 @@
     </style>
   </head>
   <body>
-    <div id="root" data-composition-id="main" data-start="0" data-duration="31.03" data-width="1920" data-height="1080">
+    <div id="root" data-composition-id="main" data-start="0" data-duration="32.63" data-width="1920" data-height="1080">
       <div class="ground"></div>
       <div id="sun" class="sun"></div>
 
@@ -262,7 +262,7 @@
         </div>
       </div>
 
-      <div id="s-booked" class="scene clip" data-start="21.6" data-duration="5.83">
+      <div id="s-booked" class="scene clip" data-start="21.6" data-duration="7.43">
         <div id="booked-dev" class="device">
           <div class="glow"></div><div class="shadow"></div><div class="base"></div>
           <div class="bezel"><div class="screen">
@@ -318,7 +318,7 @@
           <div id="pm-2" class="line">Taps <b>Book $160</b>.</div>
         </div>
       </div>
-      <div id="s-end" class="scene clip" data-start="27.43" data-duration="3.6">
+      <div id="s-end" class="scene clip" data-start="29.03" data-duration="3.6">
         <div id="end-lock" class="endc">
           <div id="end-mark" class="mark ring"></div>
           <div id="end-name" class="name">Ambient</div>
@@ -329,7 +329,7 @@
       </div>
 
       <div id="flash" class="flash"></div>
-      <audio id="mix" src="assets/mix.wav" data-start="0" data-duration="31.03" data-track-index="9"></audio>
+      <audio id="mix" src="assets/mix.wav" data-start="0" data-duration="32.63" data-track-index="9"></audio>
     </div>
 
     <script>
@@ -366,6 +366,7 @@
         tl.set(`.${p}-amb`, { opacity: who === "amb" ? 1 : 0 }, C[cue].at - 0.05);
       }
 
+      tl.set([".pa-amb", ".pb-amb"], { opacity: 0 }, 0);
       const bars = [...document.querySelectorAll(".pill .wave i")];
       const callTime = document.getElementById("ph-tmr");
       const pillTime = document.getElementById("pb-time");
@@ -388,12 +389,12 @@
         pillA.textContent = fmt(12 + Math.min(t, 3.65));
       });
 
-      tl.fromTo("#hook-price", { opacity: 0, scale: 1.18, filter: "blur(24px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.7, ease: "expo.out" }, 0);
-      tl.fromTo("#pill-a", { y: 60, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "expo.out" }, 0.05);
+      tl.fromTo("#hook-price", { opacity: 0.45, scale: 1.1, filter: "blur(10px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.7, ease: "expo.out" }, 0);
+      tl.fromTo("#pill-a", { y: 30, opacity: 0.4 }, { y: 0, opacity: 1, duration: 0.5, ease: "expo.out" }, 0);
       tl.set("#hook-tag", { rotation: -5 }, 0);
       tl.fromTo("#hook-tag", { opacity: 0, scale: 1.6, x: 60 }, { opacity: 1, scale: 1, x: 0, duration: 0.42, ease: "back.out(2.2)", transformOrigin: "0% 60%", immediateRender: false }, W("hook-joe", 1));
       tl.set("#hook-tag", { opacity: 0 }, 0);
-      tl.fromTo("#hook-eyebrow", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 0.05);
+      tl.fromTo("#hook-eyebrow", { opacity: 0.5, y: 8 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, 0);
       tl.fromTo("#hook-tag .strike", { scaleX: 0 }, { scaleX: 1, duration: 0.26, ease: "power3.out", transformOrigin: "0% 50%" }, W("hook-amb", 3));
       tl.to("#hook-tag", { y: 220, rotation: 22, opacity: 0, duration: 0.55, ease: "power2.in" }, W("hook-amb", 5) + 0.05);
       tl.fromTo("#hook-price", { x: 0 }, { x: -40, duration: 3.65, ease: "none", immediateRender: false }, 0);
@@ -505,16 +506,16 @@
         tl.fromTo(el, { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.6, ease: "expo.out", immediateRender: false }, 24.75 + i * 0.6);
         tl.fromTo(el.querySelector("svg"), { scale: 0.4 }, { scale: 1, duration: 0.45, ease: "back.out(2.6)", transformOrigin: "50% 50%", immediateRender: false }, 24.75 + i * 0.6);
       });
-      tl.to("#booked-dev", { scale: 0.64, duration: 1.8, ease: "none" }, 25.33);
-      tl.to(["#rules", "#booked-dev"], { opacity: 0, y: -20, duration: 0.28, ease: "power2.in" }, 27.13);
+      tl.to("#booked-dev", { scale: 0.63, duration: 3.4, ease: "none" }, 25.33);
+      tl.to(["#rules", "#booked-dev"], { opacity: 0, y: -20, duration: 0.28, ease: "power2.in" }, 28.73);
 
-      tl.fromTo("#end-mark", { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.7, ease: "expo.out" }, 27.43);
-      tl.fromTo("#end-name", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" }, 27.55);
-      tl.fromTo("#end-say", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" }, 27.95);
-      tl.fromTo("#end-cta", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 28.2);
-      tl.fromTo("#end-fine", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 28.6);
-      tl.fromTo("#end-lock", { scale: 1 }, { scale: 1.03, duration: 3.6, ease: "none" }, 27.43);
-      tl.fromTo("#end-mark", { boxShadow: "0 0 140px #3d7bffff" }, { boxShadow: "0 0 80px #3d7bff99", duration: 0.8, ease: "power2.out", immediateRender: false }, 28.2);
+      tl.fromTo("#end-mark", { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.7, ease: "expo.out" }, 29.03);
+      tl.fromTo("#end-name", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" }, 29.15);
+      tl.fromTo("#end-say", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" }, 29.55);
+      tl.fromTo("#end-cta", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 29.8);
+      tl.fromTo("#end-fine", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 30.2);
+      tl.fromTo("#end-lock", { scale: 1 }, { scale: 1.03, duration: 3.6, ease: "none" }, 29.03);
+      tl.fromTo("#end-mark", { boxShadow: "0 0 140px #3d7bffff" }, { boxShadow: "0 0 80px #3d7bff99", duration: 0.8, ease: "power2.out", immediateRender: false }, 29.8);
 
       tl.set(["#ask-dev", "#deal-dev", "#booked-dev"], { transformPerspective: 2600 }, 0);
       tl.fromTo("#ask-dev", { rotationY: 7 }, { rotationY: -3, duration: 3.4, ease: "none", immediateRender: false }, 3.75);
@@ -538,8 +539,8 @@
         tl.to("#pill-m", { opacity: 0, y: 30, duration: 0.2, ease: "power2.in" }, b - 0.2);
         tl.set(line, { opacity: 0 }, b);
       }
-      tl.fromTo(".pill .av .ring", { rotation: 0 }, { rotation: 3400, duration: 31.03, ease: "none" }, 0);
-      tl.to({}, { duration: 0.01 }, 31.02);
+      tl.fromTo(".pill .av .ring", { rotation: 0 }, { rotation: 3400, duration: 32.63, ease: "none" }, 0);
+      tl.to({}, { duration: 0.01 }, 32.62);
 
       window.__timelines = window.__timelines || {};
       window.__timelines["main"] = tl;
