@@ -28,6 +28,7 @@
     .fool-ty span { position: relative; display: inline-block; border-bottom: 5px solid transparent; line-height: 60px; opacity: 0; }
     .fool-ty span u { position: absolute; right: -4px; top: 8px; width: 4px; height: 44px; border-radius: 2px; background: #3d7bff; opacity: 0; text-decoration: none; }
     #fool-c0 { position: absolute; left: 44px; top: 58px; width: 4px; height: 44px; border-radius: 2px; background: #3d7bff; }
+    #fool-focus { position: absolute; inset: -7px; border-radius: 47px; border: 3px solid #3d7bff59; opacity: 0; }
     #fool-send { position: absolute; right: 28px; top: 28px; width: 210px; height: 76px; border-radius: 26px; background: #15130f; color: #f3f5f8; font: 600 30px/76px Inter; letter-spacing: -.01em; text-align: center; box-shadow: 0 14px 24px -12px #15130f88; }
     #fool-send small { margin-left: 10px; font: 500 28px/1 Inter; opacity: .6; }
     #fool-send .fool-press { position: absolute; inset: 0; border-radius: inherit; background: #fff; opacity: 0; }
@@ -67,6 +68,7 @@
       </div>
 
       <div id="fool-field">
+        <div id="fool-focus"></div>
         <b>Your answer</b>
         <div id="fool-types"></div>
         <div id="fool-c0"></div>
@@ -77,7 +79,7 @@
     </div>
 
     <div id="fool-count">
-      <div id="fool-big">4,000</div>
+      <div id="fool-big">0</div>
       <div id="fool-unit">generated calls</div>
       <div id="fool-state">Not one booked without a <em>clean yes</em>.</div>
     </div>
@@ -87,22 +89,26 @@
     (function () {
       const tl = gsap.timeline({ paused: true });
       const $ = (s) => document.querySelector(s);
-      const V0 = 0.45;
+      const V0 = 0.35;
       const NO = '<svg viewBox="0 0 84 84"><circle cx="42" cy="42" r="42" fill="#e5372f"/><path d="M29 29l26 26M55 29L29 55" stroke="#fff" stroke-width="7" stroke-linecap="round"/></svg>';
       const YES = '<div id="fool-halo"></div><svg viewBox="0 0 84 84"><circle cx="42" cy="42" r="42" fill="#1f9d5c"/><path id="fool-tick" d="M25 43l12 12 23-25" fill="none" stroke="#fff" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
       const REPLIES = [
-        { text: "Yes, plus parts.", flag: [5, 15], why: 'It adds words that can change the deal: <mark>"plus parts"</mark>.', T: 4.7 },
-        { text: "Yes, Wednesday at ten.", flag: [5, 13], why: 'It names a day that was not read back: <mark>"wednesday"</mark>.' },
-        { text: "Yeah, if nothing else breaks.", flag: [6, 28], why: 'It adds words that can change the deal: <mark>"if nothing else breaks"</mark>.' },
-        { text: "Yes, that's right.", flag: null, why: "It is a clean yes to the exact terms that were read back." }
+        { text: "Sure, one eighty.", flag: [6, 15], why: 'It has a number that was not read back: <mark>"one eighty"</mark>.', at: 5.21, on: 0.043, end: 0.999 },
+        { text: "Yes, Wednesday at ten.", flag: [5, 13], why: 'It names a day that was not read back: <mark>"wednesday"</mark>.', at: 6.29, on: 0.043, end: 1.193 },
+        { text: "Yeah, if nothing else breaks.", flag: [6, 28], why: 'It adds words that can change the deal: <mark>"if nothing else breaks"</mark>.', at: 7.54, on: 0.057, end: 1.134 },
+        { text: "Yes, that's right.", flag: null, why: "It is a clean yes to the exact terms that were read back.", at: 8.74, on: 0.047, end: 0.936 }
       ];
-      const S = 0.018, HOLD = 0.98, GAP = 0.1;
+      REPLIES.forEach((r) => {
+        r.T = r.at + r.on;
+        r.V = r.at + r.end + 0.02;
+        r.E = r.V - 0.05;
+        r.S = (r.E - r.T) / [...r.text].length;
+      });
       REPLIES.forEach((r, i) => {
-        if (i) r.T = REPLIES[i - 1].C + GAP;
-        r.E = r.T + [...r.text].length * S;
-        r.V = r.E + 0.06;
-        r.C = r.flag === null ? null : r.V + HOLD;
+        const next = REPLIES[i + 1];
+        r.C = next ? next.T - 0.08 : null;
+        r.X = next ? next.V - 0.04 : null;
       });
 
       tl.fromTo("#fool-title span", { opacity: 0.2, y: 34, filter: "blur(10px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.3, ease: "expo.out", stagger: 0.04 }, 0);
@@ -143,13 +149,13 @@
         });
         types.appendChild(ty);
         spans.forEach((sp, k) => {
-          const at = r.T + k * S;
+          const at = r.T + k * r.S;
           tl.set(sp, { opacity: 1 }, at);
           tl.set(sp.querySelector("u"), { opacity: 1 }, at);
-          if (k < spans.length - 1) tl.set(sp.querySelector("u"), { opacity: 0 }, at + S);
+          if (k < spans.length - 1) tl.set(sp.querySelector("u"), { opacity: 0 }, at + r.S);
         });
         tl.set(spans[spans.length - 1].querySelector("u"), { opacity: 0 }, r.E);
-        if (r.C) tl.to(ty, { opacity: 0, y: -12, filter: "blur(3px)", duration: 0.1, ease: "power2.in" }, r.C);
+        if (r.C) tl.to(ty, { opacity: 0, y: -12, filter: "blur(3px)", duration: 0.08, ease: "power2.in" }, r.C);
         if (r.flag) {
           const flagged = spans.slice(r.flag[0], r.flag[1] + 1);
           tl.to(flagged, { color: "#d92d20", borderBottomColor: "#e5372f", duration: 0.1, ease: "power2.out" }, r.V);
@@ -174,31 +180,33 @@
           tl.fromTo(x, { scale: 2.1, rotation: -18, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: 0.13, ease: "power4.in", transformOrigin: "50% 50%", immediateRender: false }, r.V);
           tl.fromTo(vd, { y: 0 }, { y: 5, duration: 0.04, ease: "power2.out", immediateRender: false }, r.V + 0.13);
           tl.to(vd, { y: 0, duration: 0.3, ease: "elastic.out(1.1, 0.4)" }, r.V + 0.17);
-          tl.to(vd, { opacity: 0, y: -10, filter: "blur(3px)", duration: 0.14, ease: "power2.in" }, r.C);
+          tl.to(vd, { opacity: 0, y: -10, filter: "blur(3px)", duration: 0.08, ease: "power2.in" }, r.X);
           tl.fromTo("#fool-field", { x: 0 }, { x: -9, duration: 0.05, ease: "power2.out", immediateRender: false }, r.V);
           tl.to("#fool-field", { x: 0, duration: 0.4, ease: "elastic.out(1.2, 0.35)" }, r.V + 0.05);
         }
       });
 
       tl.set("#fool-c0", { opacity: 0 }, 0);
-      tl.set("#fool-c0", { opacity: 1 }, 0.9);
-      REPLIES.forEach((r) => {
-        tl.set("#fool-c0", { opacity: 0 }, r.T - 0.02);
-      });
+      for (let t = 1.1, on = true; t < REPLIES[0].T - 0.02; t += on ? 0.5 : 0.3, on = !on) tl.set("#fool-c0", { opacity: on ? 1 : 0 }, t);
+      tl.set("#fool-c0", { opacity: 0 }, REPLIES[0].T - 0.02);
+      tl.fromTo("#fool-focus", { opacity: 0, scale: 1.015 }, { opacity: 1, scale: 1, duration: 0.5, ease: "expo.out", immediateRender: false }, 1.1);
+      tl.fromTo("#fool-field > b", { color: "#777166" }, { color: "#2a5bcc", duration: 0.3, ease: "power2.out", immediateRender: false }, 1.1);
+      tl.fromTo("#fool-send", { opacity: 0.32 }, { opacity: 1, duration: 0.2, ease: "power2.out", immediateRender: false }, REPLIES[0].T);
+      tl.set("#fool-send", { opacity: 0.32 }, 0);
 
       const last = REPLIES[REPLIES.length - 1];
       tl.fromTo("#fool-tick", { strokeDasharray: 60, strokeDashoffset: 60 }, { strokeDashoffset: 0, duration: 0.26, ease: "power2.out", immediateRender: false }, last.V + 0.06);
       tl.fromTo("#fool-halo", { scale: 1, opacity: 0.9 }, { scale: 1.9, opacity: 0, duration: 0.6, ease: "power2.out", immediateRender: false }, last.V + 0.04);
 
-      const OUT = last.V + 0.96;
-      tl.to("#fool-panel", { opacity: 0, y: -14, filter: "blur(4px)", duration: 0.18, ease: "power2.in" }, OUT);
+      const OUT = last.V + 0.9;
+      tl.to("#fool-panel", { opacity: 0, y: -14, filter: "blur(4px)", duration: 0.14, ease: "power2.in" }, OUT);
       tl.set("#fool-count > *", { opacity: 0 }, 0);
-      tl.fromTo("#fool-big", { opacity: 0, y: 30, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.45, ease: "expo.out", immediateRender: false }, OUT + 0.14);
+      tl.fromTo("#fool-big", { opacity: 0, y: 30, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.45, ease: "expo.out", immediateRender: false }, OUT + 0.15);
       const o = { v: 0 };
       const fmt = (n) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-      tl.fromTo(o, { v: 0 }, { v: 4000, duration: 1.0, ease: "expo.out", immediateRender: false, onUpdate: () => ($("#fool-big").firstChild.textContent = fmt(o.v)) }, OUT + 0.16);
-      tl.fromTo("#fool-unit", { opacity: 0, y: 20, filter: "blur(3px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.36, ease: "expo.out", immediateRender: false }, OUT + 0.32);
-      tl.fromTo("#fool-state", { opacity: 0, y: 24, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.45, ease: "expo.out", immediateRender: false }, OUT + 0.42);
+      tl.fromTo(o, { v: 0 }, { v: 4000, duration: 1.0, ease: "expo.out", immediateRender: false, onUpdate: () => ($("#fool-big").firstChild.textContent = fmt(o.v)) }, OUT + 0.15);
+      tl.fromTo("#fool-unit", { opacity: 0, y: 20, filter: "blur(3px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.36, ease: "expo.out", immediateRender: false }, OUT + 0.28);
+      tl.fromTo("#fool-state", { opacity: 0, y: 24, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.45, ease: "expo.out", immediateRender: false }, OUT + 0.4);
 
       tl.fromTo("#fool-avring", { rotation: 0 }, { rotation: 1300, duration: 13, ease: "none" }, 0);
       const ring = $("#fool-avring");

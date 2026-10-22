@@ -86,13 +86,13 @@ def main():
     release = [(0.0, 0.0)] + [(t + SHIFT, v) for t, v in f2.RELEASE if STORY_IN < t <= STORY_OUT] + [(STORY_END + 0.25, 0.0), (LENGTH, 0.0)]
     flex_start = STARTS["bridge"]
     flex_end = STARTS.get("end", LENGTH)
-    drive = [(0.0, 0.0), (flex_start, 0.0), (flex_start + 0.15, 0.45), (flex_start + 2.6, 0.5)]
+    drive = [(0.0, 0.0), (flex_start, 0.0), (flex_start + 0.15, 0.5), (flex_start + 2.6, 0.62)]
     for sid in ("fool", "around", "screens", "honest", "built", "real"):
         if sid in STARTS:
             s = STARTS[sid]
-            drive += [(s - 0.12, 0.55), (s - 0.02, 0.28), (s + 0.35, 0.55)]
-    drive += [(flex_end - 0.4, 0.6), (flex_end + 0.3, 0.0), (LENGTH, 0.0)]
-    resolve = [(0.0, 0.0), (flex_end, 0.0), (flex_end + 0.25, 0.85), (LENGTH - 1.4, 0.85), (LENGTH, 0.0)]
+            drive += [(s - 0.12, 0.65), (s - 0.02, 0.32), (s + 0.35, 0.65)]
+    drive += [(flex_end - 0.4, 0.7), (flex_end + 0.3, 0.0), (LENGTH, 0.0)]
+    resolve = [(0.0, 0.0), (flex_end, 0.0), (flex_end + 0.25, 1.0), (LENGTH - 0.9, 1.0), (LENGTH, 0.0)]
     tracks = [
         ("pulse-small-7.wav", 0.0, tension),
         ("lift-small-3.wav", 21.93 + SHIFT, release),

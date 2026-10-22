@@ -1,126 +1,132 @@
 {
-  "lines": [
-    {
-      "file": "fool-readback",
-      "at": 0.45,
-      "text": "Okay, so just to confirm, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?",
-      "band": "phone"
-    }
-  ],
-  "effects": [
-    {
-      "name": "swish",
-      "at": 0,
-      "gain": 0.22,
-      "pan": 0
-    },
-    {
-      "name": "tick",
-      "at": 4.7,
-      "gain": 0.2,
-      "pan": -0.15
-    },
-    {
-      "name": "tick",
-      "at": 4.84,
-      "gain": 0.16,
-      "pan": 0.15
-    },
-    {
-      "name": "tap",
-      "at": 4.99,
-      "gain": 0.28,
-      "pan": 0.2
-    },
-    {
-      "name": "stopdown",
-      "at": 5.17,
-      "gain": 0.4,
-      "pan": 0
-    },
-    {
-      "name": "tick",
-      "at": 6.13,
-      "gain": 0.2,
-      "pan": -0.15
-    },
-    {
-      "name": "tick",
-      "at": 6.33,
-      "gain": 0.16,
-      "pan": 0.15
-    },
-    {
-      "name": "tap",
-      "at": 6.52,
-      "gain": 0.28,
-      "pan": 0.2
-    },
-    {
-      "name": "hit",
-      "at": 6.7,
-      "gain": 0.36,
-      "pan": 0
-    },
-    {
-      "name": "tick",
-      "at": 7.66,
-      "gain": 0.2,
-      "pan": -0.15
-    },
-    {
-      "name": "tick",
-      "at": 7.93,
-      "gain": 0.16,
-      "pan": 0.15
-    },
-    {
-      "name": "tap",
-      "at": 8.19,
-      "gain": 0.28,
-      "pan": 0.2
-    },
-    {
-      "name": "stopdown",
-      "at": 8.37,
-      "gain": 0.4,
-      "pan": 0
-    },
-    {
-      "name": "tick",
-      "at": 9.33,
-      "gain": 0.2,
-      "pan": -0.15
-    },
-    {
-      "name": "tick",
-      "at": 9.49,
-      "gain": 0.16,
-      "pan": 0.15
-    },
-    {
-      "name": "tap",
-      "at": 9.65,
-      "gain": 0.28,
-      "pan": 0.2
-    },
-    {
-      "name": "ding",
-      "at": 9.71,
-      "gain": 0.7,
-      "pan": 0
-    },
-    {
-      "name": "whoosh",
-      "at": 10.67,
-      "gain": 0.2,
-      "pan": 0
-    },
-    {
-      "name": "impact",
-      "at": 11.09,
-      "gain": 0.3,
-      "pan": 0
-    }
-  ]
+ "lines": [
+  {
+   "file": "fool-readback",
+   "at": 0.35,
+   "text": "Okay, so just to confirm, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?",
+   "band": "phone"
+  },
+  {
+   "file": "fool-r1",
+   "at": 5.21,
+   "text": "Sure, one eighty.",
+   "band": "phone"
+  },
+  {
+   "file": "fool-r2",
+   "at": 6.29,
+   "text": "Yes, Wednesday at ten.",
+   "band": "phone"
+  },
+  {
+   "file": "fool-r3",
+   "at": 7.54,
+   "text": "Yeah, if nothing else breaks.",
+   "band": "phone"
+  },
+  {
+   "file": "fool-r4",
+   "at": 8.74,
+   "text": "Yes, that's right.",
+   "band": "phone"
+  },
+  {
+   "file": "fool-n1",
+   "at": 9.8,
+   "text": "Four thousand calls. Not one booked without a clean yes.",
+   "band": "room"
+  }
+ ],
+ "effects": [
+  {
+   "name": "swish",
+   "at": 0,
+   "gain": 0.22,
+   "pan": 0
+  },
+  {
+   "name": "tick",
+   "at": 5.29,
+   "gain": 0.12,
+   "pan": -0.15
+  },
+  {
+   "name": "tap",
+   "at": 6.18,
+   "gain": 0.24,
+   "pan": 0.2
+  },
+  {
+   "name": "stopdown",
+   "at": 6.23,
+   "gain": 0.36,
+   "pan": 0
+  },
+  {
+   "name": "tick",
+   "at": 6.37,
+   "gain": 0.12,
+   "pan": -0.15
+  },
+  {
+   "name": "tap",
+   "at": 7.45,
+   "gain": 0.24,
+   "pan": 0.2
+  },
+  {
+   "name": "hit",
+   "at": 7.5,
+   "gain": 0.32,
+   "pan": 0
+  },
+  {
+   "name": "tick",
+   "at": 7.64,
+   "gain": 0.12,
+   "pan": -0.15
+  },
+  {
+   "name": "tap",
+   "at": 8.64,
+   "gain": 0.24,
+   "pan": 0.2
+  },
+  {
+   "name": "stopdown",
+   "at": 8.69,
+   "gain": 0.36,
+   "pan": 0
+  },
+  {
+   "name": "tick",
+   "at": 8.83,
+   "gain": 0.12,
+   "pan": -0.15
+  },
+  {
+   "name": "tap",
+   "at": 9.65,
+   "gain": 0.24,
+   "pan": 0.2
+  },
+  {
+   "name": "ding",
+   "at": 9.7,
+   "gain": 0.6,
+   "pan": 0
+  },
+  {
+   "name": "whoosh",
+   "at": 10.6,
+   "gain": 0.18,
+   "pan": 0
+  },
+  {
+   "name": "impact",
+   "at": 11.0,
+   "gain": 0.26,
+   "pan": 0
+  }
+ ]
 }

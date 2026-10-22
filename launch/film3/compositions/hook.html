@@ -12,8 +12,10 @@
     #hook .hook-sub { position: absolute; left: 194px; top: 152px; font: 400 34px/1.1 Inter; letter-spacing: -.01em; color: #777166; white-space: nowrap; }
     #hook .hook-count { position: absolute; left: 50%; top: 290px; width: 600px; margin-left: -300px; text-align: center; font: 500 38px/1 Inter; color: #777166; font-variant-numeric: tabular-nums; }
     #hook .hook-count b { font-weight: 600; color: #15130f; }
-    #hook .hook-line { position: absolute; left: 0; right: 0; top: 452px; text-align: center; font: 400 128px/1.1 Newsreader; letter-spacing: -.03em; white-space: nowrap; }
+    #hook .hook-line { position: absolute; left: 0; right: 0; top: 430px; text-align: center; font: 400 128px/1.1 Newsreader; letter-spacing: -.03em; white-space: nowrap; }
     #hook .hook-line span { display: inline-block; }
+    #hook .hook-sub2 { position: absolute; left: 0; right: 0; top: 636px; text-align: center; font: italic 400 64px/1.1 Newsreader; letter-spacing: -.02em; color: #777166; white-space: nowrap; }
+    #hook .hook-sub2 span { display: inline-block; }
     #hook .hook-ai { font-style: italic; background: linear-gradient(100deg, #3d7bff, #8a5cff 50%, #5ad8ff 80%, #3d7bff); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; padding: 0 .08em; }
   </style>
   <div id="hook" data-composition-id="hook" data-width="1920" data-height="1080">
@@ -28,15 +30,17 @@
     </div>
     <div class="hook-line" id="hook-l1"><span>Nobody</span> <span>wants</span> <span>to</span> <span>make</span> <span>this</span> <span>call.</span></div>
     <div class="hook-line" id="hook-l2"><span>So</span> <span class="hook-ai">Alexa</span> <span>makes</span> <span>it.</span></div>
+    <div class="hook-sub2" id="hook-s2"><span>And</span> <span>it</span> <span>never</span> <span>spends</span> <span>a</span> <span>dollar</span> <span>you</span> <span>didn’t</span> <span>approve.</span></div>
   </div>
   <script>
     (function () {
       const tl = gsap.timeline({ paused: true });
-      const T = [0, 0.36, 0.68, 0.96, 1.2, 1.42];
+      const T = [0, 0.26, 0.5, 0.7, 0.88, 1.04];
       const cards = T.map((_, i) => "#hook-c" + i);
       cards.forEach((c, i) => tl.set(c, { zIndex: 10 + i }, 0));
       tl.set(cards.slice(1), { opacity: 0 }, 0);
-      tl.set(["#hook-l1 span", "#hook-l2 span", "#hook-count"], { opacity: 0 }, 0);
+      tl.set(["#hook-l1 span", "#hook-l2 span", "#hook-s2 span", "#hook-count"], { opacity: 0 }, 0);
+      tl.fromTo("#hook-stack", { scale: 1 }, { scale: 1.06, duration: 1.3, ease: "none" }, 0);
       tl.fromTo(cards[0], { y: -14, scale: 1.02, opacity: 1, filter: "blur(0px)" }, { y: 0, scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.3, ease: "expo.out" }, 0);
       T.forEach((at, k) => {
         if (k > 0) tl.fromTo(cards[k], { y: -70, scale: 1.04, opacity: 0, filter: "blur(8px)" }, { y: 0, scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.36, ease: "expo.out", immediateRender: false }, at);
@@ -48,13 +52,14 @@
         if (k === 1) tl.fromTo("#hook-count", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.24, ease: "expo.out", immediateRender: false }, at);
         if (k > 0) tl.set("#hook-count", { innerHTML: "<b>" + (k + 1) + "</b> reminders" }, at + 0.04);
       });
-      tl.to("#hook-count", { opacity: 0, y: -10, filter: "blur(4px)", duration: 0.2, ease: "power2.in" }, 1.78);
-      tl.to("#hook-stack", { y: 220, scale: 0.86, opacity: 0, filter: "blur(14px)", duration: 0.34, ease: "power3.in" }, 1.76);
-      tl.fromTo("#hook-l1 span", { opacity: 0, y: 30, filter: "blur(12px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.5, ease: "expo.out", stagger: 0.06, immediateRender: false }, 2.12);
-      tl.to("#hook-l1 span", { opacity: 0, y: -18, filter: "blur(8px)", duration: 0.18, ease: "power2.in", stagger: 0.02 }, 3.9);
-      tl.fromTo("#hook-l2 span", { opacity: 0, y: 30, filter: "blur(12px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.5, ease: "expo.out", stagger: 0.07, immediateRender: false }, 4.12);
-      tl.fromTo(".hook-ai", { backgroundPosition: "0% 0" }, { backgroundPosition: "100% 0", duration: 1.8, ease: "none", immediateRender: false }, 4.2);
-      tl.to("#hook-l2", { opacity: 0, scale: 0.97, filter: "blur(12px)", duration: 0.3, ease: "power2.in" }, 5.95);
+      tl.to("#hook-count", { opacity: 0, y: -10, filter: "blur(4px)", duration: 0.2, ease: "power2.in" }, 1.3);
+      tl.to("#hook-stack", { y: 220, scale: 0.9, opacity: 0, filter: "blur(14px)", duration: 0.3, ease: "power3.in" }, 1.28);
+      tl.fromTo("#hook-l1 span", { opacity: 0, y: 30, filter: "blur(12px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.5, ease: "expo.out", stagger: 0.06, immediateRender: false }, 1.55);
+      tl.to("#hook-l1 span", { opacity: 0, y: -18, filter: "blur(8px)", duration: 0.18, ease: "power2.in", stagger: 0.02 }, 3.28);
+      tl.fromTo("#hook-l2 span", { opacity: 0, y: 30, filter: "blur(12px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.5, ease: "expo.out", stagger: 0.07, immediateRender: false }, 3.45);
+      tl.fromTo(".hook-ai", { backgroundPosition: "0% 0" }, { backgroundPosition: "100% 0", duration: 3.2, ease: "none", immediateRender: false }, 3.5);
+      tl.fromTo("#hook-s2 span", { opacity: 0, y: 16, filter: "blur(8px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.4, ease: "expo.out", stagger: 0.16, immediateRender: false }, 4.85);
+      tl.to(["#hook-l2", "#hook-s2"], { opacity: 0, scale: 0.97, filter: "blur(12px)", duration: 0.3, ease: "power2.in" }, 7.08);
       window.__timelines["hook"] = tl;
     })();
   </script>

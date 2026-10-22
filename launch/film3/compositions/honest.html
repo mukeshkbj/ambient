@@ -43,10 +43,9 @@
   </style>
   <div id="honest" data-composition-id="honest" data-width="1920" data-height="1080">
     <div class="honest-bg"></div>
-    <div class="honest-bars"><i><b id="honest-b0"></b></i><i><b id="honest-b1"></b></i><i><b id="honest-b2"></b></i><i><b id="honest-b3"></b></i></div>
+    <div class="honest-bars"><i><b id="honest-b0"></b></i><i><b id="honest-b1"></b></i><i><b id="honest-b2"></b></i></div>
     <div class="honest-left">
       <div class="honest-head" id="honest-h0"><div class="honest-eye">When the line drops</div><div class="honest-h">No yes, <em>no booking.</em></div></div>
-      <div class="honest-head" id="honest-h1"><div class="honest-eye">After every booking</div><div class="honest-h">The business gets <em>a receipt.</em></div></div>
       <div class="honest-head" id="honest-h2"><div class="honest-eye">When a business opts out</div><div class="honest-h">“Stop calling” <em>is final.</em></div></div>
       <div class="honest-head" id="honest-h3"><div class="honest-eye">When plans change</div><div class="honest-h">“Move it to <em>Thursday.”</em></div></div>
     </div>
@@ -60,13 +59,6 @@
           <div class="honest-big honest-k">Nothing was booked.</div>
           <div class="honest-sub honest-k">You ended the call before Joe's Plumbing confirmed.</div>
           <div class="honest-btn honest-k">Call Joe's Plumbing again</div>
-        </div>
-        <div class="honest-s" id="honest-s1">
-          <div class="honest-tag honest-k" style="color:#9aa3b2">Joe's phone · the business side</div>
-          <div class="honest-ring honest-k"></div>
-          <div class="honest-who honest-k">Ambient</div>
-          <div class="honest-chip honest-k">AI assistant</div>
-          <div class="honest-receipt honest-k"><div class="honest-tag">Your receipt from Ambient</div><p>Booked for Maya: $160 total, Tuesday the 20th at 10 am.</p></div>
         </div>
         <div class="honest-s" id="honest-s2">
           <div class="honest-bub honest-joe honest-k" style="top:70px"><small>Joe's Plumbing</small><p>Take us off your list.</p></div>
@@ -87,32 +79,37 @@
   <script>
     (function () {
       const tl = gsap.timeline({ paused: true });
-      const AT = [0.08, 3.0, 5.7, 8.4];
-      const END = 10.7;
-      const GLOW = ["#ff9f1c", "#2fd37e", "#ff5a4e", "#2fd37e"];
-      for (let i = 0; i < 4; i++) {
-        tl.set(["#honest-s" + i + " .honest-k", "#honest-s" + i + " .honest-x", "#honest-h" + i + " > *"], { opacity: 0 }, 0);
-        tl.set("#honest-b" + i, { scaleX: 0 }, 0);
-      }
+      const IDS = [0, 2, 3];
+      const AT = [0.08, 2.9, 5.7];
+      const END = 8.1;
+      const GLOW = ["#ff9f1c", "#ff5a4e", "#2fd37e"];
+      IDS.forEach((id, k) => {
+        tl.set(["#honest-s" + id + " .honest-k", "#honest-s" + id + " .honest-x", "#honest-h" + id + " > *"], { opacity: 0 }, 0);
+        tl.set("#honest-b" + k, { scaleX: 0 }, 0);
+      });
       tl.fromTo("#honest-dev", { y: 30, opacity: 0, rotationY: -6, filter: "blur(4px)" }, { y: 0, opacity: 1, rotationY: -2, filter: "blur(0px)", duration: 0.45, ease: "expo.out", immediateRender: false }, 0);
       tl.fromTo(".honest-bars", { opacity: 0 }, { opacity: 1, duration: 0.3, immediateRender: false }, 0.1);
-      AT.forEach((at, i) => {
-        const keys = "#honest-s" + i + " .honest-k";
-        const head = "#honest-h" + i + " > *";
-        if (i > 0) {
-          const prev = "#honest-s" + (i - 1) + " .honest-k, #honest-s" + (i - 1) + " .honest-x";
-          const prevHead = "#honest-h" + (i - 1) + " > *";
-          tl.to([prevHead, prev], { opacity: 0, y: -10, filter: "blur(3px)", duration: 0.16, ease: "power2.in", stagger: 0.03 }, at - 0.2);
+      IDS.forEach((id, k) => {
+        const at = AT[k];
+        const keys = "#honest-s" + id + " .honest-k";
+        const head = "#honest-h" + id + " > *";
+        if (k > 0) {
+          const p = IDS[k - 1];
+          tl.to(["#honest-h" + p + " > *", "#honest-s" + p + " .honest-k", "#honest-s" + p + " .honest-x"], { opacity: 0, y: -10, filter: "blur(3px)", duration: 0.16, ease: "power2.in", stagger: 0.03 }, at - 0.2);
         }
         tl.fromTo(head, { opacity: 0, y: 18, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.42, ease: "expo.out", stagger: 0.06, immediateRender: false }, at);
-        if (i === 0) tl.set(keys, { opacity: 1 }, 0);
+        if (k === 0) tl.set(keys, { opacity: 1 }, 0);
         else tl.fromTo(keys, { opacity: 0, y: 12, filter: "blur(3px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.32, ease: "expo.out", stagger: 0.05, immediateRender: false }, at + 0.08);
-        tl.to("#honest-glow", { color: GLOW[i], duration: 0.4, ease: "power2.out" }, at);
-        tl.fromTo("#honest-b" + i, { scaleX: 0 }, { scaleX: 1, duration: (AT[i + 1] || END) - at - 0.1, ease: "none", immediateRender: false }, at);
+        tl.to("#honest-glow", { color: GLOW[k], duration: 0.4, ease: "power2.out" }, at);
+        tl.fromTo("#honest-b" + k, { scaleX: 0 }, { scaleX: 1, duration: (AT[k + 1] || END) - at - 0.1, ease: "none", immediateRender: false }, at);
       });
-      tl.fromTo("#honest-s2 .honest-amb", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.32, ease: "expo.out", immediateRender: false }, 6.4);
-      tl.fromTo("#honest-s2 .honest-final", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.32, ease: "expo.out", immediateRender: false }, 7.2);
-      tl.fromTo("#honest-s3 .honest-when s", { color: "#f3f5f8" }, { color: "#6b7280", duration: 0.3, immediateRender: false }, 8.75);
+      tl.fromTo("#honest-s0 .honest-big", { scale: 1.12, x: 0 }, { scale: 1, duration: 0.3, ease: "back.out(2)", transformOrigin: "0% 50%", immediateRender: false }, 1.0);
+      tl.fromTo("#honest-s0 .honest-big", { x: 0 }, { keyframes: [{ x: -6, duration: 0.05 }, { x: 6, duration: 0.05 }, { x: -3, duration: 0.05 }, { x: 0, duration: 0.05 }], immediateRender: false }, 1.1);
+      tl.fromTo("#honest-s0 .honest-tag", { opacity: 1 }, { opacity: 0.35, duration: 0.25, yoyo: true, repeat: 3, ease: "sine.inOut", immediateRender: false }, 1.4);
+      tl.fromTo("#honest-s2 .honest-amb", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.32, ease: "expo.out", immediateRender: false }, 3.6);
+      tl.fromTo("#honest-s2 .honest-final", { opacity: 0, y: 12, scale: 0.9 }, { opacity: 1, y: 0, scale: 1, duration: 0.36, ease: "back.out(2.5)", immediateRender: false }, 4.4);
+      tl.fromTo("#honest-s3 .honest-when s", { color: "#f3f5f8" }, { color: "#6b7280", duration: 0.3, immediateRender: false }, 6.1);
+      tl.fromTo("#honest-s3 .honest-price", { scale: 1 }, { scale: 1.06, duration: 0.18, yoyo: true, repeat: 1, ease: "power2.out", transformOrigin: "0% 50%", immediateRender: false }, 6.6);
       tl.to(["#honest-dev", ".honest-left", ".honest-bars"], { opacity: 0, filter: "blur(10px)", y: -14, duration: 0.3, ease: "power2.in" }, END);
       window.__timelines["honest"] = tl;
     })();

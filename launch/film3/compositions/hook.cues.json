@@ -2,18 +2,24 @@
  "lines": [
   {
    "file": "hook-n1",
-   "at": 2.16,
+   "at": 1.58,
    "text": "Nobody wants to make this call.",
    "band": "room"
   },
   {
    "file": "hook-n2",
-   "at": 4.16,
-   "text": "So Alexa makes it.",
+   "at": 3.48,
+   "text": "So Alexa makes it. And it never spends a dollar you didn't approve.",
    "band": "room"
   }
  ],
  "effects": [
+  {
+   "name": "hit",
+   "at": 0.0,
+   "gain": 0.3,
+   "pan": 0.0
+  },
   {
    "name": "tap",
    "at": 0,
@@ -22,73 +28,79 @@
   },
   {
    "name": "tap",
-   "at": 0.36,
+   "at": 0.26,
    "gain": 0.27,
    "pan": 0.15
   },
   {
    "name": "tap",
-   "at": 0.68,
+   "at": 0.5,
    "gain": 0.3,
    "pan": -0.15
   },
   {
    "name": "tap",
-   "at": 0.96,
+   "at": 0.7,
    "gain": 0.32999999999999996,
    "pan": 0.15
   },
   {
    "name": "tap",
-   "at": 1.2,
+   "at": 0.88,
    "gain": 0.36,
    "pan": -0.15
   },
   {
    "name": "tap",
-   "at": 1.42,
+   "at": 1.04,
    "gain": 0.39,
    "pan": 0.15
   },
   {
    "name": "drip",
-   "at": 0.2,
+   "at": 0.15,
    "gain": 0.16,
    "pan": 0.2
   },
   {
    "name": "drip",
-   "at": 0.85,
+   "at": 0.7,
    "gain": 0.14,
    "pan": 0.2
   },
   {
    "name": "drip",
-   "at": 1.5,
+   "at": 1.2,
    "gain": 0.16,
    "pan": 0.2
   },
   {
    "name": "swish",
-   "at": 1.76,
+   "at": 1.28,
    "gain": 0.14,
    "pan": 0.0
   },
   {
    "name": "hit",
-   "at": 2.12,
+   "at": 1.55,
    "gain": 0.32,
    "pan": 0.0
   },
   {
    "name": "hit",
-   "at": 4.12,
+   "at": 3.45,
    "gain": 0.4,
    "pan": 0.0
   },
   {
+   "name": "tick",
+   "at": 4.85,
+   "gain": 0.25,
+   "pan": 0.0
+  },
+  {
    "name": "whoosh",
-   "at": 6.0,
+   "at": 7.1,
    "gain": 0.22,
    "pan": 0.0
   }

@@ -1,16 +1,114 @@
 {
-  "lines": [
-    { "file": "screens-v1", "at": 5.3, "text": "Joe's Plumbing wants one hundred eighty dollars.", "band": "room" },
-    { "file": "screens-v2", "at": 7.8, "text": "Your limit is one hundred fifty dollars.", "band": "room" },
-    { "file": "screens-v3", "at": 10.15, "text": "Say yes to book it, offer a price like one fifty, or say no.", "band": "room" }
-  ],
-  "effects": [
-    { "name": "whoosh", "at": 1.35, "gain": 0.18, "pan": 0.0 },
-    { "name": "whoosh", "at": 2.85, "gain": 0.32, "pan": 0.0 },
-    { "name": "whoosh", "at": 3.05, "gain": 0.16, "pan": -0.6 },
-    { "name": "whoosh", "at": 3.2, "gain": 0.16, "pan": 0.6 },
-    { "name": "tap", "at": 4.85, "gain": 0.25, "pan": 0.6 },
-    { "name": "whoosh", "at": 4.9, "gain": 0.18, "pan": 0.35 },
-    { "name": "hit", "at": 6.9, "gain": 0.45, "pan": 0.0 }
-  ]
+ "lines": [
+  {
+   "file": "screens-v1",
+   "at": 2.4,
+   "text": "Joe's Plumbing wants one hundred eighty dollars.",
+   "band": "room"
+  },
+  {
+   "file": "screens-v2",
+   "at": 4.95,
+   "text": "Your limit is one hundred fifty dollars.",
+   "band": "room"
+  },
+  {
+   "file": "screens-v3",
+   "at": 7.35,
+   "text": "Say yes to book it, offer a price like one fifty, or say no.",
+   "band": "room"
+  }
+ ],
+ "effects": [
+  {
+   "name": "impact",
+   "at": 0.0,
+   "gain": 0.35,
+   "pan": 0.0
+  },
+  {
+   "name": "whoosh",
+   "at": 1.35,
+   "gain": 0.18,
+   "pan": 0.0
+  },
+  {
+   "name": "whoosh",
+   "at": 2.25,
+   "gain": 0.32,
+   "pan": 0.0
+  },
+  {
+   "name": "whoosh",
+   "at": 2.85,
+   "gain": 0.16,
+   "pan": -0.6
+  },
+  {
+   "name": "whoosh",
+   "at": 3.0,
+   "gain": 0.16,
+   "pan": 0.6
+  },
+  {
+   "name": "tap",
+   "at": 3.45,
+   "gain": 0.25,
+   "pan": 0.6
+  },
+  {
+   "name": "whoosh",
+   "at": 3.65,
+   "gain": 0.18,
+   "pan": 0.35
+  },
+  {
+   "name": "hit",
+   "at": 4.0,
+   "gain": 0.45,
+   "pan": 0.0
+  },
+  {
+   "name": "tap",
+   "at": 11.45,
+   "gain": 0.4,
+   "pan": -0.6
+  },
+  {
+   "name": "hit",
+   "at": 11.55,
+   "gain": 0.22,
+   "pan": 0.0
+  },
+  {
+   "name": "tick",
+   "at": 11.55,
+   "gain": 0.3,
+   "pan": -0.6
+  },
+  {
+   "name": "tick",
+   "at": 11.61,
+   "gain": 0.28,
+   "pan": -0.4
+  },
+  {
+   "name": "tick",
+   "at": 11.67,
+   "gain": 0.28,
+   "pan": 0.03
+  },
+  {
+   "name": "tick",
+   "at": 11.73,
+   "gain": 0.26,
+   "pan": 0.42
+  },
+  {
+   "name": "tick",
+   "at": 11.79,
+   "gain": 0.26,
+   "pan": 0.63
+  }
+ ]
 }

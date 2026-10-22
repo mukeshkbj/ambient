@@ -52,15 +52,15 @@
       <div class="built-n" id="built-n0" style="left:120px"><small>Voice</small><b>Maya at home</b><span>Echo · Fire TV</span></div>
       <div class="built-n" id="built-n1" style="left:465px"><small>MCP 2025-11-25</small><b>Alexa skill + MCP</b><span>/alexa · /mcp</span></div>
       <div class="built-n built-core" id="built-n2" style="left:810px"><small>Pure reducer</small><b>Call reducer</b><span>step()</span></div>
-      <div class="built-n" id="built-n3" style="left:1155px"><small>Audio</small><b>Voice line</b><span>AssemblyAI</span></div>
+      <div class="built-n" id="built-n3" style="left:1155px"><small>Audio</small><b>Voice line</b><span>speech to text</span></div>
       <div class="built-n" id="built-n4" style="left:1500px"><small>Call</small><b>The business</b><span>answers a phone</span></div>
-      <div class="built-n built-brain" id="built-n5" style="left:810px"><small>Brain</small><b>Claude</b><span>Opus 5.5</span></div>
+      <div class="built-n built-brain" id="built-n5" style="left:810px"><small>Brain</small><b>Language model</b><span>scripted or LLM</span></div>
     </div>
     <div class="built-cap" id="built-c0">Alexa reaches Ambient through MCP.</div>
-        <div class="built-cap" id="built-c2">Claude proposes. The code decides.</div>
+        <div class="built-cap" id="built-c2">The model proposes. The code decides.</div>
     <div class="built-code" id="built-code"><span class="k">function</span> <span class="f">step</span>(state, input, now)<br>&nbsp;&nbsp;<span class="k">→</span> { state, effects }<br><span class="c">// no clock · no network · no model</span></div>
-    <div class="built-chip" id="built-chip"><i></i><b>931</b> tests pass, including every honesty rule</div>
-    <div class="built-foot" id="built-foot">Demo: simulated business and Alexa+ host. The voice line and Claude brain are built, not yet live.</div>
+    <div class="built-chip" id="built-chip"><i></i><b id="built-count">931</b> tests pass, including every honesty rule</div>
+    <div class="built-foot" id="built-foot">Demo: simulated business and Alexa+ host. The live voice line and model are built, not yet run live.</div>
   </div>
   <script>
     (function () {
@@ -93,9 +93,18 @@
       tl.set("#built-dot2", { opacity: 1, x: 960, y: 330 }, 4.85);
       tl.fromTo("#built-dot2", { x: 960, y: 330 }, { x: 960, y: 0, duration: 0.85, ease: "power2.inOut", immediateRender: false }, 4.85);
       tl.to("#built-dot2", { opacity: 0, duration: 0.2 }, 5.75);
+      tl.set("#built-dot", { x: 270, y: 0 }, 5.8);
+      tl.to("#built-dot", { opacity: 1, duration: 0.1 }, 5.8);
+      tl.to("#built-dot", { x: 960, duration: 0.6, ease: "power2.inOut" }, 5.8);
+      tl.to("#built-dot", { x: 1650, duration: 0.6, ease: "power2.inOut" }, 6.4);
+      tl.to("#built-dot", { opacity: 0, duration: 0.15 }, 6.95);
+      tl.fromTo("#built-dia", { scale: 1 }, { scale: 1.04, duration: 4.4, ease: "none", immediateRender: false }, 2.6);
       tl.to("#built-dia", { scale: 1.9, opacity: 0, filter: "blur(10px)", duration: 0.5, ease: "power3.in" }, 7.0);
       tl.fromTo("#built-code", { opacity: 0, scale: 0.7, filter: "blur(12px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.6, ease: "expo.out", immediateRender: false }, 7.3);
       tl.fromTo("#built-chip", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out", immediateRender: false }, 8.6);
+      const count = { v: 0 };
+      tl.fromTo(count, { v: 0 }, { v: 931, duration: 1.2, ease: "expo.out", immediateRender: false, onUpdate: () => { document.querySelector("#built-count").textContent = Math.round(count.v); } }, 8.6);
+      tl.fromTo("#built-code", { scale: 1 }, { scale: 1.035, duration: 4.3, ease: "none", immediateRender: false }, 7.9);
       tl.fromTo("#built-foot", { opacity: 0 }, { opacity: 1, duration: 0.4, immediateRender: false }, 9.2);
       tl.to(["#built-code", "#built-chip", "#built-foot"], { opacity: 0, filter: "blur(8px)", duration: 0.3, ease: "power2.in" }, 11.62);
       window.__timelines["built"] = tl;
