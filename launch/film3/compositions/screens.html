@@ -1,0 +1,359 @@
+<template>
+  <style>
+    #screens { position: absolute; inset: 0; font-family: Inter, sans-serif; color: #15130f; -webkit-font-smoothing: antialiased; }
+    #screens * { box-sizing: border-box; margin: 0; }
+
+    .screens-title { position: absolute; left: 0; right: 0; top: 0; height: 1080px; display: flex; align-items: center; justify-content: center; white-space: nowrap; font: 400 150px/1 Newsreader; letter-spacing: -.03em; color: #15130f; }
+    .screens-title span { display: inline-block; margin: 0 .11em; }
+    .screens-title em { font-style: italic; }
+
+    .screens-world { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+    .screens-dev { position: absolute; }
+    .screens-glow { position: absolute; left: 4%; right: 4%; bottom: -26px; height: 60px; border-radius: 50%; background: radial-gradient(closest-side, #ff9f1c, #ff9f1c00); filter: blur(26px); opacity: .35; mix-blend-mode: multiply; }
+    .screens-shadow { position: absolute; left: -14px; right: -14px; bottom: -36px; height: 44px; border-radius: 50%; background: radial-gradient(closest-side, #3a2a1666, #3a2a1600); }
+    .screens-bezel { position: absolute; inset: 0; border-radius: 16px; background: linear-gradient(180deg, #2b2d33 0%, #16171b 40px, #101114 100%);
+      box-shadow: 0 1px 0 0 #ffffff4d inset, 0 0 0 1px #ffffff10 inset, 0 0 0 1px #0000004d, 0 2px 4px #140e062e, 0 30px 60px -20px #140e0661; }
+    .screens-screen { position: absolute; inset: 4px; border-radius: 12px; overflow: hidden; background: radial-gradient(90% 75% at 10% 0%, #1b2a4a 0%, #0c1018 55%, #07090d 100%); color: #f3f5f8; }
+    .screens-glare { position: absolute; inset: 4px; border-radius: 12px; background: linear-gradient(115deg, #ffffff12 0%, #ffffff06 22%, #ffffff00 40%); pointer-events: none; }
+    .screens-rim { position: absolute; inset: -1px; border-radius: inherit; box-shadow: 0 0 0 2px #ff9f1c, 0 0 36px 4px #ff9f1c77; opacity: 0; pointer-events: none; }
+    .screens-native { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+
+    .screens-lbl { position: absolute; left: 50%; width: 400px; margin-left: -200px; top: calc(100% + 30px); text-align: center; white-space: nowrap; font: 600 24px/1 Inter; letter-spacing: -.01em; color: #15130f; }
+
+    .screens-card { position: absolute; inset: 0; padding: 58px 64px; }
+    .screens-status { display: flex; align-items: center; gap: 14px; font: 600 22px/1 Inter; letter-spacing: .14em; text-transform: uppercase; color: #ff9f1c; white-space: nowrap; }
+    .screens-status i { width: 12px; height: 12px; border-radius: 50%; background: currentColor; box-shadow: 0 0 18px currentColor; }
+    .screens-wait { margin-left: auto; color: #c9ced8; letter-spacing: 0; text-transform: none; font-weight: 600; font-size: 26px; font-variant-numeric: tabular-nums; }
+    .screens-task { margin-top: 40px; font: 500 30px/1.2 Inter; color: #8b93a3; letter-spacing: -.01em; }
+    .screens-amt { margin-top: 14px; font: 600 172px/.95 Inter; letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+    .screens-when { margin-top: 14px; font: 500 36px/1.2 Inter; letter-spacing: -.015em; color: #aab0bd; }
+    .screens-note { display: inline-flex; margin-top: 22px; padding: 10px 18px; border-radius: 999px; font: 600 26px/1 Inter; color: #ff9f1c; background: #ff9f1c1f; box-shadow: 0 0 0 1px #ff9f1c44 inset; white-space: nowrap; }
+    .screens-said { position: absolute; right: 64px; top: 140px; width: 430px; padding: 26px 28px; border-radius: 26px; background: #ffffff0b; box-shadow: 0 0 0 1px #ffffff14 inset; }
+    .screens-said b { display: block; font: 600 20px/1 Inter; letter-spacing: .12em; text-transform: uppercase; color: #9aa3b2; }
+    .screens-said p { margin-top: 14px; font: 400 33px/1.26 Newsreader; color: #eef0f4; }
+    .screens-sub { position: absolute; right: 64px; top: 432px; width: 430px; font: 500 25px/1.3 Inter; color: #9aa3b2; }
+    .screens-acts { position: absolute; left: 64px; right: 64px; bottom: 56px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .screens-btn { position: relative; height: 112px; border-radius: 24px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; font: 600 36px/1 Inter; letter-spacing: -.02em; white-space: nowrap; }
+    .screens-btn small { font: 500 22px/1 Inter; letter-spacing: 0; opacity: .6; }
+    .screens-go { background: #f4f6f9; color: #0b0d12; box-shadow: 0 8px 24px #00000080, 0 1px 0 #fff inset; }
+    .screens-line { background: #ffffff0a; color: #f3f5f8; box-shadow: 0 0 0 1.5px #ffffff3d inset; }
+    .screens-stop { color: #ff8a80; background: transparent; box-shadow: 0 0 0 1.5px #ffffff1f inset; }
+    .screens-hl { position: absolute; inset: -6px; border-radius: 30px; box-shadow: 0 0 0 3px #ff9f1c, 0 0 30px #ff9f1c88; opacity: 0; }
+
+    #screens-s8 { left: 720px; top: 520px; width: 480px; height: 300px; }
+    #screens-s8 .screens-bezel { border-radius: 22px; }
+    #screens-s8 .screens-screen, #screens-s8 .screens-glare { inset: 6px; border-radius: 16px; }
+    #screens-s8 .screens-native { width: 1152px; height: 712px; transform: scale(.40625); }
+
+    #screens-s15 { left: 110px; top: 64px; width: 590px; height: 332px; }
+    #screens-s15 .screens-bezel { border-radius: 10px; background: linear-gradient(180deg, #232429, #121316); }
+    #screens-s15 .screens-screen, #screens-s15 .screens-glare { inset: 5px; border-radius: 6px; }
+    #screens-s15 .screens-native { width: 1280px; height: 699px; transform: scale(.453125); }
+    #screens-s15 .screens-shadow { bottom: auto; top: 20px; left: 10px; right: -20px; height: 340px; border-radius: 16px; background: #3a2a1626; filter: blur(22px); }
+    #screens-s15 .screens-glow { bottom: -40px; }
+    #screens-s15 .screens-said { width: 520px; }
+    #screens-s15 .screens-sub { width: 560px; }
+
+    #screens-tv { left: 1220px; top: 64px; width: 590px; height: 332px; }
+    #screens-tv .screens-bezel { border-radius: 8px; background: linear-gradient(180deg, #202126, #0d0d10); }
+    #screens-tv .screens-screen, #screens-tv .screens-glare { inset: 4px; border-radius: 5px; }
+    #screens-tv .screens-screen { background: #0a0b0f; }
+    #screens-tv .screens-native { width: 1280px; height: 703px; transform: scale(.454688); }
+    #screens-tv .screens-shadow { bottom: -50px; }
+    .screens-feet { position: absolute; bottom: -14px; left: 90px; right: 90px; height: 14px; }
+    .screens-feet i { position: absolute; top: 0; width: 44px; height: 14px; background: linear-gradient(#2b2d33, #131418); clip-path: polygon(0 0, 100% 0, 86% 100%, 14% 100%); }
+    .screens-art { position: absolute; inset: 0; transform-origin: 70% 60%; }
+    .screens-art svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .screens-shade { position: absolute; inset: 0; background: radial-gradient(90% 90% at 50% 40%, #05060a8c, #05060ad9); opacity: 0; }
+    .screens-pause { position: absolute; left: 590px; top: 190px; width: 100px; height: 140px; display: flex; justify-content: space-between; opacity: 0; }
+    .screens-pause i { width: 34px; height: 140px; border-radius: 9px; background: #f3f5f8eb; }
+    .screens-pnote { position: absolute; left: 64px; top: 56px; font: 650 44px/1 Inter; letter-spacing: -.01em; color: #f3f5f8; white-space: nowrap; opacity: 0; }
+    .screens-ntitle { position: absolute; left: 64px; bottom: 76px; font: 500 38px/1 Inter; color: #ffffffc0; white-space: nowrap; }
+    .screens-bar { position: absolute; left: 64px; right: 64px; bottom: 44px; height: 8px; border-radius: 4px; background: #ffffff33; overflow: hidden; }
+    .screens-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: #f3f5f8; transform-origin: 0 50%; }
+    .screens-corner { position: absolute; right: 56px; bottom: 56px; width: 560px; padding: 40px 46px 44px; border-radius: 34px; background: #0b0d12f2; box-shadow: 0 0 0 2px #ffffff1c inset, 0 30px 60px -16px #000000b0; opacity: 0; }
+    .screens-corner b { display: block; font: 650 46px/1 Inter; letter-spacing: -.005em; color: #ff9f1c; }
+    .screens-corner span { display: block; margin-top: 20px; font: 600 110px/.9 Inter; letter-spacing: -.05em; font-variant-numeric: tabular-nums; color: #f3f5f8; transform-origin: 0 50%; }
+
+    #screens-ph { left: 520px; top: 487px; width: 160px; height: 333px; }
+    #screens-ph .screens-bezel { border-radius: 30px; background: linear-gradient(160deg, #2c2e33, #0c0d10 45%, #1a1b1f); box-shadow: 0 2px 0 1px #ffffff18 inset, 0 36px 60px -26px #3a2c1a99, 0 0 0 1px #00000040; }
+    #screens-ph .screens-screen, #screens-ph .screens-glare { inset: 5px; border-radius: 25px; }
+    #screens-ph .screens-screen { background: radial-gradient(120% 70% at 50% 0%, #26344f, #0b0e14 60%, #07080b); }
+    #screens-ph .screens-native { width: 376px; height: 808px; transform: scale(.39894); }
+    .screens-isl { position: absolute; left: 50%; top: 7px; width: 46px; height: 13px; margin-left: -23px; border-radius: 8px; background: #000; z-index: 2; }
+    .screens-mob { position: absolute; inset: 0; padding: 78px 24px 24px; display: flex; flex-direction: column; }
+    .screens-mob .screens-status { font-size: 16px; gap: 10px; }
+    .screens-mob .screens-status i { width: 10px; height: 10px; }
+    .screens-mob .screens-wait { font-size: 17px; }
+    .screens-mob .screens-task { margin-top: 26px; font-size: 18px; }
+    .screens-mob .screens-amt { margin-top: 8px; font-size: 80px; }
+    .screens-mob .screens-when { margin-top: 8px; font-size: 22px; font-weight: 600; color: #d3d8e1; }
+    .screens-mob .screens-note { align-self: flex-start; margin-top: 14px; padding: 7px 12px; font-size: 16px; }
+    .screens-mob .screens-msub { margin-top: 14px; font: 500 16px/1.35 Inter; color: #9aa3b2; }
+    .screens-mob .screens-macts { margin-top: 18px; display: grid; gap: 10px; }
+    .screens-mob .screens-btn { height: 64px; border-radius: 16px; gap: 6px; font-size: 19px; }
+    .screens-mob .screens-btn small { font-size: 13px; }
+    .screens-mob .screens-hl { inset: -4px; border-radius: 20px; }
+    .screens-mfoot { margin-top: 26px; padding-top: 16px; border-top: 1px solid #ffffff1a; }
+    .screens-mfoot b { display: block; font: 600 13px/1 Inter; letter-spacing: .12em; text-transform: uppercase; color: #9aa3b2; }
+    .screens-mfoot p { margin-top: 10px; font: 400 19px/1.3 Newsreader; color: #eef0f4; }
+
+    #screens-dot { left: 1240px; top: 680px; width: 140px; height: 140px; }
+    .screens-sphere { position: absolute; left: 0; top: 0; width: 140px; height: 140px; border-radius: 50%; background: radial-gradient(70% 60% at 36% 24%, #52555d 0%, #26282d 48%, #121317 100%); box-shadow: 0 1px 0 #ffffff33 inset, 0 30px 50px -20px #140e0699, 0 0 0 1px #0000004d; overflow: hidden; }
+    .screens-sphere::after { content: ""; position: absolute; left: 22%; top: 8%; width: 40%; height: 18%; border-radius: 50%; background: radial-gradient(closest-side, #ffffff30, #ffffff00); }
+    .screens-lightring { position: absolute; left: 4px; right: 4px; bottom: -2px; height: 70px; border-radius: 0 0 75px 75px / 0 0 54px 54px; background: radial-gradient(70% 120% at 50% 100%, #ffd08a 0%, #ff9f1c 38%, #ff9f1c00 72%); opacity: 0; }
+    .screens-lightedge { position: absolute; left: 4px; right: 4px; bottom: 1px; height: 8px; border-radius: 0 0 75px 75px / 0 0 8px 8px; border-bottom: 5px solid #ffb547; box-shadow: 0 8px 22px #ff9f1caa; opacity: 0; }
+    .screens-pool { position: absolute; left: -10px; right: -10px; bottom: -34px; height: 70px; border-radius: 50%; background: radial-gradient(closest-side, #ff9f1c, #ff9f1c00); filter: blur(20px); opacity: 0; mix-blend-mode: multiply; }
+
+    .screens-pill { position: absolute; left: 50%; top: 916px; width: 1400px; height: 96px; margin-left: -700px; border-radius: 999px; background: linear-gradient(180deg, #1d1f25, #0c0d10); box-shadow: 0 1px 0 #ffffff1f inset, 0 0 0 1px #0000002e, 0 24px 48px -12px #1a120873; color: #f3f5f8; }
+    .screens-pav { position: absolute; left: 16px; top: 16px; width: 64px; height: 64px; border-radius: 50%; background: radial-gradient(70% 60% at 36% 24%, #52555d 0%, #26282d 48%, #121317 100%); box-shadow: 0 0 0 1px #ffffff1a inset; overflow: hidden; }
+    .screens-pav i { position: absolute; left: 6px; right: 6px; bottom: 3px; height: 5px; border-radius: 0 0 30px 30px / 0 0 5px 5px; background: #ffb547; box-shadow: 0 0 14px #ff9f1c; }
+    .screens-who { position: absolute; left: 102px; top: 13px; font: 600 20px/1 Inter; letter-spacing: .12em; text-transform: uppercase; color: #9aa3b2; white-space: nowrap; }
+    .screens-lines { position: absolute; left: 102px; right: 230px; top: 40px; height: 46px; }
+    .screens-ln { position: absolute; left: 0; top: 0; white-space: nowrap; font: 500 34px/46px Inter; letter-spacing: -.02em; opacity: 0; }
+    .screens-ln span { opacity: .4; }
+    .screens-wave { position: absolute; right: 48px; top: 26px; height: 44px; width: 150px; display: flex; align-items: center; justify-content: space-between; }
+    .screens-wave i { display: block; width: 3px; height: 6px; border-radius: 3px; background: linear-gradient(#ffd08a, #ff9f1c); }
+  </style>
+
+  <div id="screens" data-composition-id="screens" data-width="1920" data-height="1080">
+    <div id="screens-title" class="screens-title"><span class="screens-tw">Wherever</span><span class="screens-tw"><em>you</em></span><span class="screens-tw">are.</span></div>
+
+    <div id="screens-world" class="screens-world" data-layout-allow-overflow data-layout-allow-overlap>
+
+      <div id="screens-s15" class="screens-dev">
+        <div class="screens-shadow"></div><div class="screens-glow"></div>
+        <div class="screens-bezel"><div class="screens-screen"><div class="screens-native"><div class="screens-card">
+          <div class="screens-status screens-rf"><i></i>Needs you<span class="screens-wait">Waiting 0:01</span></div>
+          <div class="screens-task screens-rf">Fix the kitchen sink</div>
+          <div class="screens-amt screens-rf">$<span class="screens-n">180</span></div>
+          <div class="screens-when screens-rf">Tuesday the 20th at 10 am</div>
+          <div class="screens-note screens-rf">$30 over your $150 limit</div>
+          <div class="screens-said screens-rf"><b>Joe's Plumbing said</b><p>“Best I can do is one eighty, honestly. Parts went up this year.”</p></div>
+          <div class="screens-sub screens-rf">Joe's Plumbing is on the line, waiting for you.</div>
+          <div class="screens-acts">
+            <div class="screens-btn screens-go screens-rf screens-bk"><div class="screens-hl"></div>Book $180<small>Tells them yes</small></div>
+            <div class="screens-btn screens-line screens-rf screens-of"><div class="screens-hl"></div>Offer $150<small>Your limit</small></div>
+            <div class="screens-btn screens-stop screens-rf screens-dc"><div class="screens-hl"></div>Decline<small>Ambient hangs up</small></div>
+          </div>
+        </div></div></div><div class="screens-glare"></div><div class="screens-rim"></div></div>
+        <div class="screens-lbl screens-lb" style="top:calc(100% + 44px)">Echo Show 15</div>
+      </div>
+
+      <div id="screens-ph" class="screens-dev">
+        <div class="screens-shadow"></div><div class="screens-glow"></div>
+        <div class="screens-bezel"><div class="screens-screen"><div class="screens-isl"></div><div class="screens-native"><div class="screens-mob">
+          <div class="screens-status screens-rf"><i></i>Needs you<span class="screens-wait">Waiting 0:01</span></div>
+          <div class="screens-task screens-rf">Fix the kitchen sink</div>
+          <div class="screens-amt screens-rf">$<span class="screens-n">180</span></div>
+          <div class="screens-when screens-rf">Tuesday the 20th at 10 am</div>
+          <div class="screens-note screens-rf">$30 over your $150 limit</div>
+          <div class="screens-msub screens-rf">Joe's Plumbing is on the line, waiting for you.</div>
+          <div class="screens-macts">
+            <div class="screens-btn screens-go screens-rf screens-bk"><div class="screens-hl"></div>Book $180<small>Tells them yes</small></div>
+            <div class="screens-btn screens-line screens-rf screens-of"><div class="screens-hl"></div>Offer $150<small>Your limit</small></div>
+            <div class="screens-btn screens-stop screens-rf screens-dc"><div class="screens-hl"></div>Decline<small>Ambient hangs up</small></div>
+          </div>
+          <div class="screens-mfoot screens-rf"><b>Joe's Plumbing said</b><p>“Best I can do is one eighty, honestly. Parts went up this year.”</p></div>
+        </div></div></div><div class="screens-glare"></div><div class="screens-rim"></div></div>
+        <div class="screens-lbl screens-lb">Phone</div>
+      </div>
+
+      <div id="screens-s8" class="screens-dev">
+        <div class="screens-shadow"></div><div class="screens-glow"></div>
+        <div class="screens-bezel"><div class="screens-screen"><div class="screens-native"><div class="screens-card">
+          <div class="screens-status screens-rf"><i></i>Needs you<span class="screens-wait">Waiting 0:01</span></div>
+          <div class="screens-task screens-rf">Fix the kitchen sink</div>
+          <div class="screens-amt screens-rf">$<span id="screens-n8" class="screens-n">180</span></div>
+          <div class="screens-when screens-rf">Tuesday the 20th at 10 am</div>
+          <div class="screens-note screens-rf">$30 over your $150 limit</div>
+          <div class="screens-said screens-rf"><b>Joe's Plumbing said</b><p>“Best I can do is one eighty, honestly. Parts went up this year.”</p></div>
+          <div class="screens-sub screens-rf">Joe's Plumbing is on the line, waiting for you.</div>
+          <div class="screens-acts">
+            <div class="screens-btn screens-go screens-rf screens-bk"><div class="screens-hl"></div>Book $180<small>Tells them yes</small></div>
+            <div class="screens-btn screens-line screens-rf screens-of"><div class="screens-hl"></div>Offer $150<small>Your limit</small></div>
+            <div class="screens-btn screens-stop screens-rf screens-dc"><div class="screens-hl"></div>Decline<small>Ambient hangs up</small></div>
+          </div>
+        </div></div></div><div class="screens-glare"></div><div class="screens-rim"></div></div>
+        <div id="screens-lb8" class="screens-lbl">Echo Show 8</div>
+      </div>
+
+      <div id="screens-dot" class="screens-dev">
+        <div id="screens-pool" class="screens-pool"></div>
+        <div class="screens-sphere"><div id="screens-ring" class="screens-lightring"></div><div id="screens-edge" class="screens-lightedge"></div></div>
+        <div class="screens-lbl screens-lb">Voice only</div>
+      </div>
+
+      <div id="screens-tv" class="screens-dev">
+        <div class="screens-shadow"></div><div class="screens-glow"></div>
+        <div class="screens-feet"><i style="left:0"></i><i style="right:0"></i></div>
+        <div class="screens-bezel"><div class="screens-screen"><div class="screens-native">
+          <div id="screens-art" class="screens-art"><svg viewBox="0 0 1280 707" preserveAspectRatio="xMidYMid slice">
+            <defs><linearGradient id="screens-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2748"/><stop offset=".55" stop-color="#8a5a6a"/><stop offset="1" stop-color="#f0a06a"/></linearGradient></defs>
+            <rect width="1280" height="707" fill="url(#screens-sky)"/>
+            <circle cx="900" cy="440" r="110" fill="#ffe0ae"/>
+            <path d="M0 490 C180 420 310 480 490 438 C670 392 820 482 960 454 C1080 432 1190 462 1280 438 L1280 707 L0 707Z" fill="#5a3a52"/>
+            <path d="M0 552 C160 502 350 562 530 526 C710 490 880 572 1060 536 C1160 516 1230 534 1280 528 L1280 707 L0 707Z" fill="#2c2540"/>
+            <path d="M0 620 C240 588 410 636 650 612 C860 592 1060 636 1280 608 L1280 707 L0 707Z" fill="#120f1a"/>
+          </svg></div>
+          <div id="screens-shade" class="screens-shade"></div>
+          <div id="screens-pause" class="screens-pause"><i></i><i></i></div>
+          <div id="screens-pnote" class="screens-pnote">Film paused · the call needs you</div>
+          <div id="screens-ntitle" class="screens-ntitle">Now playing · a film</div>
+          <div id="screens-barw" class="screens-bar"><i id="screens-prog"></i></div>
+          <div id="screens-corner" class="screens-corner"><b>Over your limit</b><span class="screens-n">$180</span></div>
+        </div></div><div class="screens-glare"></div><div class="screens-rim"></div></div>
+        <div class="screens-lbl screens-lb" style="top:calc(100% + 44px)">Fire TV</div>
+      </div>
+    </div>
+
+    <div id="screens-pill" class="screens-pill">
+      <div class="screens-pav"><i></i></div>
+      <div class="screens-who">Echo Dot · no screen</div>
+      <div class="screens-lines">
+        <div id="screens-l1" class="screens-ln"></div>
+        <div id="screens-l2" class="screens-ln"></div>
+        <div id="screens-l3" class="screens-ln"></div>
+      </div>
+      <div id="screens-wave" class="screens-wave"></div>
+    </div>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const V = [
+      { el: "#screens-l1", at: 5.3, words: [["Joe's", 0, 0.48], ["Plumbing", 0.48, 0.96], ["wants", 0.96, 1.2], ["one", 1.2, 1.36], ["hundred", 1.36, 1.52], ["eighty", 1.6, 1.92], ["dollars…", 1.92, 2.32]] },
+      { el: "#screens-l2", at: 7.8, words: [["Your", 0, 0.24], ["limit", 0.24, 0.64], ["is", 0.64, 0.88], ["one", 0.88, 1.08], ["hundred", 1.08, 1.36], ["fifty", 1.36, 1.72], ["dollars.", 1.72, 2.16]] },
+      { el: "#screens-l3", at: 10.15, words: [["Say", 0, 0.24], ["yes", 0.24, 0.4], ["to", 0.4, 0.56], ["book", 0.56, 0.8], ["it,", 0.8, 1.04], ["offer", 1.12, 1.44], ["a", 1.44, 1.52], ["price", 1.52, 1.76], ["like", 1.76, 1.92], ["one", 1.92, 2.2], ["fifty,", 2.2, 2.72], ["or", 2.72, 2.88], ["say", 2.88, 3.04], ["no.", 3.12, 3.52]] }
+    ];
+    const W = (seg, i) => V[seg].at + V[seg].words[i][1];
+    const SYNC = W(0, 5);
+    const BREATH = 1.2;
+    const HERO = { x: -1018, y: -780, scale: 2.06 };
+
+    const reflow = (dev, at) => tl.fromTo(dev + " .screens-rf", { opacity: 0, y: 14, filter: "blur(3px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.34, ease: "expo.out", stagger: 0.04 }, at);
+    const arrive = (dev, from, at) => {
+      tl.fromTo(dev, { opacity: 0 }, { opacity: 1, duration: 0.16, ease: "power1.out" }, at);
+      tl.fromTo(dev, { x: 0, y: 0, scale: 1, ...from }, { x: 0, y: 0, scale: 1, duration: 0.9, ease: "expo.out", immediateRender: true }, at);
+      tl.fromTo(dev, { filter: "blur(8px)" }, { filter: "blur(0px)", duration: 0.4, ease: "power2.out" }, at);
+      tl.fromTo(dev + " .screens-lb", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, at + 0.55);
+    };
+    const roll = (dev, at) => {
+      const o = { v: 150 };
+      const els = [...document.querySelectorAll(dev + " .screens-amt .screens-n")];
+      tl.fromTo(o, { v: 150 }, { v: 180, duration: 0.7, ease: "expo.out", immediateRender: false, onUpdate: () => els.forEach((e) => (e.textContent = Math.round(o.v))) }, at);
+      tl.fromTo(dev + " .screens-amt", { color: "#f3f5f8" }, { color: "#ffb347", duration: 0.15, ease: "power2.out", immediateRender: false }, at + 0.1);
+      tl.to(dev + " .screens-amt", { color: "#f3f5f8", duration: 0.6, ease: "power2.out" }, at + 0.5);
+    };
+
+    tl.fromTo(".screens-tw", { opacity: 0.2, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.22, ease: "power2.out", stagger: 0.09 }, 0);
+    tl.fromTo("#screens-title", { y: 0, scale: 1 }, { y: -310, scale: 0.4, duration: 0.75, ease: "power3.inOut", immediateRender: false }, 0.85);
+
+    tl.set("#screens-world", HERO, 0);
+    tl.fromTo("#screens-s8", { y: 420 }, { y: 0, duration: 1.0, ease: "expo.out" }, 1.0);
+    reflow("#screens-s8", 1.3);
+    roll("#screens-s8", 1.5);
+    tl.fromTo("#screens-lb8", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 3.3);
+    tl.fromTo("#screens-world", HERO, { x: 0, y: 0, scale: 1, duration: 1.25, ease: "expo.inOut", immediateRender: false }, 2.6);
+
+    arrive("#screens-s15", { x: -560, scale: 0.94 }, 3.25);
+    reflow("#screens-s15", 3.45);
+    roll("#screens-s15", 3.6);
+
+    arrive("#screens-tv", { x: 520, scale: 0.94 }, 4.1);
+    tl.fromTo("#screens-art", { scale: 1, x: 0 }, { scale: 1.06, x: -30, duration: 0.75, ease: "none" }, 4.1);
+    tl.fromTo("#screens-prog", { scaleX: 0.34 }, { scaleX: 0.36, duration: 0.75, ease: "none" }, 4.1);
+    tl.fromTo("#screens-shade", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out", immediateRender: false }, 4.85);
+    tl.fromTo("#screens-pause", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2.2)", transformOrigin: "50% 50%", immediateRender: false }, 4.85);
+    tl.to(["#screens-ntitle", "#screens-barw"], { opacity: 0, duration: 0.2, ease: "power2.in" }, 4.85);
+    tl.fromTo("#screens-pnote", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out", immediateRender: false }, 5.0);
+    tl.fromTo("#screens-corner", { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: 0.55, ease: "expo.out", immediateRender: false }, 5.1);
+
+    arrive("#screens-dot", { x: 460, scale: 0.9 }, 4.95);
+    tl.fromTo(["#screens-ring", "#screens-edge"], { opacity: 0 }, { opacity: 0.7, duration: 0.4, ease: "power2.out", immediateRender: false }, 5.2);
+    tl.fromTo("#screens-pool", { opacity: 0 }, { opacity: 0.6, duration: 0.4, ease: "power2.out", immediateRender: false }, 5.2);
+    tl.fromTo("#screens-pill", { opacity: 0 }, { opacity: 1, duration: 0.15, ease: "power1.out" }, 5.0);
+    tl.fromTo("#screens-pill", { y: 70 }, { y: 0, duration: 0.7, ease: "expo.out" }, 5.0);
+
+    arrive("#screens-ph", { x: -520, scale: 0.96 }, 5.85);
+    reflow("#screens-ph", 6.1);
+    roll("#screens-ph", 6.2);
+
+    V.forEach((seg, k) => {
+      const el = document.querySelector(seg.el);
+      el.innerHTML = seg.words.map((w) => `<span>${w[0]}</span>`).join(" ");
+      const spans = [...el.querySelectorAll("span")];
+      const end = seg.at + seg.words[seg.words.length - 1][2];
+      tl.fromTo(el, { opacity: 0, y: 12, filter: "blur(3px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.3, ease: "expo.out", immediateRender: false }, seg.at - 0.12);
+      if (k < V.length - 1) tl.to(el, { opacity: 0, y: -10, filter: "blur(3px)", duration: 0.16, ease: "power2.in" }, V[k + 1].at - 0.3);
+      spans.forEach((s, i) => tl.fromTo(s, { opacity: 0.4 }, { opacity: 1, duration: 0.12, ease: "none", immediateRender: false }, seg.at + seg.words[i][1] - 0.03));
+    });
+
+    const hit = (sel, at, scale) => {
+      tl.fromTo(sel, { scale: 1 }, { scale, duration: 0.12, ease: "power2.out", immediateRender: false }, at);
+      tl.to(sel, { scale: 1, duration: 0.5, ease: "expo.out" }, at + 0.12);
+    };
+    tl.fromTo(".screens-rim", { opacity: 0 }, { opacity: 1, duration: 0.1, ease: "power2.out", immediateRender: false }, SYNC);
+    tl.to(".screens-rim", { opacity: 0, duration: 0.9, ease: "power2.out" }, SYNC + 0.1);
+    tl.fromTo([".screens-amt", "#screens-corner span"], { color: "#f3f5f8" }, { color: "#ffb347", duration: 0.1, ease: "power2.out", immediateRender: false }, SYNC);
+    tl.to([".screens-amt", "#screens-corner span"], { color: "#f3f5f8", duration: 0.7, ease: "power2.out" }, SYNC + 0.2);
+    hit(".screens-amt", SYNC, 1.05);
+    hit("#screens-corner span", SYNC, 1.08);
+    tl.set(".screens-amt", { transformOrigin: "0% 80%" }, 0);
+
+    const lim = W(1, 3);
+    tl.fromTo(".screens-note", { boxShadow: "0 0 0 1px #ff9f1c44 inset, 0 0 0px #ff9f1c00" }, { boxShadow: "0 0 0 3px #ff9f1c inset, 0 0 40px #ff9f1caa", duration: 0.14, ease: "power2.out", immediateRender: false }, lim);
+    tl.to(".screens-note", { boxShadow: "0 0 0 1px #ff9f1c44 inset, 0 0 0px #ff9f1c00", duration: 0.9, ease: "power2.out" }, lim + 0.5);
+    hit(".screens-note", lim, 1.06);
+    tl.set(".screens-note", { transformOrigin: "0% 50%" }, 0);
+
+    for (const [sel, at, hold] of [[".screens-bk", W(2, 1), 0.55], [".screens-of", W(2, 5), 0.9], [".screens-dc", W(2, 12) - 0.1, 0.6]]) {
+      tl.fromTo(sel + " .screens-hl", { opacity: 0 }, { opacity: 1, duration: 0.12, ease: "power2.out", immediateRender: false }, at);
+      tl.to(sel + " .screens-hl", { opacity: 0, duration: 0.4, ease: "power2.out" }, at + hold);
+      hit(sel, at, 1.04);
+    }
+
+    document.getElementById("screens-wave").innerHTML = "<i></i>".repeat(22);
+    const bars = [...document.querySelectorAll("#screens-wave i")];
+    const spoken = V.flatMap((s) => s.words.map((w) => [s.at + w[1], s.at + w[2]]));
+    const level = (t) => {
+      let lv = 0;
+      for (const [a, b] of spoken) {
+        const d = t < a ? a - t : t > b ? t - b : 0;
+        lv = Math.max(lv, 1 - d / 0.09);
+      }
+      return Math.max(0, lv);
+    };
+    const waits = [...document.querySelectorAll("#screens .screens-wait")];
+    const glows = [...document.querySelectorAll("#screens .screens-glow")];
+    const dots = [...document.querySelectorAll("#screens .screens-status i")];
+    const ring = document.getElementById("screens-ring");
+    const pool = document.getElementById("screens-pool");
+    const pav = document.querySelector(".screens-pav i");
+    tl.eventCallback("onUpdate", () => {
+      const t = tl.time();
+      const lv = level(t);
+      bars.forEach((b, i) => {
+        const shape = 0.35 + 0.65 * Math.sin(((i + 0.5) / 22) * Math.PI);
+        const jit = 0.65 + 0.35 * Math.sin(t * 23 + i * 1.9) * Math.sin(t * 7 + i * 0.7);
+        b.style.height = 6 + 36 * lv * shape * jit + "px";
+      });
+      const s = 1 + Math.floor(Math.max(0, t - 1.05));
+      waits.forEach((w) => (w.textContent = `Waiting 0:${String(s).padStart(2, "0")}`));
+      const k = t >= SYNC ? 0.5 + 0.5 * Math.cos((2 * Math.PI * (t - SYNC)) / BREATH) : 0;
+      const kick = t >= SYNC ? Math.max(0, 1 - (t - SYNC) / 0.8) : 0;
+      glows.forEach((g) => (g.style.opacity = 0.32 + 0.28 * k + 0.4 * kick));
+      dots.forEach((d) => (d.style.transform = `scale(${1 + 0.35 * k + 0.6 * kick})`));
+      if (t >= 5.6) {
+        const r = Math.min(1, 0.55 + 0.25 * k + 0.45 * lv);
+        ring.style.opacity = r;
+        pool.style.opacity = 0.45 + 0.35 * k + 0.3 * lv;
+        pav.style.opacity = 0.5 + 0.5 * lv;
+      }
+    });
+
+    tl.to({}, { duration: 0.01 }, 13.99);
+    window.__timelines = window.__timelines || {};
+    window.__timelines["screens"] = tl;
+  </script>
+</template>

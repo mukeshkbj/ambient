@@ -1,0 +1,26 @@
+<template>
+  <style>
+    #bridge { position: absolute; inset: 0; color: #15130f; -webkit-font-smoothing: antialiased; }
+    #bridge .bridge-bg { position: absolute; inset: 0; background: radial-gradient(75% 65% at 46% 34%, #fbf9f6 0%, #eee9e1 52%, #dad3c7 100%); }
+    #bridge .bridge-line { position: absolute; left: 0; right: 0; top: 470px; text-align: center; font: 400 120px/1.1 Newsreader; letter-spacing: -.025em; white-space: nowrap; }
+    #bridge .bridge-line span { display: inline-block; }
+    #bridge .bridge-line em { font-style: italic; color: #777166; }
+  </style>
+  <div id="bridge" data-composition-id="bridge" data-width="1920" data-height="1080">
+    <div class="bridge-bg" id="bridge-bg"></div>
+    <div class="bridge-line" id="bridge-l1"><span>That</span> <span>was</span> <span><em>one</em></span> <span>call.</span></div>
+    <div class="bridge-line" id="bridge-l2"><span>Now</span> <span>make</span> <span>it</span> <span><em>hard.</em></span></div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.set(["#bridge-l1 span", "#bridge-l2 span"], { opacity: 0 }, 0);
+      tl.fromTo("#bridge-bg", { opacity: 0 }, { opacity: 1, duration: 0.22, ease: "power2.out", immediateRender: false }, 0);
+      tl.fromTo("#bridge-l1 span", { opacity: 0, y: 24, filter: "blur(10px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.5, ease: "expo.out", stagger: 0.07, immediateRender: false }, 0.12);
+      tl.to("#bridge-l1 span", { opacity: 0, y: -16, filter: "blur(8px)", duration: 0.18, ease: "power2.in", stagger: 0.02 }, 1.5);
+      tl.fromTo("#bridge-l2 span", { opacity: 0, y: 24, filter: "blur(10px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.5, ease: "expo.out", stagger: 0.07, immediateRender: false }, 1.72);
+      tl.to("#bridge-l2", { opacity: 0, scale: 1.04, filter: "blur(12px)", duration: 0.26, ease: "power2.in" }, 2.5);
+      window.__timelines["bridge"] = tl;
+    })();
+  </script>
+</template>

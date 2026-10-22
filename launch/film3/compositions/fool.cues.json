@@ -1,0 +1,180 @@
+{
+  "lines": [
+    {
+      "file": "fool-readback",
+      "at": 0.85,
+      "text": "Okay, so just to confirm, one hundred sixty dollars total, Tuesday the 20th at 10 am. Is that right?",
+      "band": "phone"
+    }
+  ],
+  "effects": [
+    {
+      "name": "swish",
+      "at": 0.0,
+      "gain": 0.22,
+      "pan": 0
+    },
+    {
+      "name": "whoosh",
+      "at": 4.75,
+      "gain": 0.16,
+      "pan": 0
+    },
+    {
+      "name": "tick",
+      "at": 5.6,
+      "gain": 0.2,
+      "pan": -0.15
+    },
+    {
+      "name": "tick",
+      "at": 5.92,
+      "gain": 0.16,
+      "pan": 0.15
+    },
+    {
+      "name": "tap",
+      "at": 6.28,
+      "gain": 0.28,
+      "pan": 0.2
+    },
+    {
+      "name": "stopdown",
+      "at": 6.34,
+      "gain": 0.4,
+      "pan": 0
+    },
+    {
+      "name": "tick",
+      "at": 7.06,
+      "gain": 0.2,
+      "pan": -0.15
+    },
+    {
+      "name": "tick",
+      "at": 7.4,
+      "gain": 0.16,
+      "pan": 0.15
+    },
+    {
+      "name": "tap",
+      "at": 7.78,
+      "gain": 0.28,
+      "pan": 0.2
+    },
+    {
+      "name": "hit",
+      "at": 7.84,
+      "gain": 0.32,
+      "pan": 0
+    },
+    {
+      "name": "tick",
+      "at": 8.58,
+      "gain": 0.2,
+      "pan": -0.15
+    },
+    {
+      "name": "tick",
+      "at": 8.95,
+      "gain": 0.16,
+      "pan": 0.15
+    },
+    {
+      "name": "tap",
+      "at": 9.37,
+      "gain": 0.28,
+      "pan": 0.2
+    },
+    {
+      "name": "stopdown",
+      "at": 9.43,
+      "gain": 0.4,
+      "pan": 0
+    },
+    {
+      "name": "tick",
+      "at": 10.16,
+      "gain": 0.2,
+      "pan": -0.15
+    },
+    {
+      "name": "tick",
+      "at": 10.45,
+      "gain": 0.16,
+      "pan": 0.15
+    },
+    {
+      "name": "tap",
+      "at": 10.79,
+      "gain": 0.28,
+      "pan": 0.2
+    },
+    {
+      "name": "hit",
+      "at": 10.85,
+      "gain": 0.32,
+      "pan": 0
+    },
+    {
+      "name": "tick",
+      "at": 11.63,
+      "gain": 0.2,
+      "pan": -0.15
+    },
+    {
+      "name": "tick",
+      "at": 12.09,
+      "gain": 0.16,
+      "pan": 0.15
+    },
+    {
+      "name": "tap",
+      "at": 12.6,
+      "gain": 0.28,
+      "pan": 0.2
+    },
+    {
+      "name": "stopdown",
+      "at": 12.66,
+      "gain": 0.4,
+      "pan": 0
+    },
+    {
+      "name": "tick",
+      "at": 13.53,
+      "gain": 0.2,
+      "pan": -0.15
+    },
+    {
+      "name": "tick",
+      "at": 13.84,
+      "gain": 0.16,
+      "pan": 0.15
+    },
+    {
+      "name": "tap",
+      "at": 14.2,
+      "gain": 0.28,
+      "pan": 0.2
+    },
+    {
+      "name": "ding",
+      "at": 14.26,
+      "gain": 0.7,
+      "pan": 0
+    },
+    {
+      "name": "whoosh",
+      "at": 15.0,
+      "gain": 0.2,
+      "pan": 0
+    },
+    {
+      "name": "impact",
+      "at": 15.7,
+      "gain": 0.3,
+      "pan": 0
+    }
+  ]
+}

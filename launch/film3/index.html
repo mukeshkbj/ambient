@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Newsreader"; src: url("assets/fonts/Newsreader.woff2") format("woff2"); font-weight: 200 800; }
+      @font-face { font-family: "Newsreader"; src: url("assets/fonts/Newsreader-Italic.woff2") format("woff2"); font-weight: 200 800; font-style: italic; }
+      @font-face { font-family: "JetBrains Mono"; src: url("assets/fonts/JetBrainsMono-400.woff2") format("woff2"); font-weight: 400 500; }
+      @font-face { font-family: "JetBrains Mono"; src: url("assets/fonts/JetBrainsMono-700.woff2") format("woff2"); font-weight: 600 800; }
+      * { box-sizing: border-box; margin: 0; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #efebe4; }
+      #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; font-family: Inter, sans-serif; color: #15130f; -webkit-font-smoothing: antialiased; }
+      .ground { position: absolute; inset: 0; background: radial-gradient(75% 65% at 46% 34%, #fbf9f6 0%, #eee9e1 52%, #dad3c7 100%); }
+      .sun { position: absolute; left: -300px; top: -420px; width: 1500px; height: 1100px; border-radius: 50%; background: radial-gradient(closest-side, #fff6e6cc, #fff6e600); }
+      .host { position: absolute; inset: 0; }
+      #story { position: absolute; inset: 0; width: 1920px; height: 1080px; object-fit: cover; z-index: 2; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="133.98" data-width="1920" data-height="1080">
+      <div class="ground"></div>
+      <div class="sun"></div>
+      <div id="hook" class="host" data-composition-id="hook" data-composition-src="compositions/hook.html" data-start="0" data-duration="7.2" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <video id="story" class="clip" src="assets/video/story.mp4" data-start="7.2" data-duration="24.98" data-track-index="2" muted playsinline></video>
+      <div id="bridge" class="host" data-composition-id="bridge" data-composition-src="compositions/bridge.html" data-start="32.18" data-duration="2.8" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="fool" class="host" data-composition-id="fool" data-composition-src="compositions/fool.html" data-start="34.98" data-duration="18" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="around" class="host" data-composition-id="around" data-composition-src="compositions/around.html" data-start="52.98" data-duration="20" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="screens" class="host" data-composition-id="screens" data-composition-src="compositions/screens.html" data-start="72.98" data-duration="14" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="honest" class="host" data-composition-id="honest" data-composition-src="compositions/honest.html" data-start="86.98" data-duration="14" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="built" class="host" data-composition-id="built" data-composition-src="compositions/built.html" data-start="100.98" data-duration="15" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="real" class="host" data-composition-id="real" data-composition-src="compositions/real.html" data-start="115.98" data-duration="12" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <div id="end" class="host" data-composition-id="end" data-composition-src="compositions/end.html" data-start="127.98" data-duration="6" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+      <audio id="mix" src="assets/mix.wav" data-start="0" data-duration="133.98" data-track-index="9"></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

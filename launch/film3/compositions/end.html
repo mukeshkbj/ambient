@@ -1,0 +1,37 @@
+<template>
+  <style>
+    #end { position: absolute; inset: 0; font-family: Inter, sans-serif; color: #15130f; -webkit-font-smoothing: antialiased; }
+    #end .end-bg { position: absolute; inset: 0; background: radial-gradient(75% 65% at 46% 34%, #fbf9f6 0%, #eee9e1 52%, #dad3c7 100%); }
+    #end .end-lock { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; }
+    #end .end-mark { margin-top: 210px; width: 150px; height: 150px; border-radius: 50%; background: conic-gradient(from 200deg, #5ad8ff, #3d7bff, #8a5cff, #5ad8ff); -webkit-mask: radial-gradient(circle, #0000 54px, #000 55px); mask: radial-gradient(circle, #0000 54px, #000 55px); box-shadow: 0 0 80px #3d7bff99; }
+    #end .end-name { margin-top: 44px; font: 400 150px/1 Newsreader; letter-spacing: -.04em; }
+    #end .end-say { margin-top: 26px; font: italic 400 64px/1 Newsreader; color: #777166; }
+    #end .end-cta { margin-top: 64px; display: flex; align-items: center; gap: 24px; font: 500 36px/1 Inter; color: #777166; }
+    #end .end-cta code { padding: 14px 24px; border-radius: 16px; background: #15130f; color: #f3f5f8; font: 500 36px/1 "JetBrains Mono"; }
+    #end .end-fine { position: absolute; left: 0; right: 0; bottom: 56px; text-align: center; font: 500 28px/1 Inter; color: #4f4a42; }
+  </style>
+  <div id="end" data-composition-id="end" data-width="1920" data-height="1080">
+    <div class="end-bg"></div>
+    <div class="end-lock" id="end-lock">
+      <div class="end-mark" id="end-mark"></div>
+      <div class="end-name" id="end-name">Ambient</div>
+      <div class="end-say" id="end-say">Alexa makes the call. You still decide.</div>
+      <div class="end-cta" id="end-cta">Try it in one minute, no keys <code>pnpm demo</code></div>
+    </div>
+    <div class="end-fine" id="end-fine">Simulated business and Alexa+ host · Ambient's own screens</div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#end-mark", { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.7, ease: "expo.out" }, 0.05);
+      tl.fromTo("#end-mark", { rotation: 0 }, { rotation: 140, duration: 6, ease: "none" }, 0);
+      tl.fromTo("#end-name", { opacity: 0, y: 30, filter: "blur(8px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.6, ease: "expo.out" }, 0.17);
+      tl.fromTo("#end-say", { opacity: 0, y: 20, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.6, ease: "expo.out" }, 0.6);
+      tl.fromTo("#end-cta", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 1.0);
+      tl.fromTo("#end-fine", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 1.4);
+      tl.fromTo("#end-lock", { scale: 1 }, { scale: 1.03, duration: 6, ease: "none" }, 0);
+      tl.fromTo("#end-mark", { boxShadow: "0 0 140px #3d7bffff" }, { boxShadow: "0 0 80px #3d7bff99", duration: 0.8, ease: "power2.out", immediateRender: false }, 0.8);
+      window.__timelines["end"] = tl;
+    })();
+  </script>
+</template>
