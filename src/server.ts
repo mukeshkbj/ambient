@@ -90,7 +90,7 @@ function writeJson(response: ServerResponse, status: number, body: unknown): voi
   response.end(payload);
 }
 
-function writeText(response: ServerResponse, status: number, body: string, type = "text/plain; charset=utf-8"): void {
+function writeText(response: ServerResponse, status: number, body: string | Buffer, type = "text/plain; charset=utf-8"): void {
   response.statusCode = status;
   response.setHeader("content-type", type);
   response.setHeader("content-length", Buffer.byteLength(body));

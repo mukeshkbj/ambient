@@ -93,6 +93,29 @@ async def main():
         await asyncio.sleep(0.8)
         await call.screenshot(path=OUT / "call-business-ringing.png")
         print("saved call-business-ringing")
+        await call.evaluate("""() => {
+          document.getElementById("receiptText").textContent = "Booked for Maya: $160 total, Tuesday the 20th at 10 am.";
+          document.getElementById("receipt").classList.remove("hidden");
+          document.getElementById("ringingActions").classList.add("hidden");
+          document.getElementById("note").textContent = "You can close this page.";
+          document.body.dataset.state = "ended";
+          document.getElementById("state").textContent = "Ambient ended the call";
+        }""")
+        await call.screenshot(path=OUT / "call-business-receipt.png")
+        print("saved call-business-receipt")
+        await call.unroute("**/call/demo/info")
+        await call.route("**/call/demo/info", lambda route: route.fulfill(json={"ownerName": "Maya", "language": "es"}))
+        await call.goto(f"{BASE}/call/demo")
+        await asyncio.sleep(0.8)
+        await call.screenshot(path=OUT / "call-business-ringing-es.png")
+        print("saved call-business-ringing-es")
+        fool = await browser.new_page(viewport={"width": 1440, "height": 900}, device_scale_factor=2)
+        await fool.goto(f"{BASE}/sim/")
+        await fool.locator("#foolChips button").first.click()
+        await fool.wait_for_selector("#foolVerdict:not(:empty)")
+        await asyncio.sleep(0.5)
+        await fool.locator(".fool").screenshot(path=OUT / "sim-fool.png")
+        print("saved fool")
         await browser.close()
 
 

@@ -30,7 +30,8 @@ const MIME: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
   ".svg": "image/svg+xml",
   ".png": "image/png",
-  ".ico": "image/x-icon"
+  ".ico": "image/x-icon",
+  ".woff2": "font/woff2"
 };
 
 function structuredOf(result: unknown): Record<string, unknown> | undefined {
@@ -181,11 +182,11 @@ export class SimHost {
   }
 
   /** Static asset for GET /sim/…; index.html for the bare route. */
-  asset(pathname: string): { body: string; type: string } | undefined {
+  asset(pathname: string): { body: Buffer; type: string } | undefined {
     const rel = pathname === "/sim" || pathname === "/sim/" ? "index.html" : pathname.replace(/^\/sim\//, "");
     if (rel.includes("..") || rel.startsWith("/")) return undefined;
     const file = join(this.options.assetsDir, rel);
     if (!existsSync(file)) return undefined;
-    return { body: readFileSync(file, "utf8"), type: MIME[rel.slice(rel.lastIndexOf("."))] ?? "text/plain; charset=utf-8" };
+    return { body: readFileSync(file), type: MIME[rel.slice(rel.lastIndexOf("."))] ?? "text/plain; charset=utf-8" };
   }
 }
