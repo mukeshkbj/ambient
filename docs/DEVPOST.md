@@ -1,6 +1,6 @@
 # Ambient: Alexa, handle the call
 
-This file holds every field of the Devpost entry, in form order. Paste each field as it is. Before you submit, replace `https://github.com/mukeshkbj/ambient` and `[VIDEO URL]` everywhere in this file with one find-and-replace each.
+This file holds every field of the Devpost entry, in form order. Paste each field as it is. Before you submit, replace `[VIDEO URL]` everywhere in this file with one find-and-replace.
 
 ## Form fields
 
