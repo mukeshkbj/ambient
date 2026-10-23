@@ -125,7 +125,7 @@ Four cards, about 3 s each, each with one caption. The voiceover runs over them.
 
 ### 10. End card (2:33 to 2:40)
 
-- Screen: "Ambient. Alexa, handle the call." and the repo URL [PUBLIC REPO URL].
+- Screen: "Ambient. Alexa, handle the call." and the repo URL https://github.com/mukeshkbj/ambient.
 - Needs: none.
 
 ## Production notes

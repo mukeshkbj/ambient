@@ -1,6 +1,6 @@
 # Ambient: Alexa, handle the call
 
-This file holds every field of the Devpost entry, in form order. Paste each field as it is. Before you submit, replace `[PUBLIC REPO URL]` and `[VIDEO URL]` everywhere in this file with one find-and-replace each.
+This file holds every field of the Devpost entry, in form order. Paste each field as it is. Before you submit, replace `https://github.com/mukeshkbj/ambient` and `[VIDEO URL]` everywhere in this file with one find-and-replace each.
 
 ## Form fields
 
@@ -10,12 +10,12 @@ This file holds every field of the Devpost entry, in form order. Paste each fiel
 | Elevator pitch (200 characters) | Alexa hands a phone errand to an AI that must say it is an AI, never spend past your limit without asking, and refuse "Yes, plus parts." 4,000 generated calls: no booking without a clean yes. |
 | Track | Alexa+ |
 | Video demo link | [VIDEO URL] |
-| Try it out | [PUBLIC REPO URL] |
+| Try it out | https://github.com/mukeshkbj/ambient |
 | Thumbnail | `docs/media/thumbnail.png`, the "+ parts" price struck through (3:2, from the launch film) |
 | Built with (tags) | alexa-skills-kit, alexa-plus, mcp, claude, anthropic, assemblyai, typescript, node.js, sqlite, vitest, aws-cdk, pnpm |
 | License | MIT (`LICENSE`) |
-| Friction log | [PUBLIC REPO URL]/blob/main/docs/friction-log.md |
-| Product feedback | [PUBLIC REPO URL]/blob/main/docs/product-feedback.md |
+| Friction log | https://github.com/mukeshkbj/ambient/blob/main/docs/friction-log.md |
+| Product feedback | https://github.com/mukeshkbj/ambient/blob/main/docs/product-feedback.md |
 
 Gallery images, in this order, with these captions:
 
@@ -40,7 +40,7 @@ The repo began on 2026-09-16 as an agent-supervision bridge for Alexa+. We kept 
 
 ## Try it in one minute, no keys
 
-Open [PUBLIC REPO URL] in GitHub Codespaces. It installs the project, starts the demo and opens `/sim`, and each judge gets a private copy. Or run it locally with Node 22.13 or later: clone the repo, then `pnpm install` and `pnpm demo`, and open http://127.0.0.1:3000/sim. Then type your own answer to the read-back in the "Try to fool it" panel.
+Open https://github.com/mukeshkbj/ambient in GitHub Codespaces. It installs the project, starts the demo and opens `/sim`, and each judge gets a private copy. Or run it locally with Node 22.13 or later: clone the repo, then `pnpm install` and `pnpm demo`, and open http://127.0.0.1:3000/sim. Then type your own answer to the read-back in the "Try to fool it" panel.
 
 ## What it does
 
@@ -82,4 +82,4 @@ Honesty belongs in a state machine. Prompt-level instructions leaked under revie
 
 Run the voice line against the live API and measure the time to the first word. Deploy the skill and run it on a real Echo Dot and Echo Show. Then a small pilot: 5 households, 15 real calls, every transcript read. One booking the owner did not approve fails the pilot.
 
-Source: [PUBLIC REPO URL]. Friction log: [friction-log.md]([PUBLIC REPO URL]/blob/main/docs/friction-log.md). Product feedback: [product-feedback.md]([PUBLIC REPO URL]/blob/main/docs/product-feedback.md).
+Source: https://github.com/mukeshkbj/ambient. Friction log: [friction-log.md](https://github.com/mukeshkbj/ambient/blob/main/docs/friction-log.md). Product feedback: [product-feedback.md](https://github.com/mukeshkbj/ambient/blob/main/docs/product-feedback.md).
